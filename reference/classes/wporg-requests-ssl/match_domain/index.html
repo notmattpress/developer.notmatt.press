@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wporg-requests-ssl/">Ssl</a></span><span class="is-current-page">Ssl::match_domain()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Ssl::match_domain()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">Ssl::match_domain( <span class="arg-type">string|WpOrgRequestsStringable</span> <span class="arg-name">$host</span>,  <span class="arg-type">string|WpOrgRequestsStringable</span> <span class="arg-name">$reference</span> ): <span class="return-type">boolean</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Match a hostname against a dNSName reference</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$host</code><span class="type"><span class="string">string</span>|<span class="WpOrgRequestsStringable">WpOrgRequestsStringable</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Requested host</span></div></dd><dt><code>$reference</code><span class="type"><span class="string">string</span>|<span class="WpOrgRequestsStringable">WpOrgRequestsStringable</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">dNSName to match against</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">boolean</span> Does the domain match?</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="152"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function match_domain($host, $reference) {
+	if (InputValidator::is_string_or_stringable($host) === false) {
+		throw InvalidArgument::create(1, '$host', 'string|Stringable', gettype($host));
+	}
+
+	// Check if the reference is blocklisted first
+	if (self::verify_reference_name($reference) !== true) {
+		return false;
+	}
+
+	// Check for a direct match
+	if ((string) $host === (string) $reference) {
+		return true;
+	}
+
+	// Calculate the valid wildcard match if the host is not an IP address
+	// Also validates that the host has 3 parts or more, as per Firefox's ruleset,
+	// as a wildcard reference is only allowed with 3 parts or more, so the
+	// comparison will never match if host doesn't contain 3 parts or more as well.
+	if (ip2long($host) === false) {
+		$parts    = explode('.', $host);
+		$parts[0] = '*';
+		$wildcard = implode('.', $parts);
+		if ($wildcard === (string) $reference) {
+			return true;
+		}
+	}
+
+	return false;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/requests/src/ssl.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/Requests/src/Ssl.php#L152">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/Requests/src/Ssl.php#L152-L181">View on GitHub</a></p></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

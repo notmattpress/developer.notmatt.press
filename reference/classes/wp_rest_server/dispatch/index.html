@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_server/">WP_REST_Server</a></span><span class="is-current-page">WP_REST_Server::dispatch()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_Server::dispatch()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_Server::dispatch( <span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_rest_response/" rel="class">WP_REST_Response</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Matches the request to a callback and call it.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$request</code><span class="type"><span class="WP_REST_Request"><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/" rel="class">WP_REST_Request</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Request to attempt dispatching.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_rest_response/" rel="class">WP_REST_Response</a></span> Response returned by the callback.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1062"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function dispatch( $request ) {
+	$this-&gt;dispatching_requests[] = $request;
+
+	/**
+	 * Filters the pre-calculated result of a REST API dispatch request.
+	 *
+	 * Allow hijacking the request before dispatching by returning a non-empty. The returned value
+	 * will be used to serve the request instead.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param mixed           $result  Response to replace the requested version with. Can be anything
+	 *                                 a normal endpoint can return, or null to not hijack the request.
+	 * @param WP_REST_Server  $server  Server instance.
+	 * @param WP_REST_Request $request Request used to generate the response.
+	 */
+	$result = apply_filters( 'rest_pre_dispatch', null, $this, $request );
+
+	if ( ! empty( $result ) ) {
+
+		// Normalize to either WP_Error or WP_REST_Response...
+		$result = rest_ensure_response( $result );
+
+		// ...then convert WP_Error across.
+		if ( is_wp_error( $result ) ) {
+			$result = $this-&gt;error_to_response( $result );
+		}
+
+		array_pop( $this-&gt;dispatching_requests );
+		return $result;
+	}
+
+	$error   = null;
+	$matched = $this-&gt;match_request_to_handler( $request );
+
+	if ( is_wp_error( $matched ) ) {
+		$response = $this-&gt;error_to_response( $matched );
+		array_pop( $this-&gt;dispatching_requests );
+		return $response;
+	}
+
+	list( $route, $handler ) = $matched;
+
+	if ( ! is_callable( $handler['callback'] ) ) {
+		$error = new WP_Error(
+			'rest_invalid_handler',
+			__( 'The handler for the route is invalid.' ),
+			array( 'status' =&gt; 500 )
+		);
+	}
+
+	if ( ! is_wp_error( $error ) ) {
+		$check_required = $request-&gt;has_valid_params();
+		if ( is_wp_error( $check_required ) ) {
+			$error = $check_required;
+		} else {
+			$check_sanitized = $request-&gt;sanitize_params();
+			if ( is_wp_error( $check_sanitized ) ) {
+				$error = $check_sanitized;
+			}
+		}
+	}
+
+	$response = $this-&gt;respond_to_request( $request, $route, $handler, $error );
+	array_pop( $this-&gt;dispatching_requests );
+	return $response;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/class-wp-rest-server.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/class-wp-rest-server.php#L1062">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/class-wp-rest-server.php#L1062-L1128">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/rest_pre_dispatch/"><span class="hook-func">apply_filters</span>( ‘rest_pre_dispatch’,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$result</span></nobr>,  <nobr><span class="arg-type">WP_REST_Server</span> <span class="arg-name">$server</span></nobr>,  <nobr><span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span></nobr> )</a></dt><dd><p>Filters the pre-calculated result of a REST API dispatch request.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/match_request_to_handler/">WP_REST_Server::match_request_to_handler()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Matches a request object to its handler.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/respond_to_request/">WP_REST_Server::respond_to_request()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Dispatches the request to the callback handler.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/error_to_response/">WP_REST_Server::error_to_response()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Converts an error to a response object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/rest_ensure_response/">rest_ensure_response()</a><code>wp-includes/rest-api.php</code></td><td><p>Ensures a REST response is a response object (for consistency).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/serve_request/">WP_REST_Server::serve_request()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Handles serving a REST API request.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/embed_links/">WP_REST_Server::embed_links()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Embeds the links from the data into the request.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.4.0/">4.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

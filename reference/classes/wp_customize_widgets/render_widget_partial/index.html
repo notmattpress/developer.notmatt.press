@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_customize_widgets/">WP_Customize_Widgets</a></span><span class="is-current-page">WP_Customize_Widgets::render_widget_partial()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Customize_Widgets::render_widget_partial()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Customize_Widgets::render_widget_partial( <span class="arg-type">WP_Customize_Partial</span> <span class="arg-name">$partial</span>,  <span class="arg-type">array</span> <span class="arg-name">$context</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Renders a specific widget using the supplied sidebar arguments.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/dynamic_sidebar">dynamic_sidebar()</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$partial</code><span class="type"><span class="WP_Customize_Partial"><a href="https://developer.notmatt.press/reference/classes/wp_customize_partial/" rel="class">WP_Customize_Partial</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Partial.</span></div></dd><dt><code>$context</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Sidebar args supplied as container context.<br/>
+<ul class="param-hash"><li><code>sidebar_id</code> <span class="type">string</span><div class="desc">ID for sidebar for widget to render into.</div></li>
+<li><code>sidebar_instance_number</code> <span class="type">int</span><div class="desc">Disambiguating instance number.</div></li>
+</ul>
+</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2009"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function render_widget_partial( $partial, $context ) {
+	$id_data   = $partial-&gt;id_data();
+	$widget_id = array_shift( $id_data['keys'] );
+
+	if ( ! is_array( $context )
+		|| empty( $context['sidebar_id'] )
+		|| ! is_registered_sidebar( $context['sidebar_id'] )
+	) {
+		return false;
+	}
+
+	$this-&gt;rendering_sidebar_id = $context['sidebar_id'];
+
+	if ( isset( $context['sidebar_instance_number'] ) ) {
+		$this-&gt;context_sidebar_instance_number = (int) $context['sidebar_instance_number'];
+	}
+
+	// Filter sidebars_widgets so that only the queried widget is in the sidebar.
+	$this-&gt;rendering_widget_id = $widget_id;
+
+	$filter_callback = array( $this, 'filter_sidebars_widgets_for_rendering_widget' );
+	add_filter( 'sidebars_widgets', $filter_callback, 1000 );
+
+	// Render the widget.
+	ob_start();
+	$this-&gt;rendering_sidebar_id = $context['sidebar_id'];
+	dynamic_sidebar( $this-&gt;rendering_sidebar_id );
+	$container = ob_get_clean();
+
+	// Reset variables for next partial render.
+	remove_filter( 'sidebars_widgets', $filter_callback, 1000 );
+
+	$this-&gt;context_sidebar_instance_number = null;
+	$this-&gt;rendering_sidebar_id            = null;
+	$this-&gt;rendering_widget_id             = null;
+
+	return $container;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-customize-widgets.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-customize-widgets.php#L2009">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-customize-widgets.php#L2009-L2046">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_registered_sidebar/">is_registered_sidebar()</a><code>wp-includes/widgets.php</code></td><td><p>Checks if a sidebar is registered.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/dynamic_sidebar/">dynamic_sidebar()</a><code>wp-includes/widgets.php</code></td><td><p>Display dynamic sidebar.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_filter/">remove_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Removes a callback function from a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.5.0/">4.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_default_block_editor_settings()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_default_block_editor_settings()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_default_block_editor_settings(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns the default block editor settings.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The default block editor settings.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="155"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_default_block_editor_settings() {
+	// Media settings.
+
+	// wp_max_upload_size() can be expensive, so only call it when relevant for the current user.
+	$max_upload_size = 0;
+	if ( current_user_can( 'upload_files' ) ) {
+		$max_upload_size = wp_max_upload_size();
+		if ( ! $max_upload_size ) {
+			$max_upload_size = 0;
+		}
+	}
+
+	/** This filter is documented in wp-admin/includes/media.php */
+	$image_size_names = apply_filters(
+		'image_size_names_choose',
+		array(
+			'thumbnail' =&gt; __( 'Thumbnail' ),
+			'medium'    =&gt; __( 'Medium' ),
+			'large'     =&gt; __( 'Large' ),
+			'full'      =&gt; __( 'Full Size' ),
+		)
+	);
+
+	$available_image_sizes = array();
+	foreach ( $image_size_names as $image_size_slug =&gt; $image_size_name ) {
+		$available_image_sizes[] = array(
+			'slug' =&gt; $image_size_slug,
+			'name' =&gt; $image_size_name,
+		);
+	}
+
+	$default_size       = get_option( 'image_default_size', 'large' );
+	$image_default_size = in_array( $default_size, array_keys( $image_size_names ), true ) ? $default_size : 'large';
+
+	$image_dimensions = array();
+	$all_sizes        = wp_get_registered_image_subsizes();
+	foreach ( $available_image_sizes as $size ) {
+		$key = $size['slug'];
+		if ( isset( $all_sizes[ $key ] ) ) {
+			$image_dimensions[ $key ] = $all_sizes[ $key ];
+		}
+	}
+
+	// These styles are used if the "no theme styles" options is triggered or on
+	// themes without their own editor styles.
+	$default_editor_styles_file = ABSPATH . WPINC . '/css/dist/block-editor/default-editor-styles.css';
+
+	static $default_editor_styles_file_contents = false;
+	if ( ! $default_editor_styles_file_contents &amp;&amp; file_exists( $default_editor_styles_file ) ) {
+		$default_editor_styles_file_contents = file_get_contents( $default_editor_styles_file );
+	}
+
+	$default_editor_styles = array();
+	if ( $default_editor_styles_file_contents ) {
+		$default_editor_styles = array(
+			array( 'css' =&gt; $default_editor_styles_file_contents ),
+		);
+	}
+
+	$editor_settings = array(
+		'alignWide'                        =&gt; get_theme_support( 'align-wide' ),
+		'allowedBlockTypes'                =&gt; true,
+		'allowedMimeTypes'                 =&gt; get_allowed_mime_types(),
+		'defaultEditorStyles'              =&gt; $default_editor_styles,
+		'blockCategories'                  =&gt; get_default_block_categories(),
+		'isRTL'                            =&gt; is_rtl(),
+		'imageDefaultSize'                 =&gt; $image_default_size,
+		'imageDimensions'                  =&gt; $image_dimensions,
+		'imageEditing'                     =&gt; true,
+		'imageSizes'                       =&gt; $available_image_sizes,
+		'maxUploadFileSize'                =&gt; $max_upload_size,
+		// The following flag is required to enable the new Gallery block format on the mobile apps in 5.9.
+		'__unstableGalleryWithImageBlocks' =&gt; true,
+	);
+
+	$theme_settings = get_classic_theme_supports_block_editor_settings();
+	foreach ( $theme_settings as $key =&gt; $value ) {
+		$editor_settings[ $key ] = $value;
+	}
+
+	return $editor_settings;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/block-editor.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/block-editor.php#L155">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/block-editor.php#L155-L236">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/image_size_names_choose/"><span class="hook-func">apply_filters</span>( ‘image_size_names_choose’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$size_names</span></nobr> )</a></dt><dd><p>Filters the names and labels of the default image sizes.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_classic_theme_supports_block_editor_settings/">get_classic_theme_supports_block_editor_settings()</a><code>wp-includes/block-editor.php</code></td><td><p>Returns the classic theme supports settings for block editor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_default_block_categories/">get_default_block_categories()</a><code>wp-includes/block-editor.php</code></td><td><p>Returns the list of default categories for block types.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_theme_support/">get_theme_support()</a><code>wp-includes/theme.php</code></td><td><p>Gets the theme support arguments passed when registering that support.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_allowed_mime_types/">get_allowed_mime_types()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the list of allowed mime types and file extensions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_block_editor_settings/">get_block_editor_settings()</a><code>wp-includes/block-editor.php</code></td><td><p>Returns the contextualized block editor settings for a selected editor context.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

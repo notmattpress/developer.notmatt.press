@@ -1,0 +1,416 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">register_block_type_from_metadata()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>register_block_type_from_metadata()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">register_block_type_from_metadata( <span class="arg-type">string</span> <span class="arg-name">$file_or_folder</span>,  <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_block_type/" rel="class">WP_Block_Type</a>|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Registers a block type from the metadata stored in the <code>block.json</code> file.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$file_or_folder</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Path to the JSON file with metadata definition for                               the block or path to the folder where the <code>block.json</code> file is located.<br/>
+If providing the path to a JSON file, the filename must end with <code>block.json</code>.</span></div></dd><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Array of block type arguments. Accepts any public property                               of <code>WP_Block_Type</code>. See <a href="https://developer.notmatt.press/reference/classes/wp_block_type/__construct/" rel="method">WP_Block_Type::__construct()</a> for information                               on accepted arguments. </span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_block_type/" rel="class">WP_Block_Type</a>|false</span> The registered block type on success, or false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="414"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function register_block_type_from_metadata( $file_or_folder, $args = array() ) {
+	/*
+	 * Get an array of metadata from a PHP file.
+	 * This improves performance for core blocks as it's only necessary to read a single PHP file
+	 * instead of reading a JSON file per-block, and then decoding from JSON to PHP.
+	 * Using a static variable ensures that the metadata is only read once per request.
+	 */
+
+	$metadata_file = ( ! str_ends_with( $file_or_folder, 'block.json' ) ) ?
+		trailingslashit( $file_or_folder ) . 'block.json' :
+		$file_or_folder;
+
+	$is_core_block        = str_starts_with( $file_or_folder, ABSPATH . WPINC );
+	$metadata_file_exists = $is_core_block || file_exists( $metadata_file );
+	$registry_metadata    = WP_Block_Metadata_Registry::get_metadata( $file_or_folder );
+
+	if ( $registry_metadata ) {
+		$metadata = $registry_metadata;
+	} elseif ( $metadata_file_exists ) {
+		$metadata = wp_json_file_decode( $metadata_file, array( 'associative' =&gt; true ) );
+	} else {
+		$metadata = array();
+	}
+
+	if ( ! is_array( $metadata ) || ( empty( $metadata['name'] ) &amp;&amp; empty( $args['name'] ) ) ) {
+		return false;
+	}
+
+	$metadata['file'] = $metadata_file_exists ? wp_normalize_path( realpath( $metadata_file ) ) : null;
+
+	/**
+	 * Filters the metadata provided for registering a block type.
+	 *
+	 * @since 5.7.0
+	 *
+	 * @param array $metadata Metadata for registering a block type.
+	 */
+	$metadata = apply_filters( 'block_type_metadata', $metadata );
+
+	// Add `style` and `editor_style` for core blocks if missing.
+	if ( ! empty( $metadata['name'] ) &amp;&amp; str_starts_with( $metadata['name'], 'core/' ) ) {
+		$block_name = str_replace( 'core/', '', $metadata['name'] );
+
+		if ( ! isset( $metadata['style'] ) ) {
+			$metadata['style'] = "wp-block-$block_name";
+		}
+		if ( current_theme_supports( 'wp-block-styles' ) &amp;&amp; wp_should_load_separate_core_block_assets() ) {
+			$metadata['style']   = (array) $metadata['style'];
+			$metadata['style'][] = "wp-block-{$block_name}-theme";
+		}
+		if ( ! isset( $metadata['editorStyle'] ) ) {
+			$metadata['editorStyle'] = "wp-block-{$block_name}-editor";
+		}
+	}
+
+	$settings          = array();
+	$property_mappings = array(
+		'apiVersion'      =&gt; 'api_version',
+		'name'            =&gt; 'name',
+		'title'           =&gt; 'title',
+		'category'        =&gt; 'category',
+		'parent'          =&gt; 'parent',
+		'ancestor'        =&gt; 'ancestor',
+		'icon'            =&gt; 'icon',
+		'description'     =&gt; 'description',
+		'keywords'        =&gt; 'keywords',
+		'attributes'      =&gt; 'attributes',
+		'providesContext' =&gt; 'provides_context',
+		'usesContext'     =&gt; 'uses_context',
+		'selectors'       =&gt; 'selectors',
+		'supports'        =&gt; 'supports',
+		'styles'          =&gt; 'styles',
+		'variations'      =&gt; 'variations',
+		'example'         =&gt; 'example',
+		'allowedBlocks'   =&gt; 'allowed_blocks',
+	);
+	$textdomain        = ! empty( $metadata['textdomain'] ) ? $metadata['textdomain'] : null;
+	$i18n_schema       = get_block_metadata_i18n_schema();
+
+	foreach ( $property_mappings as $key =&gt; $mapped_key ) {
+		if ( isset( $metadata[ $key ] ) ) {
+			$settings[ $mapped_key ] = $metadata[ $key ];
+			if ( $metadata_file_exists &amp;&amp; $textdomain &amp;&amp; isset( $i18n_schema-&gt;$key ) ) {
+				$settings[ $mapped_key ] = translate_settings_using_i18n_schema( $i18n_schema-&gt;$key, $settings[ $key ], $textdomain );
+			}
+		}
+	}
+
+	if ( ! empty( $metadata['render'] ) ) {
+		$template_path = wp_normalize_path(
+			realpath(
+				dirname( $metadata['file'] ) . '/' .
+				remove_block_asset_path_prefix( $metadata['render'] )
+			)
+		);
+		if ( $template_path ) {
+			/**
+			 * Renders the block on the server.
+			 *
+			 * @since 6.1.0
+			 *
+			 * @param array    $attributes Block attributes.
+			 * @param string   $content    Block default content.
+			 * @param WP_Block $block      Block instance.
+			 *
+			 * @return string Returns the block content.
+			 */
+			$settings['render_callback'] = static function ( $attributes, $content, $block ) use ( $template_path ) {
+				ob_start();
+				require $template_path;
+				return ob_get_clean();
+			};
+		}
+	}
+
+	// If `variations` is a string, it's the name of a PHP file that
+	// generates the variations.
+	if ( ! empty( $metadata['variations'] ) &amp;&amp; is_string( $metadata['variations'] ) ) {
+		$variations_path = wp_normalize_path(
+			realpath(
+				dirname( $metadata['file'] ) . '/' .
+				remove_block_asset_path_prefix( $metadata['variations'] )
+			)
+		);
+		if ( $variations_path ) {
+			/**
+			 * Generates the list of block variations.
+			 *
+			 * @since 6.7.0
+			 *
+			 * @return string Returns the list of block variations.
+			 */
+			$settings['variation_callback'] = static function () use ( $variations_path ) {
+				$variations = require $variations_path;
+				return $variations;
+			};
+			// The block instance's `variations` field is only allowed to be an array
+			// (of known block variations). We unset it so that the block instance will
+			// provide a getter that returns the result of the `variation_callback` instead.
+			unset( $settings['variations'] );
+		}
+	}
+
+	$settings = array_merge( $settings, $args );
+
+	$script_fields = array(
+		'editorScript' =&gt; 'editor_script_handles',
+		'script'       =&gt; 'script_handles',
+		'viewScript'   =&gt; 'view_script_handles',
+	);
+	foreach ( $script_fields as $metadata_field_name =&gt; $settings_field_name ) {
+		if ( ! empty( $settings[ $metadata_field_name ] ) ) {
+			$metadata[ $metadata_field_name ] = $settings[ $metadata_field_name ];
+		}
+		if ( ! empty( $metadata[ $metadata_field_name ] ) ) {
+			$scripts           = $metadata[ $metadata_field_name ];
+			$processed_scripts = array();
+			if ( is_array( $scripts ) ) {
+				for ( $index = 0; $index &lt; count( $scripts ); $index++ ) {
+					$result = register_block_script_handle(
+						$metadata,
+						$metadata_field_name,
+						$index
+					);
+					if ( $result ) {
+						$processed_scripts[] = $result;
+					}
+				}
+			} else {
+				$result = register_block_script_handle(
+					$metadata,
+					$metadata_field_name
+				);
+				if ( $result ) {
+					$processed_scripts[] = $result;
+				}
+			}
+			$settings[ $settings_field_name ] = $processed_scripts;
+		}
+	}
+
+	$module_fields = array(
+		'viewScriptModule' =&gt; 'view_script_module_ids',
+	);
+	foreach ( $module_fields as $metadata_field_name =&gt; $settings_field_name ) {
+		if ( ! empty( $settings[ $metadata_field_name ] ) ) {
+			$metadata[ $metadata_field_name ] = $settings[ $metadata_field_name ];
+		}
+		if ( ! empty( $metadata[ $metadata_field_name ] ) ) {
+			$modules           = $metadata[ $metadata_field_name ];
+			$processed_modules = array();
+			if ( is_array( $modules ) ) {
+				for ( $index = 0; $index &lt; count( $modules ); $index++ ) {
+					$result = register_block_script_module_id(
+						$metadata,
+						$metadata_field_name,
+						$index
+					);
+					if ( $result ) {
+						$processed_modules[] = $result;
+					}
+				}
+			} else {
+				$result = register_block_script_module_id(
+					$metadata,
+					$metadata_field_name
+				);
+				if ( $result ) {
+					$processed_modules[] = $result;
+				}
+			}
+			$settings[ $settings_field_name ] = $processed_modules;
+		}
+	}
+
+	$style_fields = array(
+		'editorStyle' =&gt; 'editor_style_handles',
+		'style'       =&gt; 'style_handles',
+		'viewStyle'   =&gt; 'view_style_handles',
+	);
+	foreach ( $style_fields as $metadata_field_name =&gt; $settings_field_name ) {
+		if ( ! empty( $settings[ $metadata_field_name ] ) ) {
+			$metadata[ $metadata_field_name ] = $settings[ $metadata_field_name ];
+		}
+		if ( ! empty( $metadata[ $metadata_field_name ] ) ) {
+			$styles           = $metadata[ $metadata_field_name ];
+			$processed_styles = array();
+			if ( is_array( $styles ) ) {
+				for ( $index = 0; $index &lt; count( $styles ); $index++ ) {
+					$result = register_block_style_handle(
+						$metadata,
+						$metadata_field_name,
+						$index
+					);
+					if ( $result ) {
+						$processed_styles[] = $result;
+					}
+				}
+			} else {
+				$result = register_block_style_handle(
+					$metadata,
+					$metadata_field_name
+				);
+				if ( $result ) {
+					$processed_styles[] = $result;
+				}
+			}
+			$settings[ $settings_field_name ] = $processed_styles;
+		}
+	}
+
+	if ( ! empty( $metadata['blockHooks'] ) ) {
+		/**
+		 * Map camelCased position string (from block.json) to snake_cased block type position.
+		 *
+		 * @var array
+		 */
+		$position_mappings = array(
+			'before'     =&gt; 'before',
+			'after'      =&gt; 'after',
+			'firstChild' =&gt; 'first_child',
+			'lastChild'  =&gt; 'last_child',
+		);
+
+		$settings['block_hooks'] = array();
+		foreach ( $metadata['blockHooks'] as $anchor_block_name =&gt; $position ) {
+			// Avoid infinite recursion (hooking to itself).
+			if ( $metadata['name'] === $anchor_block_name ) {
+				_doing_it_wrong(
+					__METHOD__,
+					__( 'Cannot hook block to itself.' ),
+					'6.4.0'
+				);
+				continue;
+			}
+
+			if ( ! isset( $position_mappings[ $position ] ) ) {
+				continue;
+			}
+
+			$settings['block_hooks'][ $anchor_block_name ] = $position_mappings[ $position ];
+		}
+	}
+
+	/**
+	 * Filters the settings determined from the block type metadata.
+	 *
+	 * @since 5.7.0
+	 *
+	 * @param array $settings Array of determined settings for registering a block type.
+	 * @param array $metadata Metadata provided for registering a block type.
+	 */
+	$settings = apply_filters( 'block_type_metadata_settings', $settings, $metadata );
+
+	$metadata['name'] = ! empty( $settings['name'] ) ? $settings['name'] : $metadata['name'];
+
+	return WP_Block_Type_Registry::get_instance()-&gt;register(
+		$metadata['name'],
+		$settings
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/blocks.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/blocks.php#L414">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/blocks.php#L414-L714">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/block_type_metadata/"><span class="hook-func">apply_filters</span>( ‘block_type_metadata’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$metadata</span></nobr> )</a></dt><dd><p>Filters the metadata provided for registering a block type.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/block_type_metadata_settings/"><span class="hook-func">apply_filters</span>( ‘block_type_metadata_settings’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$settings</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$metadata</span></nobr> )</a></dt><dd><p>Filters the settings determined from the block type metadata.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/get_metadata/">WP_Block_Metadata_Registry::get_metadata()</a><code>wp-includes/class-wp-block-metadata-registry.php</code></td><td><p>Retrieves block metadata for a given block within a specific collection.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/register_block_script_module_id/">register_block_script_module_id()</a><code>wp-includes/blocks.php</code></td><td><p>Finds a script module ID for the selected block metadata field. It detects when a path to file was provided and optionally finds a corresponding asset file with details necessary to register the script module under with an automatically generated module ID. It returns unprocessed script module ID otherwise.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_json_file_decode/">wp_json_file_decode()</a><code>wp-includes/functions.php</code></td><td><p>Reads and decodes a JSON file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_block_metadata_i18n_schema/">get_block_metadata_i18n_schema()</a><code>wp-includes/blocks.php</code></td><td><p>Gets i18n schema for block’s metadata read from <code>block.json</code> file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_should_load_separate_core_block_assets/">wp_should_load_separate_core_block_assets()</a><code>wp-includes/script-loader.php</code></td><td><p>Checks whether separate styles should be loaded for core blocks on-render.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_block_script_handle/">register_block_script_handle()</a><code>wp-includes/blocks.php</code></td><td><p>Finds a script handle for the selected block metadata field. It detects when a path to file was provided and optionally finds a corresponding asset file with details necessary to register the script under automatically generated handle name. It returns unprocessed script handle otherwise.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_block_style_handle/">register_block_style_handle()</a><code>wp-includes/blocks.php</code></td><td><p>Finds a style handle for the block metadata field. It detects when a path to file was provided and registers the style under automatically generated handle name. It returns unprocessed style handle otherwise.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_block_asset_path_prefix/">remove_block_asset_path_prefix()</a><code>wp-includes/blocks.php</code></td><td><p>Removes the block asset’s path prefix if provided.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_block_type_registry/get_instance/">WP_Block_Type_Registry::get_instance()</a><code>wp-includes/class-wp-block-type-registry.php</code></td><td><p>Utility method to retrieve the main instance of the class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_normalize_path/">wp_normalize_path()</a><code>wp-includes/functions.php</code></td><td><p>Normalizes a filesystem path.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_theme_supports/">current_theme_supports()</a><code>wp-includes/theme.php</code></td><td><p>Checks a theme’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 9 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/register_block_type/">register_block_type()</a><code>wp-includes/blocks.php</code></td><td><p>Registers a block type. The recommended way is to register a block type using the metadata stored in the <code>block.json</code> file.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td><span class="since-description">Allow PHP filename as <code>variations</code> argument.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td><span class="since-description">Added support for <code>allowedBlocks</code>, <code>viewScriptModule</code>, and <code>viewStyle</code> fields.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.4.0/">6.4.0</a></td><td><span class="since-description">Added support for <code>blockHooks</code> field.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td><span class="since-description">Added <code>selectors</code> field.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td><span class="since-description">Added support for <code>render</code> field.</span></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/since/5.9.0/">5.9.0</a></td><td><span class="since-description">Added support for <code>variations</code> and <code>viewScript</code> fields.</span></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/since/5.7.0/">5.7.0</a></td><td><span class="since-description">Added support for <code>textdomain</code> field and i18n handling for all translatable fields.</span></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/since/5.5.0/">5.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-mrwweb odd alt thread-even depth-1" data-comment-id="5471" id="comment-5471">
+<article class="comment-body" id="div-comment-5471">
+<a class="screen-reader-text" href="#comment-content-5471">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5471">
+<p><a href="https://make.wordpress.org/core/2021/06/23/block-api-enhancements-in-wordpress-5-8/" rel="nofollow ugc">In WordPress 5.8</a>, the ability to use <code>block.json</code> metadata was added to the <a href="https://developer.notmatt.press/reference/functions/register_block_type/"><code>register_block_type</code> function</a>. Therefore, <code>register_block_type_from_metadata</code> is now redundant and the shorter <code>register_block_type</code> is preferred. The only reason to use <code>register_block_type_from_metadata</code> is for supporting sites on WordPress versions 5.5 – 5.7.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5471">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-ztig even thread-odd thread-alt depth-1" data-comment-id="5189" id="comment-5189">
+<article class="comment-body" id="div-comment-5189">
+<a class="screen-reader-text" href="#comment-content-5189">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5189">
+<p>It’s worth noting that when registering blocks using this method, you can not register scripts and styles from <code>block.json</code> if you include it in a theme.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-5189">
+<ul class="children">
+<li class="comment byuser comment-author-thisiswilliam odd alt depth-2" data-comment-id="5306" id="comment-5306">
+<article class="comment-body" id="div-comment-5306">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5306">
+<div>It is possible in 5.8 to set style, script, editorStyle, editorScript for a block read more <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-metadata/#editor-style">here</a></div>
+<div><a class="url" href="https://profiles.wordpress.org/thisiswilliam/" rel="external nofollow">thisiswilliam</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/register_block_type_from_metadata/#comment-5306"><time datetime="2021-09-07T20:14:54+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

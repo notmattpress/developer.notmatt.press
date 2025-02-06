@@ -1,0 +1,717 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wpdb/">wpdb</a></span><span class="is-current-page">wpdb::prepare()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wpdb::prepare()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wpdb::prepare( <span class="arg-type">string</span> <span class="arg-name">$query</span>,  <span class="arg-type">mixed</span> <span class="arg-name">$args</span> ): <span class="return-type">string|void</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Prepares a SQL query for safe execution.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Uses <code>sprintf()</code>-like syntax. The following placeholders can be used in the query string:</p> <ul> <li><code>%d</code> (integer)</li> <li><code>%f</code> (float)</li> <li><code>%s</code> (string)</li> <li><code>%i</code> (identifier, e.g. table/field names)</li> </ul> <p>All placeholders MUST be left unquoted in the query string. A corresponding argument MUST be passed for each placeholder.</p> <p>Note: There is one exception to the above: for compatibility with old behavior, numbered or formatted string placeholders (eg, <code>%1$s</code>, <code>%5s</code>) will not have quotes added by this function, so should be passed with appropriate quotes around them.</p> <p>Literal percentage signs (<code>%</code>) in the query string must be written as <code>%%</code>. Percentage wildcards (for example, to use in LIKE syntax) must be passed via a substitution argument containing the complete LIKE string, these cannot be inserted directly in the query string.<br/>Also see <a href="https://developer.notmatt.press/reference/classes/wpdb/esc_like/" rel="method">wpdb::esc_like()</a>.</p> <p>Arguments may be passed as individual arguments to the method, or as a single array containing all arguments. A combination of the two is not supported.</p> <p>Examples:</p> <pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wpdb-&gt;prepare(
+    "SELECT * FROM `table` WHERE `column` = %s AND `field` = %d OR `other_field` LIKE %s",
+    array( 'foo', 1337, '%bar' )
+);
+
+$wpdb-&gt;prepare(
+    "SELECT DATE_FORMAT(`field`, '%%c') FROM `table` WHERE `column` = %s",
+    'foo'
+);</code></pre></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$query</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Query statement with <code>sprintf()</code>-like placeholders.</span></div></dd><dt><code>$args</code><span class="type"><span class="mixed">mixed</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Further variables to substitute into the query’s placeholders                             if being called with individual arguments.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|void</span> Sanitized query string, if there is a query to prepare.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1452"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function prepare( $query, ...$args ) {
+	if ( is_null( $query ) ) {
+		return;
+	}
+
+	/*
+	 * This is not meant to be foolproof -- but it will catch obviously incorrect usage.
+	 *
+	 * Note: str_contains() is not used here, as this file can be included
+	 * directly outside of WordPress core, e.g. by HyperDB, in which case
+	 * the polyfills from wp-includes/compat.php are not loaded.
+	 */
+	if ( false === strpos( $query, '%' ) ) {
+		wp_load_translations_early();
+		_doing_it_wrong(
+			'wpdb::prepare',
+			sprintf(
+				/* translators: %s: wpdb::prepare() */
+				__( 'The query argument of %s must have a placeholder.' ),
+				'wpdb::prepare()'
+			),
+			'3.9.0'
+		);
+	}
+
+	/*
+	 * Specify the formatting allowed in a placeholder. The following are allowed:
+	 *
+	 * - Sign specifier, e.g. $+d
+	 * - Numbered placeholders, e.g. %1$s
+	 * - Padding specifier, including custom padding characters, e.g. %05s, %'#5s
+	 * - Alignment specifier, e.g. %05-s
+	 * - Precision specifier, e.g. %.2f
+	 */
+	$allowed_format = '(?:[1-9][0-9]*[$])?[-+0-9]*(?: |0|\'.)?[-+0-9]*(?:\.[0-9]+)?';
+
+	/*
+	 * If a %s placeholder already has quotes around it, removing the existing quotes
+	 * and re-inserting them ensures the quotes are consistent.
+	 *
+	 * For backward compatibility, this is only applied to %s, and not to placeholders like %1$s,
+	 * which are frequently used in the middle of longer strings, or as table name placeholders.
+	 */
+	$query = str_replace( "'%s'", '%s', $query ); // Strip any existing single quotes.
+	$query = str_replace( '"%s"', '%s', $query ); // Strip any existing double quotes.
+
+	// Escape any unescaped percents (i.e. anything unrecognised).
+	$query = preg_replace( "/%(?:%|$|(?!($allowed_format)?[sdfFi]))/", '%%\\1', $query );
+
+	// Extract placeholders from the query.
+	$split_query = preg_split( "/(^|[^%]|(?:%%)+)(%(?:$allowed_format)?[sdfFi])/", $query, -1, PREG_SPLIT_DELIM_CAPTURE );
+
+	$split_query_count = count( $split_query );
+
+	/*
+	 * Split always returns with 1 value before the first placeholder (even with $query = "%s"),
+	 * then 3 additional values per placeholder.
+	 */
+	$placeholder_count = ( ( $split_query_count - 1 ) / 3 );
+
+	// If args were passed as an array, as in vsprintf(), move them up.
+	$passed_as_array = ( isset( $args[0] ) &amp;&amp; is_array( $args[0] ) &amp;&amp; 1 === count( $args ) );
+	if ( $passed_as_array ) {
+		$args = $args[0];
+	}
+
+	$new_query       = '';
+	$key             = 2; // Keys 0 and 1 in $split_query contain values before the first placeholder.
+	$arg_id          = 0;
+	$arg_identifiers = array();
+	$arg_strings     = array();
+
+	while ( $key &lt; $split_query_count ) {
+		$placeholder = $split_query[ $key ];
+
+		$format = substr( $placeholder, 1, -1 );
+		$type   = substr( $placeholder, -1 );
+
+		if ( 'f' === $type &amp;&amp; true === $this-&gt;allow_unsafe_unquoted_parameters
+			/*
+			 * Note: str_ends_with() is not used here, as this file can be included
+			 * directly outside of WordPress core, e.g. by HyperDB, in which case
+			 * the polyfills from wp-includes/compat.php are not loaded.
+			 */
+			&amp;&amp; '%' === substr( $split_query[ $key - 1 ], -1, 1 )
+		) {
+
+			/*
+			 * Before WP 6.2 the "force floats to be locale-unaware" RegEx didn't
+			 * convert "%%%f" to "%%%F" (note the uppercase F).
+			 * This was because it didn't check to see if the leading "%" was escaped.
+			 * And because the "Escape any unescaped percents" RegEx used "[sdF]" in its
+			 * negative lookahead assertion, when there was an odd number of "%", it added
+			 * an extra "%", to give the fully escaped "%%%%f" (not a placeholder).
+			 */
+
+			$s = $split_query[ $key - 2 ] . $split_query[ $key - 1 ];
+			$k = 1;
+			$l = strlen( $s );
+			while ( $k &lt;= $l &amp;&amp; '%' === $s[ $l - $k ] ) {
+				++$k;
+			}
+
+			$placeholder = '%' . ( $k % 2 ? '%' : '' ) . $format . $type;
+
+			--$placeholder_count;
+
+		} else {
+
+			// Force floats to be locale-unaware.
+			if ( 'f' === $type ) {
+				$type        = 'F';
+				$placeholder = '%' . $format . $type;
+			}
+
+			if ( 'i' === $type ) {
+				$placeholder = '`%' . $format . 's`';
+				// Using a simple strpos() due to previous checking (e.g. $allowed_format).
+				$argnum_pos = strpos( $format, '$' );
+
+				if ( false !== $argnum_pos ) {
+					// sprintf() argnum starts at 1, $arg_id from 0.
+					$arg_identifiers[] = ( ( (int) substr( $format, 0, $argnum_pos ) ) - 1 );
+				} else {
+					$arg_identifiers[] = $arg_id;
+				}
+			} elseif ( 'd' !== $type &amp;&amp; 'F' !== $type ) {
+				/*
+				 * i.e. ( 's' === $type ), where 'd' and 'F' keeps $placeholder unchanged,
+				 * and we ensure string escaping is used as a safe default (e.g. even if 'x').
+				 */
+				$argnum_pos = strpos( $format, '$' );
+
+				if ( false !== $argnum_pos ) {
+					$arg_strings[] = ( ( (int) substr( $format, 0, $argnum_pos ) ) - 1 );
+				} else {
+					$arg_strings[] = $arg_id;
+				}
+
+				/*
+				 * Unquoted strings for backward compatibility (dangerous).
+				 * First, "numbered or formatted string placeholders (eg, %1$s, %5s)".
+				 * Second, if "%s" has a "%" before it, even if it's unrelated (e.g. "LIKE '%%%s%%'").
+				 */
+				if ( true !== $this-&gt;allow_unsafe_unquoted_parameters
+					/*
+					 * Note: str_ends_with() is not used here, as this file can be included
+					 * directly outside of WordPress core, e.g. by HyperDB, in which case
+					 * the polyfills from wp-includes/compat.php are not loaded.
+					 */
+					|| ( '' === $format &amp;&amp; '%' !== substr( $split_query[ $key - 1 ], -1, 1 ) )
+				) {
+					$placeholder = "'%" . $format . "s'";
+				}
+			}
+		}
+
+		// Glue (-2), any leading characters (-1), then the new $placeholder.
+		$new_query .= $split_query[ $key - 2 ] . $split_query[ $key - 1 ] . $placeholder;
+
+		$key += 3;
+		++$arg_id;
+	}
+
+	// Replace $query; and add remaining $query characters, or index 0 if there were no placeholders.
+	$query = $new_query . $split_query[ $key - 2 ];
+
+	$dual_use = array_intersect( $arg_identifiers, $arg_strings );
+
+	if ( count( $dual_use ) &gt; 0 ) {
+		wp_load_translations_early();
+
+		$used_placeholders = array();
+
+		$key    = 2;
+		$arg_id = 0;
+		// Parse again (only used when there is an error).
+		while ( $key &lt; $split_query_count ) {
+			$placeholder = $split_query[ $key ];
+
+			$format = substr( $placeholder, 1, -1 );
+
+			$argnum_pos = strpos( $format, '$' );
+
+			if ( false !== $argnum_pos ) {
+				$arg_pos = ( ( (int) substr( $format, 0, $argnum_pos ) ) - 1 );
+			} else {
+				$arg_pos = $arg_id;
+			}
+
+			$used_placeholders[ $arg_pos ][] = $placeholder;
+
+			$key += 3;
+			++$arg_id;
+		}
+
+		$conflicts = array();
+		foreach ( $dual_use as $arg_pos ) {
+			$conflicts[] = implode( ' and ', $used_placeholders[ $arg_pos ] );
+		}
+
+		_doing_it_wrong(
+			'wpdb::prepare',
+			sprintf(
+				/* translators: %s: A list of placeholders found to be a problem. */
+				__( 'Arguments cannot be prepared as both an Identifier and Value. Found the following conflicts: %s' ),
+				implode( ', ', $conflicts )
+			),
+			'6.2.0'
+		);
+
+		return;
+	}
+
+	$args_count = count( $args );
+
+	if ( $args_count !== $placeholder_count ) {
+		if ( 1 === $placeholder_count &amp;&amp; $passed_as_array ) {
+			/*
+			 * If the passed query only expected one argument,
+			 * but the wrong number of arguments was sent as an array, bail.
+			 */
+			wp_load_translations_early();
+			_doing_it_wrong(
+				'wpdb::prepare',
+				__( 'The query only expected one placeholder, but an array of multiple placeholders was sent.' ),
+				'4.9.0'
+			);
+
+			return;
+		} else {
+			/*
+			 * If we don't have the right number of placeholders,
+			 * but they were passed as individual arguments,
+			 * or we were expecting multiple arguments in an array, throw a warning.
+			 */
+			wp_load_translations_early();
+			_doing_it_wrong(
+				'wpdb::prepare',
+				sprintf(
+					/* translators: 1: Number of placeholders, 2: Number of arguments passed. */
+					__( 'The query does not contain the correct number of placeholders (%1$d) for the number of arguments passed (%2$d).' ),
+					$placeholder_count,
+					$args_count
+				),
+				'4.8.3'
+			);
+
+			/*
+			 * If we don't have enough arguments to match the placeholders,
+			 * return an empty string to avoid a fatal error on PHP 8.
+			 */
+			if ( $args_count &lt; $placeholder_count ) {
+				$max_numbered_placeholder = 0;
+
+				for ( $i = 2, $l = $split_query_count; $i &lt; $l; $i += 3 ) {
+					// Assume a leading number is for a numbered placeholder, e.g. '%3$s'.
+					$argnum = (int) substr( $split_query[ $i ], 1 );
+
+					if ( $max_numbered_placeholder &lt; $argnum ) {
+						$max_numbered_placeholder = $argnum;
+					}
+				}
+
+				if ( ! $max_numbered_placeholder || $args_count &lt; $max_numbered_placeholder ) {
+					return '';
+				}
+			}
+		}
+	}
+
+	$args_escaped = array();
+
+	foreach ( $args as $i =&gt; $value ) {
+		if ( in_array( $i, $arg_identifiers, true ) ) {
+			$args_escaped[] = $this-&gt;_escape_identifier_value( $value );
+		} elseif ( is_int( $value ) || is_float( $value ) ) {
+			$args_escaped[] = $value;
+		} else {
+			if ( ! is_scalar( $value ) &amp;&amp; ! is_null( $value ) ) {
+				wp_load_translations_early();
+				_doing_it_wrong(
+					'wpdb::prepare',
+					sprintf(
+						/* translators: %s: Value type. */
+						__( 'Unsupported value type (%s).' ),
+						gettype( $value )
+					),
+					'4.8.2'
+				);
+
+				// Preserving old behavior, where values are escaped as strings.
+				$value = '';
+			}
+
+			$args_escaped[] = $this-&gt;_real_escape( $value );
+		}
+	}
+
+	$query = vsprintf( $query, $args_escaped );
+
+	return $this-&gt;add_placeholder_escape( $query );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wpdb.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wpdb.php#L1452">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wpdb.php#L1452-L1754">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/_escape_identifier_value/">wpdb::_escape_identifier_value()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Escapes an identifier value without adding the surrounding quotes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/add_placeholder_escape/">wpdb::add_placeholder_escape()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Adds a placeholder escape string, to escape anything that resembles a printf() placeholder.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_load_translations_early/">wp_load_translations_early()</a><code>wp-includes/load.php</code></td><td><p>Attempts an early load of translations.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/_real_escape/">wpdb::_real_escape()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Real escape using mysqli_real_escape_string().</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_check_comment_data/">wp_check_comment_data()</a><code>wp-includes/comment.php</code></td><td><p>Checks whether comment data passes internal checks or has disallowed content.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_prime_network_option_caches/">wp_prime_network_option_caches()</a><code>wp-includes/option.php</code></td><td><p>Primes specific network options into the cache with a single database query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_prime_option_caches/">wp_prime_option_caches()</a><code>wp-includes/option.php</code></td><td><p>Primes specific options into the cache with a single database query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_set_option_autoload_values/">wp_set_option_autoload_values()</a><code>wp-includes/option.php</code></td><td><p>Sets the autoload values for multiple options in the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/should_suggest_persistent_object_cache/">WP_Site_Health::should_suggest_persistent_object_cache()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Determines whether to suggest using a persistent object cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_batch_update_comment_type/">_wp_batch_update_comment_type()</a><code>wp-includes/comment.php</code></td><td><p>Updates the comment type for a batch of comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_site/">wp_delete_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Deletes a site from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/populate_network_meta/">populate_network_meta()</a><code>wp-admin/includes/schema.php</code></td><td><p>Creates WordPress network meta and sets the default values.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/populate_site_meta/">populate_site_meta()</a><code>wp-admin/includes/schema.php</code></td><td><p>Creates WordPress site meta and sets the default values.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_find_post_by_old_slug/">_find_post_by_old_slug()</a><code>wp-includes/query.php</code></td><td><p>Find the post ID for redirecting an old slug.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_find_post_by_old_date/">_find_post_by_old_date()</a><code>wp-includes/query.php</code></td><td><p>Find the post ID for redirecting an old date.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_attachment_files/">wp_delete_attachment_files()</a><code>wp-includes/post.php</code></td><td><p>Deletes all files that belong to the given attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_requests_table/get_request_counts/">WP_Privacy_Requests_Table::get_request_counts()</a><code>wp-admin/includes/class-wp-privacy-requests-table.php</code></td><td><p>Counts the number of requests for each status.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/has_term_meta/">has_term_meta()</a><code>wp-includes/taxonomy.php</code></td><td><p>Gets all meta data, including meta IDs, for the given term ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_expired_transients/">delete_expired_transients()</a><code>wp-includes/option.php</code></td><td><p>Deletes all expired transients.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_check_comment_flood/">wp_check_comment_flood()</a><code>wp-includes/comment.php</code></td><td><p>Checks whether comment flooding is occurring.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_term_query/get_search_sql/">WP_Term_Query::get_search_sql()</a><code>wp-includes/class-wp-term-query.php</code></td><td><p>Used internally to generate a SQL string related to the ‘search’ parameter.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_term_query/get_terms/">WP_Term_Query::get_terms()</a><code>wp-includes/class-wp-term-query.php</code></td><td><p>Retrieves the query results.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_network_query/get_search_sql/">WP_Network_Query::get_search_sql()</a><code>wp-includes/class-wp-network-query.php</code></td><td><p>Used internally to generate an SQL string for searching across multiple columns.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_network_query/get_network_ids/">WP_Network_Query::get_network_ids()</a><code>wp-includes/class-wp-network-query.php</code></td><td><p>Used internally to get a list of network IDs matching the query vars.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_site_query/get_search_sql/">WP_Site_Query::get_search_sql()</a><code>wp-includes/class-wp-site-query.php</code></td><td><p>Used internally to generate an SQL string for searching across multiple columns.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_site_query/get_site_ids/">WP_Site_Query::get_site_ids()</a><code>wp-includes/class-wp-site-query.php</code></td><td><p>Used internally to get a list of site IDs matching the query vars.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_site/get_instance/">WP_Site::get_instance()</a><code>wp-includes/class-wp-site.php</code></td><td><p>Retrieves a site from the database by its ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/create_lock/">WP_Upgrader::create_lock()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Creates a lock using WordPress options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_network/get_instance/">WP_Network::get_instance()</a><code>wp-includes/class-wp-network.php</code></td><td><p>Retrieves a network from the database by its ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_term_is_shared/">wp_term_is_shared()</a><code>wp-includes/taxonomy.php</code></td><td><p>Determines whether a term is shared between multiple taxonomies.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_comment/get_instance/">WP_Comment::get_instance()</a><code>wp-includes/class-wp-comment.php</code></td><td><p>Retrieves a <a href="https://developer.notmatt.press/reference/classes/wp_comment/" rel="class">WP_Comment</a> instance.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_users_with_no_role/">wp_get_users_with_no_role()</a><code>wp-includes/user.php</code></td><td><p>Gets the user IDs of all users with no role on this site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_comment_query/get_comment_ids/">WP_Comment_Query::get_comment_ids()</a><code>wp-includes/class-wp-comment-query.php</code></td><td><p>Used internally to get a list of comment IDs matching the query vars.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_term/get_instance/">WP_Term::get_instance()</a><code>wp-includes/class-wp-term.php</code></td><td><p>Retrieve <a href="https://developer.notmatt.press/reference/classes/wp_term/" rel="class">WP_Term</a> instance.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_network_option/">delete_network_option()</a><code>wp-includes/option.php</code></td><td><p>Removes a network option by name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_network_option/">get_network_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves a network’s option value based on the option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_batch_split_terms/">_wp_batch_split_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Splits a batch of shared taxonomy terms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/strip_invalid_text/">wpdb::strip_invalid_text()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Strips any invalid characters based on value/charset pairs.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_media_attach_action/">wp_media_attach_action()</a><code>wp-admin/includes/media.php</code></td><td><p>Encapsulates the logic for Attach/Detach actions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_meta_query/get_sql_for_clause/">WP_Meta_Query::get_sql_for_clause()</a><code>wp-includes/class-wp-meta-query.php</code></td><td><p>Generates SQL JOIN and WHERE clauses for a first-order query clause.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_tax_query/get_sql_for_clause/">WP_Tax_Query::get_sql_for_clause()</a><code>wp-includes/class-wp-tax-query.php</code></td><td><p>Generates SQL JOIN and WHERE clauses for a “first-order” query clause.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_date_query/get_sql_for_clause/">WP_Date_Query::get_sql_for_clause()</a><code>wp-includes/class-wp-date-query.php</code></td><td><p>Turns a first-order date query into SQL for a WHERE clause.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/display_setup_form/">display_setup_form()</a><code>wp-admin/install.php</code></td><td><p>Displays installer setup form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/network_domain_check/">network_domain_check()</a><code>wp-admin/includes/network.php</code></td><td><p>Check for an existing network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/export_date_options/">export_date_options()</a><code>wp-admin/export.php</code></td><td><p>Creates the date options fields for exporting a given post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user_search/prepare_query/">WP_User_Search::prepare_query()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Prepares the user search query (legacy).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_author_user_ids/">get_author_user_ids()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Get all user IDs.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_editable_user_ids/">get_editable_user_ids()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Gets the IDs of any users who can edit posts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_nonauthor_user_ids/">get_nonauthor_user_ids()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Gets all users who are not authors.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_others_unpublished_posts/">get_others_unpublished_posts()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Retrieves editable posts from other users.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_list_table/months_dropdown/">WP_List_Table::months_dropdown()</a><code>wp-admin/includes/class-wp-list-table.php</code></td><td><p>Displays a dropdown for filtering items in the list table by month.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_delete_user/">wpmu_delete_user()</a><code>wp-admin/includes/ms.php</code></td><td><p>Deletes a user and all of their posts from the network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/populate_network/">populate_network()</a><code>wp-admin/includes/schema.php</code></td><td><p>Populate network settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/populate_options/">populate_options()</a><code>wp-admin/includes/schema.php</code></td><td><p>Create WordPress options and set the default values.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_create_table/">maybe_create_table()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Creates a table in the database, if it doesn’t already exist.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_install_defaults/">wp_install_defaults()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Creates the initial content for a newly-installed site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_users_drafts/">get_users_drafts()</a><code>wp-admin/includes/user.php</code></td><td><p>Retrieve the user’s drafts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_user/">wp_delete_user()</a><code>wp-admin/includes/user.php</code></td><td><p>Delete user and optionally reassign posts and links to another user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/meta_form/">meta_form()</a><code>wp-admin/includes/template.php</code></td><td><p>Prints the form in the Custom Fields meta box.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/parent_dropdown/">parent_dropdown()</a><code>wp-admin/includes/template.php</code></td><td><p>Prints out option HTML elements for the page parents drop-down.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_sites_list_table/prepare_items/">WP_MS_Sites_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-ms-sites-list-table.php</code></td><td><p>Prepares the list of sites for display.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_gallery_tab/">update_gallery_tab()</a><code>wp-admin/includes/media.php</code></td><td><p>Adds the gallery tab back to the tabs array if post has image attachments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/has_meta/">has_meta()</a><code>wp-admin/includes/post.php</code></td><td><p>Returns meta data for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_available_post_mime_types/">get_available_post_mime_types()</a><code>wp-includes/post.php</code></td><td><p>Gets all available post MIME types for a given post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_exists/">post_exists()</a><code>wp-admin/includes/post.php</code></td><td><p>Determines if a post exists based on title, content, date and type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_importer/get_imported_comments/">WP_Importer::get_imported_comments()</a><code>wp-admin/includes/class-wp-importer.php</code></td><td><p>Sets array with imported comments from WordPress database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_importer/get_imported_posts/">WP_Importer::get_imported_posts()</a><code>wp-admin/includes/class-wp-importer.php</code></td><td><p>Returns array with imported permalinks from WordPress database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_importer/count_imported_posts/">WP_Importer::count_imported_posts()</a><code>wp-admin/includes/class-wp-importer.php</code></td><td><p>Returns count of imported permalinks from WordPress database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_delete_orphaned_draft_menu_items/">_wp_delete_orphaned_draft_menu_items()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Deletes orphaned draft menu items</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/__construct/">WP_Posts_List_Table::__construct()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/comment_exists/">comment_exists()</a><code>wp-admin/includes/comment.php</code></td><td><p>Determines if a comment exists based on author and date.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/get_data_by/">WP_User::get_data_by()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Returns only the main user fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_archives/">wp_get_archives()</a><code>wp-includes/general-template.php</code></td><td><p>Displays archive links based on type and format.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_usermeta/">delete_usermeta()</a><code>wp-includes/deprecated.php</code></td><td><p>Remove user meta data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_usermeta/">get_usermeta()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieve user metadata.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_usermeta/">update_usermeta()</a><code>wp-includes/deprecated.php</code></td><td><p>Update metadata of user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get_posts/">WP_Query::get_posts()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves an array of posts based on query variables.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/parse_search/">WP_Query::parse_search()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Generates SQL for the WHERE clause based on passed search terms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/parse_search_order/">WP_Query::parse_search_order()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Generates SQL for the ORDER BY condition based on passed search terms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_scheduled_delete/">wp_scheduled_delete()</a><code>wp-includes/functions.php</code></td><td><p>Permanently deletes comments or posts of any type that have held a status of ‘trash’ for the number of days defined in EMPTY_TRASH_DAYS.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_enclose/">do_enclose()</a><code>wp-includes/functions.php</code></td><td><p>Checks content for video and audio links to add as enclosures.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_update_post_term_count/">_update_post_term_count()</a><code>wp-includes/taxonomy.php</code></td><td><p>Updates term count based on object types of the current taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_update_generic_term_count/">_update_generic_term_count()</a><code>wp-includes/taxonomy.php</code></td><td><p>Updates term count based on number of objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unique_term_slug/">wp_unique_term_slug()</a><code>wp-includes/taxonomy.php</code></td><td><p>Makes term slug unique, if it isn’t already.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_term/">wp_update_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Updates term based on arguments provided.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_term/">wp_insert_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Adds a new term to the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_object_terms/">wp_set_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Creates term and taxonomy relationships.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_remove_object_terms/">wp_remove_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes term(s) associated with a given object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_term/">wp_delete_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes a term from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_adjacent_post/">get_adjacent_post()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the adjacent post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/ms_allowed_http_request_hosts/">ms_allowed_http_request_hosts()</a><code>wp-includes/http.php</code></td><td><p>Adds any domain in a multisite installation for safe HTTP requests to the allowed list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_date_query/build_time_query/">WP_Date_Query::build_time_query()</a><code>wp-includes/class-wp-date-query.php</code></td><td><p>Builds a query string for comparing time values (hour, minute, second).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_option/">add_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_option/">delete_option()</a><code>wp-includes/option.php</code></td><td><p>Removes an option by name. Prevents removal of protected WordPress options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user_query/prepare_query/">WP_User_Query::prepare_query()</a><code>wp-includes/class-wp-user-query.php</code></td><td><p>Prepares the query variables.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user_query/get_search_sql/">WP_User_Query::get_search_sql()</a><code>wp-includes/class-wp-user-query.php</code></td><td><p>Used internally to generate an SQL string for searching across multiple columns.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_user/">wp_insert_user()</a><code>wp-includes/user.php</code></td><td><p>Inserts a user into the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/count_users/">count_users()</a><code>wp-includes/user.php</code></td><td><p>Counts number of users who have each of the user roles.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_post/get_instance/">WP_Post::get_instance()</a><code>wp-includes/class-wp-post.php</code></td><td><p>Retrieve <a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a> instance.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_posts_by_author_sql/">get_posts_by_author_sql()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the post SQL based on capability, author, and type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_attachment/">wp_delete_attachment()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_page_by_title/">get_page_by_title()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieves a page given its title.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unique_post_slug/">wp_unique_post_slug()</a><code>wp-includes/post.php</code></td><td><p>Computes a unique slug for the post, when given the desired slug and some post details.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_untrash_post_comments/">wp_untrash_post_comments()</a><code>wp-includes/post.php</code></td><td><p>Restores comments for a post from the Trash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_post/">wp_insert_post()</a><code>wp-includes/post.php</code></td><td><p>Inserts or update a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post/">wp_delete_post()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes a post or page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_trash_post_comments/">wp_trash_post_comments()</a><code>wp-includes/post.php</code></td><td><p>Moves comments for a post to the Trash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_count_posts/">wp_count_posts()</a><code>wp-includes/post.php</code></td><td><p>Counts number of posts of a post type and if user has permissions to view.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/page_uri_index/">WP_Rewrite::page_uri_index()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Retrieves all pages and attachments for pages URIs.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/redirect_canonical/">redirect_canonical()</a><code>wp-includes/canonical.php</code></td><td><p>Redirects incoming links to the proper URL based on the site url.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/redirect_guess_404_permalink/">redirect_guess_404_permalink()</a><code>wp-includes/canonical.php</code></td><td><p>Attempts to guess the correct URL for a 404 request based on query vars.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_upgrade_revisions_of_post/">_wp_upgrade_revisions_of_post()</a><code>wp-includes/revision.php</code></td><td><p>Upgrades the revisions author, adds the current post as a revision and sets the revisions version to 1.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_post_autosave/">wp_get_post_autosave()</a><code>wp-includes/revision.php</code></td><td><p>Retrieves the autosaved data of the specified post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_most_recent_post_of_user/">get_most_recent_post_of_user()</a><code>wp-includes/ms-functions.php</code></td><td><p>Gets a user’s most recent post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_activate_signup/">wpmu_activate_signup()</a><code>wp-includes/ms-functions.php</code></td><td><p>Activates a signup.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_validate_user_signup/">wpmu_validate_user_signup()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sanitizes and validates data required for a user sign-up.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_validate_blog_signup/">wpmu_validate_blog_signup()</a><code>wp-includes/ms-functions.php</code></td><td><p>Processes new site registrations.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_admin_users_for_domain/">get_admin_users_for_domain()</a><code>wp-includes/ms-deprecated.php</code></td><td><p>Get the admin for a domain/path combination.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_user_from_blog/">remove_user_from_blog()</a><code>wp-includes/ms-functions.php</code></td><td><p>Removes a user from a blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bookmark/">get_bookmark()</a><code>wp-includes/bookmark.php</code></td><td><p>Retrieves bookmark data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bookmarks/">get_bookmarks()</a><code>wp-includes/bookmark.php</code></td><td><p>Retrieves the list of bookmarks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/ms_not_installed/">ms_not_installed()</a><code>wp-includes/ms-load.php</code></td><td><p>Displays a failure message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_blog_list/">get_blog_list()</a><code>wp-includes/ms-deprecated.php</code></td><td><p>Deprecated functionality to retrieve a list of all sites.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_blog_status/">get_blog_status()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Gets a blog details field.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_last_updated/">get_last_updated()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Gets a list of most recently updated blogs.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_blog_details/">get_blog_details()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Retrieves the details for a blog from the blogs table and blog options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_gettrackbackpings/">wp_xmlrpc_server::mt_getTrackbackPings()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves trackbacks sent to a given post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/pingback_ping/">wp_xmlrpc_server::pingback_ping()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a pingback and registers it.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/pingback_extensions_getpingbacks/">wp_xmlrpc_server::pingback_extensions_getPingbacks()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves an array of URLs that pingbacked the given URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/_insert_replace_helper/">wpdb::_insert_replace_helper()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Helper function for insert and replace.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/update/">wpdb::update()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Updates a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/delete/">wpdb::delete()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Deletes a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/set_charset/">wpdb::set_charset()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Sets the connection’s character set.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_comment_query/get_search_sql/">WP_Comment_Query::get_search_sql()</a><code>wp-includes/class-wp-comment-query.php</code></td><td><p>Used internally to generate an SQL string for searching across multiple columns.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trackback/">trackback()</a><code>wp-includes/comment.php</code></td><td><p>Sends a Trackback.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_comment_count_now/">wp_update_comment_count_now()</a><code>wp-includes/comment.php</code></td><td><p>Updates the comment count for the post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_trackbacks/">do_trackbacks()</a><code>wp-includes/comment.php</code></td><td><p>Performs trackbacks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_comment/">wp_delete_comment()</a><code>wp-includes/comment.php</code></td><td><p>Trashes or deletes a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_lastcommentmodified/">get_lastcommentmodified()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves the date the last comment was modified.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_allow_comment/">wp_allow_comment()</a><code>wp-includes/comment.php</code></td><td><p>Validates whether this comment is allowed to be made.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_comment/">check_comment()</a><code>wp-includes/comment.php</code></td><td><p>Checks whether a comment passes internal checks to be allowed to add.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_metadata/">delete_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Deletes metadata for the specified object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_metadata_by_mid/">get_metadata_by_mid()</a><code>wp-includes/meta.php</code></td><td><p>Retrieves metadata by meta ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_metadata/">add_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Adds metadata for the specified object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_metadata/">update_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Updates metadata for the specified object. If no value already exists for the specified object ID and metadata key, the metadata will be added.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 138 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.2.0/">6.2.0</a></td><td><span class="since-description">Added <code>%i</code> for identifiers, e.g. table or field names.<br/>
+Check support via <code>wpdb::has_cap( 'identifier_placeholders' )</code>.<br/>
+This preserves compatibility with <code>sprintf()</code>, as the C version uses              <code>%d</code> and <code>$i</code> as a signed integer, whereas PHP only supports <code>%d</code>.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.3.0/">5.3.0</a></td><td><span class="since-description">Formalized the existing and already documented <code>...$args</code> parameter              by updating the function signature. The second parameter was changed              from <code>$args</code> to <code>...$args</code>.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.3.0/">2.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-iandunn even thread-even depth-1" data-comment-id="1557" id="comment-1557">
+<article class="comment-body" id="div-comment-1557">
+<a class="screen-reader-text" href="#comment-content-1557">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1557">
+<p><code>prepare()</code> is often called with each un-sanitized value explicitly passed as an individual argument; for example:</p>
+<p><code>$wpdb-&gt;prepare( "SELECT id FROM $wpdb-&gt;posts WHERE id &gt; %d AND `post_status` = %s", $min_id, $status )</code></p>
+<p>The function will also accept an array of un-sanitized values, though, like this:</p>
+<p><code>$wpdb-&gt;prepare( "SELECT id FROM $wpdb-&gt;posts WHERE id &gt; %d AND `post_status` = %s", array( $min_id, $status ) )</code></p>
+<p>That can be useful in certain circumstances, like when you have a multi-dimensional array where each sub-array contains a different number of items, and so you need to build the placeholders dynamically:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">foreach ( $new_status_post_id_map as $new_status =&gt; $wordcamp_ids ) {
+	$wordcamp_id_placeholders = implode( ', ', array_fill( 0, count( $wordcamp_ids ), '%d' ) );
+	$prepare_values           = array_merge( array( $new_status ), $wordcamp_ids );
+
+	$wpdb-&gt;query( $wpdb-&gt;prepare( "
+		UPDATE `$table_name`
+		SET `post_status` = %s
+		WHERE ID IN ( $wordcamp_id_placeholders )",
+		$prepare_values
+	) );
+}</code></pre>
+<p>So if a sub-array has 2 items, then <code>$wordcamp_id_placeholders</code> will be <code>'%d, %d'</code>, and if the next array has 4 items, then its placeholder string would be <code>'%d, %d, %d, %d'</code>.</p>
+<p>In the future, <a href="https://core.trac.wordpress.org/ticket/54042" rel="nofollow ugc">https://core.trac.wordpress.org/ticket/54042</a> may provide an easier way to do this.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1557">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-macbookandrew odd alt thread-odd thread-alt depth-1" data-comment-id="2964" id="comment-2964">
+<article class="comment-body" id="div-comment-2964">
+<a class="screen-reader-text" href="#comment-content-2964">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2964">
+<p>Argument swapping is not supported in the sense that you can not reuse the same argument several times in a prepare statement.</p>
+<p>For example, this <strong>does not work</strong> but throws an error because the number of placeholders does not match the number of arguments passed:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Does NOT work due to not enough arguments being passed.
+$wpdb-&gt;prepare(
+	"SELECT * FROM {$wpdb-&gt;posts} WHERE `post_date` &gt; %1$s AND `post_title` LIKE %2$s OR `post_content` LIKE %2$s",
+	$post_date,
+	$search_string
+);</code></pre>
+<p>Instead, you need to pass each argument individually:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Pass each argument for every time you need it.
+$wpdb-&gt;prepare(
+	"SELECT * FROM {$wpdb-&gt;posts} WHERE `post_date` &gt; %1$s AND `post_title` LIKE %2$s OR `post_content` LIKE %3$s",
+	$post_date,
+	$search_string,
+	$search_string
+);</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-2964">
+<ul class="children">
+<li class="comment byuser comment-author-aberdov even depth-2" data-comment-id="3359" id="comment-3359">
+<article class="comment-body" id="div-comment-3359">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3359">
+<div>Placeholders like %1$s have been deprecated since version 4.8.2.</div>
+<div><a class="url" href="https://profiles.wordpress.org/aberdov/" rel="external nofollow">Berdych</a> <a class="comment-date" href="https://developer.notmatt.press/reference/classes/wpdb/prepare/#comment-3359"><time datetime="2019-08-30T19:10:12+00:00">5 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-strackerphil-1 odd alt thread-even depth-1" data-comment-id="5155" id="comment-5155">
+<article class="comment-body" id="div-comment-5155">
+<a class="screen-reader-text" href="#comment-content-5155">Skip to note 9 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5155">
+<p><strong>Available placeholders</strong></p>
+<p><code>%s</code> – string (value is escaped and wrapped in quotes)<br>
+<code>%d</code> – integer<br>
+<code>%f</code> – float<br>
+<code>%%</code> – % sign</br></br></br></p>
+<p><strong><code>LIKE</code> Statements</strong> – use <code>esc_like()</code> and use placeholder „%“ in arg-value, not inside the query</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$my_domain = 'example.com';
+$sql = $wpdb-&gt;prepare(
+	"SELECT * FROM $wpdb-&gt;options WHERE option_value LIKE %s;",
+	'%' . $wpdb-&gt;esc_like( $my_domain ) . '%'
+);</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-5155">
+<ul class="children">
+<li class="comment byuser comment-author-iandunn even depth-2" data-comment-id="6752" id="comment-6752">
+<article class="comment-body" id="div-comment-6752">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6752">
+<div>`%i` is also available now, for escaping table names. See <a href="https://core.trac.wordpress.org/ticket/52506" rel="nofollow ugc">https://core.trac.wordpress.org/ticket/52506</a></div>
+<div><a class="url" href="https://profiles.wordpress.org/iandunn/" rel="external nofollow">Ian Dunn</a> <a class="comment-date" href="https://developer.notmatt.press/reference/classes/wpdb/prepare/#comment-6752"><time datetime="2023-11-03T15:29:40+00:00">1 year ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-martinkolle odd alt thread-odd thread-alt depth-1" data-comment-id="2331" id="comment-2331">
+<article class="comment-body" id="div-comment-2331">
+<a class="screen-reader-text" href="#comment-content-2331">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2331">
+<p>Reply to <a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/#comment-2240" rel="ugc">https://developer.notmatt.press/reference/classes/wpdb/prepare/#comment-2240</a><br/>
+Tablename should not be defined like this, because if the prefix is changed or used in a plugin, it will not work on all sites. The proper way is:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$table_name = "{$wpdb-&gt;prefix}myTable";
+$myID = 12;
+
+$wpdb-&gt;query( $wpdb-&gt;prepare( "UPDATE `$table_name` SET `your_column_1` = 1 WHERE `$table_name`.`your_column_id` = %d", $myID ) );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-2331">
+<ul class="children">
+<li class="comment byuser comment-author-flimm even depth-2" data-comment-id="6581" id="comment-6581">
+<article class="comment-body" id="div-comment-6581">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6581">
+<div>In your example, the table names are not escaped properly. To escape them properly in WordPress 6.2 or greater, use the %i placeholder, like this:  <code>$table_name = "{$wpdb-&gt;prefix}myTable"; $myID = 12;  $wpdb-&gt;query( $wpdb-&gt;prepare( "UPDATE %i SET `your_column_1` = 1 WHERE %i.`your_column_id` = %d", $table_name, $table_name, $myID ) );</code></div>
+<div><a class="url" href="https://profiles.wordpress.org/flimm/" rel="external nofollow">flimm</a> <a class="comment-date" href="https://developer.notmatt.press/reference/classes/wpdb/prepare/#comment-6581"><time datetime="2023-07-22T11:10:00+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-obnirb odd alt thread-even depth-1" data-comment-id="5916" id="comment-5916">
+<article class="comment-body" id="div-comment-5916">
+<a class="screen-reader-text" href="#comment-content-5916">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5916">
+<p>The code below does not work!</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$results = $wpdb-&gt;get_results($wpdb-&gt;prepare(
+                "SELECT `id`, `name`, `desc` ".
+                "FROM `%s` ORDER BY `id`, 
+                $table_name));</code></pre>
+<p>I would end up with a select statement:<br/>
+SELECT `id`, `name`, `desc` FROM `’table-name’` ORDER BY `id`</p>
+<p>Even if I remove the ` character from around my %s placeholder, it still will not work because table-name cannot be surrounded by ‘ characters. If $<a href="https://developer.notmatt.press/reference/classes/wpdb/" rel="class">wpdb</a>-&gt;prepare could check if my %s placeholder is already surrounded by ` characters and in that case not add ‘ characters around my %s placeholder then the code above would work. </p>
+<p>So my workaround (for select-statements) is to use sprintf instead (of $<a href="https://developer.notmatt.press/reference/classes/wpdb/" rel="class">wpdb</a>-&gt;prepare) and I always check sql statements in Phpmyadmin.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="3" id="feedback-5916">
+<ul class="children">
+<li class="comment byuser comment-author-mogomogo even depth-2" data-comment-id="6369" id="comment-6369">
+<article class="comment-body" id="div-comment-6369">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6369">
+<div>There is no need to use <a href="https://developer.notmatt.press/reference/classes/wpdb/" rel="class">wpdb</a>-&gt;prepare for table names. <a href="https://developer.notmatt.press/reference/classes/wpdb/" rel="class">wpdb</a>-&gt;prepare is for the variables you get from user input or from front-end via javascript/html form as $_POST,$_GET variables. Table name is always defined and used by the system developer, so there is no need to add extra check for table names. And nobody should put table name to user-facing forms.</div>
+<div><a class="url" href="https://profiles.wordpress.org/mogomogo/" rel="external nofollow">mogo</a> <a class="comment-date" href="https://developer.notmatt.press/reference/classes/wpdb/prepare/#comment-6369"><time datetime="2023-02-27T12:29:01+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-iandunn odd alt depth-2" data-comment-id="6751" id="comment-6751">
+<article class="comment-body" id="div-comment-6751">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6751">
+<div>You can now use the `%i` placeholder for table names. See <a href="https://core.trac.wordpress.org/ticket/52506" rel="nofollow ugc">https://core.trac.wordpress.org/ticket/52506</a></div>
+<div><a class="url" href="https://profiles.wordpress.org/iandunn/" rel="external nofollow">Ian Dunn</a> <a class="comment-date" href="https://developer.notmatt.press/reference/classes/wpdb/prepare/#comment-6751"><time datetime="2023-11-03T15:26:06+00:00">1 year ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-aurovrata even depth-2" data-comment-id="6795" id="comment-6795">
+<article class="comment-body" id="div-comment-6795">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6795">
+<div>Use `$<a href="https://developer.notmatt.press/reference/classes/wpdb/" rel="class">wpdb</a>` table names instead, <code>"SELECT `ID` from `{$wpdb-&gt;posts}`..."</code> or for custom tables, <code>"SELECT `my_field` from `{$wpdb-&gt;prefix}my_custom_table` ... "</code></div>
+<div><a class="url" href="https://profiles.wordpress.org/aurovrata/" rel="external nofollow">Aurovrata Venet</a> <a class="comment-date" href="https://developer.notmatt.press/reference/classes/wpdb/prepare/#comment-6795"><time datetime="2023-11-29T09:52:40+00:00">1 year ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-wpfanatico odd alt thread-odd thread-alt depth-1 bad-note" data-comment-id="2240" id="comment-2240">
+<article class="comment-body" id="div-comment-2240">
+<a class="screen-reader-text" href="#comment-content-2240">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2240">
+<p>Example: Simple update with prepare (one parameter)</p>
+<p>CASE: Update a column value Where ID column = 12</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$table_name='myTable';
+
+$myID=12;
+
+$wpdb-&gt;query($wpdb-&gt;prepare("UPDATE `$table_name` SET `your_column_1` = 1 WHERE `$table_name`.`your_column_id` = %d", $myID));</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2240">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_list_table/">WP_List_Table</a></span><span class="is-current-page">WP_List_Table::print_table_description()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_List_Table::print_table_description()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_List_Table::print_table_description()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Print a table description with information about current sorting and order.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>For the table initial view, information about initial orderby and order should be provided via get_sortable_columns().</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1548"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function print_table_description() {
+	list( $columns, $hidden, $sortable ) = $this-&gt;get_column_info();
+
+	if ( empty( $sortable ) ) {
+		return;
+	}
+
+	// When users click on a column header to sort by other columns.
+	if ( isset( $_GET['orderby'] ) ) {
+		$current_orderby = $_GET['orderby'];
+		// In the initial view there's no orderby parameter.
+	} else {
+		$current_orderby = '';
+	}
+
+	// Not in the initial view and descending order.
+	if ( isset( $_GET['order'] ) &amp;&amp; 'desc' === $_GET['order'] ) {
+		$current_order = 'desc';
+	} else {
+		// The initial view is not always 'asc', we'll take care of this below.
+		$current_order = 'asc';
+	}
+
+	foreach ( array_keys( $columns ) as $column_key ) {
+
+		if ( isset( $sortable[ $column_key ] ) ) {
+			$orderby       = isset( $sortable[ $column_key ][0] ) ? $sortable[ $column_key ][0] : '';
+			$desc_first    = isset( $sortable[ $column_key ][1] ) ? $sortable[ $column_key ][1] : false;
+			$abbr          = isset( $sortable[ $column_key ][2] ) ? $sortable[ $column_key ][2] : '';
+			$orderby_text  = isset( $sortable[ $column_key ][3] ) ? $sortable[ $column_key ][3] : '';
+			$initial_order = isset( $sortable[ $column_key ][4] ) ? $sortable[ $column_key ][4] : '';
+
+			if ( ! is_string( $orderby_text ) || '' === $orderby_text ) {
+				return;
+			}
+			/*
+			 * We're in the initial view and there's no $_GET['orderby'] then check if the
+			 * initial sorting information is set in the sortable columns and use that.
+			 */
+			if ( '' === $current_orderby &amp;&amp; $initial_order ) {
+				// Use the initially sorted column $orderby as current orderby.
+				$current_orderby = $orderby;
+				// Use the initially sorted column asc/desc order as initial order.
+				$current_order = $initial_order;
+			}
+
+			/*
+			 * True in the initial view when an initial orderby is set via get_sortable_columns()
+			 * and true in the sorted views when the actual $_GET['orderby'] is equal to $orderby.
+			 */
+			if ( $current_orderby === $orderby ) {
+				/* translators: Hidden accessibility text. */
+				$asc_text = __( 'Ascending.' );
+				/* translators: Hidden accessibility text. */
+				$desc_text  = __( 'Descending.' );
+				$order_text = 'asc' === $current_order ? $asc_text : $desc_text;
+				echo '&lt;caption class="screen-reader-text"&gt;' . $orderby_text . ' ' . $order_text . '&lt;/caption&gt;';
+
+				return;
+			}
+		}
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-list-table.php#L1548">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-list-table.php#L1548-L1610">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_list_table/get_column_info/">WP_List_Table::get_column_info()</a><code>wp-admin/includes/class-wp-list-table.php</code></td><td><p>Gets a list of all, hidden, and sortable columns, with filter applied.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_list_table/display/">WP_List_Table::display()</a><code>wp-admin/includes/class-wp-list-table.php</code></td><td><p>Displays the table.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

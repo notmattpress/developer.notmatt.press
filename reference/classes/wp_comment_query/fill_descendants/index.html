@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_comment_query/">WP_Comment_Query</a></span><span class="is-current-page">WP_Comment_Query::fill_descendants()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Comment_Query::fill_descendants()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Comment_Query::fill_descendants( <span class="arg-type">WP_Comment[]</span> <span class="arg-name">$comments</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Fetch descendants for located comments.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Instead of calling <code>get_children()</code> separately on each child comment, we do a single set of queries to fetch the descendant trees for all matched top-level comments.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$comments</code><span class="type"><span class="WP_Comment[]"><a href="https://developer.notmatt.press/reference/classes/wp_comment/" rel="class">WP_Comment</a>[]</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Array of top-level comments whose descendants should be filled in.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1030"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function fill_descendants( $comments ) {
+	$levels = array(
+		0 =&gt; wp_list_pluck( $comments, 'comment_ID' ),
+	);
+
+	$key          = md5( serialize( wp_array_slice_assoc( $this-&gt;query_vars, array_keys( $this-&gt;query_var_defaults ) ) ) );
+	$last_changed = wp_cache_get_last_changed( 'comment' );
+
+	// Fetch an entire level of the descendant tree at a time.
+	$level        = 0;
+	$exclude_keys = array( 'parent', 'parent__in', 'parent__not_in' );
+	do {
+		// Parent-child relationships may be cached. Only query for those that are not.
+		$child_ids           = array();
+		$uncached_parent_ids = array();
+		$_parent_ids         = $levels[ $level ];
+		if ( $_parent_ids ) {
+			$cache_keys = array();
+			foreach ( $_parent_ids as $parent_id ) {
+				$cache_keys[ $parent_id ] = "get_comment_child_ids:$parent_id:$key:$last_changed";
+			}
+			$cache_data = wp_cache_get_multiple( array_values( $cache_keys ), 'comment-queries' );
+			foreach ( $_parent_ids as $parent_id ) {
+				$parent_child_ids = $cache_data[ $cache_keys[ $parent_id ] ];
+				if ( false !== $parent_child_ids ) {
+					$child_ids = array_merge( $child_ids, $parent_child_ids );
+				} else {
+					$uncached_parent_ids[] = $parent_id;
+				}
+			}
+		}
+
+		if ( $uncached_parent_ids ) {
+			// Fetch this level of comments.
+			$parent_query_args = $this-&gt;query_vars;
+			foreach ( $exclude_keys as $exclude_key ) {
+				$parent_query_args[ $exclude_key ] = '';
+			}
+			$parent_query_args['parent__in']    = $uncached_parent_ids;
+			$parent_query_args['no_found_rows'] = true;
+			$parent_query_args['hierarchical']  = false;
+			$parent_query_args['offset']        = 0;
+			$parent_query_args['number']        = 0;
+
+			$level_comments = get_comments( $parent_query_args );
+
+			// Cache parent-child relationships.
+			$parent_map = array_fill_keys( $uncached_parent_ids, array() );
+			foreach ( $level_comments as $level_comment ) {
+				$parent_map[ $level_comment-&gt;comment_parent ][] = $level_comment-&gt;comment_ID;
+				$child_ids[]                                    = $level_comment-&gt;comment_ID;
+			}
+
+			$data = array();
+			foreach ( $parent_map as $parent_id =&gt; $children ) {
+				$cache_key          = "get_comment_child_ids:$parent_id:$key:$last_changed";
+				$data[ $cache_key ] = $children;
+			}
+			wp_cache_set_multiple( $data, 'comment-queries' );
+		}
+
+		++$level;
+		$levels[ $level ] = $child_ids;
+	} while ( $child_ids );
+
+	// Prime comment caches for non-top-level comments.
+	$descendant_ids = array();
+	for ( $i = 1, $c = count( $levels ); $i &lt; $c; $i++ ) {
+		$descendant_ids = array_merge( $descendant_ids, $levels[ $i ] );
+	}
+
+	_prime_comment_caches( $descendant_ids, $this-&gt;query_vars['update_comment_meta_cache'] );
+
+	// Assemble a flat array of all comments + descendants.
+	$all_comments = $comments;
+	foreach ( $descendant_ids as $descendant_id ) {
+		$all_comments[] = get_comment( $descendant_id );
+	}
+
+	// If a threaded representation was requested, build the tree.
+	if ( 'threaded' === $this-&gt;query_vars['hierarchical'] ) {
+		$threaded_comments = array();
+		$ref               = array();
+		foreach ( $all_comments as $k =&gt; $c ) {
+			$_c = get_comment( $c-&gt;comment_ID );
+
+			// If the comment isn't in the reference array, it goes in the top level of the thread.
+			if ( ! isset( $ref[ $c-&gt;comment_parent ] ) ) {
+				$threaded_comments[ $_c-&gt;comment_ID ] = $_c;
+				$ref[ $_c-&gt;comment_ID ]               = $threaded_comments[ $_c-&gt;comment_ID ];
+
+				// Otherwise, set it as a child of its parent.
+			} else {
+
+				$ref[ $_c-&gt;comment_parent ]-&gt;add_child( $_c );
+				$ref[ $_c-&gt;comment_ID ] = $ref[ $_c-&gt;comment_parent ]-&gt;get_child( $_c-&gt;comment_ID );
+			}
+		}
+
+		// Set the 'populated_children' flag, to ensure additional database queries aren't run.
+		foreach ( $ref as $_ref ) {
+			$_ref-&gt;populated_children( true );
+		}
+
+		$comments = $threaded_comments;
+	} else {
+		$comments = $all_comments;
+	}
+
+	return $comments;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-comment-query.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-comment-query.php#L1030">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-comment-query.php#L1030-L1140">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set_multiple/">wp_cache_set_multiple()</a><code>wp-includes/cache.php</code></td><td><p>Sets multiple values to the cache in one call.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get_multiple/">wp_cache_get_multiple()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves multiple values from the cache in one call.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get_last_changed/">wp_cache_get_last_changed()</a><code>wp-includes/functions.php</code></td><td><p>Gets last changed date for the specified cache group.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_prime_comment_caches/">_prime_comment_caches()</a><code>wp-includes/comment.php</code></td><td><p>Adds any comments from the given IDs to the cache that do not already exist in cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_list_pluck/">wp_list_pluck()</a><code>wp-includes/functions.php</code></td><td><p>Plucks a certain field out of each object or array in an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_array_slice_assoc/">wp_array_slice_assoc()</a><code>wp-includes/functions.php</code></td><td><p>Extracts a slice of an array, given a list of keys.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comments/">get_comments()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves a list of comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comment/">get_comment()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves comment data given a comment ID or comment object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_comment_query/get_comments/">WP_Comment_Query::get_comments()</a><code>wp-includes/class-wp-comment-query.php</code></td><td><p>Get a list of comments matching the query vars.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.4.0/">4.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

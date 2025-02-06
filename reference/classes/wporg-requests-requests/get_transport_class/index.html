@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wporg-requests-requests/">Requests</a></span><span class="is-current-page">Requests::get_transport_class()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Requests::get_transport_class()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">Requests::get_transport_class( <span class="arg-name">$capabilities</span> = <span class="arg-default">array()</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Get the fully qualified class name (FQCN) for a working transport.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dd><div class="desc"><span class="description">bool&gt; $capabilities Optional. Associative array of capabilities to test against, i.e. <code>[<code>&lt;capability&gt;</code> =&gt; true]</code>.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> FQCN of the transport to use, or an empty string if no transport was                found which provided the requested capabilities.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="225"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected static function get_transport_class(array $capabilities = []) {
+	// Caching code, don't bother testing coverage.
+	// @codeCoverageIgnoreStart
+	// Array of capabilities as a string to be used as an array key.
+	ksort($capabilities);
+	$cap_string = serialize($capabilities);
+
+	// Don't search for a transport if it's already been done for these $capabilities.
+	if (isset(self::$transport[$cap_string])) {
+		return self::$transport[$cap_string];
+	}
+
+	// Ensure we will not run this same check again later on.
+	self::$transport[$cap_string] = '';
+	// @codeCoverageIgnoreEnd
+
+	if (empty(self::$transports)) {
+		self::$transports = self::DEFAULT_TRANSPORTS;
+	}
+
+	// Find us a working transport.
+	foreach (self::$transports as $class) {
+		if (!class_exists($class)) {
+			continue;
+		}
+
+		$result = $class::test($capabilities);
+		if ($result === true) {
+			self::$transport[$cap_string] = $class;
+			break;
+		}
+	}
+
+	return self::$transport[$cap_string];
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/requests/src/requests.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/Requests/src/Requests.php#L225">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/Requests/src/Requests.php#L225-L259">View on GitHub</a></p></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

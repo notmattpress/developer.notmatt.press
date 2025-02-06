@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/hooks/">Hooks</a></span><span class="is-current-page">cron_schedules</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>cron_schedules</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="hook-func">apply_filters</span>( ‘cron_schedules’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$new_schedules</span></nobr> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Filters the non-default cron schedules.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$new_schedules</code><span class="type"><span class="array">array</span></span></dt><dd><div class="desc"><span class="description">An array of non-default cron schedules keyed by the schedule name. Default empty array.<br/>
+<ul class="param-hash"><li><code>...$0</code> <span class="type">array</span><div class="desc"> Cron schedule information.<ul class="param-hash">
+<li><code>interval</code> <span class="type">int</span><div class="desc">The schedule interval in seconds.</div></li>
+<li><code>display</code> <span class="type">string</span><div class="desc">The schedule display name.<br/>
+</div></li></ul>
+</div></li>
+</ul>
+</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>The filter accepts an array of non-default cron schedules in arrays (an array of arrays). The outer array has a key that is the name of the schedule (for example, ‘weekly’). The value is an array with two keys, one is ‘interval’ and the other is ‘display’.</p>
+<p>The ‘interval’ is a number in seconds of when the cron job shall run. So, for a hourly schedule, the ‘interval’ value would be 3600 or 60*60. For for a weekly schedule, the ‘interval’ value would be 60*60*24*7 or 604800.</p>
+<p>The ‘display’ is the description of the non-default cron schedules. For the ‘weekly’ key, the ‘display’ may be __(‘Once Weekly’).</p>
+<p><strong>Why is this important?</strong></p>
+<p>When scheduling your own actions to run using the WordPress Cron service, you have to specify which interval WordPress should use. WordPress has its own, limited, default set of intervals, or “schedules”, including ‘hourly’, ‘twicedaily’, and ‘daily’. This filter allows you to add your own intervals to the default set.</p>
+<p>For your plugin, you will be passed an array, you can easily add a weekly schedule by doing something like:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function my_add_weekly( $schedules ) {
+// add a 'weekly' schedule to the existing set
+$schedules['weekly'] = array(
+'interval' =&gt; 604800,
+'display' =&gt; __('Once Weekly')
+);
+return $schedules;
+}
+add_filter( 'cron_schedules', 'my_add_weekly' );</code></pre>
+<p>Adding multiple intervals works similarly:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function my_add_intervals($schedules) {
+// add a 'weekly' interval
+$schedules['weekly'] = array(
+'interval' =&gt; 604800,
+'display' =&gt; __('Once Weekly')
+);
+$schedules['monthly'] = array(
+'interval' =&gt; 2635200,
+'display' =&gt; __('Once a month')
+);
+return $schedules;
+}
+add_filter( 'cron_schedules', 'my_add_intervals');</code></pre>
+<p>Be sure to add your schedule to the passed array, as shown in the example. If you simply return only your own schedule array then you will potentially delete schedules created by other plugins.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1116"><code class="language-php line-numbers" id="wporg-source-code" lang="php">return array_merge( apply_filters( 'cron_schedules', array() ), $schedules );
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/cron.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/cron.php#L1116">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/cron.php#L1116-L1116">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_schedules/">wp_get_schedules()</a><code>wp-includes/cron.php</code></td><td><p>Retrieves supported event recurrence schedules.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-ocean90 even thread-even depth-1" data-comment-id="1740" id="comment-1740">
+<article class="comment-body" id="div-comment-1740">
+<a class="screen-reader-text" href="#comment-content-1740">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1740">
+<p>Add a custom cron schedule for every 5 minutes:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Adds a custom cron schedule for every 5 minutes.
+ *
+ * @param array $schedules An array of non-default cron schedules.
+ * @return array Filtered array of non-default cron schedules.
+ */
+function devhub_custom_cron_schedule( $schedules ) {
+	$schedules[ 'every-5-minutes' ] = array( 'interval' =&gt; 5 * MINUTE_IN_SECONDS, 'display' =&gt; __( 'Every 5 minutes', 'devhub' ) );
+	return $schedules;
+}
+add_filter( 'cron_schedules', 'devhub_custom_cron_schedule' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1740">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-bogdanfix odd alt thread-odd thread-alt depth-1" data-comment-id="5531" id="comment-5531">
+<article class="comment-body" id="div-comment-5531">
+<a class="screen-reader-text" href="#comment-content-5531">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5531">
+<p>As a handy tip to save your time, I’d suggest to always hook to <code>cron_schedules</code> filter <em>inside a major action</em> that runs on each page load. Like <code>init</code> or <code>wp_loaded</code>. And also hook to that filter <em>before</em> your code using the custom schedule.</p>
+<p>For example:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// function that registers new custom schedule
+
+function bf_add_custom_schedule( $schedules )
+{
+    $schedules[ 'every_five_minutes' ] = array(
+        'interval' =&gt; 300,
+        'display'  =&gt; 'Every 5 minutes',
+    );
+
+    return $schedules;
+}
+
+// function that schedules custom event
+
+function bf_schedule_custom_event()
+{
+    // the actual hook to register new custom schedule
+
+    add_filter( 'cron_schedules', 'bf_add_custom_schedule' );
+
+    // schedule custom event
+
+    if( !wp_next_scheduled( 'bf_your_custom_event' ) )
+    {
+        wp_schedule_event( time(), 'every_five_minutes', 'bf_your_custom_event' );
+    }
+}
+add_action( 'init', 'bf_schedule_custom_event' );
+
+// fire custom event
+
+function bf_do_something_on_schedule()
+{
+    // your code...
+}
+add_action( 'bf_your_custom_event', 'bf_do_something_on_schedule' );</code></pre>
+<p>This approach guarantees that your custom schedule is always registered before it is used in <code>wp_schedule_event</code> function. And saves you from nasty <code>"invalid_schedule":"Event schedule does not exist."</code> error.</p>
+<p>Cheers :)</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5531">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-dhl17 even thread-even depth-1" data-comment-id="2588" id="comment-2588">
+<article class="comment-body" id="div-comment-2588">
+<a class="screen-reader-text" href="#comment-content-2588">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2588">
+<p>custom cron schedule for every 10 &amp; 15 Seconds</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function custom_cron_job_recurrence( $schedules ) 
+{
+	if(!isset($schedules['10sec']))
+	{
+		$schedules['10sec'] = array(
+			'display' =&gt; __( 'Every 10 Seconds', 'twentyfifteen' ),
+			'interval' =&gt; 10,
+		);
+	}
+	
+	if(!isset($schedules['15sec']))
+	{
+		$schedules['15sec'] = array(
+		'display' =&gt; __( 'Every 15 Seconds', 'twentyfifteen' ),
+		'interval' =&gt; 15,
+		);
+	}
+	
+	return $schedules;
+}
+add_filter( ‘cron_schedules’, ‘custom_cron_job_recurrence’ );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2588">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-shaampk1 odd alt thread-odd thread-alt depth-1" data-comment-id="5099" id="comment-5099">
+<article class="comment-body" id="div-comment-5099">
+<a class="screen-reader-text" href="#comment-content-5099">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5099">
+<p><strong>Add a user-defined interval value:</strong><br>
+<em>Using functinal approach</em></br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">     add_filter( 'cron_schedules', 'wpdocs_add_cron_interval' );
+     function wpdocs_add_cron_interval( $schedules ) {
+          $options = get_option( 'wpdocs_custom_interval' );
+          $interval = ( ! empty( $options ) ? absint( $options ) * HOUR_IN_SECONDS : DAY_IN_SECONDS );
+
+          $schedules['wpdocs_interval'] = array(
+               'interval' =&gt; $interval,
+               'display' =&gt; esc_html__( 'Custom Interval' )
+          );
+
+          return $schedules;
+    }</code></pre>
+<p><em>Using class based approach</em></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">     add_filter( 'cron_schedules', array( $this, 'add_cron_interval' ) );
+
+    /**
+     * Adds custom time intervals for the cron.
+     */
+    private function add_cron_interval( $schedules ) {
+          $options = get_option( 'wpdocs_custom_interval' );
+          $interval = ( ! empty( $options ) ? absint( $options ) * HOUR_IN_SECONDS : DAY_IN_SECONDS );
+
+          $schedules['wpdocs_interval'] = array(
+               'interval' =&gt; $interval,
+               'display' =&gt; esc_html__( 'Custom Interval' )
+          );
+
+          return $schedules;
+    }</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5099">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

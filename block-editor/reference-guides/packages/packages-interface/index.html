@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/interface</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/interface</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The Interface Package contains the basis to start a new WordPress screen as Edit Post or Edit Site. The package offers a data store and a set of components. The store is useful to contain common data required by a screen (e.g., active areas). The information is persisted across screen reloads. The components allow one to implement functionality like a sidebar or menu items. Third-party plugins can extend them by default.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/interface --save
+</code></pre>
+<p><em>This package assumes that your code will run in an <strong>ES2015+</strong> environment. If you’re using an environment that has limited or no support for such language features and APIs, you should include <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default#polyfill">the polyfill shipped in <code>@wordpress/babel-preset-default</code></a> in your code.</em></p>
+<h2 class="is-toc-heading" id="api-usage" tabindex="-1"><a href="#api-usage">API Usage</a></h2>
+<h3 class="is-toc-heading" id="complementary-areas" tabindex="-1"><a href="#complementary-areas">Complementary Areas</a></h3>
+<p>This component was named after a <a href="https://www.w3.org/TR/wai-aria-practices/examples/landmarks/complementary.html">complementary landmark</a> – a supporting section of the document, designed to be complementary to the main content at a similar level in the DOM hierarchy, but remains meaningful when separated from the main content.</p>
+<p><code>ComplementaryArea</code> and <code>ComplementaryArea.Slot</code> form a slot fill pair to render complementary areas. Multiple <code>ComplementaryArea</code> components representing different complementary areas may be rendered at the same time, but only one appears on the slot depending on which complementary area is enabled.</p>
+<p>It is possible to control which complementary is enabled by using the store:</p>
+<p>Below are some examples of how to control the active complementary area using the store:</p>
+<pre><code class="language-js">wp.data
+    .select( 'core/interface' )
+    .getActiveComplementaryArea( 'core' );
+// -&gt; "edit-post/document"
+
+wp.data
+    .dispatch( 'core/interface' )
+    .enableComplementaryArea( 'core', 'edit-post/block' );
+
+wp.data
+    .select( 'core/interface' )
+    .getActiveComplementaryArea( 'core' );
+// -&gt; "edit-post/block"
+
+wp.data
+    .dispatch( 'core/interface' )
+    .disableComplementaryArea( 'core' );
+
+wp.data
+    .select( 'core/interface' )
+    .getActiveComplementaryArea( 'core' );
+// -&gt; null
+</code></pre>
+<h3 class="is-toc-heading" id="pinned-items" tabindex="-1"><a href="#pinned-items">Pinned Items</a></h3>
+<p><code>PinnedItems</code> and <code>PinnedItems.Slot</code> form a slot fill pair to render pinned items (or areas) that act as a list of favorites similar to browser extensions listed in the Chrome Menu.</p>
+<p>Example usage: <code>ComplementaryArea</code> component makes use of <code>PinnedItems</code> and automatically adds a pinned item for the complementary areas marked as a favorite.</p>
+<pre><code class="language-js">wp.data.select( 'core/interface' ).isItemPinned( 'core', 'edit-post-block-patterns/block-patterns-sidebar' );
+// -&gt; false
+
+wp.data.dispatch( 'core/interface' ).pinItem( 'core', 'edit-post-block-patterns/block-patterns-sidebar' );
+
+wp.data.select( 'core/interface' ).isItemPinned( 'core', 'edit-post-block-patterns/block-patterns-sidebar' );
+// -&gt; true
+
+wp.data.dispatch( 'core/interface' ).unpinItem( 'core', 'edit-post-block-patterns/block-patterns-sidebar' );
+
+wp.data.select( 'core/interface' ).isItemPinned( 'core', 'edit-post-block-patterns/block-patterns-sidebar' ); -&gt; false
+</code></pre>
+<h3 class="is-toc-heading" id="preferences" tabindex="-1"><a href="#preferences">Preferences</a></h3>
+<p>The interface package provides some helpers for implementing editor preferences.</p>
+<h4>Features</h4>
+<p>Features are boolean values used for toggling specific editor features on or off.</p>
+<p>Set the default values for any features on editor initialization:</p>
+<pre><code class="language-js">import { dispatch } from '@wordpress/data';
+import { store as interfaceStore } from '@wordpress/interface';
+
+function initialize() {
+    // ...
+
+    dispatch( interfaceStore ).setFeatureDefaults(
+        'namespace/editor-or-plugin-name',
+        {
+            myFeatureName: true,
+        }
+    );
+
+    // ...
+}
+</code></pre>
+<p>Use the <code>toggleFeature</code> action and the <code>isFeatureActive</code> selector to toggle features within your app:</p>
+<pre><code class="language-js">wp.data
+    .select( 'core/interface' )
+    .isFeatureActive( 'namespace/editor-or-plugin-name', 'myFeatureName' ); // true
+wp.data
+    .dispatch( 'core/interface' )
+    .toggleFeature( 'namespace/editor-or-plugin-name', 'myFeatureName' );
+wp.data
+    .select( 'core/interface' )
+    .isFeatureActive( 'namespace/editor-or-plugin-name', 'myFeatureName' ); // false
+</code></pre>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

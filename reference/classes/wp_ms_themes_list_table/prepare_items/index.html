@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_ms_themes_list_table/">WP_MS_Themes_List_Table</a></span><span class="is-current-page">WP_MS_Themes_List_Table::prepare_items()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_MS_Themes_List_Table::prepare_items()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_MS_Themes_List_Table::prepare_items()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="99"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function prepare_items() {
+	global $status, $totals, $page, $orderby, $order, $s;
+
+	$orderby = ! empty( $_REQUEST['orderby'] ) ? sanitize_text_field( $_REQUEST['orderby'] ) : '';
+	$order   = ! empty( $_REQUEST['order'] ) ? sanitize_text_field( $_REQUEST['order'] ) : '';
+	$s       = ! empty( $_REQUEST['s'] ) ? sanitize_text_field( $_REQUEST['s'] ) : '';
+
+	$themes = array(
+		/**
+		 * Filters the full array of WP_Theme objects to list in the Multisite
+		 * themes list table.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @param WP_Theme[] $all Array of WP_Theme objects to display in the list table.
+		 */
+		'all'      =&gt; apply_filters( 'all_themes', wp_get_themes() ),
+		'search'   =&gt; array(),
+		'enabled'  =&gt; array(),
+		'disabled' =&gt; array(),
+		'upgrade'  =&gt; array(),
+		'broken'   =&gt; $this-&gt;is_site_themes ? array() : wp_get_themes( array( 'errors' =&gt; true ) ),
+	);
+
+	if ( $this-&gt;show_autoupdates ) {
+		$auto_updates = (array) get_site_option( 'auto_update_themes', array() );
+
+		$themes['auto-update-enabled']  = array();
+		$themes['auto-update-disabled'] = array();
+	}
+
+	if ( $this-&gt;is_site_themes ) {
+		$themes_per_page = $this-&gt;get_items_per_page( 'site_themes_network_per_page' );
+		$allowed_where   = 'site';
+	} else {
+		$themes_per_page = $this-&gt;get_items_per_page( 'themes_network_per_page' );
+		$allowed_where   = 'network';
+	}
+
+	$current      = get_site_transient( 'update_themes' );
+	$maybe_update = current_user_can( 'update_themes' ) &amp;&amp; ! $this-&gt;is_site_themes &amp;&amp; $current;
+
+	foreach ( (array) $themes['all'] as $key =&gt; $theme ) {
+		if ( $this-&gt;is_site_themes &amp;&amp; $theme-&gt;is_allowed( 'network' ) ) {
+			unset( $themes['all'][ $key ] );
+			continue;
+		}
+
+		if ( $maybe_update &amp;&amp; isset( $current-&gt;response[ $key ] ) ) {
+			$themes['all'][ $key ]-&gt;update = true;
+			$themes['upgrade'][ $key ]     = $themes['all'][ $key ];
+		}
+
+		$filter                    = $theme-&gt;is_allowed( $allowed_where, $this-&gt;site_id ) ? 'enabled' : 'disabled';
+		$themes[ $filter ][ $key ] = $themes['all'][ $key ];
+
+		$theme_data = array(
+			'update_supported' =&gt; isset( $theme-&gt;update_supported ) ? $theme-&gt;update_supported : true,
+		);
+
+		// Extra info if known. array_merge() ensures $theme_data has precedence if keys collide.
+		if ( isset( $current-&gt;response[ $key ] ) ) {
+			$theme_data = array_merge( (array) $current-&gt;response[ $key ], $theme_data );
+		} elseif ( isset( $current-&gt;no_update[ $key ] ) ) {
+			$theme_data = array_merge( (array) $current-&gt;no_update[ $key ], $theme_data );
+		} else {
+			$theme_data['update_supported'] = false;
+		}
+
+		$theme-&gt;update_supported = $theme_data['update_supported'];
+
+		/*
+		 * Create the expected payload for the auto_update_theme filter, this is the same data
+		 * as contained within $updates or $no_updates but used when the Theme is not known.
+		 */
+		$filter_payload = array(
+			'theme'        =&gt; $key,
+			'new_version'  =&gt; '',
+			'url'          =&gt; '',
+			'package'      =&gt; '',
+			'requires'     =&gt; '',
+			'requires_php' =&gt; '',
+		);
+
+		$filter_payload = (object) array_merge( $filter_payload, array_intersect_key( $theme_data, $filter_payload ) );
+
+		$auto_update_forced = wp_is_auto_update_forced_for_item( 'theme', null, $filter_payload );
+
+		if ( ! is_null( $auto_update_forced ) ) {
+			$theme-&gt;auto_update_forced = $auto_update_forced;
+		}
+
+		if ( $this-&gt;show_autoupdates ) {
+			$enabled = in_array( $key, $auto_updates, true ) &amp;&amp; $theme-&gt;update_supported;
+			if ( isset( $theme-&gt;auto_update_forced ) ) {
+				$enabled = (bool) $theme-&gt;auto_update_forced;
+			}
+
+			if ( $enabled ) {
+				$themes['auto-update-enabled'][ $key ] = $theme;
+			} else {
+				$themes['auto-update-disabled'][ $key ] = $theme;
+			}
+		}
+	}
+
+	if ( $s ) {
+		$status           = 'search';
+		$themes['search'] = array_filter( array_merge( $themes['all'], $themes['broken'] ), array( $this, '_search_callback' ) );
+	}
+
+	$totals    = array();
+	$js_themes = array();
+	foreach ( $themes as $type =&gt; $list ) {
+		$totals[ $type ]    = count( $list );
+		$js_themes[ $type ] = array_keys( $list );
+	}
+
+	if ( empty( $themes[ $status ] ) &amp;&amp; ! in_array( $status, array( 'all', 'search' ), true ) ) {
+		$status = 'all';
+	}
+
+	$this-&gt;items = $themes[ $status ];
+	WP_Theme::sort_by_name( $this-&gt;items );
+
+	$this-&gt;has_items = ! empty( $themes['all'] );
+	$total_this_page = $totals[ $status ];
+
+	wp_localize_script(
+		'updates',
+		'_wpUpdatesItemCounts',
+		array(
+			'themes' =&gt; $js_themes,
+			'totals' =&gt; wp_get_update_data(),
+		)
+	);
+
+	if ( $orderby ) {
+		$orderby = ucfirst( $orderby );
+		$order   = strtoupper( $order );
+
+		if ( 'Name' === $orderby ) {
+			if ( 'ASC' === $order ) {
+				$this-&gt;items = array_reverse( $this-&gt;items );
+			}
+		} else {
+			uasort( $this-&gt;items, array( $this, '_order_callback' ) );
+		}
+	}
+
+	$start = ( $page - 1 ) * $themes_per_page;
+
+	if ( $total_this_page &gt; $themes_per_page ) {
+		$this-&gt;items = array_slice( $this-&gt;items, $start, $themes_per_page, true );
+	}
+
+	$this-&gt;set_pagination_args(
+		array(
+			'total_items' =&gt; $total_this_page,
+			'per_page'    =&gt; $themes_per_page,
+		)
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-ms-themes-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-ms-themes-list-table.php#L99">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-ms-themes-list-table.php#L99-L261">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/all_themes/"><span class="hook-func">apply_filters</span>( ‘all_themes’,  <nobr><span class="arg-type">WP_Theme[]</span> <span class="arg-name">$all</span></nobr> )</a></dt><dd><p>Filters the full array of <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a> objects to list in the Multisite themes list table.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_auto_update_forced_for_item/">wp_is_auto_update_forced_for_item()</a><code>wp-admin/includes/update.php</code></td><td><p>Checks whether auto-updates are forced for an item.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_themes/">wp_get_themes()</a><code>wp-includes/theme.php</code></td><td><p>Returns an array of <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a> objects based on the arguments.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/sort_by_name/">WP_Theme::sort_by_name()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Sorts themes by name.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_localize_script/">wp_localize_script()</a><code>wp-includes/functions.wp-scripts.php</code></td><td><p>Localizes a script.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_update_data/">wp_get_update_data()</a><code>wp-includes/update.php</code></td><td><p>Collects counts and UI strings for available updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_site_transient/">get_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_text_field/">sanitize_text_field()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string from user input or from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_site_option/">get_site_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieve an option value for the current network based on name of option.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

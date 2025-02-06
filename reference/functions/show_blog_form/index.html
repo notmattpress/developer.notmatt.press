@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">show_blog_form()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>show_blog_form()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">show_blog_form( <span class="arg-type">string</span> <span class="arg-name">$blogname</span> = <span class="arg-default">''</span>,  <span class="arg-type">string</span> <span class="arg-name">$blog_title</span> = <span class="arg-default">''</span>,  <span class="arg-type">WP_Error|string</span> <span class="arg-name">$errors</span> = <span class="arg-default">''</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Generates and displays the Sign-up and Create Site forms.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$blogname</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The new site name.</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$blog_title</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The new site title.</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$errors</code><span class="type"><span class="WP_Error"><a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> object containing existing errors. Defaults to empty string.</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="110"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function show_blog_form( $blogname = '', $blog_title = '', $errors = '' ) {
+	if ( ! is_wp_error( $errors ) ) {
+		$errors = new WP_Error();
+	}
+
+	$current_network = get_network();
+	// Site name.
+	if ( ! is_subdomain_install() ) {
+		echo '&lt;label for="blogname"&gt;' . __( 'Site Name (subdirectory only):' ) . '&lt;/label&gt;';
+	} else {
+		echo '&lt;label for="blogname"&gt;' . __( 'Site Domain (subdomain only):' ) . '&lt;/label&gt;';
+	}
+
+	$errmsg_blogname      = $errors-&gt;get_error_message( 'blogname' );
+	$errmsg_blogname_aria = '';
+	if ( $errmsg_blogname ) {
+		$errmsg_blogname_aria = 'wp-signup-blogname-error ';
+		echo '&lt;p class="error" id="wp-signup-blogname-error"&gt;' . $errmsg_blogname . '&lt;/p&gt;';
+	}
+
+	if ( ! is_subdomain_install() ) {
+		echo '&lt;div class="wp-signup-blogname"&gt;&lt;span class="prefix_address" id="prefix-address"&gt;' . $current_network-&gt;domain . $current_network-&gt;path . '&lt;/span&gt;&lt;input name="blogname" type="text" id="blogname" value="' . esc_attr( $blogname ) . '" maxlength="60" autocomplete="off" required="required" aria-describedby="' . $errmsg_blogname_aria . 'prefix-address" /&gt;&lt;/div&gt;';
+	} else {
+		$site_domain = preg_replace( '|^www\.|', '', $current_network-&gt;domain );
+		echo '&lt;div class="wp-signup-blogname"&gt;&lt;input name="blogname" type="text" id="blogname" value="' . esc_attr( $blogname ) . '" maxlength="60" autocomplete="off" required="required" aria-describedby="' . $errmsg_blogname_aria . 'suffix-address" /&gt;&lt;span class="suffix_address" id="suffix-address"&gt;.' . esc_html( $site_domain ) . '&lt;/span&gt;&lt;/div&gt;';
+	}
+
+	if ( ! is_user_logged_in() ) {
+		if ( ! is_subdomain_install() ) {
+			$site = $current_network-&gt;domain . $current_network-&gt;path . __( 'sitename' );
+		} else {
+			$site = __( 'domain' ) . '.' . $site_domain . $current_network-&gt;path;
+		}
+
+		printf(
+			'&lt;p&gt;(&lt;strong&gt;%s&lt;/strong&gt;) %s&lt;/p&gt;',
+			/* translators: %s: Site address. */
+			sprintf( __( 'Your address will be %s.' ), $site ),
+			__( 'Must be at least 4 characters, letters and numbers only. It cannot be changed, so choose carefully!' )
+		);
+	}
+
+	// Site Title.
+	?&gt;
+	&lt;label for="blog_title"&gt;&lt;?php _e( 'Site Title:' ); ?&gt;&lt;/label&gt;
+	&lt;?php
+	$errmsg_blog_title      = $errors-&gt;get_error_message( 'blog_title' );
+	$errmsg_blog_title_aria = '';
+	if ( $errmsg_blog_title ) {
+		$errmsg_blog_title_aria = ' aria-describedby="wp-signup-blog-title-error"';
+		echo '&lt;p class="error" id="wp-signup-blog-title-error"&gt;' . $errmsg_blog_title . '&lt;/p&gt;';
+	}
+	echo '&lt;input name="blog_title" type="text" id="blog_title" value="' . esc_attr( $blog_title ) . '" required="required" autocomplete="off"' . $errmsg_blog_title_aria . ' /&gt;';
+	?&gt;
+
+	&lt;?php
+	// Site Language.
+	$languages = signup_get_available_languages();
+
+	if ( ! empty( $languages ) ) :
+		?&gt;
+		&lt;p&gt;
+			&lt;label for="site-language"&gt;&lt;?php _e( 'Site Language:' ); ?&gt;&lt;/label&gt;
+			&lt;?php
+			// Network default.
+			$lang = get_site_option( 'WPLANG' );
+
+			if ( isset( $_POST['WPLANG'] ) ) {
+				$lang = $_POST['WPLANG'];
+			}
+
+			// Use US English if the default isn't available.
+			if ( ! in_array( $lang, $languages, true ) ) {
+				$lang = '';
+			}
+
+			wp_dropdown_languages(
+				array(
+					'name'                        =&gt; 'WPLANG',
+					'id'                          =&gt; 'site-language',
+					'selected'                    =&gt; $lang,
+					'languages'                   =&gt; $languages,
+					'show_available_translations' =&gt; false,
+				)
+			);
+			?&gt;
+		&lt;/p&gt;
+		&lt;?php
+		endif; // Languages.
+
+		$blog_public_on_checked  = '';
+		$blog_public_off_checked = '';
+	if ( isset( $_POST['blog_public'] ) &amp;&amp; '0' === $_POST['blog_public'] ) {
+		$blog_public_off_checked = 'checked="checked"';
+	} else {
+		$blog_public_on_checked = 'checked="checked"';
+	}
+	?&gt;
+
+	&lt;div id="privacy"&gt;
+		&lt;fieldset class="privacy-intro"&gt;
+			&lt;legend&gt;
+				&lt;span class="label-heading"&gt;&lt;?php _e( 'Privacy:' ); ?&gt;&lt;/span&gt;
+				&lt;?php _e( 'Allow search engines to index this site.' ); ?&gt;
+			&lt;/legend&gt;
+			&lt;p class="wp-signup-radio-buttons"&gt;
+				&lt;span class="wp-signup-radio-button"&gt;
+					&lt;input type="radio" id="blog_public_on" name="blog_public" value="1" &lt;?php echo $blog_public_on_checked; ?&gt; /&gt;
+					&lt;label class="checkbox" for="blog_public_on"&gt;&lt;?php _e( 'Yes' ); ?&gt;&lt;/label&gt;
+				&lt;/span&gt;
+				&lt;span class="wp-signup-radio-button"&gt;
+					&lt;input type="radio" id="blog_public_off" name="blog_public" value="0" &lt;?php echo $blog_public_off_checked; ?&gt; /&gt;
+					&lt;label class="checkbox" for="blog_public_off"&gt;&lt;?php _e( 'No' ); ?&gt;&lt;/label&gt;
+				&lt;/span&gt;
+			&lt;/p&gt;
+		&lt;/fieldset&gt;
+	&lt;/div&gt;
+
+	&lt;?php
+	/**
+	 * Fires after the site sign-up form.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param WP_Error $errors A WP_Error object possibly containing 'blogname' or 'blog_title' errors.
+	 */
+	do_action( 'signup_blogform', $errors );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-signup.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-signup.php#L110">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-signup.php#L110-L237">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/signup_blogform/"><span class="hook-func">do_action</span>( ‘signup_blogform’,  <nobr><span class="arg-type">WP_Error</span> <span class="arg-name">$errors</span></nobr> )</a></dt><dd><p>Fires after the site sign-up form.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_network/">get_network()</a><code>wp-includes/ms-network.php</code></td><td><p>Retrieves network data given a network ID or network object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/signup_get_available_languages/">signup_get_available_languages()</a><code>wp-signup.php</code></td><td><p>Retrieves languages available during the site/user sign-up process.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_subdomain_install/">is_subdomain_install()</a><code>wp-includes/ms-load.php</code></td><td><p>Whether a subdomain configuration is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_site_option/">get_site_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieve an option value for the current network based on name of option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/signup_another_blog/">signup_another_blog()</a><code>wp-signup.php</code></td><td><p>Shows a form for returning users to sign up for another site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/signup_blog/">signup_blog()</a><code>wp-signup.php</code></td><td><p>Shows a form for a user or visitor to sign up for a new site.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/mu.3.0.0/">MU (3.0.0)</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

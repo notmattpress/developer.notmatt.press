@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_comments_number_text()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_comments_number_text()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_comments_number_text( <span class="arg-type">string</span> <span class="arg-name">$zero</span> = <span class="arg-default">false</span>,  <span class="arg-type">string</span> <span class="arg-name">$one</span> = <span class="arg-default">false</span>,  <span class="arg-type">string</span> <span class="arg-name">$more</span> = <span class="arg-default">false</span>,  <span class="arg-type">int|WP_Post</span> <span class="arg-name">$post</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Displays the language string for the number of comments the current post has.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$zero</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Text for no comments. </span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$one</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Text for one comment. </span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$more</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Text for more than one comment. </span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID or <a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a> object. Default is the global <code>$post</code>.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Language string for the number of comments a post has.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="963"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_comments_number_text( $zero = false, $one = false, $more = false, $post = 0 ) {
+	$comments_number = get_comments_number( $post );
+
+	if ( $comments_number &gt; 1 ) {
+		if ( false === $more ) {
+			$comments_number_text = sprintf(
+				/* translators: %s: Number of comments. */
+				_n( '%s Comment', '%s Comments', $comments_number ),
+				number_format_i18n( $comments_number )
+			);
+		} else {
+			// % Comments
+			/*
+			 * translators: If comment number in your language requires declension,
+			 * translate this to 'on'. Do not translate into your own language.
+			 */
+			if ( 'on' === _x( 'off', 'Comment number declension: on or off' ) ) {
+				$text = preg_replace( '#&lt;span class="screen-reader-text"&gt;.+?&lt;/span&gt;#', '', $more );
+				$text = preg_replace( '/&amp;.+?;/', '', $text ); // Remove HTML entities.
+				$text = trim( strip_tags( $text ), '% ' );
+
+				// Replace '% Comments' with a proper plural form.
+				if ( $text &amp;&amp; ! preg_match( '/[0-9]+/', $text ) &amp;&amp; str_contains( $more, '%' ) ) {
+					/* translators: %s: Number of comments. */
+					$new_text = _n( '%s Comment', '%s Comments', $comments_number );
+					$new_text = trim( sprintf( $new_text, '' ) );
+
+					$more = str_replace( $text, $new_text, $more );
+					if ( ! str_contains( $more, '%' ) ) {
+						$more = '% ' . $more;
+					}
+				}
+			}
+
+			$comments_number_text = str_replace( '%', number_format_i18n( $comments_number ), $more );
+		}
+	} elseif ( 0 == $comments_number ) {
+		$comments_number_text = ( false === $zero ) ? __( 'No Comments' ) : $zero;
+	} else { // Must be one.
+		$comments_number_text = ( false === $one ) ? __( '1 Comment' ) : $one;
+	}
+
+	/**
+	 * Filters the comments count for display.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @see _n()
+	 *
+	 * @param string $comments_number_text A translatable string formatted based on whether the count
+	 *                                     is equal to 0, 1, or 1+.
+	 * @param int    $comments_number      The number of post comments.
+	 */
+	return apply_filters( 'comments_number', $comments_number_text, $comments_number );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/comment-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/comment-template.php#L963">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/comment-template.php#L963-L1017">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comments_number/"><span class="hook-func">apply_filters</span>( ‘comments_number’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$comments_number_text</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$comments_number</span></nobr> )</a></dt><dd><p>Filters the comments count for display.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_comments_number/">get_comments_number()</a><code>wp-includes/comment-template.php</code></td><td><p>Retrieves the amount of comments a post has.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/number_format_i18n/">number_format_i18n()</a><code>wp-includes/functions.php</code></td><td><p>Converts float number to format based on the locale.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/comments_popup_link/">comments_popup_link()</a><code>wp-includes/comment-template.php</code></td><td><p>Displays the link to the comments for the current post ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/comments_number/">comments_number()</a><code>wp-includes/comment-template.php</code></td><td><p>Displays the language string for the number of comments the current post has.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.4.0/">5.4.0</a></td><td><span class="since-description">Added the <code>$post</code> parameter to allow using the function outside of the loop.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.0.0/">4.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codeamp odd alt thread-odd thread-alt depth-1" data-comment-id="5416" id="comment-5416">
+<article class="comment-body" id="div-comment-5416">
+<a class="screen-reader-text" href="#comment-content-5416">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5416">
+<p>A caveat to be aware of:</p>
+<p> – <code>%</code> symbol is supported in the <code>$more</code> argument and can be used to position the comment count<br/>
+ – <code>%</code> symbol is <strong>not </strong>supported in the <code>$one</code> label – you have to add the comment count to the label yourself</p>
+<p>Eg:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$comments_text = get_comments_number_text( 'No comments', '1 comment found', '% comments found', $post_id );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5416">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

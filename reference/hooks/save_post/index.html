@@ -1,0 +1,398 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/hooks/">Hooks</a></span><span class="is-current-page">save_post</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>save_post</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="hook-func">do_action</span>( ‘save_post’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$update</span></nobr> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Fires once a post has been saved.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post_id</code><span class="type"><span class="int">int</span></span></dt><dd><div class="desc"><span class="description">Post ID.</span></div></dd><dt><code>$post</code><span class="type"><span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span></dt><dd><div class="desc"><span class="description">Post object.</span></div></dd><dt><code>$update</code><span class="type"><span class="bool">bool</span></span></dt><dd><div class="desc"><span class="description">Whether this is an existing post being updated.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p><code>save_post</code> is an action triggered whenever a post or page is created or updated, which could be from an import, post/page edit form, xmlrpc, or post by email. The data for the post is stored in <code>$_POST</code>, <code>$_GET</code> or the global <code>$post_data</code>, depending on how the post was edited. For example, quick edits use <code>$_POST</code>.</p>
+<p>Since this action is triggered right after the post has been saved, you can easily access this post object by using <code>get_post($post_id);</code>.</p>
+<p><strong>NOTE:</strong> As of WP 3.7, an alternative action has been introduced, which is called for specific post types: <code><a href="https://developer.notmatt.press/reference/hooks/save_post_post-post_type/">save_post_{post_type}</a></code>. Hooking to this action prevents your callback to be unnecessarily triggered.</p>
+<h3 class="is-toc-heading wp-block-heading" id="avoiding-infinite-loops" tabindex="-1"><a href="#avoiding-infinite-loops">Avoiding infinite loops</a></h3>
+<p>If you are calling a function such as <a href="https://developer.notmatt.press/reference/functions/wp_update_post/"><code>wp_update_post</code></a> that includes the <code>save_post</code> hook, your hooked function will create an infinite loop. To avoid this, unhook your function before calling the function you need, then re-hook it afterward.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php"><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">/**
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">  * Makes all posts in the default category private.
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">  *
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">  * @see 'save_post'
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">  *
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">  * @param int $post_id The post being saved.
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">  */
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">function set_private_categories( $post_id ) {
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    // If this is a revision, get real post ID.
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    $parent_id = wp_is_post_revision( $post_id );</span>
+
+<span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    if ( false !== $parent_id ) {
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">        $post_id = $parent_id;
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    }
+
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    // Get default category ID from options.
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    $defaultcat = get_option( 'default_category' );
+
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    // Check if this post is in default category.
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    if ( in_category( $defaultcat, $post_id ) ) {
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">        // unhook this function so it doesn't loop infinitely
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">        remove_action( 'save_post', 'set_private_categories' );
+
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">        // update the post, which calls save_post again.
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">        wp_update_post( array( 'ID' =&gt; $post_id, 'post_status' =&gt; 'private' ) );
+
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">        // re-hook this function.
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">        add_action( 'save_post', 'set_private_categories' );
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">    }
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">}
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif">add_action( 'save_post', 'set_private_categories' );
+</span><span style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif"></span></code></pre>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="5060"><code class="language-php line-numbers" id="wporg-source-code" lang="php">do_action( 'save_post', $post_id, $post, $update );
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/post.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/post.php#L5060">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/post.php#L5060-L5060">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/trash_changeset_post/">WP_Customize_Manager::trash_changeset_post()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Trashes or deletes a changeset post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_publish_post/">wp_publish_post()</a><code>wp-includes/post.php</code></td><td><p>Publishes a post by transitioning the post status.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_post/">wp_insert_post()</a><code>wp-includes/post.php</code></td><td><p>Inserts or update a post.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-jason_the_adams even thread-even depth-1" data-comment-id="2789" id="comment-2789">
+<article class="comment-body" id="div-comment-2789">
+<a class="screen-reader-text" href="#comment-content-2789">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2789">
+<p>When using WordPress 3.7 or later, it’s a good idea to use the save_post_{$post-&gt;post_type} hook when it makes sense to in order to reduce code and fire less hooks overall when posts are created and updated.</p>
+<p>Documentation can be found here: <a href="https://developer.notmatt.press/reference/hooks/save_post_post-post_type/" rel="ugc">https://developer.notmatt.press/reference/hooks/save_post_post-post_type/</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-2789">
+<ul class="children">
+<li class="comment byuser comment-author-dsouzaj86 odd alt depth-2" data-comment-id="5321" id="comment-5321">
+<article class="comment-body" id="div-comment-5321">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5321">
+<div>Note that save_post_{$post-&gt;post_type} fires before save_post. Many popular plugins hook into save_post and therefore save_post_{$post-&gt;post_type} may not be appropriate.</div>
+<div><a class="url" href="https://profiles.wordpress.org/dsouzaj86/" rel="external nofollow">Joseph D’Souza</a> <a class="comment-date" href="https://developer.notmatt.press/reference/hooks/save_post/#comment-5321"><time datetime="2021-09-14T19:56:12+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-aurovrata even thread-odd thread-alt depth-1" data-comment-id="2706" id="comment-2706">
+<article class="comment-body" id="div-comment-2706">
+<a class="screen-reader-text" href="#comment-content-2706">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2706">
+<p>Force a new post of have specific category term,</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'save_post', 'set_post_default_category', 10,3 );
+
+function set_post_default_category( $post_id, $post, $update ) {
+	// Only want to set if this is a new post!
+	if ( $update ){
+		return;
+	}
+	
+	// Only set for post_type = post!
+	if ( 'post' !== $post-&gt;post_type ) {
+		return;
+	}
+	
+	// Get the default term using the slug, its more portable!
+	$term = get_term_by( 'slug', 'my-custom-term', 'category' );
+
+	wp_set_post_terms( $post_id, $term-&gt;term_id, 'category', true );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2706">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-camparry odd alt thread-even depth-1" data-comment-id="5519" id="comment-5519">
+<article class="comment-body" id="div-comment-5519">
+<a class="screen-reader-text" href="#comment-content-5519">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5519">
+<p>The save_post_{post_type} hook fires BEFORE the general save_post hook, meaning that save_post will override any meta updates made with save_post_{post_type}. Many plugins like ACF and Pods use the save post action hook, so if you are trying to update a meta field and you are using one of these plugins, you must use the save_post hook instead.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// does not work
+function my_save_meta_function( $post_id, $post, $update )
+{
+	// fires but can be overridden by plugins, regardless of priority number
+	update_post_meta( $post_id, 'address', '123 Test St' );
+}
+add_action( 'save_post_event', 'my_save_meta_function', 99, 3 );
+
+
+// does work
+function my_save_meta_function( $post_id, $post, $update )
+{
+	if ( get_post_type( $post_id ) !== 'event' ) return;
+	update_post_meta( $post_id, 'address', '123 Test St' );
+}
+add_action( 'save_post', 'my_save_meta_function', 99, 3 );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5519">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-leogermani even thread-odd thread-alt depth-1" data-comment-id="3368" id="comment-3368">
+<article class="comment-body" id="div-comment-3368">
+<a class="screen-reader-text" href="#comment-content-3368">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3368">
+<p>Below is a basic example that will send an email every time a post or page is updated on your website. </p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function my_project_updated_send_email( $post_id ) {
+
+	// If this is just a revision, don't send the email.
+	if ( wp_is_post_revision( $post_id ) ) {
+		return;
+        }
+
+	$post_title = get_the_title( $post_id );
+	$post_url = get_permalink( $post_id );
+	$subject = 'A post has been updated';
+
+	$message = "A post has been updated on your website:\n\n";
+	$message .= $post_title . ": " . $post_url;
+
+	// Send email to admin.
+	wp_mail( 'admin@example.com', $subject, $message );
+}
+add_action( 'save_post', 'my_project_updated_send_email' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3368">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-gerardreches odd alt thread-even depth-1" data-comment-id="6892" id="comment-6892">
+<article class="comment-body" id="div-comment-6892">
+<a class="screen-reader-text" href="#comment-content-6892">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6892">
+<p>The documentation provides a way to avoid an infinite loop by removing the hook and then adding it again after we have used a function such as `wp_update_post`.</p>
+<p>The problem about this is that other actions on the same hook may still trigger twice.</p>
+<p>I came up with the following alternative:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Prevent infinite loop.
+ */
+//remove_action( 'save_post', array( self::class, 'save_meta_boxes' ) );
+
+global $wp_actions, $wp_filters, $wp_filter;
+
+$actions = $wp_actions;
+$filters = $wp_filters;
+$filter  = $wp_filter;
+
+remove_all_actions( 'save_post' );
+
+wp_update_post( $post );
+
+$wp_actions = $actions;
+$wp_filters = $filters;
+$wp_filter  = $filter;
+//add_action( 'save_post', array( self::class, 'save_meta_boxes' ) );</code></pre>
+<p>By doing this we take a “snapshot” of all the registered hooks before we update the post. Then we remove all the actions for the hook, and once it has been updated, we restore the snapshots.</p>
+<p>You should also think about removing all `save_post_{$post-&gt;post-type}` actions and viceversa.</p>
+<p>It would be nice if there was a core function for this. `wp_update_post` already has a third optional parameter to prevent firing the after insert hooks. A fourth parameter could be added to prevent firing the `save_post` and `save_post_{$post-&gt;post-type}` hooks so that we don’t have to use workarounds to prevent the infinite loop issue.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6892">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-alireyad even thread-odd thread-alt depth-1" data-comment-id="5555" id="comment-5555">
+<article class="comment-body" id="div-comment-5555">
+<a class="screen-reader-text" href="#comment-content-5555">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5555">
+<p>To trigger for specific post type, assume we have a post type name ‘book’</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function wpdocs_book_meta( $post_id ) {
+	// Check the logged in user has permission to edit this post
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return $post_id;
+	}
+
+	if ( isset( $_POST['website'] ) ) {
+		$website = esc_url_raw( $_POST['website'] );
+		update_post_meta( $post_id, 'website', $website );
+	}
+}
+add_action( 'save_post_book', 'wpdocs_book_meta' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5555">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-arunbasillal odd alt thread-even depth-1" data-comment-id="5853" id="comment-5853">
+<article class="comment-body" id="div-comment-5853">
+<a class="screen-reader-text" href="#comment-content-5853">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5853">
+<p>The <code>$post_ID</code> passed to the action is the <strong>ID of the revision</strong> while updating a post. To find the ID of the parent post, use <code>wp_get_post_parent_id</code>.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function my_function_on_save_post( $post_id ) {
+
+	// Find parent post_id.
+	if ( $post_parent_id = wp_get_post_parent_id( $post_id ) ) {
+		$post_id = $post_parent_id;
+	}
+
+	// Do something.
+
+}
+add_action( 'save_post', 'my_function_on_save_post' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5853">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-cfoster even thread-odd thread-alt depth-1" data-comment-id="6797" id="comment-6797">
+<article class="comment-body" id="div-comment-6797">
+<a class="screen-reader-text" href="#comment-content-6797">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6797">
+<p>I was trying to add a hook to review the current posts and terms in the database whenever a post was updated (through the regular editing interface, not direct calls to the API) but hit a problem.</p>
+<p>If a user updates only a post’s Terms (categories, tags), <code>save_post</code> is triggered before the new Terms are pushed to the database. (If the Term changes are saved with any other changes, the Terms are written to the DB before <code>save_post</code> is triggered.)</p>
+<p><strong>Details:</strong></p>
+<p><code>wp_insert_post()</code> does <em>look</em> like it saves Terms before triggering the <code>save_post</code> action but the Term data it passes to (ultimately) <code>wp_set_object_terms()</code> is the OLD terms for the post. (Why resave the old data? Dunno.)</p>
+<p>After <code>wp_insert_post()</code> triggers <code>save_post</code>, an additional call to <code>wp_set_object_terms()</code> is made (from <code>WP_REST_Posts_Controller</code>) that has a the new Terms data in it. (I didn’t dig further to find out why the two calls for this case.)</p>
+<p><strong>Workaround:</strong></p>
+<p>If your hook needs the Terms to be accurate, attach it to <code>rest_after_insert_(post|page|attachment)</code> instead. This is triggered when ALL changes are stored, regardless of whether it is just the post content, just the terms, or both.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6797">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-patelhitesh odd alt thread-even depth-1" data-comment-id="6957" id="comment-6957">
+<article class="comment-body" id="div-comment-6957">
+<a class="screen-reader-text" href="#comment-content-6957">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6957">
+<p>Here is my updated code which will check whether post title is exist or not before inserting into news post title.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function wpdocs_save_post_callback( $post_id ) {
+    $post = get_post( $post_id );
+
+    if ( $post &amp;&amp; 'post' === $post-&gt;post_type &amp;&amp; isset( $_POST['post_title'] ) ) {
+        $post_title = sanitize_text_field( $_POST['post_title'] );
+
+        // Check if a post with the same title already exists in the "news" post type
+        $existing_post = get_page_by_title( $post_title, OBJECT, 'news' );
+
+        if ( ! $existing_post ) { // If no post with the same title exists
+            $post_data = array(
+                'post_type'   =&gt; 'news',
+                'post_status' =&gt; 'publish',
+                'post_title'  =&gt; $post_title
+            );
+
+            wp_insert_post( $post_data );
+        } else {
+            // Post with the same title already exists
+            // You can handle this case according to your requirement, e.g., display a message or update the existing post
+        }
+    }
+}
+add_action( 'save_post', 'wpdocs_save_post_callback' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6957">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-patelhitesh even thread-odd thread-alt depth-1" data-comment-id="6945" id="comment-6945">
+<article class="comment-body" id="div-comment-6945">
+<a class="screen-reader-text" href="#comment-content-6945">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6945">
+<p>Here is a simple example which will save post on publish and also at the same time add the post in another post type also.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function wpdocs_save_post_callback( $post_id ) {
+	$post = get_post( $post_id );
+
+      	if ( $post &amp;&amp; 'post' === $post-&gt;post_type &amp;&amp; isset( $_POST['post_title'] ) ) {
+		$post_title = sanitize_text_field( $_POST['post_title'] );
+
+		$post_data = array(
+			'post_type' =&gt; 'news',
+			'post_status' =&gt; 'publish',
+			'post_title' =&gt; $post_title
+		);
+
+		wp_insert_post( $post_data );
+	}
+}
+add_action( 'save_post', 'wpdocs_save_post_callback' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-6945">
+<ul class="children">
+<li class="comment byuser comment-author-crstauf odd alt depth-2" data-comment-id="6952" id="comment-6952">
+<article class="comment-body" id="div-comment-6952">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6952">
+<div>Be aware that `save_post` runs on post update as well, and this function does not check if it’s a new post or updating a post, which means that whenever saving an existing Post, a new News post will be created, even if a News post with same title already exists.</div>
+<div><a class="url" href="https://profiles.wordpress.org/crstauf/" rel="external nofollow">crstauf</a> <a class="comment-date" href="https://developer.notmatt.press/reference/hooks/save_post/#comment-6952"><time datetime="2024-03-19T14:31:48+00:00">11 months ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

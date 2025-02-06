@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">create_initial_rest_routes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>create_initial_rest_routes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">create_initial_rest_routes()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Registers default REST API routes.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="265"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function create_initial_rest_routes() {
+	foreach ( get_post_types( array( 'show_in_rest' =&gt; true ), 'objects' ) as $post_type ) {
+		$controller = $post_type-&gt;get_rest_controller();
+
+		if ( ! $controller ) {
+			continue;
+		}
+
+		if ( ! $post_type-&gt;late_route_registration ) {
+			$controller-&gt;register_routes();
+		}
+
+		$revisions_controller = $post_type-&gt;get_revisions_rest_controller();
+		if ( $revisions_controller ) {
+			$revisions_controller-&gt;register_routes();
+		}
+
+		$autosaves_controller = $post_type-&gt;get_autosave_rest_controller();
+		if ( $autosaves_controller ) {
+			$autosaves_controller-&gt;register_routes();
+		}
+
+		if ( $post_type-&gt;late_route_registration ) {
+			$controller-&gt;register_routes();
+		}
+	}
+
+	// Post types.
+	$controller = new WP_REST_Post_Types_Controller();
+	$controller-&gt;register_routes();
+
+	// Post statuses.
+	$controller = new WP_REST_Post_Statuses_Controller();
+	$controller-&gt;register_routes();
+
+	// Taxonomies.
+	$controller = new WP_REST_Taxonomies_Controller();
+	$controller-&gt;register_routes();
+
+	// Terms.
+	foreach ( get_taxonomies( array( 'show_in_rest' =&gt; true ), 'object' ) as $taxonomy ) {
+		$controller = $taxonomy-&gt;get_rest_controller();
+
+		if ( ! $controller ) {
+			continue;
+		}
+
+		$controller-&gt;register_routes();
+	}
+
+	// Users.
+	$controller = new WP_REST_Users_Controller();
+	$controller-&gt;register_routes();
+
+	// Application Passwords
+	$controller = new WP_REST_Application_Passwords_Controller();
+	$controller-&gt;register_routes();
+
+	// Comments.
+	$controller = new WP_REST_Comments_Controller();
+	$controller-&gt;register_routes();
+
+	$search_handlers = array(
+		new WP_REST_Post_Search_Handler(),
+		new WP_REST_Term_Search_Handler(),
+		new WP_REST_Post_Format_Search_Handler(),
+	);
+
+	/**
+	 * Filters the search handlers to use in the REST search controller.
+	 *
+	 * @since 5.0.0
+	 *
+	 * @param array $search_handlers List of search handlers to use in the controller. Each search
+	 *                               handler instance must extend the `WP_REST_Search_Handler` class.
+	 *                               Default is only a handler for posts.
+	 */
+	$search_handlers = apply_filters( 'wp_rest_search_handlers', $search_handlers );
+
+	$controller = new WP_REST_Search_Controller( $search_handlers );
+	$controller-&gt;register_routes();
+
+	// Block Renderer.
+	$controller = new WP_REST_Block_Renderer_Controller();
+	$controller-&gt;register_routes();
+
+	// Block Types.
+	$controller = new WP_REST_Block_Types_Controller();
+	$controller-&gt;register_routes();
+
+	// Settings.
+	$controller = new WP_REST_Settings_Controller();
+	$controller-&gt;register_routes();
+
+	// Themes.
+	$controller = new WP_REST_Themes_Controller();
+	$controller-&gt;register_routes();
+
+	// Plugins.
+	$controller = new WP_REST_Plugins_Controller();
+	$controller-&gt;register_routes();
+
+	// Sidebars.
+	$controller = new WP_REST_Sidebars_Controller();
+	$controller-&gt;register_routes();
+
+	// Widget Types.
+	$controller = new WP_REST_Widget_Types_Controller();
+	$controller-&gt;register_routes();
+
+	// Widgets.
+	$controller = new WP_REST_Widgets_Controller();
+	$controller-&gt;register_routes();
+
+	// Block Directory.
+	$controller = new WP_REST_Block_Directory_Controller();
+	$controller-&gt;register_routes();
+
+	// Pattern Directory.
+	$controller = new WP_REST_Pattern_Directory_Controller();
+	$controller-&gt;register_routes();
+
+	// Block Patterns.
+	$controller = new WP_REST_Block_Patterns_Controller();
+	$controller-&gt;register_routes();
+
+	// Block Pattern Categories.
+	$controller = new WP_REST_Block_Pattern_Categories_Controller();
+	$controller-&gt;register_routes();
+
+	// Site Health.
+	$site_health = WP_Site_Health::get_instance();
+	$controller  = new WP_REST_Site_Health_Controller( $site_health );
+	$controller-&gt;register_routes();
+
+	// URL Details.
+	$controller = new WP_REST_URL_Details_Controller();
+	$controller-&gt;register_routes();
+
+	// Menu Locations.
+	$controller = new WP_REST_Menu_Locations_Controller();
+	$controller-&gt;register_routes();
+
+	// Site Editor Export.
+	$controller = new WP_REST_Edit_Site_Export_Controller();
+	$controller-&gt;register_routes();
+
+	// Navigation Fallback.
+	$controller = new WP_REST_Navigation_Fallback_Controller();
+	$controller-&gt;register_routes();
+
+	// Font Collections.
+	$font_collections_controller = new WP_REST_Font_Collections_Controller();
+	$font_collections_controller-&gt;register_routes();
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api.php#L265">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api.php#L265-L419">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_rest_search_handlers/"><span class="hook-func">apply_filters</span>( ‘wp_rest_search_handlers’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$search_handlers</span></nobr> )</a></dt><dd><p>Filters the search handlers to use in the REST search controller.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_font_collections_controller/__construct/">WP_REST_Font_Collections_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-font-collections-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_navigation_fallback_controller/__construct/">WP_REST_Navigation_Fallback_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-navigation-fallback-controller.php</code></td><td><p>Constructs the controller.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_block_patterns_controller/__construct/">WP_REST_Block_Patterns_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-block-patterns-controller.php</code></td><td><p>Constructs the controller.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_block_pattern_categories_controller/__construct/">WP_REST_Block_Pattern_Categories_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-block-pattern-categories-controller.php</code></td><td><p>Constructs the controller.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_url_details_controller/__construct/">WP_REST_URL_Details_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php</code></td><td><p>Constructs the controller.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_locations_controller/__construct/">WP_REST_Menu_Locations_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-locations-controller.php</code></td><td><p>Menu Locations Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_edit_site_export_controller/__construct/">WP_REST_Edit_Site_Export_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-edit-site-export-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_widgets_controller/__construct/">WP_REST_Widgets_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-widgets-controller.php</code></td><td><p>Widgets controller constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_sidebars_controller/__construct/">WP_REST_Sidebars_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-sidebars-controller.php</code></td><td><p>Sidebars controller constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_pattern_directory_controller/__construct/">WP_REST_Pattern_Directory_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-pattern-directory-controller.php</code></td><td><p>Constructs the controller.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_widget_types_controller/__construct/">WP_REST_Widget_Types_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-widget-types-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_site_health_controller/__construct/">WP_REST_Site_Health_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-site-health-controller.php</code></td><td><p>Site Health controller constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_application_passwords_controller/__construct/">WP_REST_Application_Passwords_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-application-passwords-controller.php</code></td><td><p>Application Passwords controller constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_term_search_handler/__construct/">WP_REST_Term_Search_Handler::__construct()</a><code>wp-includes/rest-api/search/class-wp-rest-term-search-handler.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_post_format_search_handler/__construct/">WP_REST_Post_Format_Search_Handler::__construct()</a><code>wp-includes/rest-api/search/class-wp-rest-post-format-search-handler.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_block_directory_controller/__construct/">WP_REST_Block_Directory_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-block-directory-controller.php</code></td><td><p>Constructs the controller.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_plugins_controller/__construct/">WP_REST_Plugins_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-plugins-controller.php</code></td><td><p>Plugins controller constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_block_types_controller/__construct/">WP_REST_Block_Types_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-block-types-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_instance/">WP_Site_Health::get_instance()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Returns an instance of the <a href="https://developer.notmatt.press/reference/classes/wp_site_health/" rel="class">WP_Site_Health</a> class, or create one if none exist yet.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_search_controller/__construct/">WP_REST_Search_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-search-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_themes_controller/__construct/">WP_REST_Themes_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-themes-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_block_renderer_controller/__construct/">WP_REST_Block_Renderer_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-block-renderer-controller.php</code></td><td><p>Constructs the controller.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_post_search_handler/__construct/">WP_REST_Post_Search_Handler::__construct()</a><code>wp-includes/rest-api/search/class-wp-rest-post-search-handler.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_users_controller/__construct/">WP_REST_Users_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_post_statuses_controller/__construct/">WP_REST_Post_Statuses_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-post-statuses-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_settings_controller/__construct/">WP_REST_Settings_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-settings-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_taxonomies_controller/__construct/">WP_REST_Taxonomies_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-taxonomies-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_post_types_controller/__construct/">WP_REST_Post_Types_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-post-types-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_comments_controller/__construct/">WP_REST_Comments_Controller::__construct()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-comments-controller.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomies/">get_taxonomies()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves a list of registered taxonomy names or objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_types/">get_post_types()</a><code>wp-includes/post.php</code></td><td><p>Gets a list of all registered post type objects.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 27 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.7.0/">4.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

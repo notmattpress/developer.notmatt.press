@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_text_diff_renderer_table/">WP_Text_Diff_Renderer_Table</a></span><span class="is-current-page">WP_Text_Diff_Renderer_Table::_changed()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Text_Diff_Renderer_Table::_changed()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Text_Diff_Renderer_Table::_changed( <span class="arg-type">array</span> <span class="arg-name">$orig</span>,  <span class="arg-type">array</span> <span class="arg-name">$final</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Process changed lines to do word-by-word diffs for extra highlighting.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>(TRAC style) sometimes these lines can actually be deleted or added rows.<br/>We do additional processing to figure that out</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$orig</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"></div></dd><dt><code>$final</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="282"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function _changed( $orig, $final ) { // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.finalFound
+	$r = '';
+
+	/*
+	 * Does the aforementioned additional processing:
+	 * *_matches tell what rows are "the same" in orig and final. Those pairs will be diffed to get word changes.
+	 * - match is numeric: an index in other column.
+	 * - match is 'X': no match. It is a new row.
+	 * *_rows are column vectors for the orig column and the final column.
+	 * - row &gt;= 0: an index of the $orig or $final array.
+	 * - row &lt; 0: a blank row for that column.
+	 */
+	list($orig_matches, $final_matches, $orig_rows, $final_rows) = $this-&gt;interleave_changed_lines( $orig, $final );
+
+	// These will hold the word changes as determined by an inline diff.
+	$orig_diffs  = array();
+	$final_diffs = array();
+
+	// Compute word diffs for each matched pair using the inline diff.
+	foreach ( $orig_matches as $o =&gt; $f ) {
+		if ( is_numeric( $o ) &amp;&amp; is_numeric( $f ) ) {
+			$text_diff = new Text_Diff( 'auto', array( array( $orig[ $o ] ), array( $final[ $f ] ) ) );
+			$renderer  = new $this-&gt;inline_diff_renderer();
+			$diff      = $renderer-&gt;render( $text_diff );
+
+			// If they're too different, don't include any &lt;ins&gt; or &lt;del&gt;'s.
+			if ( preg_match_all( '!(&lt;ins&gt;.*?&lt;/ins&gt;|&lt;del&gt;.*?&lt;/del&gt;)!', $diff, $diff_matches ) ) {
+				// Length of all text between &lt;ins&gt; or &lt;del&gt;.
+				$stripped_matches = strlen( strip_tags( implode( ' ', $diff_matches[0] ) ) );
+				/*
+				 * Since we count length of text between &lt;ins&gt; or &lt;del&gt; (instead of picking just one),
+				 * we double the length of chars not in those tags.
+				 */
+				$stripped_diff = strlen( strip_tags( $diff ) ) * 2 - $stripped_matches;
+				$diff_ratio    = $stripped_matches / $stripped_diff;
+				if ( $diff_ratio &gt; $this-&gt;_diff_threshold ) {
+					continue; // Too different. Don't save diffs.
+				}
+			}
+
+			// Un-inline the diffs by removing &lt;del&gt; or &lt;ins&gt;.
+			$orig_diffs[ $o ]  = preg_replace( '|&lt;ins&gt;.*?&lt;/ins&gt;|', '', $diff );
+			$final_diffs[ $f ] = preg_replace( '|&lt;del&gt;.*?&lt;/del&gt;|', '', $diff );
+		}
+	}
+
+	foreach ( array_keys( $orig_rows ) as $row ) {
+		// Both columns have blanks. Ignore them.
+		if ( $orig_rows[ $row ] &lt; 0 &amp;&amp; $final_rows[ $row ] &lt; 0 ) {
+			continue;
+		}
+
+		// If we have a word based diff, use it. Otherwise, use the normal line.
+		if ( isset( $orig_diffs[ $orig_rows[ $row ] ] ) ) {
+			$orig_line = $orig_diffs[ $orig_rows[ $row ] ];
+		} elseif ( isset( $orig[ $orig_rows[ $row ] ] ) ) {
+			$orig_line = htmlspecialchars( $orig[ $orig_rows[ $row ] ] );
+		} else {
+			$orig_line = '';
+		}
+
+		if ( isset( $final_diffs[ $final_rows[ $row ] ] ) ) {
+			$final_line = $final_diffs[ $final_rows[ $row ] ];
+		} elseif ( isset( $final[ $final_rows[ $row ] ] ) ) {
+			$final_line = htmlspecialchars( $final[ $final_rows[ $row ] ] );
+		} else {
+			$final_line = '';
+		}
+
+		if ( $orig_rows[ $row ] &lt; 0 ) { // Orig is blank. This is really an added row.
+			$r .= $this-&gt;_added( array( $final_line ), false );
+		} elseif ( $final_rows[ $row ] &lt; 0 ) { // Final is blank. This is really a deleted row.
+			$r .= $this-&gt;_deleted( array( $orig_line ), false );
+		} else { // A true changed row.
+			if ( $this-&gt;_show_split_view ) {
+				$r .= '&lt;tr&gt;' . $this-&gt;deletedLine( $orig_line ) . $this-&gt;addedLine( $final_line ) . "&lt;/tr&gt;\n";
+			} else {
+				$r .= '&lt;tr&gt;' . $this-&gt;deletedLine( $orig_line ) . '&lt;/tr&gt;&lt;tr&gt;' . $this-&gt;addedLine( $final_line ) . "&lt;/tr&gt;\n";
+			}
+		}
+	}
+
+	return $r;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-text-diff-renderer-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-text-diff-renderer-table.php#L282">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-text-diff-renderer-table.php#L282-L365">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_text_diff_renderer_table/interleave_changed_lines/">WP_Text_Diff_Renderer_Table::interleave_changed_lines()</a><code>wp-includes/class-wp-text-diff-renderer-table.php</code></td><td><p>Takes changed blocks and matches which rows in orig turned into which rows in final.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.6.0/">2.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

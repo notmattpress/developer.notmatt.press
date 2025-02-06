@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_menu_items_controller/">WP_REST_Menu_Items_Controller</a></span><span class="is-current-page">WP_REST_Menu_Items_Controller::prepare_item_for_database()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_Menu_Items_Controller::prepare_item_for_database()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_Menu_Items_Controller::prepare_item_for_database( <span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span> ): <span class="return-type">object|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Prepares a single nav menu item for create or update.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$request</code><span class="type"><span class="WP_REST_Request"><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/" rel="class">WP_REST_Request</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Request object.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">object|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="328"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function prepare_item_for_database( $request ) {
+	$menu_item_db_id = $request['id'];
+	$menu_item_obj   = $this-&gt;get_nav_menu_item( $menu_item_db_id );
+	// Need to persist the menu item data. See https://core.trac.wordpress.org/ticket/28138
+	if ( ! is_wp_error( $menu_item_obj ) ) {
+		// Correct the menu position if this was the first item. See https://core.trac.wordpress.org/ticket/28140
+		$position = ( 0 === $menu_item_obj-&gt;menu_order ) ? 1 : $menu_item_obj-&gt;menu_order;
+
+		$prepared_nav_item = array(
+			'menu-item-db-id'       =&gt; $menu_item_db_id,
+			'menu-item-object-id'   =&gt; $menu_item_obj-&gt;object_id,
+			'menu-item-object'      =&gt; $menu_item_obj-&gt;object,
+			'menu-item-parent-id'   =&gt; $menu_item_obj-&gt;menu_item_parent,
+			'menu-item-position'    =&gt; $position,
+			'menu-item-type'        =&gt; $menu_item_obj-&gt;type,
+			'menu-item-title'       =&gt; $menu_item_obj-&gt;title,
+			'menu-item-url'         =&gt; $menu_item_obj-&gt;url,
+			'menu-item-description' =&gt; $menu_item_obj-&gt;description,
+			'menu-item-attr-title'  =&gt; $menu_item_obj-&gt;attr_title,
+			'menu-item-target'      =&gt; $menu_item_obj-&gt;target,
+			'menu-item-classes'     =&gt; $menu_item_obj-&gt;classes,
+			// Stored in the database as a string.
+			'menu-item-xfn'         =&gt; explode( ' ', $menu_item_obj-&gt;xfn ),
+			'menu-item-status'      =&gt; $menu_item_obj-&gt;post_status,
+			'menu-id'               =&gt; $this-&gt;get_menu_id( $menu_item_db_id ),
+		);
+	} else {
+		$prepared_nav_item = array(
+			'menu-id'               =&gt; 0,
+			'menu-item-db-id'       =&gt; 0,
+			'menu-item-object-id'   =&gt; 0,
+			'menu-item-object'      =&gt; '',
+			'menu-item-parent-id'   =&gt; 0,
+			'menu-item-position'    =&gt; 1,
+			'menu-item-type'        =&gt; 'custom',
+			'menu-item-title'       =&gt; '',
+			'menu-item-url'         =&gt; '',
+			'menu-item-description' =&gt; '',
+			'menu-item-attr-title'  =&gt; '',
+			'menu-item-target'      =&gt; '',
+			'menu-item-classes'     =&gt; array(),
+			'menu-item-xfn'         =&gt; array(),
+			'menu-item-status'      =&gt; 'publish',
+		);
+	}
+
+	$mapping = array(
+		'menu-item-db-id'       =&gt; 'id',
+		'menu-item-object-id'   =&gt; 'object_id',
+		'menu-item-object'      =&gt; 'object',
+		'menu-item-parent-id'   =&gt; 'parent',
+		'menu-item-position'    =&gt; 'menu_order',
+		'menu-item-type'        =&gt; 'type',
+		'menu-item-url'         =&gt; 'url',
+		'menu-item-description' =&gt; 'description',
+		'menu-item-attr-title'  =&gt; 'attr_title',
+		'menu-item-target'      =&gt; 'target',
+		'menu-item-classes'     =&gt; 'classes',
+		'menu-item-xfn'         =&gt; 'xfn',
+		'menu-item-status'      =&gt; 'status',
+	);
+
+	$schema = $this-&gt;get_item_schema();
+
+	foreach ( $mapping as $original =&gt; $api_request ) {
+		if ( isset( $request[ $api_request ] ) ) {
+			$prepared_nav_item[ $original ] = $request[ $api_request ];
+		}
+	}
+
+	$taxonomy = get_taxonomy( 'nav_menu' );
+	$base     = ! empty( $taxonomy-&gt;rest_base ) ? $taxonomy-&gt;rest_base : $taxonomy-&gt;name;
+	// If menus submitted, cast to int.
+	if ( ! empty( $request[ $base ] ) ) {
+		$prepared_nav_item['menu-id'] = absint( $request[ $base ] );
+	}
+
+	// Nav menu title.
+	if ( ! empty( $schema['properties']['title'] ) &amp;&amp; isset( $request['title'] ) ) {
+		if ( is_string( $request['title'] ) ) {
+			$prepared_nav_item['menu-item-title'] = $request['title'];
+		} elseif ( ! empty( $request['title']['raw'] ) ) {
+			$prepared_nav_item['menu-item-title'] = $request['title']['raw'];
+		}
+	}
+
+	$error = new WP_Error();
+
+	// Check if object id exists before saving.
+	if ( ! $prepared_nav_item['menu-item-object'] ) {
+		// If taxonomy, check if term exists.
+		if ( 'taxonomy' === $prepared_nav_item['menu-item-type'] ) {
+			$original = get_term( absint( $prepared_nav_item['menu-item-object-id'] ) );
+			if ( empty( $original ) || is_wp_error( $original ) ) {
+				$error-&gt;add( 'rest_term_invalid_id', __( 'Invalid term ID.' ), array( 'status' =&gt; 400 ) );
+			} else {
+				$prepared_nav_item['menu-item-object'] = get_term_field( 'taxonomy', $original );
+			}
+			// If post, check if post object exists.
+		} elseif ( 'post_type' === $prepared_nav_item['menu-item-type'] ) {
+			$original = get_post( absint( $prepared_nav_item['menu-item-object-id'] ) );
+			if ( empty( $original ) ) {
+				$error-&gt;add( 'rest_post_invalid_id', __( 'Invalid post ID.' ), array( 'status' =&gt; 400 ) );
+			} else {
+				$prepared_nav_item['menu-item-object'] = get_post_type( $original );
+			}
+		}
+	}
+
+	// If post type archive, check if post type exists.
+	if ( 'post_type_archive' === $prepared_nav_item['menu-item-type'] ) {
+		$post_type = $prepared_nav_item['menu-item-object'] ? $prepared_nav_item['menu-item-object'] : false;
+		$original  = get_post_type_object( $post_type );
+		if ( ! $original ) {
+			$error-&gt;add( 'rest_post_invalid_type', __( 'Invalid post type.' ), array( 'status' =&gt; 400 ) );
+		}
+	}
+
+	// Check if menu item is type custom, then title and url are required.
+	if ( 'custom' === $prepared_nav_item['menu-item-type'] ) {
+		if ( '' === $prepared_nav_item['menu-item-title'] ) {
+			$error-&gt;add( 'rest_title_required', __( 'The title is required when using a custom menu item type.' ), array( 'status' =&gt; 400 ) );
+		}
+		if ( empty( $prepared_nav_item['menu-item-url'] ) ) {
+			$error-&gt;add( 'rest_url_required', __( 'The url is required when using a custom menu item type.' ), array( 'status' =&gt; 400 ) );
+		}
+	}
+
+	if ( $error-&gt;has_errors() ) {
+		return $error;
+	}
+
+	// The xfn and classes properties are arrays, but passed to wp_update_nav_menu_item as a string.
+	foreach ( array( 'menu-item-xfn', 'menu-item-classes' ) as $key ) {
+		$prepared_nav_item[ $key ] = implode( ' ', $prepared_nav_item[ $key ] );
+	}
+
+	// Only draft / publish are valid post status for menu items.
+	if ( 'publish' !== $prepared_nav_item['menu-item-status'] ) {
+		$prepared_nav_item['menu-item-status'] = 'draft';
+	}
+
+	$prepared_nav_item = (object) $prepared_nav_item;
+
+	/**
+	 * Filters a menu item before it is inserted via the REST API.
+	 *
+	 * @since 5.9.0
+	 *
+	 * @param object          $prepared_nav_item An object representing a single menu item prepared
+	 *                                           for inserting or updating the database.
+	 * @param WP_REST_Request $request           Request object.
+	 */
+	return apply_filters( 'rest_pre_insert_nav_menu_item', $prepared_nav_item, $request );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php#L328">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php#L328-L482">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/rest_pre_insert_nav_menu_item/"><span class="hook-func">apply_filters</span>( ‘rest_pre_insert_nav_menu_item’,  <nobr><span class="arg-type">object</span> <span class="arg-name">$prepared_nav_item</span></nobr>,  <nobr><span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span></nobr> )</a></dt><dd><p>Filters a menu item before it is inserted via the REST API.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/get_menu_id/">WP_REST_Menu_Items_Controller::get_menu_id()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Gets the id of the menu that the given menu item belongs to.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/get_item_schema/">WP_REST_Menu_Items_Controller::get_item_schema()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Retrieves the nav menu item’s schema, conforming to JSON Schema.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/get_nav_menu_item/">WP_REST_Menu_Items_Controller::get_nav_menu_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Gets the nav menu item, if the ID is valid.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_term_field/">get_term_field()</a><code>wp-includes/taxonomy.php</code></td><td><p>Gets sanitized term field.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_type/">get_post_type()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the post type of the current post or of a given post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/absint/">absint()</a><code>wp-includes/load.php</code></td><td><p>Converts a value to non-negative integer.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomy/">get_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the taxonomy object of $taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_term/">get_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Gets all term data from database by term ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_object/">get_post_type_object()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post type object by name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 8 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/create_item/">WP_REST_Menu_Items_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Creates a single nav menu item.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/update_item/">WP_REST_Menu_Items_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Updates a single nav menu item.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.9.0/">5.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_wp_build_title_and_description_for_taxonomy_block_template()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_wp_build_title_and_description_for_taxonomy_block_template()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_wp_build_title_and_description_for_taxonomy_block_template( <span class="arg-type">string</span> <span class="arg-name">$taxonomy</span>,  <span class="arg-type">string</span> <span class="arg-name">$slug</span>,  <span class="arg-type">WP_Block_Template</span> <span class="arg-name">$template</span> ): <span class="return-type">bool</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Builds the title and description of a taxonomy-specific template based on the underlying entity referenced.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Mutates the underlying template object.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$taxonomy</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Identifier of the taxonomy, e.g. category.</span></div></dd><dt><code>$slug</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Slug of the term, e.g. shoes.</span></div></dd><dt><code>$template</code><span class="type"><span class="WP_Block_Template"><a href="https://developer.notmatt.press/reference/classes/wp_block_template/" rel="class">WP_Block_Template</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Template to mutate adding the description and title computed.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True if the term referenced was found and false otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="736"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _wp_build_title_and_description_for_taxonomy_block_template( $taxonomy, $slug, WP_Block_Template $template ) {
+	$taxonomy_object = get_taxonomy( $taxonomy );
+
+	$default_args = array(
+		'taxonomy'               =&gt; $taxonomy,
+		'hide_empty'             =&gt; false,
+		'update_term_meta_cache' =&gt; false,
+	);
+
+	$term_query = new WP_Term_Query();
+
+	$args = array(
+		'number' =&gt; 1,
+		'slug'   =&gt; $slug,
+	);
+	$args = wp_parse_args( $args, $default_args );
+
+	$terms_query = $term_query-&gt;query( $args );
+
+	if ( empty( $terms_query ) ) {
+		$template-&gt;title = sprintf(
+			/* translators: Custom template title in the Site Editor, referencing a taxonomy term that was not found. 1: Taxonomy singular name, 2: Term slug. */
+			__( 'Not found: %1$s (%2$s)' ),
+			$taxonomy_object-&gt;labels-&gt;singular_name,
+			$slug
+		);
+		return false;
+	}
+
+	$term_title = $terms_query[0]-&gt;name;
+
+	$template-&gt;title = sprintf(
+		/* translators: Custom template title in the Site Editor. 1: Taxonomy singular name, 2: Term title. */
+		__( '%1$s: %2$s' ),
+		$taxonomy_object-&gt;labels-&gt;singular_name,
+		$term_title
+	);
+
+	$template-&gt;description = sprintf(
+		/* translators: Custom template description in the Site Editor. %s: Term title. */
+		__( 'Template for %s' ),
+		$term_title
+	);
+
+	$term_query = new WP_Term_Query();
+
+	$args = array(
+		'number' =&gt; 2,
+		'name'   =&gt; $term_title,
+	);
+	$args = wp_parse_args( $args, $default_args );
+
+	$terms_with_same_title_query = $term_query-&gt;query( $args );
+
+	if ( count( $terms_with_same_title_query ) &gt; 1 ) {
+		$template-&gt;title = sprintf(
+			/* translators: Custom template title in the Site Editor. 1: Template title, 2: Term slug. */
+			__( '%1$s (%2$s)' ),
+			$template-&gt;title,
+			$slug
+		);
+	}
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/block-template-utils.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/block-template-utils.php#L736">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/block-template-utils.php#L736-L800">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_term_query/__construct/">WP_Term_Query::__construct()</a><code>wp-includes/class-wp-term-query.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomy/">get_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the taxonomy object of $taxonomy.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_build_block_template_result_from_post/">_build_block_template_result_from_post()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Builds a unified template object based a post Object.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

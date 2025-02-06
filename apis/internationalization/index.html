@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/apis/">Common APIs Handbook</a></span><span class="is-current-page">Internationalization</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Internationalization</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="what-is-internationalization" tabindex="-1"><a href="#what-is-internationalization">What is internationalization?</a></h2>
+<p>Internationalization is the process of developing your application in a way it can easily be translated into other languages. Internationalization is often abbreviated as <code>i18n</code> (because there are 18 letters between the letters i and n).</p>
+<h2 class="is-toc-heading wp-block-heading" id="why-is-internationalization-important" tabindex="-1"><a href="#why-is-internationalization-important">Why is internationalization important?</a></h2>
+<p>WordPress is used all over the world, by people who speak many different languages. The strings in WordPress need to be coded in a special way so that they can be easily translated into other languages. As a developer, you may not be able to provide localization for all your users; however, a translator can successfully localize your code without needing to modify the source code itself. </p>
+<p>While making your code translatable is called Internationalization, the act of translating it and adapting the strings to a specific location is called <a href="https://developer.notmatt.press/apis/handbook/internationalization/localization/">Localization</a>. Read more about <a href="https://developer.notmatt.press/apis/handbook/internationalization/localization/">Localization in WordPress</a>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="the-basics" tabindex="-1"><a href="#the-basics">The basics</a></h2>
+<p>In order to make a string translatable, you have to wrap the original strings in a call to one of the <a href="https://developer.notmatt.press/apis/handbook/internationalization/internationalization-functions/">WordPress i18n functions</a>.</p>
+<p>For example, the PHP function <a href="https://developer.notmatt.press/reference/functions/_e/" rel="function">_e()</a>  echoes a translatable string:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php"> _e('Edit post'); </code></pre>
+<p>You will find code like this all over WordPress core files. However, if you are internationalizing a theme or a plugin, there is another argument that all i18n functions take called Text Domain.</p>
+<p>Text Domains set the domain your plugin or theme translations belong. This assures there is no conflict between strings in plugins, themes, and the WordPress core.</p>
+<p>With a text-domain, the most basic call to a i18n function that will output a string would be like:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php"> _e('Edit movie', 'my-plugin'); </code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="setting-up-your-plugin-and-theme-to-i18n" tabindex="-1"><a href="#setting-up-your-plugin-and-theme-to-i18n">Setting up your plugin and theme to i18n</a></h2>
+<p>Setting up i18n is slightly different for Plugins and Themes, therefore this information is detailed in each respective Handbook:</p>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/themes/functionality/internationalization/">How to internationalize your theme</a></li>
+<li><a href="https://developer.notmatt.press/plugins/internationalization/how-to-internationalize-your-plugin/">How to internationalize your plugin</a></li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="internationalizing-javascript" tabindex="-1"><a href="#internationalizing-javascript">Internationalizing JavaScript</a></h3>
+<p>Since WordPress 5.0 it’s possible to internationalize JavaScript files using the same set of i18n functions used in PHP. </p>
+<p>In order to be able to use i18n functions in your JavaScript code, you have to declare <code>wp-i18n</code> as a dependency on your script when registering or enqueueing it. For example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_register_script(
+     'my-script',
+     plugins_url( 'js/my-script.js', FILE ),
+     array( 'wp-i18n' ),
+     '0.0.1'
+ );</code></pre>
+<p>Now that you have added the dependency to your script, you can use i18n functions in it, however you still have to tell WordPress to load the translations. </p>
+<p>You do this by calling <code>wp_set_script_translations()</code>. This function takes three arguments: the registered/enqueued script handle, the text domain, and optionally a path to the directory containing translation files. The latter is only needed if your plugin or theme is not hosted on WordPress.org, which provides these translation files automatically.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_set_script_translations('my-script', 'my-plugin');</code></pre>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">For better performance, always make sure to enqueue your scripts and load their translations only when they are really used.</div></div>
+<p>In your JavaScript code you will use i18n functions pretty much the same way you do in your PHP code:</p>
+<pre class="wp-block-code"><code class="language-js" lang="js">const { __, _x, _n, sprintf } = wp.i18n;
+
+// simple string
+__( 'Hello World', 'my-plugin' );
+
+// string with context
+_x( 'My Gutenberg block name', 'block name', 'my-plugin' );</code></pre>
+<p>The available i18n for you to use in your JS code are (See internationalization functions for more details):</p>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/reference/functions/__/" rel="function">__()</a> </li>
+<li> <a href="https://developer.notmatt.press/reference/functions/_x/" rel="function">_x()</a> </li>
+<li> <a href="https://developer.notmatt.press/reference/functions/_n/" rel="function">_n()</a> </li>
+<li> <a href="https://developer.notmatt.press/reference/functions/_nx/" rel="function">_nx()</a> </li>
+<li> sprintf()</li>
+</ul>
+<p>Notice that the wp-i18n package also includes the <code>sprintf</code> function. This is very useful to internationalize strings that have variables in it. </p>
+<p>Now refer to the Internationalization Guidelines to learn how to use all these functions and the best practices on writing your strings.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"> If you are not hosting your plugin or theme on WordPress.org, you will need to create your translation files yourself. Check <a href="https://pascalbirchler.com/internationalization-in-wordpress-5-0/">this post</a> out to learn how to do this.</div></div>
+<h4 class="wp-block-heading">Internationalizing JavaScript before WP 5.0</h4>
+<p>Another way to internationalize your JavaScript files is to use the <a href="https://developer.notmatt.press/reference/functions/wp_localize_script/" rel="function">wp_localize_script()</a>  function.</p>
+<p>With this function you can register translatable strings and have them available in your JavaScript to be used.</p>
+<p>Please refer to the <a href="https://developer.notmatt.press/reference/functions/wp_localize_script/"><code>wp_localize_script</code>() reference</a> to learn how to use it.</p>
+<h2 class="is-toc-heading wp-block-heading" id="internationalization-guidelines" tabindex="-1"><a href="#internationalization-guidelines">Internationalization Guidelines</a></h2>
+<p>Now that you are ready to internationalize your application, read through the <a href="https://developer.notmatt.press/apis/handbook/internationalization/internationalization-guidelines/">Internationalization Guidelines</a> and learn what each i18n function is for, how to use them, and the best practices when writing your strings.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

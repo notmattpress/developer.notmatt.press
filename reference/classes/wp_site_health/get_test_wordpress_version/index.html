@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_site_health/">WP_Site_Health</a></span><span class="is-current-page">WP_Site_Health::get_test_wordpress_version()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Site_Health::get_test_wordpress_version()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Site_Health::get_test_wordpress_version(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Tests for WordPress version and outputs it.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Gives various results depending on what kind of updates are available, if any, to encourage the user to install security updates as a priority.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The test result.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="254"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_test_wordpress_version() {
+	$result = array(
+		'label'       =&gt; '',
+		'status'      =&gt; '',
+		'badge'       =&gt; array(
+			'label' =&gt; __( 'Performance' ),
+			'color' =&gt; 'blue',
+		),
+		'description' =&gt; '',
+		'actions'     =&gt; '',
+		'test'        =&gt; 'wordpress_version',
+	);
+
+	$core_current_version = wp_get_wp_version();
+	$core_updates         = get_core_updates();
+
+	if ( ! is_array( $core_updates ) ) {
+		$result['status'] = 'recommended';
+
+		$result['label'] = sprintf(
+			/* translators: %s: Your current version of WordPress. */
+			__( 'WordPress version %s' ),
+			$core_current_version
+		);
+
+		$result['description'] = sprintf(
+			'&lt;p&gt;%s&lt;/p&gt;',
+			__( 'Unable to check if any new versions of WordPress are available.' )
+		);
+
+		$result['actions'] = sprintf(
+			'&lt;a href="%s"&gt;%s&lt;/a&gt;',
+			esc_url( admin_url( 'update-core.php?force-check=1' ) ),
+			__( 'Check for updates manually' )
+		);
+	} else {
+		foreach ( $core_updates as $core =&gt; $update ) {
+			if ( 'upgrade' === $update-&gt;response ) {
+				$current_version = explode( '.', $core_current_version );
+				$new_version     = explode( '.', $update-&gt;version );
+
+				$current_major = $current_version[0] . '.' . $current_version[1];
+				$new_major     = $new_version[0] . '.' . $new_version[1];
+
+				$result['label'] = sprintf(
+					/* translators: %s: The latest version of WordPress available. */
+					__( 'WordPress update available (%s)' ),
+					$update-&gt;version
+				);
+
+				$result['actions'] = sprintf(
+					'&lt;a href="%s"&gt;%s&lt;/a&gt;',
+					esc_url( admin_url( 'update-core.php' ) ),
+					__( 'Install the latest version of WordPress' )
+				);
+
+				if ( $current_major !== $new_major ) {
+					// This is a major version mismatch.
+					$result['status']      = 'recommended';
+					$result['description'] = sprintf(
+						'&lt;p&gt;%s&lt;/p&gt;',
+						__( 'A new version of WordPress is available.' )
+					);
+				} else {
+					// This is a minor version, sometimes considered more critical.
+					$result['status']         = 'critical';
+					$result['badge']['label'] = __( 'Security' );
+					$result['description']    = sprintf(
+						'&lt;p&gt;%s&lt;/p&gt;',
+						__( 'A new minor update is available for your site. Because minor updates often address security, it&amp;#8217;s important to install them.' )
+					);
+				}
+			} else {
+				$result['status'] = 'good';
+				$result['label']  = sprintf(
+					/* translators: %s: The current version of WordPress installed on this site. */
+					__( 'Your version of WordPress (%s) is up to date' ),
+					$core_current_version
+				);
+
+				$result['description'] = sprintf(
+					'&lt;p&gt;%s&lt;/p&gt;',
+					__( 'You are currently running the latest version of WordPress available, keep it up!' )
+				);
+			}
+		}
+	}
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-site-health.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-site-health.php#L254">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-site-health.php#L254-L343">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_wp_version/">wp_get_wp_version()</a><code>wp-includes/functions.php</code></td><td><p>Returns the current WordPress version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_core_updates/">get_core_updates()</a><code>wp-admin/includes/update.php</code></td><td><p>Gets available core updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_url/">admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the current site.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">network_home_url()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>network_home_url()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">network_home_url( <span class="arg-type">string</span> <span class="arg-name">$path</span> = <span class="arg-default">''</span>,  <span class="arg-type">string|null</span> <span class="arg-name">$scheme</span> = <span class="arg-default">null</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the home URL for the current network.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Returns the home URL with the appropriate protocol, ‘https’ <a href="https://developer.notmatt.press/reference/functions/is_ssl/" rel="function">is_ssl()</a>  and ‘http’ otherwise. If <code>$scheme</code> is ‘http’ or ‘https’, <code>is_ssl()</code> is overridden.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$path</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Path relative to the home URL. </span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$scheme</code><span class="type"><span class="string">string</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Scheme to give the home URL context. Accepts                            <code>'http'</code>, <code>'https'</code>, or <code>'relative'</code>. </span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Home URL link with optional path appended.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3776"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function network_home_url( $path = '', $scheme = null ) {
+	if ( ! is_multisite() ) {
+		return home_url( $path, $scheme );
+	}
+
+	$current_network = get_network();
+	$orig_scheme     = $scheme;
+
+	if ( ! in_array( $scheme, array( 'http', 'https', 'relative' ), true ) ) {
+		$scheme = is_ssl() ? 'https' : 'http';
+	}
+
+	if ( 'relative' === $scheme ) {
+		$url = $current_network-&gt;path;
+	} else {
+		$url = set_url_scheme( 'http://' . $current_network-&gt;domain . $current_network-&gt;path, $scheme );
+	}
+
+	if ( $path &amp;&amp; is_string( $path ) ) {
+		$url .= ltrim( $path, '/' );
+	}
+
+	/**
+	 * Filters the network home URL.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string      $url         The complete network home URL including scheme and path.
+	 * @param string      $path        Path relative to the network home URL. Blank string
+	 *                                 if no path is specified.
+	 * @param string|null $orig_scheme Scheme to give the URL context. Accepts 'http', 'https',
+	 *                                 'relative' or null.
+	 */
+	return apply_filters( 'network_home_url', $url, $path, $orig_scheme );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/link-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/link-template.php#L3776">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/link-template.php#L3776-L3810">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/network_home_url/"><span class="hook-func">apply_filters</span>( ‘network_home_url’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$url</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$path</span></nobr>,  <nobr><span class="arg-type">string|null</span> <span class="arg-name">$orig_scheme</span></nobr> )</a></dt><dd><p>Filters the network home URL.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_network/">get_network()</a><code>wp-includes/ms-network.php</code></td><td><p>Retrieves network data given a network ID or network object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_ssl/">is_ssl()</a><code>wp-includes/load.php</code></td><td><p>Determines if SSL is used.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_url_scheme/">set_url_scheme()</a><code>wp-includes/link-template.php</code></td><td><p>Sets the scheme for a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/update_network_option_new_admin_email/">update_network_option_new_admin_email()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends a confirmation request email when a change of network admin email address is attempted.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/send_debug_email/">WP_Automatic_Updater::send_debug_email()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Prepares and sends an email of a full log of background update results, useful for debugging and geekery.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_install_defaults/">wp_install_defaults()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Creates the initial content for a newly-installed site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_notify_postauthor/">wp_notify_postauthor()</a><code>wp-includes/pluggable.php</code></td><td><p>Notifies an author (and/or others) of a comment/trackback/pingback on a post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_mail/">wp_mail()</a><code>wp-includes/pluggable.php</code></td><td><p>Sends an email, similar to PHP’s mail function.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_welcome_user_notification/">wpmu_welcome_user_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Notifies a user that their account activation has been successful.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_redirect_404/">maybe_redirect_404()</a><code>wp-includes/ms-functions.php</code></td><td><p>Corrects 404 redirects when NOBLOGREDIRECT is defined.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_welcome_notification/">wpmu_welcome_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Notifies the site administrator that their site activation was successful.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_signup_blog_notification/">wpmu_signup_blog_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends a confirmation request email to a user when they sign up for a new site. The new site will not become active until the confirmation link is clicked.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_signup_user_notification/">wpmu_signup_user_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends a confirmation request email to a user when they sign up for a new user account (without signing up for a site at the same time). The user account will not become active until the confirmation link is clicked.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_blogaddress_by_name/">get_blogaddress_by_name()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Gets a full site URL, given a site name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1 bad-note" data-comment-id="1370" id="comment-1370">
+<article class="comment-body" id="div-comment-1370">
+<a class="screen-reader-text" href="#comment-content-1370">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1370">
+<p><strong>Basic Example</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$url = network_home_url();
+echo $url;</code></pre>
+<p>Output: <a href="http://www.example.com" rel="nofollow ugc">http://www.example.com</a></p>
+<p>Note the lack of a trailing slash.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-1370">
+<ul class="children">
+<li class="comment byuser comment-author-huskyr odd alt depth-2" data-comment-id="5122" id="comment-5122">
+<article class="comment-body" id="div-comment-5122">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5122">
+<div>I’m getting a trailing slash when i run <code>network_home_url()</code> on my network, so i wouldn’t depend on it.</div>
+<div><a class="url" href="https://profiles.wordpress.org/huskyr/" rel="external nofollow">Hay</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/network_home_url/#comment-5122"><time datetime="2021-06-09T13:39:32+00:00">4 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_comments_personal_data_eraser()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_comments_personal_data_eraser()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_comments_personal_data_eraser( <span class="arg-type">string</span> <span class="arg-name">$email_address</span>,  <span class="arg-type">int</span> <span class="arg-name">$page</span> = <span class="arg-default">1</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Erases personal data associated with an email address from the comments table.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$email_address</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The comment author email address.</span></div></dd><dt><code>$page</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Comment page number.</span></div><p class="default">Default:<code>1</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Data removal results.<br/>
+<ul class="param-hash"><li><code>items_removed</code> <span class="type">bool</span><div class="desc">Whether items were actually removed.</div></li>
+<li><code>items_retained</code> <span class="type">bool</span><div class="desc">Whether items were retained.</div></li>
+<li><code>messages</code> <span class="type">string[]</span><div class="desc">An array of messages to add to the personal data export file.</div></li>
+<li><code>done</code> <span class="type">bool</span><div class="desc">Whether the eraser is finished.</div></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3862"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_comments_personal_data_eraser( $email_address, $page = 1 ) {
+	global $wpdb;
+
+	if ( empty( $email_address ) ) {
+		return array(
+			'items_removed'  =&gt; false,
+			'items_retained' =&gt; false,
+			'messages'       =&gt; array(),
+			'done'           =&gt; true,
+		);
+	}
+
+	// Limit us to 500 comments at a time to avoid timing out.
+	$number         = 500;
+	$page           = (int) $page;
+	$items_removed  = false;
+	$items_retained = false;
+
+	$comments = get_comments(
+		array(
+			'author_email'       =&gt; $email_address,
+			'number'             =&gt; $number,
+			'paged'              =&gt; $page,
+			'orderby'            =&gt; 'comment_ID',
+			'order'              =&gt; 'ASC',
+			'include_unapproved' =&gt; true,
+		)
+	);
+
+	/* translators: Name of a comment's author after being anonymized. */
+	$anon_author = __( 'Anonymous' );
+	$messages    = array();
+
+	foreach ( (array) $comments as $comment ) {
+		$anonymized_comment                         = array();
+		$anonymized_comment['comment_agent']        = '';
+		$anonymized_comment['comment_author']       = $anon_author;
+		$anonymized_comment['comment_author_email'] = '';
+		$anonymized_comment['comment_author_IP']    = wp_privacy_anonymize_data( 'ip', $comment-&gt;comment_author_IP );
+		$anonymized_comment['comment_author_url']   = '';
+		$anonymized_comment['user_id']              = 0;
+
+		$comment_id = (int) $comment-&gt;comment_ID;
+
+		/**
+		 * Filters whether to anonymize the comment.
+		 *
+		 * @since 4.9.6
+		 *
+		 * @param bool|string $anon_message       Whether to apply the comment anonymization (bool) or a custom
+		 *                                        message (string). Default true.
+		 * @param WP_Comment  $comment            WP_Comment object.
+		 * @param array       $anonymized_comment Anonymized comment data.
+		 */
+		$anon_message = apply_filters( 'wp_anonymize_comment', true, $comment, $anonymized_comment );
+
+		if ( true !== $anon_message ) {
+			if ( $anon_message &amp;&amp; is_string( $anon_message ) ) {
+				$messages[] = esc_html( $anon_message );
+			} else {
+				/* translators: %d: Comment ID. */
+				$messages[] = sprintf( __( 'Comment %d contains personal data but could not be anonymized.' ), $comment_id );
+			}
+
+			$items_retained = true;
+
+			continue;
+		}
+
+		$args = array(
+			'comment_ID' =&gt; $comment_id,
+		);
+
+		$updated = $wpdb-&gt;update( $wpdb-&gt;comments, $anonymized_comment, $args );
+
+		if ( $updated ) {
+			$items_removed = true;
+			clean_comment_cache( $comment_id );
+		} else {
+			$items_retained = true;
+		}
+	}
+
+	$done = count( $comments ) &lt; $number;
+
+	return array(
+		'items_removed'  =&gt; $items_removed,
+		'items_retained' =&gt; $items_retained,
+		'messages'       =&gt; $messages,
+		'done'           =&gt; $done,
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/comment.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/comment.php#L3862">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/comment.php#L3862-L3953">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_anonymize_comment/"><span class="hook-func">apply_filters</span>( ‘wp_anonymize_comment’,  <nobr><span class="arg-type">bool|string</span> <span class="arg-name">$anon_message</span></nobr>,  <nobr><span class="arg-type">WP_Comment</span> <span class="arg-name">$comment</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$anonymized_comment</span></nobr> )</a></dt><dd><p>Filters whether to anonymize the comment.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_anonymize_data/">wp_privacy_anonymize_data()</a><code>wp-includes/functions.php</code></td><td><p>Returns uniform “anonymous” data by type.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/update/">wpdb::update()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Updates a row in the table.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/clean_comment_cache/">clean_comment_cache()</a><code>wp-includes/comment.php</code></td><td><p>Removes a comment from the object cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_comments/">get_comments()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves a list of comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.9.6/">4.9.6</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

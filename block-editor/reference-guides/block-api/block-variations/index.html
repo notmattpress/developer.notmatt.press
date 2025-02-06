@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Variations</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Variations</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The Block Variations API allows you to define multiple versions (variations) of a block. A block variation differs from the original block by a set of initial attributes or inner blocks. When you insert the block variation into the Editor, these attributes and/or inner blocks are applied.</p>
+<p>Variations are an excellent way to create iterations of existing blocks without building entirely new blocks from scratch.</p>
+<p>To better understand this API, consider the Embed block. This block contains numerous variations for each type of embeddable content (WordPress, Youtube, etc.). Each Embed block variation shares the same underlying functionality for editing, saving, and so on. Besides the name and descriptive information, the main difference is the <code>providerNameSlug</code> attribute. Below is a simplified example of the variations in the Embed block. View the <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/embed/variations.js">source code</a> for the complete specification.</p>
+<pre><code class="language-js">variations: [
+    {
+        name: 'wordpress',
+        title: 'WordPress',
+        description: __( 'Embed a WordPress post.' ),
+        attributes: { providerNameSlug: 'wordpress' },
+    },
+    {
+        name: 'youtube',
+        title: 'YouTube',
+        description: __( 'Embed a YouTube video.' ),
+        attributes: { providerNameSlug: 'youtube' },
+    },
+],
+</code></pre>
+<h2 class="is-toc-heading" id="defining-a-block-variation" tabindex="-1"><a href="#defining-a-block-variation">Defining a block variation</a></h2>
+<p>A block variation is defined by an object that can contain the following fields:</p>
+<ul>
+<li><code>name</code> (type <code>string</code>) – A unique and machine-readable name.</li>
+<li><code>title</code> (optional, type <code>string</code>) – A human-readable variation title.</li>
+<li><code>description</code> (optional, type <code>string</code>) – A human-readable variation description.</li>
+<li><code>category</code> (optional, type <code>string</code>) – A category classification used in search interfaces to arrange block types by category.</li>
+<li><code>keywords</code> (optional, type <code>string[]</code>) – An array of terms (which can be translated) that help users discover the variation while searching.</li>
+<li><code>icon</code> (optional, type <code>string</code> | <code>Object</code>) – An icon helping to visualize the variation. It can have the same shape as the block type.</li>
+<li><code>attributes</code> (optional, type <code>Object</code>) – Values that override block attributes.</li>
+<li><code>innerBlocks</code> (optional, type <code>Array[]</code>) – Initial configuration of nested blocks.</li>
+<li><code>example</code> (optional, type <code>Object</code>) – Provides structured data for the block preview. Set to <code>undefined</code> to disable the preview. See the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-registration/#example-optional">Block Registration API</a> for more details.</li>
+<li><code>scope</code> (optional, type <code>WPBlockVariationScope[]</code>) – Defaults to <code>block</code> and <code>inserter</code>. The list of scopes where the variation is applicable. Available options include:
+<ul>
+<li><code>block</code> – Used by blocks to filter specific block variations. <code>Columns</code> and <code>Query</code> blocks have such variations, which are passed to the <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-editor/src/components/block-variation-picker/README.md">experimental BlockVariationPicker</a> component. This component handles displaying the variations and allows users to choose one of them.</li>
+<li><code>inserter</code> – Block variation is shown on the inserter.</li>
+<li><code>transform</code> – Block variation is shown in the component for variation transformations.</li>
+</ul>
+</li>
+<li><code>isDefault</code> (optional, type <code>boolean</code>) – Defaults to <code>false</code>. Indicates whether the current variation is the default one (details below).</li>
+<li><code>isActive</code> (optional, type <code>Function|string[]</code>) – A function or an array of block attributes that is used to determine if the variation is active when the block is selected. The function accepts <code>blockAttributes</code> and <code>variationAttributes</code> (details below).</li>
+</ul>
+<div class="callout callout-info">
+    You can technically create a block variation without a unique <code>name</code>, but this is <strong>not</strong> recommended. A unique <code>name</code> allows the Editor to differentiate between your variation and others that may exist. It also allows your variation to be unregistered as needed and has implications for the <code>isDefault</code> settings (details below).
+</div>
+<h2 class="is-toc-heading" id="creating-a-block-variation" tabindex="-1"><a href="#creating-a-block-variation">Creating a block variation</a></h2>
+<p>Block variations can be declared during a block’s registration by providing the <code>variations</code> key with a proper array of variation objects, as shown in the example above. See the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-registration/">Block Registration API</a> for more details.</p>
+<p>To create a variation for an existing block, such as a Core block, use <code>wp.blocks.registerBlockVariation()</code>. This function accepts the name of the block and the object defining the variation.</p>
+<pre><code class="language-js">wp.blocks.registerBlockVariation( 'core/embed', {
+    name: 'custom-embed',
+    attributes: { providerNameSlug: 'custom' },
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="removing-a-block-variation" tabindex="-1"><a href="#removing-a-block-variation">Removing a block variation</a></h2>
+<p>Block variations can also be easily removed. To do so, use <code>wp.blocks.unregisterBlockVariation()</code>. This function accepts the name of the block and the <code>name</code> of the variation that should be unregistered.</p>
+<pre><code class="language-js">wp.blocks.unregisterBlockVariation( 'core/embed', 'youtube' );
+</code></pre>
+<h2 class="is-toc-heading" id="block-variations-versus-block-styles" tabindex="-1"><a href="#block-variations-versus-block-styles">Block variations versus block styles</a></h2>
+<p>The main difference between block styles and block variations is that a block style just applies a CSS class to the block, so it can be styled in an alternative way. See the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-styles/">Block Styles API</a> for more details.</p>
+<p>If you want to apply initial attributes or inner blocks, this falls into block variation territory. It’s also possible to override the default block style using the <code>className</code> attribute when defining a block variation.</p>
+<pre><code class="language-js">variations: [
+    {
+        name: 'blue',
+        title: __( 'Blue Quote' ),
+        isDefault: true,
+        attributes: {
+            color: 'blue',
+            className: 'is-style-blue-quote'
+        },
+        icon: 'format-quote',
+        isActive: ( blockAttributes, variationAttributes ) =&gt;
+            blockAttributes.color === variationAttributes.color
+    },
+],
+</code></pre>
+<h2 class="is-toc-heading" id="using-isdefault" tabindex="-1"><a href="#using-isdefault">Using isDefault</a></h2>
+<p>By default, all variations will show up in the Inserter in addition to the original block type item. However, setting the <code>isDefault</code> flag for any variations listed will override the regular block type in the Inserter. This is a great tool for curating the Editor experience to your specific needs.</p>
+<p>For example, if you want Media &amp; Text block to display the image on the right by default, you could create a variation like this:</p>
+<pre><code class="language-js">wp.blocks.registerBlockVariation( 'core/media-text', {
+    name: 'media-text-media-right',
+    title: __( 'Media &amp; Text' ),
+    isDefault: true,
+    attributes: {
+        mediaPosition: 'right',
+    },
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="caveats-to-using-isdefault" tabindex="-1"><a href="#caveats-to-using-isdefault">Caveats to using isDefault</a></h3>
+<p>While <code>isDefault</code> works great when overriding a block without existing variations, you may run into issues when other variations exist.</p>
+<p>If another variation for the same block uses <code>isDefault</code>, your variation will not necessarily become the default. The Editor respects the first registered variation with <code>isDefault</code>, which might not be yours.</p>
+<p>The solution is to unregister the other variation before registering your variation with <code>isDefault</code>. This caveat reinforces the recommendation always to provide variations with a unique <code>name</code>. Otherwise, the variation cannot be unregistered.</p>
+<h2 class="is-toc-heading" id="using-isactive" tabindex="-1"><a href="#using-isactive">Using isActive</a></h2>
+<p>While the <code>isActive</code> property is optional, it’s recommended. This API is used by the block editor to check which variation is active, and display the correct variation’s title, icon and description when an instance of the variation is selected in the editor.</p>
+<p>If <code>isActive</code> is not set, the Editor cannot distinguish between an instance of the original block and your variation, so the original block information will be displayed.</p>
+<p>The property can be set to either an array of strings (<code>string[]</code>), or a function. It is recommended to use the string array version whenever possible.</p>
+<p>The <code>string[]</code> version is used to declare which of the block instance’s attributes should be compared to the given variation’s. Each attribute will be checked and the variation will be active if all of them match.</p>
+<p>As an example, in the core Embed block, the <code>providerNameSlug</code> attribute is used to determine the embed provider (e.g. ‘youtube’ or ‘twitter’). The variations may be declared like this:</p>
+<pre><code class="language-js">const variations = [
+    {
+        name: 'twitter',
+        title: 'Twitter',
+        icon: embedTwitterIcon,
+        keywords: [ 'tweet', __( 'social' ) ],
+        description: __( 'Embed a tweet.' ),
+        patterns: [ /^https?:\/\/(www\.)?twitter\.com\/.+/i ],
+        attributes: { providerNameSlug: 'twitter', responsive: true },
+    },
+    {
+        name: 'youtube',
+        title: 'YouTube',
+        icon: embedYouTubeIcon,
+        keywords: [ __( 'music' ), __( 'video' ) ],
+        description: __( 'Embed a YouTube video.' ),
+        patterns: [
+            /^https?:\/\/((m|www)\.)?youtube\.com\/.+/i,
+            /^https?:\/\/youtu\.be\/.+/i,
+        ],
+        attributes: { providerNameSlug: 'youtube', responsive: true },
+    },
+    // ...
+];
+</code></pre>
+<p>The <code>isActive</code> property would then look like this:</p>
+<pre><code class="language-js">isActive: [ 'providerNameSlug' ];
+</code></pre>
+<p>This will cause the block instance value for <code>providerNameSlug</code> to be compared to the value declared in the variation’s declaration (the values in the code snippet above) to determine which embed variation is active.</p>
+<p>Nested object paths are also supported since WordPress <code>6.6.0</code>. For example, consider a block variation that has a <code>query</code> object as an attribute. It is possible to determine if the variation is active solely based on that object’s <code>postType</code> property (while ignoring all its other properties):</p>
+<pre><code class="language-js">isActive: [ 'query.postType' ];
+</code></pre>
+<p>The function version of this property accepts a block instance’s <code>blockAttributes</code> as the first argument, and the <code>variationAttributes</code> declared for a variation as the second argument. These arguments can be used to determine if a variation is active by comparing them and returning a <code>true</code> or <code>false</code> (indicating whether this variation is inactive for this block instance).</p>
+<p>Using the same example for the embed block, the function version would look like this:</p>
+<pre><code class="language-js">isActive: ( blockAttributes, variationAttributes ) =&gt;
+    blockAttributes.providerNameSlug === variationAttributes.providerNameSlug,
+</code></pre>
+<h3 class="is-toc-heading" id="specificity-of-isactive-matches" tabindex="-1"><a href="#specificity-of-isactive-matches">Specificity of isActive matches</a></h3>
+<p><em>Note: Improved handling since WordPress <code>6.6.0</code>.</em></p>
+<p>If there are multiple variations whose <code>isActive</code> check matches a given block instance, and all of them are string arrays, then the variation with the highest <em>specificity</em> will be chosen. Consider the following example:</p>
+<pre><code class="language-js">wp.blocks.registerBlockVariation( 'core/paragraph', {
+    name: 'paragraph-red',
+    title: 'Red Paragraph',
+    attributes: {
+        textColor: 'vivid-red',
+    },
+    isActive: [ 'textColor' ],
+} );
+
+wp.blocks.registerBlockVariation( 'core/paragraph', {
+    name: 'paragraph-red-grey',
+    title: 'Red/Grey Paragraph',
+    attributes: {
+        textColor: 'vivid-red',
+        backgroundColor: 'cyan-bluish-gray',
+    },
+    isActive: [ 'textColor', 'backgroundColor' ],
+} );
+</code></pre>
+<p>If a block instance has attributes <code>textColor: vivid-red</code> and <code>backgroundColor: cyan-bluish-gray</code>, both variations’ <code>isActive</code> criterion will match that block instance. In this case, the more <em>specific</em> match will be determined to be the active variation, where specificity is calculated as the length of each <code>isActive</code> array. This means that the <code>Red/Grey Paragraph</code> will be shown as the active variation.</p>
+<p>Note that specificity cannot be determined for a matching variation if its <code>isActive</code> property is a function rather than a <code>string[]</code>. In this case, the first matching variation will be determined to be the active variation. For this reason, it is generally recommended to use a <code>string[]</code> rather than a <code>function</code> for the <code>isActive</code> property.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

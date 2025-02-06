@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_block_editor_settings()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_block_editor_settings()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_block_editor_settings( <span class="arg-type">array</span> <span class="arg-name">$custom_settings</span>,  <span class="arg-type">WP_Block_Editor_Context</span> <span class="arg-name">$block_editor_context</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns the contextualized block editor settings for a selected editor context.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$custom_settings</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Custom settings to use with the given editor type.</span></div></dd><dt><code>$block_editor_context</code><span class="type"><span class="WP_Block_Editor_Context"><a href="https://developer.notmatt.press/reference/classes/wp_block_editor_context/" rel="class">WP_Block_Editor_Context</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The current block editor context.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The contextualized block editor settings.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="488"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_block_editor_settings( array $custom_settings, $block_editor_context ) {
+	$editor_settings = array_merge(
+		get_default_block_editor_settings(),
+		array(
+			'allowedBlockTypes' =&gt; get_allowed_block_types( $block_editor_context ),
+			'blockCategories'   =&gt; get_block_categories( $block_editor_context ),
+		),
+		$custom_settings
+	);
+
+	$global_styles = array();
+	$presets       = array(
+		array(
+			'css'            =&gt; 'variables',
+			'__unstableType' =&gt; 'presets',
+			'isGlobalStyles' =&gt; true,
+		),
+		array(
+			'css'            =&gt; 'presets',
+			'__unstableType' =&gt; 'presets',
+			'isGlobalStyles' =&gt; true,
+		),
+	);
+	foreach ( $presets as $preset_style ) {
+		$actual_css = wp_get_global_stylesheet( array( $preset_style['css'] ) );
+		if ( '' !== $actual_css ) {
+			$preset_style['css'] = $actual_css;
+			$global_styles[]     = $preset_style;
+		}
+	}
+
+	if ( wp_theme_has_theme_json() ) {
+		$block_classes = array(
+			'css'            =&gt; 'styles',
+			'__unstableType' =&gt; 'theme',
+			'isGlobalStyles' =&gt; true,
+		);
+		$actual_css    = wp_get_global_stylesheet( array( $block_classes['css'] ) );
+		if ( '' !== $actual_css ) {
+			$block_classes['css'] = $actual_css;
+			$global_styles[]      = $block_classes;
+		}
+
+		/*
+		 * Add the custom CSS as a separate stylesheet so any invalid CSS
+		 * entered by users does not break other global styles.
+		 */
+		$global_styles[] = array(
+			'css'            =&gt; wp_get_global_stylesheet( array( 'custom-css' ) ),
+			'__unstableType' =&gt; 'user',
+			'isGlobalStyles' =&gt; true,
+		);
+	} else {
+		// If there is no `theme.json` file, ensure base layout styles are still available.
+		$block_classes = array(
+			'css'            =&gt; 'base-layout-styles',
+			'__unstableType' =&gt; 'base-layout',
+			'isGlobalStyles' =&gt; true,
+		);
+		$actual_css    = wp_get_global_stylesheet( array( $block_classes['css'] ) );
+		if ( '' !== $actual_css ) {
+			$block_classes['css'] = $actual_css;
+			$global_styles[]      = $block_classes;
+		}
+	}
+
+	$editor_settings['styles'] = array_merge( $global_styles, get_block_editor_theme_styles() );
+
+	$editor_settings['__experimentalFeatures'] = wp_get_global_settings();
+	// These settings may need to be updated based on data coming from theme.json sources.
+	if ( isset( $editor_settings['__experimentalFeatures']['color']['palette'] ) ) {
+		$colors_by_origin          = $editor_settings['__experimentalFeatures']['color']['palette'];
+		$editor_settings['colors'] = isset( $colors_by_origin['custom'] ) ?
+			$colors_by_origin['custom'] : (
+				isset( $colors_by_origin['theme'] ) ?
+					$colors_by_origin['theme'] :
+					$colors_by_origin['default']
+			);
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['color']['gradients'] ) ) {
+		$gradients_by_origin          = $editor_settings['__experimentalFeatures']['color']['gradients'];
+		$editor_settings['gradients'] = isset( $gradients_by_origin['custom'] ) ?
+			$gradients_by_origin['custom'] : (
+				isset( $gradients_by_origin['theme'] ) ?
+					$gradients_by_origin['theme'] :
+					$gradients_by_origin['default']
+			);
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['typography']['fontSizes'] ) ) {
+		$font_sizes_by_origin         = $editor_settings['__experimentalFeatures']['typography']['fontSizes'];
+		$editor_settings['fontSizes'] = isset( $font_sizes_by_origin['custom'] ) ?
+			$font_sizes_by_origin['custom'] : (
+				isset( $font_sizes_by_origin['theme'] ) ?
+					$font_sizes_by_origin['theme'] :
+					$font_sizes_by_origin['default']
+			);
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['color']['custom'] ) ) {
+		$editor_settings['disableCustomColors'] = ! $editor_settings['__experimentalFeatures']['color']['custom'];
+		unset( $editor_settings['__experimentalFeatures']['color']['custom'] );
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['color']['customGradient'] ) ) {
+		$editor_settings['disableCustomGradients'] = ! $editor_settings['__experimentalFeatures']['color']['customGradient'];
+		unset( $editor_settings['__experimentalFeatures']['color']['customGradient'] );
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['typography']['customFontSize'] ) ) {
+		$editor_settings['disableCustomFontSizes'] = ! $editor_settings['__experimentalFeatures']['typography']['customFontSize'];
+		unset( $editor_settings['__experimentalFeatures']['typography']['customFontSize'] );
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['typography']['lineHeight'] ) ) {
+		$editor_settings['enableCustomLineHeight'] = $editor_settings['__experimentalFeatures']['typography']['lineHeight'];
+		unset( $editor_settings['__experimentalFeatures']['typography']['lineHeight'] );
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['spacing']['units'] ) ) {
+		$editor_settings['enableCustomUnits'] = $editor_settings['__experimentalFeatures']['spacing']['units'];
+		unset( $editor_settings['__experimentalFeatures']['spacing']['units'] );
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['spacing']['padding'] ) ) {
+		$editor_settings['enableCustomSpacing'] = $editor_settings['__experimentalFeatures']['spacing']['padding'];
+		unset( $editor_settings['__experimentalFeatures']['spacing']['padding'] );
+	}
+	if ( isset( $editor_settings['__experimentalFeatures']['spacing']['customSpacingSize'] ) ) {
+		$editor_settings['disableCustomSpacingSizes'] = ! $editor_settings['__experimentalFeatures']['spacing']['customSpacingSize'];
+		unset( $editor_settings['__experimentalFeatures']['spacing']['customSpacingSize'] );
+	}
+
+	if ( isset( $editor_settings['__experimentalFeatures']['spacing']['spacingSizes'] ) ) {
+		$spacing_sizes_by_origin         = $editor_settings['__experimentalFeatures']['spacing']['spacingSizes'];
+		$editor_settings['spacingSizes'] = isset( $spacing_sizes_by_origin['custom'] ) ?
+			$spacing_sizes_by_origin['custom'] : (
+				isset( $spacing_sizes_by_origin['theme'] ) ?
+					$spacing_sizes_by_origin['theme'] :
+					$spacing_sizes_by_origin['default']
+			);
+	}
+
+	$editor_settings['__unstableResolvedAssets']         = _wp_get_iframed_editor_assets();
+	$editor_settings['__unstableIsBlockBasedTheme']      = wp_is_block_theme();
+	$editor_settings['localAutosaveInterval']            = 15;
+	$editor_settings['disableLayoutStyles']              = current_theme_supports( 'disable-layout-styles' );
+	$editor_settings['__experimentalDiscussionSettings'] = array(
+		'commentOrder'         =&gt; get_option( 'comment_order' ),
+		'commentsPerPage'      =&gt; get_option( 'comments_per_page' ),
+		'defaultCommentsPage'  =&gt; get_option( 'default_comments_page' ),
+		'pageComments'         =&gt; get_option( 'page_comments' ),
+		'threadComments'       =&gt; get_option( 'thread_comments' ),
+		'threadCommentsDepth'  =&gt; get_option( 'thread_comments_depth' ),
+		'defaultCommentStatus' =&gt; get_option( 'default_comment_status' ),
+		'avatarURL'            =&gt; get_avatar_url(
+			'',
+			array(
+				'size'          =&gt; 96,
+				'force_default' =&gt; true,
+				'default'       =&gt; get_option( 'avatar_default' ),
+			)
+		),
+	);
+
+	$post_content_block_attributes = wp_get_post_content_block_attributes();
+
+	if ( isset( $post_content_block_attributes ) ) {
+		$editor_settings['postContentAttributes'] = $post_content_block_attributes;
+	}
+
+	$editor_settings['canUpdateBlockBindings'] = current_user_can( 'edit_block_binding', $block_editor_context );
+
+	/**
+	 * Filters the settings to pass to the block editor for all editor type.
+	 *
+	 * @since 5.8.0
+	 *
+	 * @param array                   $editor_settings      Default editor settings.
+	 * @param WP_Block_Editor_Context $block_editor_context The current block editor context.
+	 */
+	$editor_settings = apply_filters( 'block_editor_settings_all', $editor_settings, $block_editor_context );
+
+	if ( ! empty( $block_editor_context-&gt;post ) ) {
+		$post = $block_editor_context-&gt;post;
+
+		/**
+		 * Filters the settings to pass to the block editor.
+		 *
+		 * @since 5.0.0
+		 * @deprecated 5.8.0 Use the <a href="https://developer.notmatt.press/reference/functions/block_editor_settings_all">'block_editor_settings_all'</a> filter instead.
+		 *
+		 * @param array   $editor_settings Default editor settings.
+		 * @param WP_Post $post            Post being edited.
+		 */
+		$editor_settings = apply_filters_deprecated( 'block_editor_settings', array( $editor_settings, $post ), '5.8.0', 'block_editor_settings_all' );
+	}
+
+	return $editor_settings;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/block-editor.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/block-editor.php#L488">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/block-editor.php#L488-L680">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/block_editor_settings/"><span class="hook-func">apply_filters_deprecated</span>( ‘block_editor_settings’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$editor_settings</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the settings to pass to the block editor.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/block_editor_settings_all/"><span class="hook-func">apply_filters</span>( ‘block_editor_settings_all’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$editor_settings</span></nobr>,  <nobr><span class="arg-type">WP_Block_Editor_Context</span> <span class="arg-name">$block_editor_context</span></nobr> )</a></dt><dd><p>Filters the settings to pass to the block editor for all editor type.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_post_content_block_attributes/">wp_get_post_content_block_attributes()</a><code>wp-includes/block-editor.php</code></td><td><p>Retrieves Post Content block attributes from the current post template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_theme_has_theme_json/">wp_theme_has_theme_json()</a><code>wp-includes/global-styles-and-settings.php</code></td><td><p>Checks whether a theme or its parent has a theme.json file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_get_iframed_editor_assets/">_wp_get_iframed_editor_assets()</a><code>wp-includes/block-editor.php</code></td><td><p>Collect the block editor assets that need to be loaded into the editor’s iframe.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_global_stylesheet/">wp_get_global_stylesheet()</a><code>wp-includes/global-styles-and-settings.php</code></td><td><p>Returns the stylesheet resulting of merging core, theme, and user data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_global_settings/">wp_get_global_settings()</a><code>wp-includes/global-styles-and-settings.php</code></td><td><p>Gets the settings resulting of merging core, theme, and user data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_is_block_theme/">wp_is_block_theme()</a><code>wp-includes/theme.php</code></td><td><p>Returns whether the active theme is a block-based theme or not.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_block_editor_theme_styles/">get_block_editor_theme_styles()</a><code>wp-includes/block-editor.php</code></td><td><p>Creates an array of theme styles to load into the block editor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_default_block_editor_settings/">get_default_block_editor_settings()</a><code>wp-includes/block-editor.php</code></td><td><p>Returns the default block editor settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_allowed_block_types/">get_allowed_block_types()</a><code>wp-includes/block-editor.php</code></td><td><p>Gets the list of allowed block types to use in the block editor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_block_categories/">get_block_categories()</a><code>wp-includes/block-editor.php</code></td><td><p>Returns all the categories for block types that will be shown in the block editor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters_deprecated/">apply_filters_deprecated()</a><code>wp-includes/plugin.php</code></td><td><p>Fires functions attached to a deprecated filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_avatar_url/">get_avatar_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the avatar URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_theme_supports/">current_theme_supports()</a><code>wp-includes/theme.php</code></td><td><p>Checks a theme’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 11 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/enqueue_scripts/">WP_Customize_Widgets::enqueue_scripts()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Enqueues scripts and styles for Customizer panel and export data to JavaScript.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

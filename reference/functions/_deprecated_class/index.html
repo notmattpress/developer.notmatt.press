@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_deprecated_class()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_deprecated_class()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_deprecated_class( <span class="arg-type">string</span> <span class="arg-name">$class_name</span>,  <span class="arg-type">string</span> <span class="arg-name">$version</span>,  <span class="arg-type">string</span> <span class="arg-name">$replacement</span> = <span class="arg-default">''</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Marks a class as deprecated and informs when it has been used.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>There is a <a href="https://developer.notmatt.press/reference/hooks/deprecated_class_run/">‘deprecated_class_run’</a> hook that will be called that can be used to get the backtrace up to what file and function called the deprecated class.</p>
+<p>The current behavior is to trigger a user error if <code>WP_DEBUG</code> is true.</p>
+<p>This function is to be used in the class constructor for every deprecated class.<br/>See <a href="https://developer.notmatt.press/reference/functions/_deprecated_constructor">_deprecated_constructor()</a> for deprecating PHP4-style constructors.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$class_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The name of the class being instantiated.</span></div></dd><dt><code>$version</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The version of WordPress that deprecated the class.</span></div></dd><dt><code>$replacement</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The class or function that should have been called.<br/>
+</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="5687"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _deprecated_class( $class_name, $version, $replacement = '' ) {
+
+	/**
+	 * Fires when a deprecated class is called.
+	 *
+	 * @since 6.4.0
+	 *
+	 * @param string $class_name  The name of the class being instantiated.
+	 * @param string $replacement The class or function that should have been called.
+	 * @param string $version     The version of WordPress that deprecated the class.
+	 */
+	do_action( 'deprecated_class_run', $class_name, $replacement, $version );
+
+	/**
+	 * Filters whether to trigger an error for a deprecated class.
+	 *
+	 * @since 6.4.0
+	 *
+	 * @param bool $trigger Whether to trigger an error for a deprecated class. Default true.
+	 */
+	if ( WP_DEBUG &amp;&amp; apply_filters( 'deprecated_class_trigger_error', true ) ) {
+		if ( function_exists( '__' ) ) {
+			if ( $replacement ) {
+				$message = sprintf(
+					/* translators: 1: PHP class name, 2: Version number, 3: Alternative class or function name. */
+					__( 'Class %1$s is &lt;strong&gt;deprecated&lt;/strong&gt; since version %2$s! Use %3$s instead.' ),
+					$class_name,
+					$version,
+					$replacement
+				);
+			} else {
+				$message = sprintf(
+					/* translators: 1: PHP class name, 2: Version number. */
+					__( 'Class %1$s is &lt;strong&gt;deprecated&lt;/strong&gt; since version %2$s with no alternative available.' ),
+					$class_name,
+					$version
+				);
+			}
+		} else {
+			if ( $replacement ) {
+				$message = sprintf(
+					'Class %1$s is &lt;strong&gt;deprecated&lt;/strong&gt; since version %2$s! Use %3$s instead.',
+					$class_name,
+					$version,
+					$replacement
+				);
+			} else {
+				$message = sprintf(
+					'Class %1$s is &lt;strong&gt;deprecated&lt;/strong&gt; since version %2$s with no alternative available.',
+					$class_name,
+					$version
+				);
+			}
+		}
+
+		wp_trigger_error( '', $message, E_USER_DEPRECATED );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L5687">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L5687-L5744">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/deprecated_class_run/"><span class="hook-func">do_action</span>( ‘deprecated_class_run’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$class_name</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$replacement</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$version</span></nobr> )</a></dt><dd><p>Fires when a deprecated class is called.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/deprecated_class_trigger_error/"><span class="hook-func">apply_filters</span>( ‘deprecated_class_trigger_error’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$trigger</span></nobr> )</a></dt><dd><p>Filters whether to trigger an error for a deprecated class.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_trigger_error/">wp_trigger_error()</a><code>wp-includes/functions.php</code></td><td><p>Generates a user-level error/warning/notice/deprecation message.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_user_search/__construct/">WP_User_Search::__construct()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>PHP5 Constructor – Sets up the object properties.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.4.0/">6.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

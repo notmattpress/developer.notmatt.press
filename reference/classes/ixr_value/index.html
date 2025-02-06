@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">IXR_Value</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>IXR_Value</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> IXR_Value {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p><a href="https://developer.notmatt.press/reference/classes/ixr_value/" rel="class">IXR_Value</a></p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/ixr_value/__construct/">IXR_Value::__construct</a></td><td>PHP5 constructor.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/ixr_value/calculatetype/">IXR_Value::calculateType</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/ixr_value/getxml/">IXR_Value::getXml</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/ixr_value/isstruct/">IXR_Value::isStruct</a></td><td>Checks whether or not the supplied array is a struct or not</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/ixr_value/ixr_value/">IXR_Value::IXR_Value</a></td><td>PHP4 constructor.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="8"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class IXR_Value {
+    var $data;
+    var $type;
+
+	/**
+	 * PHP5 constructor.
+	 */
+	function __construct( $data, $type = false )
+    {
+        $this-&gt;data = $data;
+        if (!$type) {
+            $type = $this-&gt;calculateType();
+        }
+        $this-&gt;type = $type;
+        if ($type == 'struct') {
+            // Turn all the values in the array in to new IXR_Value objects
+            foreach ($this-&gt;data as $key =&gt; $value) {
+                $this-&gt;data[$key] = new IXR_Value($value);
+            }
+        }
+        if ($type == 'array') {
+            for ($i = 0, $j = count($this-&gt;data); $i &lt; $j; $i++) {
+                $this-&gt;data[$i] = new IXR_Value($this-&gt;data[$i]);
+            }
+        }
+    }
+
+	/**
+	 * PHP4 constructor.
+	 */
+	public function IXR_Value( $data, $type = false ) {
+		self::__construct( $data, $type );
+	}
+
+    function calculateType()
+    {
+        if ($this-&gt;data === true || $this-&gt;data === false) {
+            return 'boolean';
+        }
+        if (is_integer($this-&gt;data)) {
+            return 'int';
+        }
+        if (is_double($this-&gt;data)) {
+            return 'double';
+        }
+
+        // Deal with IXR object types base64 and date
+        if (is_object($this-&gt;data) &amp;&amp; is_a($this-&gt;data, 'IXR_Date')) {
+            return 'date';
+        }
+        if (is_object($this-&gt;data) &amp;&amp; is_a($this-&gt;data, 'IXR_Base64')) {
+            return 'base64';
+        }
+
+        // If it is a normal PHP object convert it in to a struct
+        if (is_object($this-&gt;data)) {
+            $this-&gt;data = get_object_vars($this-&gt;data);
+            return 'struct';
+        }
+        if (!is_array($this-&gt;data)) {
+            return 'string';
+        }
+
+        // We have an array - is it an array or a struct?
+        if ($this-&gt;isStruct($this-&gt;data)) {
+            return 'struct';
+        } else {
+            return 'array';
+        }
+    }
+
+    function getXml()
+    {
+        // Return XML for this value
+        switch ($this-&gt;type) {
+            case 'boolean':
+                return '&lt;boolean&gt;'.(($this-&gt;data) ? '1' : '0').'&lt;/boolean&gt;';
+                break;
+            case 'int':
+                return '&lt;int&gt;'.$this-&gt;data.'&lt;/int&gt;';
+                break;
+            case 'double':
+                return '&lt;double&gt;'.$this-&gt;data.'&lt;/double&gt;';
+                break;
+            case 'string':
+                return '&lt;string&gt;'.htmlspecialchars($this-&gt;data).'&lt;/string&gt;';
+                break;
+            case 'array':
+                $return = '&lt;array&gt;&lt;data&gt;'."\n";
+                foreach ($this-&gt;data as $item) {
+                    $return .= '  &lt;value&gt;'.$item-&gt;getXml()."&lt;/value&gt;\n";
+                }
+                $return .= '&lt;/data&gt;&lt;/array&gt;';
+                return $return;
+                break;
+            case 'struct':
+                $return = '&lt;struct&gt;'."\n";
+                foreach ($this-&gt;data as $name =&gt; $value) {
+					$name = htmlspecialchars($name);
+                    $return .= "  &lt;member&gt;&lt;name&gt;$name&lt;/name&gt;&lt;value&gt;";
+                    $return .= $value-&gt;getXml()."&lt;/value&gt;&lt;/member&gt;\n";
+                }
+                $return .= '&lt;/struct&gt;';
+                return $return;
+                break;
+            case 'date':
+            case 'base64':
+                return $this-&gt;data-&gt;getXml();
+                break;
+        }
+        return false;
+    }
+
+    /**
+     * Checks whether or not the supplied array is a struct or not
+     *
+     * @param array $array
+     * @return bool
+     */
+    function isStruct($array)
+    {
+        $expected = 0;
+        foreach ($array as $key =&gt; $value) {
+            if ((string)$key !== (string)$expected) {
+                return true;
+            }
+            $expected++;
+        }
+        return false;
+    }
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/ixr/class-ixr-value.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/IXR/class-IXR-value.php#L8">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/IXR/class-IXR-value.php#L8-L138">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

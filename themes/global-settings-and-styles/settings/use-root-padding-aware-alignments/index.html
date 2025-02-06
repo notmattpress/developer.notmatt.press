@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/global-settings-and-styles/">Global Settings and Styles (theme.json)</a></span><span><a href="https://developer.wordpress.org/themes/global-settings-and-styles/settings/">Settings</a></span><span class="is-current-page">Use Root Padding Aware Alignments</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Use Root Padding Aware Alignments</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>The <code>settings.useRootPaddingAwareAlignments</code> property can be one of the most confusing settings in <code>theme.json</code>. It is not tied to an interface option. Nor is it used for registering presets. Instead, it’s for configuring where WordPress places your theme’s horizontal padding styles.</p>
+<p>This means it works in conjunction with <code>styles.spacing.padding</code> in <code>theme.json</code>. You can find out more about general styling in the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles">Styles documentation</a>, but you’ll learn how this specific style works alongside this setting here.</p>
+<h2 class="is-toc-heading wp-block-heading" id="what-is-root-padding" tabindex="-1"><a href="#what-is-root-padding">What is root padding?</a></h2>
+<p>Before understanding how the <code>settings.useRootPaddingAwareAlignments</code> property works, you must first understand what root padding is.</p>
+<p>Root padding is the padding that is applied to a web page’s “root” element. In the case of WordPress themes, this is the <code>&lt;body&gt;</code> element. To customize the spacing for the root element, you must target the <code>styles.spacing.padding</code> element in <code>theme.json</code>.</p>
+<p>Take the following <code>theme.json</code> snippet, for example. It adds <code>0</code> for top and bottom padding and <code>2rem</code> for left and right padding:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,	
+	"styles": {
+		"spacing": {
+			"padding": {
+				"top": "0",
+				"bottom": "0",
+				"left": "2rem",
+				"right": "2rem"
+			}
+		}
+	}
+}</code></pre>
+<p>By default, this will add <code>2rem</code> of padding on the left and right sides of the <code>&lt;body&gt;</code> (root) element.</p>
+<p>As shown in this screenshot, there is horizontal padding at the root, and a full-width Cover block stretches until it hits that padding:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding.jpg?ssl=1"><img alt="WordPress site header with a Cover block background. It has padding to the left and right of it so that it doesn't stretch the full width of the screen." class="wp-image-149093" data-recalc-dims="1" decoding="async" fetchpriority="high" height="1024" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding.jpg?resize=2048%2C1024&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding.jpg?resize=300%2C150&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding.jpg?resize=1024%2C512&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding.jpg?resize=768%2C384&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding.jpg?resize=1536%2C768&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>This is the CSS that WordPress outputs based on the above <code>theme.json</code> code:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">body {
+	padding-top: 0;
+	padding-right: 2rem;
+	padding-bottom: 0;
+	padding-left: 2rem;
+}</code></pre>
+<p>But—and this is where things can look odd to seasoned designers—when <code>settings.useRootPaddingAwareAlignments</code> is enabled, the “root” padding is no longer applied to the root element. It is applied to container blocks like Group. </p>
+<p>You’ll learn more about why this happens in the next section. The main goal right now is to understand that root padding is traditionally applied to the <code>&lt;body&gt;</code> element, and that is what most theme authors would expect.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>For root padding aware alignments, WordPress is only concerned with the horizontal (left and right) padding. So the vertical (top and bottom) padding is not relevant to this documentation.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="enabling-root-padding-aware-alignments" tabindex="-1"><a href="#enabling-root-padding-aware-alignments">Enabling root padding aware alignments</a></h2>
+<p>By default, WordPress will apply root padding to the <code>&lt;body&gt;</code> element. If this makes sense for your theme’s design, you don’t need to do anything else.</p>
+<p><em>But what if you want to let full-width items stretch to the edges of the screen </em><strong><em>and</em></strong><em> have padding on the root element? </em></p>
+<p>When compared to the first screenshot, notice how the Cover block stretches to edges of the screen but there is padding still applied to the nested blocks here:</p>
+<figure class="wp-block-image size-large"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding-aware.jpg?ssl=1"><img alt="WordPress site header with a Cover block background that stretches the full width of the screen." class="wp-image-149094" data-recalc-dims="1" decoding="async" height="510" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding-aware.jpg?resize=1024%2C510&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding-aware.jpg?resize=1024%2C510&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding-aware.jpg?resize=300%2C149&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding-aware.jpg?resize=768%2C382&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding-aware.jpg?resize=1536%2C764&amp;ssl=1 1536w, https://i0.wp.com/developer.wordpress.org/files/2023/10/root-padding-aware.jpg?w=2048&amp;ssl=1 2048w" width="1024"/></a></figure>
+<p>This is a common design pattern, and there are several ways to stretch elements beyond their containers in CSS. But WordPress has a standard approach that would work with any theme.</p>
+<p>That’s where <code>settings.useRootPaddingAwareAlignments</code> comes in. When this property is set to <code>true</code>, it puts the root padding on container elements instead of <code>&lt;body&gt;</code>. This must also be combined with a <code>styles.spacing.padding</code> object, particularly with horizontal padding applied.</p>
+<p>Try this code in your <code>theme.json</code>:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"settings": {
+		"useRootPaddingAwareAlignments": true
+	},	
+	"styles": {
+		"spacing": {
+			"padding": {
+				"top": "0",
+				"bottom": "0",
+				"left": "2rem",
+				"right": "2rem"
+			}
+		}
+	}
+}</code></pre>
+<p>There is no right or wrong way to handle root padding. It is a situational setting where you must decide which option is best for your theme’s design.</p>
+<h3 class="is-toc-heading wp-block-heading" id="how-does-this-work" tabindex="-1"><a href="#how-does-this-work">How does this work?</a></h3>
+<p>It’s not particularly vital to know how WordPress handles all of this under the hood, but sometimes you might just want a deeper understanding of what’s going on.</p>
+<p>When you enable <code>settings.useRootPaddingAwareAlignments</code>, as shown in the last <code>theme.json</code> example, WordPress will generate two new bits of CSS. The first is that it defines some CSS custom properties for the root padding:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">body {
+	--wp--style--root--padding-top: 0;
+	--wp--style--root--padding-right: 2rem;
+	--wp--style--root--padding-bottom: 0;
+	--wp--style--root--padding-left: 2rem;
+}</code></pre>
+<p>The second is that it adds a <code>.has-global-padding</code> class:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">.has-global-padding {
+	padding-right: var(--wp--style--root--padding-right);
+	padding-left: var(--wp--style--root--padding-left);
+}</code></pre>
+<p>This class is then given to container blocks with constrained layouts (for example, Group blocks with the <strong>Layout &gt; Inner blocks use content width</strong> option enabled):</p>
+<pre class="wp-block-code"><code class="language-markup" lang="markup">&lt;div class="wp-block-group has-global-padding is-layout-constrained wp-block-group-is-layout-constrained"&gt;
+	&lt;!-- nested blocks... --&gt;
+&lt;/div&gt;</code></pre>
+<p>Beyond that, WordPress adds inline CSS to stretch nested wide and full-width blocks beyond their parent block’s width (including the additional padding that’s added to the width).</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

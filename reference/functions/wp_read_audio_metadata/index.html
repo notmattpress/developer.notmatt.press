@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_read_audio_metadata()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_read_audio_metadata()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_read_audio_metadata( <span class="arg-type">string</span> <span class="arg-name">$file</span> ): <span class="return-type">array|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves metadata from an audio file’s ID3 tags.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$file</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Path to file.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|false</span> Returns array of metadata, if found.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3688"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_read_audio_metadata( $file ) {
+	if ( ! file_exists( $file ) ) {
+		return false;
+	}
+
+	$metadata = array();
+
+	if ( ! defined( 'GETID3_TEMP_DIR' ) ) {
+		define( 'GETID3_TEMP_DIR', get_temp_dir() );
+	}
+
+	if ( ! class_exists( 'getID3', false ) ) {
+		require ABSPATH . WPINC . '/ID3/getid3.php';
+	}
+
+	$id3 = new getID3();
+	// Required to get the `created_timestamp` value.
+	$id3-&gt;options_audiovideo_quicktime_ReturnAtomData = true; // phpcs:ignore WordPress.NamingConventions.ValidVariableName
+
+	$data = $id3-&gt;analyze( $file );
+
+	if ( ! empty( $data['audio'] ) ) {
+		unset( $data['audio']['streams'] );
+		$metadata = $data['audio'];
+	}
+
+	if ( ! empty( $data['fileformat'] ) ) {
+		$metadata['fileformat'] = $data['fileformat'];
+	}
+
+	if ( ! empty( $data['filesize'] ) ) {
+		$metadata['filesize'] = (int) $data['filesize'];
+	}
+
+	if ( ! empty( $data['mime_type'] ) ) {
+		$metadata['mime_type'] = $data['mime_type'];
+	}
+
+	if ( ! empty( $data['playtime_seconds'] ) ) {
+		$metadata['length'] = (int) round( $data['playtime_seconds'] );
+	}
+
+	if ( ! empty( $data['playtime_string'] ) ) {
+		$metadata['length_formatted'] = $data['playtime_string'];
+	}
+
+	if ( empty( $metadata['created_timestamp'] ) ) {
+		$created_timestamp = wp_get_media_creation_timestamp( $data );
+
+		if ( false !== $created_timestamp ) {
+			$metadata['created_timestamp'] = $created_timestamp;
+		}
+	}
+
+	wp_add_id3_tag_data( $metadata, $data );
+
+	$file_format = isset( $metadata['fileformat'] ) ? $metadata['fileformat'] : null;
+
+	/**
+	 * Filters the array of metadata retrieved from an audio file.
+	 *
+	 * In core, usually this selection is what is stored.
+	 * More complete data can be parsed from the `$data` parameter.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param array       $metadata    Filtered audio metadata.
+	 * @param string      $file        Path to audio file.
+	 * @param string|null $file_format File format of audio, as analyzed by getID3.
+	 *                                 Null if unknown.
+	 * @param array       $data        Raw metadata from getID3.
+	 */
+	return apply_filters( 'wp_read_audio_metadata', $metadata, $file, $file_format, $data );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/media.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/media.php#L3688">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/media.php#L3688-L3761">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_read_audio_metadata/"><span class="hook-func">apply_filters</span>( ‘wp_read_audio_metadata’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$metadata</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$file</span></nobr>,  <nobr><span class="arg-type">string|null</span> <span class="arg-name">$file_format</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$data</span></nobr> )</a></dt><dd><p>Filters the array of metadata retrieved from an audio file.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_media_creation_timestamp/">wp_get_media_creation_timestamp()</a><code>wp-admin/includes/media.php</code></td><td><p>Parses creation date from media metadata.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_add_id3_tag_data/">wp_add_id3_tag_data()</a><code>wp-admin/includes/media.php</code></td><td><p>Parses ID3v2, ID3v1, and getID3 comments to extract usable data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_temp_dir/">get_temp_dir()</a><code>wp-includes/functions.php</code></td><td><p>Determines a writable directory for temporary files.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_generate_attachment_metadata/">wp_generate_attachment_metadata()</a><code>wp-admin/includes/image.php</code></td><td><p>Generates attachment meta data and create image sub-sizes for images.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/media_handle_upload/">media_handle_upload()</a><code>wp-admin/includes/media.php</code></td><td><p>Saves a file submitted from a POST request and create an attachment post for it.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.6.0/">3.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="1418" id="comment-1418">
+<article class="comment-body" id="div-comment-1418">
+<a class="screen-reader-text" href="#comment-content-1418">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1418">
+<p><strong>Example</strong></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$uploads = wp_upload_dir();
+$uploads_dir = ( $uploads['baseurl'] . $uploads['subdir'] );
+$file = $uploads_dir . '/example.mp3';
+$metadata = wp_read_audio_metadata( $file );
+print "Audio is " . $metadata['length'] . ' seconds long';</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1418">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-lucasmarinifalbo odd alt thread-odd thread-alt depth-1" data-comment-id="6515" id="comment-6515">
+<article class="comment-body" id="div-comment-6515">
+<a class="screen-reader-text" href="#comment-content-6515">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6515">
+<p>This function does not work on the front-end, so if you need to call it on the front-end, first you need to require the library.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Requires the media library that unlocks the function
+require_once ABSPATH . 'wp-admin/includes/media.php';
+
+// Get the audio metadata
+$meta = wp_read_audio_metadata( $path );</code></pre>
+<p>One important detail that people misses is that the function expects the file path, not the url.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6515">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

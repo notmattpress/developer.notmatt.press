@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/rest-api/">REST API Handbook</a></span><span><a href="https://developer.wordpress.org/rest-api/using-the-rest-api/">Using the REST API</a></span><span class="is-current-page">Authentication</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Authentication</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="cookie-authentication" tabindex="-1"><a href="#cookie-authentication">Cookie Authentication</a></h2>
+<p>Cookie authentication is the standard authentication method included with WordPress. When you log in to your dashboard, this sets up the cookies correctly for you, so plugin and theme developers need only to have a logged-in user.</p>
+<p>However, the REST API includes a technique called <a href="https://developer.notmatt.press/apis/security/nonces/">nonces</a> to avoid <a href="http://en.wikipedia.org/wiki/Cross-site_request_forgery">CSRF</a> issues. This prevents other sites from forcing you to perform actions without explicitly intending to do so. This requires slightly special handling for the API.</p>
+<p>For developers using the built-in Javascript API, this is handled automatically for you. This is the recommended way to use the API for plugins and themes. Custom data models can extend <code>wp.api.models.Base</code> to ensure this is sent correctly for any custom requests.</p>
+<p>For developers making manual Ajax requests, the nonce will need to be passed with each request. The API uses nonces with the action set to <code>wp_rest</code>. These can then be passed to the API via the <code>_wpnonce</code> data parameter (either POST data or in the query for GET requests), or via the <code>X-WP-Nonce</code> header. If no nonce is provided the API will set the current user to 0, turning the request into an <strong>unauthenticated request</strong>, even if you’re logged into WordPress.</p>
+<p>Note: Until recently, most software had spotty support for <code>DELETE</code> requests. For instance, PHP doesn’t transform the request body of a <code>DELETE</code> request into a super global. As such, supplying the nonce as a header is the most reliable approach.</p>
+<p>It is important to keep in mind that this authentication method relies on WordPress cookies. As a result this method is only applicable when the REST API is used inside of WordPress and the current user is logged in. In addition, the current user must have the appropriate capability to perform the action being performed.</p>
+<p>As an example, this is how the built-in Javascript client creates the nonce:</p>
+<pre><code class="language-php">&lt;?php
+wp_localize_script( 'wp-api', 'wpApiSettings', array(
+    'root' =&gt; esc_url_raw( rest_url() ),
+    'nonce' =&gt; wp_create_nonce( 'wp_rest' )
+) );
+</code></pre>
+<p>This is then used in the base model:</p>
+<pre><code class="language-js">options.beforeSend = function(xhr) {
+    xhr.setRequestHeader('X-WP-Nonce', wpApiSettings.nonce);
+
+    if (beforeSend) {
+        return beforeSend.apply(this, arguments);
+    }
+};
+</code></pre>
+<p>Here is an example of editing the title of a post, using jQuery AJAX:</p>
+<pre><code class="language-js">$.ajax( {
+    url: wpApiSettings.root + 'wp/v2/posts/1',
+    method: 'POST',
+    beforeSend: function ( xhr ) {
+        xhr.setRequestHeader( 'X-WP-Nonce', wpApiSettings.nonce );
+    },
+    data:{
+        'title' : 'Hello Moon'
+    }
+} ).done( function ( response ) {
+    console.log( response );
+} );
+</code></pre>
+<p>Note that you do not need to verify that the nonce is valid inside your custom end point. This is automatically done for you in <code>rest_cookie_check_errors()</code>.</p>
+<h2 class="is-toc-heading" id="basic-authentication-with-application-passwords" tabindex="-1"><a href="#basic-authentication-with-application-passwords">Basic Authentication with Application Passwords</a></h2>
+<p>As of 5.6, WordPress has shipped with <a href="https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/">Application Passwords</a>, which can be generated from an Edit User page (wp-admin -&gt; Users -&gt; Edit User).</p>
+<p>The credentials can be passed along to REST API requests served over https:// using <a href="https://ec.haxx.se/http/http-auth">Basic Auth</a> / <a href="https://tools.ietf.org/html/rfc7617">RFC 7617</a> — <a href="https://ec.haxx.se/http/http-auth">here’s the documentation for how to use it with cURL</a>.</p>
+<p>For a simple command-line script example, just swap out USERNAME, PASSWORD, and HOSTNAME in this with their respective values:</p>
+<pre><code>curl --user "USERNAME:PASSWORD" https://HOSTNAME/wp-json/wp/v2/users?context=edit
+</code></pre>
+<h2 class="is-toc-heading" id="authentication-plugins" tabindex="-1"><a href="#authentication-plugins">Authentication Plugins</a></h2>
+<p>Plugins may be added to support alternative modes of authentication that will work from remote applications. Some example plugins are <a href="https://wordpress.org/plugins/rest-api-oauth1/">OAuth 1.0a Server</a> and <a href="https://wordpress.org/plugins/jwt-authentication-for-wp-rest-api/">JSON Web Tokens</a>.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">
+<p>There’s also a <a href="https://github.com/WP-API/Basic-Auth">Basic Authentication</a> plugin.</p>
+<p>Note that this plugin requires sending your username and password with every request, and should only be used for development and testing i.e. not in a production environment. Using Application Passwords (see above) is preferred.</p>
+<p>
+</p></div></div>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

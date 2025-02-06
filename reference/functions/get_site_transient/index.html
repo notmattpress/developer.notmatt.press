@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_site_transient()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_site_transient()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_site_transient( <span class="arg-type">string</span> <span class="arg-name">$transient</span> ): <span class="return-type">mixed</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the value of a site transient.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If the transient does not exist, does not have a value, or has expired, then the return value will be false.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/get_transient">get_transient()</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$transient</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Transient name. Expected to not be SQL-escaped.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">mixed</span> Value of transient.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2520"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_site_transient( $transient ) {
+
+	/**
+	 * Filters the value of an existing site transient before it is retrieved.
+	 *
+	 * The dynamic portion of the hook name, `$transient`, refers to the transient name.
+	 *
+	 * Returning a value other than boolean false will short-circuit retrieval and
+	 * return that value instead.
+	 *
+	 * @since 2.9.0
+	 * @since 4.4.0 The `$transient` parameter was added.
+	 *
+	 * @param mixed  $pre_site_transient The default value to return if the site transient does not exist.
+	 *                                   Any value other than false will short-circuit the retrieval
+	 *                                   of the transient, and return that value.
+	 * @param string $transient          Transient name.
+	 */
+	$pre = apply_filters( "pre_site_transient_{$transient}", false, $transient );
+
+	if ( false !== $pre ) {
+		return $pre;
+	}
+
+	if ( wp_using_ext_object_cache() || wp_installing() ) {
+		$value = wp_cache_get( $transient, 'site-transient' );
+	} else {
+		// Core transients that do not have a timeout. Listed here so querying timeouts can be avoided.
+		$no_timeout       = array( 'update_core', 'update_plugins', 'update_themes' );
+		$transient_option = '_site_transient_' . $transient;
+		if ( ! in_array( $transient, $no_timeout, true ) ) {
+			$transient_timeout = '_site_transient_timeout_' . $transient;
+			wp_prime_site_option_caches( array( $transient_option, $transient_timeout ) );
+
+			$timeout = get_site_option( $transient_timeout );
+			if ( false !== $timeout &amp;&amp; $timeout &lt; time() ) {
+				delete_site_option( $transient_option );
+				delete_site_option( $transient_timeout );
+				$value = false;
+			}
+		}
+
+		if ( ! isset( $value ) ) {
+			$value = get_site_option( $transient_option );
+		}
+	}
+
+	/**
+	 * Filters the value of an existing site transient.
+	 *
+	 * The dynamic portion of the hook name, `$transient`, refers to the transient name.
+	 *
+	 * @since 2.9.0
+	 * @since 4.4.0 The `$transient` parameter was added.
+	 *
+	 * @param mixed  $value     Value of site transient.
+	 * @param string $transient Transient name.
+	 */
+	return apply_filters( "site_transient_{$transient}", $value, $transient );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/option.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/option.php#L2520">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/option.php#L2520-L2579">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_site_transient_transient/"><span class="hook-func">apply_filters</span>( “pre_site_transient_{$transient}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$pre_site_transient</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$transient</span></nobr> )</a></dt><dd><p>Filters the value of an existing site transient before it is retrieved.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/site_transient_transient/"><span class="hook-func">apply_filters</span>( “site_transient_{$transient}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$transient</span></nobr> )</a></dt><dd><p>Filters the value of an existing site transient.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_prime_site_option_caches/">wp_prime_site_option_caches()</a><code>wp-includes/option.php</code></td><td><p>Primes specific network options for the current network into the cache with a single database query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_installing/">wp_installing()</a><code>wp-includes/load.php</code></td><td><p>Checks or sets whether WordPress is in “installation” mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_using_ext_object_cache/">wp_using_ext_object_cache()</a><code>wp-includes/load.php</code></td><td><p>Toggles <code>$_wp_using_ext_object_cache</code> on and off without directly touching global.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/delete_site_option/">delete_site_option()</a><code>wp-includes/option.php</code></td><td><p>Removes an option by name for the current network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_site_option/">get_site_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieve an option value for the current network based on name of option.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/get_dependency_api_data/">WP_Plugin_Dependencies::get_dependency_api_data()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Retrieves and stores dependency plugin data from the WordPress.org Plugin API.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_collection/load_from_url/">WP_Font_Collection::load_from_url()</a><code>wp-includes/fonts/class-wp-font-collection.php</code></td><td><p>Loads the font collection data from a JSON file URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_pattern_cache/">WP_Theme::get_pattern_cache()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Gets block pattern cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_url_details_controller/get_cache/">WP_REST_URL_Details_Controller::get_cache()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php</code></td><td><p>Utility function to retrieve a value from the cache at a given key.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_pattern_directory_controller/get_items/">WP_REST_Pattern_Directory_Controller::get_items()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-pattern-directory-controller.php</code></td><td><p>Search and retrieve block patterns metadata</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_themes_list_table/column_autoupdates/">WP_MS_Themes_List_Table::column_autoupdates()</a><code>wp-admin/includes/class-wp-ms-themes-list-table.php</code></td><td><p>Handles the auto-updates column output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_check_php_version/">wp_check_php_version()</a><code>wp-admin/includes/misc.php</code></td><td><p>Checks if the user needs to update PHP.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_install_list_table/get_installed_plugins/">WP_Plugin_Install_List_Table::get_installed_plugins()</a><code>wp-admin/includes/class-wp-plugin-install-list-table.php</code></td><td><p>Returns the list of known plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_community_events/get_cached_events/">WP_Community_Events::get_cached_events()</a><code>wp-admin/includes/class-wp-community-events.php</code></td><td><p>Gets cached events.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_update_theme/">wp_ajax_update_theme()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles updating a theme via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_available_translations/">wp_get_available_translations()</a><code>wp-admin/includes/translation-install.php</code></td><td><p>Get available translations from the WordPress.org API.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/run/">WP_Automatic_Updater::run()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Kicks off the background update process, looping through all pending updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/plugin_upgrader/bulk_upgrade/">Plugin_Upgrader::bulk_upgrade()</a><code>wp-admin/includes/class-plugin-upgrader.php</code></td><td><p>Upgrades several plugins at once.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/theme_upgrader/upgrade/">Theme_Upgrader::upgrade()</a><code>wp-admin/includes/class-theme-upgrader.php</code></td><td><p>Upgrades a theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/theme_upgrader/bulk_upgrade/">Theme_Upgrader::bulk_upgrade()</a><code>wp-admin/includes/class-theme-upgrader.php</code></td><td><p>Upgrades several themes at once.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/plugin_upgrader/upgrade/">Plugin_Upgrader::upgrade()</a><code>wp-admin/includes/class-plugin-upgrader.php</code></td><td><p>Upgrades a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_prepare_themes_for_js/">wp_prepare_themes_for_js()</a><code>wp-admin/includes/theme.php</code></td><td><p>Prepares themes for JavaScript.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_theme_update_available/">get_theme_update_available()</a><code>wp-admin/includes/theme.php</code></td><td><p>Retrieves the update link if there is a theme update available.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_theme_feature_list/">get_theme_feature_list()</a><code>wp-admin/includes/theme.php</code></td><td><p>Retrieves list of WordPress theme features (aka theme tags).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_plugins_list_table/prepare_items/">WP_Plugins_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-plugins-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_themes_list_table/prepare_items/">WP_MS_Themes_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-ms-themes-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_core_updates/">get_core_updates()</a><code>wp-admin/includes/update.php</code></td><td><p>Gets available core updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/find_core_auto_update/">find_core_auto_update()</a><code>wp-admin/includes/update.php</code></td><td><p>Gets the best available (and enabled) Auto-Update for WordPress core.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/find_core_update/">find_core_update()</a><code>wp-admin/includes/update.php</code></td><td><p>Finds the available update for WordPress core.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_plugin_updates/">get_plugin_updates()</a><code>wp-admin/includes/update.php</code></td><td><p>Retrieves plugins with updates available.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_plugin_update_rows/">wp_plugin_update_rows()</a><code>wp-admin/includes/update.php</code></td><td><p>Adds a callback to display update information for plugins with updates available.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_plugin_update_row/">wp_plugin_update_row()</a><code>wp-admin/includes/update.php</code></td><td><p>Displays update information for a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_theme_updates/">get_theme_updates()</a><code>wp-admin/includes/update.php</code></td><td><p>Retrieves themes with updates available.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_theme_update_rows/">wp_theme_update_rows()</a><code>wp-admin/includes/update.php</code></td><td><p>Adds a callback to display update information for themes with updates available.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_theme_update_row/">wp_theme_update_row()</a><code>wp-admin/includes/update.php</code></td><td><p>Displays update information for a theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_check_browser_version/">wp_check_browser_version()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Checks if the user needs a browser update.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/install_popular_tags/">install_popular_tags()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Retrieves popular WordPress plugin tags.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/install_plugin_install_status/">install_plugin_install_status()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Determines the status we can perform on a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_plugins/">delete_plugins()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Removes directory and files of a plugin for a list of plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_popular_importers/">wp_get_popular_importers()</a><code>wp-admin/includes/import.php</code></td><td><p>Returns a list from WordPress.org of popular importer plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_credits/">wp_credits()</a><code>wp-admin/includes/credits.php</code></td><td><p>Retrieves the contributor credits.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_theme_roots/">get_theme_roots()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves theme roots.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/search_theme_directories/">search_theme_directories()</a><code>wp-includes/theme.php</code></td><td><p>Searches all registered theme directories for complete and valid themes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_maybe_update_plugins/">_maybe_update_plugins()</a><code>wp-includes/update.php</code></td><td><p>Checks the last time plugins were run before checking plugin versions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_maybe_update_themes/">_maybe_update_themes()</a><code>wp-includes/update.php</code></td><td><p>Checks themes versions only after a duration of time.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_version_check/">wp_version_check()</a><code>wp-includes/update.php</code></td><td><p>Checks WordPress version against the newest version.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_plugins/">wp_update_plugins()</a><code>wp-includes/update.php</code></td><td><p>Checks for available updates to plugins based on the latest versions hosted on WordPress.org.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_themes/">wp_update_themes()</a><code>wp-includes/update.php</code></td><td><p>Checks for available updates to themes based on the latest versions hosted on WordPress.org.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_translation_updates/">wp_get_translation_updates()</a><code>wp-includes/update.php</code></td><td><p>Retrieves a list of all language updates available.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_update_data/">wp_get_update_data()</a><code>wp-includes/update.php</code></td><td><p>Collects counts and UI strings for available updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_maybe_update_core/">_maybe_update_core()</a><code>wp-includes/update.php</code></td><td><p>Determines whether core should be updated.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 41 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.9.0/">2.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

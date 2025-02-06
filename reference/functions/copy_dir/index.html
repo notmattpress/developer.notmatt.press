@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">copy_dir()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>copy_dir()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">copy_dir( <span class="arg-type">string</span> <span class="arg-name">$from</span>,  <span class="arg-type">string</span> <span class="arg-name">$to</span>,  <span class="arg-type">string[]</span> <span class="arg-name">$skip_list</span> = <span class="arg-default">array()</span> ): <span class="return-type">true|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Copies a directory from one location to another via the WordPress Filesystem Abstraction.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Assumes that <a href="https://developer.notmatt.press/reference/functions/wp_filesystem/" rel="function">WP_Filesystem()</a>  has already been called and setup.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$from</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Source directory.</span></div></dd><dt><code>$to</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Destination directory.</span></div></dd><dt><code>$skip_list</code><span class="type"><span class="string[]">string[]</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">An array of files/folders to skip copying.</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">true|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> True on success, <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1994"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function copy_dir( $from, $to, $skip_list = array() ) {
+	global $wp_filesystem;
+
+	$dirlist = $wp_filesystem-&gt;dirlist( $from );
+
+	if ( false === $dirlist ) {
+		return new WP_Error( 'dirlist_failed_copy_dir', __( 'Directory listing failed.' ), basename( $from ) );
+	}
+
+	$from = trailingslashit( $from );
+	$to   = trailingslashit( $to );
+
+	if ( ! $wp_filesystem-&gt;exists( $to ) &amp;&amp; ! $wp_filesystem-&gt;mkdir( $to ) ) {
+		return new WP_Error(
+			'mkdir_destination_failed_copy_dir',
+			__( 'Could not create the destination directory.' ),
+			basename( $to )
+		);
+	}
+
+	foreach ( (array) $dirlist as $filename =&gt; $fileinfo ) {
+		if ( in_array( $filename, $skip_list, true ) ) {
+			continue;
+		}
+
+		if ( 'f' === $fileinfo['type'] ) {
+			if ( ! $wp_filesystem-&gt;copy( $from . $filename, $to . $filename, true, FS_CHMOD_FILE ) ) {
+				// If copy failed, chmod file to 0644 and try again.
+				$wp_filesystem-&gt;chmod( $to . $filename, FS_CHMOD_FILE );
+
+				if ( ! $wp_filesystem-&gt;copy( $from . $filename, $to . $filename, true, FS_CHMOD_FILE ) ) {
+					return new WP_Error( 'copy_failed_copy_dir', __( 'Could not copy file.' ), $to . $filename );
+				}
+			}
+
+			wp_opcache_invalidate( $to . $filename );
+		} elseif ( 'd' === $fileinfo['type'] ) {
+			if ( ! $wp_filesystem-&gt;is_dir( $to . $filename ) ) {
+				if ( ! $wp_filesystem-&gt;mkdir( $to . $filename, FS_CHMOD_DIR ) ) {
+					return new WP_Error( 'mkdir_failed_copy_dir', __( 'Could not create directory.' ), $to . $filename );
+				}
+			}
+
+			// Generate the $sub_skip_list for the subdirectory as a sub-set of the existing $skip_list.
+			$sub_skip_list = array();
+
+			foreach ( $skip_list as $skip_item ) {
+				if ( str_starts_with( $skip_item, $filename . '/' ) ) {
+					$sub_skip_list[] = preg_replace( '!^' . preg_quote( $filename, '!' ) . '/!i', '', $skip_item );
+				}
+			}
+
+			$result = copy_dir( $from . $filename, $to . $filename, $sub_skip_list );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+		}
+	}
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/file.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/file.php#L1994">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/file.php#L1994-L2055">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_opcache_invalidate/">wp_opcache_invalidate()</a><code>wp-admin/includes/file.php</code></td><td><p>Attempts to clear the opcode cache for an individual PHP file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/copy_dir/">copy_dir()</a><code>wp-admin/includes/file.php</code></td><td><p>Copies a directory from one location to another via the WordPress Filesystem Abstraction.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/move_dir/">move_dir()</a><code>wp-admin/includes/file.php</code></td><td><p>Moves a directory from one location to another.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/install_package/">WP_Upgrader::install_package()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Install a package.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/update_core/">update_core()</a><code>wp-admin/includes/update-core.php</code></td><td><p>Upgrades the core of WordPress.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/copy_dir/">copy_dir()</a><code>wp-admin/includes/file.php</code></td><td><p>Copies a directory from one location to another via the WordPress Filesystem Abstraction.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-jdgrimes odd alt thread-odd thread-alt depth-1" data-comment-id="1815" id="comment-1815">
+<article class="comment-body" id="div-comment-1815">
+<a class="screen-reader-text" href="#comment-content-1815">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1815">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Connecting to the filesystem.
+if ( ! WP_Filesystem() ) {
+	// Unable to connect to the filesystem, FTP credentials may be required or something.
+	// You can request these with request_filesystem_credentials()
+	exit;
+}
+
+// Don't forget that the target directory needs to exist.
+// If it doesn't already, you'll need to create it.
+global $wp_filesystem;
+$wp_filesystem-&gt;mkdir( $target_dir );
+
+// Now copy all the files in the source directory to the target directory.
+copy_dir( $src_dir, $target_dir );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1815">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

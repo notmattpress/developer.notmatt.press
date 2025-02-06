@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/commands</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/commands</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Commands is a generic package that allows registering and modifying commands to be displayed using the commands menu, also called the Command Palette. The Command Palette can be accessed in the Editor using <code>cmd+k</code>.</p>
+<h2 class="is-toc-heading" id="types-of-commands" tabindex="-1"><a href="#types-of-commands">Types of commands</a></h2>
+<p>There are two ways to register commands: static or dynamic. Both methods receive a command object as an argument, which provides:</p>
+<ul>
+<li><code>name</code>: A unique machine-readable name for the command</li>
+<li><code>label</code>: A human-readable label</li>
+<li><code>icon</code>: An SVG icon</li>
+<li><code>callback</code>: A callback function that is called when the command is selected</li>
+<li><code>context</code>: (Optional) The context of the command</li>
+</ul>
+<h3 class="is-toc-heading" id="static-commands" tabindex="-1"><a href="#static-commands">Static commands</a></h3>
+<p>Static commands can be registered using the <code>wp.data.dispatch( wp.commands.store ).registerCommand</code> action or using the <code>wp.commands.useCommand</code> React hook. Static commands are commonly used to perform a specific action. These could include adding a new page or opening a section of the Editor interface, such as opening the Editor Preferences modal. See the <code>useCommand</code> <a href="#usecommand">code example</a> below.</p>
+<h3 class="is-toc-heading" id="dynamic-commands" tabindex="-1"><a href="#dynamic-commands">Dynamic commands</a></h3>
+<p>Dynamic commands, on the other hand, are registered using “command loaders”, <code>wp.commands.useCommandLoader</code>. These loaders are needed when the command list depends on a search term entered by the user in the Command Palette input or when some commands are only available when some conditions are met.</p>
+<p>For example, when a user types “contact”, the Command Palette needs to filter the available pages using that input to try and find the Contact page. See the <code>useCommandLoader</code> <a href="#usecommandloader">code example</a> below.</p>
+<h2 class="is-toc-heading" id="contextual-commands" tabindex="-1"><a href="#contextual-commands">Contextual commands</a></h2>
+<p>Static and dynamic commands can be contextual. This means that in a given context (for example, when navigating the Site Editor or editing a template), some specific commands are given more priority and are visible as soon as you open the Command Palette. Also, when typing the Command Palette, these contextual commands are shown above the rest of the commands.</p>
+<p>At the moment, three contexts have been implemented:</p>
+<ul>
+<li><code>site-editor</code>: This is the context that is set when you are navigating in the site editor (sidebar visible).</li>
+<li><code>entity-edit</code>: This is the context that is set when you are editing a document (template, template part or page).</li>
+<li><code>block-selection-edit</code>: This is the context that is set when a block is selected.</li>
+</ul>
+<p>As the usage of the Command Palette expands, more contexts will be added.</p>
+<p>Attaching a command or command loader to a given context is as simple as adding the <code>context</code> property (with the right context value from the available contexts above) to the <code>useCommand</code> or <code>useCommandLoader</code> calls.</p>
+<h2 class="is-toc-heading" id="wordpress-data-api" tabindex="-1"><a href="#wordpress-data-api">WordPress Data API</a></h2>
+<p>The Command Palette also offers a number of <a href="https://developer.notmatt.press/block-editor/reference-guides/data/data-core-commands/">selectors and actions</a> to manipulate its state, which include:</p>
+<ul>
+<li>Retrieving the registered commands and command loaders using the following selectors <code>getCommands</code> and <code>getCommandLoader</code></li>
+<li>Checking if the Command Palette is open using the <code>isOpen</code> selector.</li>
+<li>Programmatically open or close the Command Palette using the <code>open</code> and <code>close</code> actions.</li>
+</ul>
+<p>See the <a href="https://developer.notmatt.press/block-editor/reference-guides/data/data-core-commands/">Commands Data</a> documentation for more information.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/commands --save
+</code></pre>
+<p><em>This package assumes that your code will run in an <strong>ES2015+</strong> environment. If you’re using an environment that has limited or no support for such language features and APIs, you should include <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default#polyfill">the polyfill shipped in <code>@wordpress/babel-preset-default</code></a> in your code.</em></p>
+<h2 class="is-toc-heading" id="api" tabindex="-1"><a href="#api">API</a></h2>
+<p><!-- START TOKEN(Autogenerated API docs) --></p>
+<h3 class="is-toc-heading" id="store" tabindex="-1"><a href="#store">store</a></h3>
+<p>Store definition for the commands namespace.</p>
+<p><em>Related</em></p>
+<ul>
+<li><a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/data/README.md#createReduxStore">https://github.com/WordPress/gutenberg/blob/HEAD/packages/data/README.md#createReduxStore</a></li>
+</ul>
+<p><em>Usage</em></p>
+<pre><code class="language-js">import { store as commandsStore } from '@wordpress/commands';
+import { useDispatch } from '@wordpress/data';
+...
+const { open: openCommandCenter } = useDispatch( commandsStore );
+</code></pre>
+<p><em>Type</em></p>
+<ul>
+<li><code>Object</code></li>
+</ul>
+<h3 class="is-toc-heading" id="usecommand" tabindex="-1"><a href="#usecommand">useCommand</a></h3>
+<p>Attach a command to the command palette. Used for static commands.</p>
+<p><em>Usage</em></p>
+<pre><code class="language-js">import { useCommand } from '@wordpress/commands';
+import { plus } from '@wordpress/icons';
+
+useCommand( {
+    name: 'myplugin/my-command-name',
+    label: __( 'Add new post' ),
+    icon: plus,
+    callback: ( { close } ) =&gt; {
+        document.location.href = 'post-new.php';
+        close();
+    },
+} );
+</code></pre>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>command</em> <code>import('../store/actions').WPCommandConfig</code>: command config.</li>
+</ul>
+<h3 class="is-toc-heading" id="usecommandloader" tabindex="-1"><a href="#usecommandloader">useCommandLoader</a></h3>
+<p>Attach a command loader to the command palette. Used for dynamic commands.</p>
+<p><em>Usage</em></p>
+<pre><code class="language-js">import { useCommandLoader } from '@wordpress/commands';
+import { post, page, layout, symbolFilled } from '@wordpress/icons';
+
+const icons = {
+    post,
+    page,
+    wp_template: layout,
+    wp_template_part: symbolFilled,
+};
+
+function usePageSearchCommandLoader( { search } ) {
+    // Retrieve the pages for the "search" term.
+    const { records, isLoading } = useSelect( ( select ) =&gt; {
+        const { getEntityRecords } = select( coreStore );
+        const query = {
+            search: !! search ? search : undefined,
+            per_page: 10,
+            orderby: search ? 'relevance' : 'date',
+        };
+        return {
+            records: getEntityRecords( 'postType', 'page', query ),
+            isLoading: ! select( coreStore ).hasFinishedResolution(
+                'getEntityRecords',
+                'postType', 'page', query ]
+            ),
+        };
+    }, [ search ] );
+
+    // Create the commands.
+    const commands = useMemo( () =&gt; {
+        return ( records ?? [] ).slice( 0, 10 ).map( ( record ) =&gt; {
+            return {
+                name: record.title?.rendered + ' ' + record.id,
+                label: record.title?.rendered
+                    ? record.title?.rendered
+                    : __( '(no title)' ),
+                icon: icons[ postType ],
+                callback: ( { close } ) =&gt; {
+                    const args = {
+                        postType,
+                        postId: record.id,
+                        ...extraArgs,
+                    };
+                    document.location = addQueryArgs( 'site-editor.php', args );
+                    close();
+                },
+            };
+        } );
+    }, [ records, history ] );
+
+    return {
+        commands,
+        isLoading,
+    };
+}
+
+useCommandLoader( {
+    name: 'myplugin/page-search',
+    hook: usePageSearchCommandLoader,
+} );
+</code></pre>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>loader</em> <code>import('../store/actions').WPCommandLoaderConfig</code>: command loader config.</li>
+</ul>
+<p><!-- END TOKEN(Autogenerated API docs) --></p>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_create_post_autosave()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_create_post_autosave()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_create_post_autosave( <span class="arg-type">array|int</span> <span class="arg-name">$post_data</span> ): <span class="return-type">int|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Creates autosave data for the specified post from <code>$_POST</code> data.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post_data</code><span class="type"><span class="array">array</span>|<span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Associative array containing the post data, or integer post ID.<br/>
+If a numeric post ID is provided, will use the <code>$_POST</code> superglobal.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">int|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> The autosave revision ID. <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> or 0 on error.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1943"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_create_post_autosave( $post_data ) {
+	if ( is_numeric( $post_data ) ) {
+		$post_id   = $post_data;
+		$post_data = $_POST;
+	} else {
+		$post_id = (int) $post_data['post_ID'];
+	}
+
+	$post_data = _wp_translate_postdata( true, $post_data );
+	if ( is_wp_error( $post_data ) ) {
+		return $post_data;
+	}
+	$post_data = _wp_get_allowed_postdata( $post_data );
+
+	$post_author = get_current_user_id();
+
+	// Store one autosave per author. If there is already an autosave, overwrite it.
+	$old_autosave = wp_get_post_autosave( $post_id, $post_author );
+	if ( $old_autosave ) {
+		$new_autosave                = _wp_post_revision_data( $post_data, true );
+		$new_autosave['ID']          = $old_autosave-&gt;ID;
+		$new_autosave['post_author'] = $post_author;
+
+		$post = get_post( $post_id );
+
+		// If the new autosave has the same content as the post, delete the autosave.
+		$autosave_is_different = false;
+		foreach ( array_intersect( array_keys( $new_autosave ), array_keys( _wp_post_revision_fields( $post ) ) ) as $field ) {
+			if ( normalize_whitespace( $new_autosave[ $field ] ) !== normalize_whitespace( $post-&gt;$field ) ) {
+				$autosave_is_different = true;
+				break;
+			}
+		}
+
+		if ( ! $autosave_is_different ) {
+			wp_delete_post_revision( $old_autosave-&gt;ID );
+			return 0;
+		}
+
+		/**
+		 * Fires before an autosave is stored.
+		 *
+		 * @since 4.1.0
+		 * @since 6.4.0 The `$is_update` parameter was added to indicate if the autosave is being updated or was newly created.
+		 *
+		 * @param array $new_autosave Post array - the autosave that is about to be saved.
+		 * @param bool  $is_update    Whether this is an existing autosave.
+		 */
+		do_action( 'wp_creating_autosave', $new_autosave, true );
+		return wp_update_post( $new_autosave );
+	}
+
+	// _wp_put_post_revision() expects unescaped.
+	$post_data = wp_unslash( $post_data );
+
+	// Otherwise create the new autosave as a special post revision.
+	$revision = _wp_put_post_revision( $post_data, true );
+
+	if ( ! is_wp_error( $revision ) &amp;&amp; 0 !== $revision ) {
+
+		/** This action is documented in wp-admin/includes/post.php */
+		do_action( 'wp_creating_autosave', get_post( $revision, ARRAY_A ), false );
+	}
+
+	return $revision;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/post.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/post.php#L1943">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/post.php#L1943-L2008">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_creating_autosave/"><span class="hook-func">do_action</span>( ‘wp_creating_autosave’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$new_autosave</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$is_update</span></nobr> )</a></dt><dd><p>Fires before an autosave is stored.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_get_allowed_postdata/">_wp_get_allowed_postdata()</a><code>wp-admin/includes/post.php</code></td><td><p>Returns only allowed post data fields.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_post_revision_data/">_wp_post_revision_data()</a><code>wp-includes/revision.php</code></td><td><p>Returns a post array ready to be inserted into the posts table as a post revision.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_translate_postdata/">_wp_translate_postdata()</a><code>wp-admin/includes/post.php</code></td><td><p>Renames <code>$_POST</code> data from form names to DB post columns.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/normalize_whitespace/">normalize_whitespace()</a><code>wp-includes/formatting.php</code></td><td><p>Normalizes EOL characters and strips duplicate whitespace.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_post/">wp_update_post()</a><code>wp-includes/post.php</code></td><td><p>Updates a post with new post data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post_revision/">wp_delete_post_revision()</a><code>wp-includes/revision.php</code></td><td><p>Deletes a revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_put_post_revision/">_wp_put_post_revision()</a><code>wp-includes/revision.php</code></td><td><p>Inserts post data into the posts table as a post revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_post_autosave/">wp_get_post_autosave()</a><code>wp-includes/revision.php</code></td><td><p>Retrieves the autosaved data of the specified post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_post_revision_fields/">_wp_post_revision_fields()</a><code>wp-includes/revision.php</code></td><td><p>Determines which fields of posts are to be saved in revisions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_user_id/">get_current_user_id()</a><code>wp-includes/user.php</code></td><td><p>Gets the current user’s ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 9 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/save_changeset_post/">WP_Customize_Manager::save_changeset_post()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Saves the post for the loaded changeset.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/post_preview/">post_preview()</a><code>wp-admin/includes/post.php</code></td><td><p>Saves a draft or manually autosaves for the purpose of showing a post preview.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_autosave/">wp_autosave()</a><code>wp-admin/includes/post.php</code></td><td><p>Saves a post submitted with XHR.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.6.0/">2.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

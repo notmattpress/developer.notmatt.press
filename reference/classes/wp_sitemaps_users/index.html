@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Sitemaps_Users</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Sitemaps_Users</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Sitemaps_Users {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Users XML sitemap provider.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_users/__construct/">WP_Sitemaps_Users::__construct</a></td><td><a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_users/" rel="class">WP_Sitemaps_Users</a> constructor.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_users/get_max_num_pages/">WP_Sitemaps_Users::get_max_num_pages</a></td><td>Gets the max number of pages available for the object type.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_users/get_url_list/">WP_Sitemaps_Users::get_url_list</a></td><td>Gets a URL list for a user sitemap.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_users/get_users_query_args/">WP_Sitemaps_Users::get_users_query_args</a></td><td>Returns the query args for retrieving users to list in the sitemap.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="17"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Sitemaps_Users extends WP_Sitemaps_Provider {
+	/**
+	 * WP_Sitemaps_Users constructor.
+	 *
+	 * @since 5.5.0
+	 */
+	public function __construct() {
+		$this-&gt;name        = 'users';
+		$this-&gt;object_type = 'user';
+	}
+
+	/**
+	 * Gets a URL list for a user sitemap.
+	 *
+	 * @since 5.5.0
+	 *
+	 * @param int    $page_num       Page of results.
+	 * @param string $object_subtype Optional. Not applicable for Users but
+	 *                               required for compatibility with the parent
+	 *                               provider class. Default empty.
+	 * @return array[] Array of URL information for a sitemap.
+	 */
+	public function get_url_list( $page_num, $object_subtype = '' ) {
+		/**
+		 * Filters the users URL list before it is generated.
+		 *
+		 * Returning a non-null value will effectively short-circuit the generation,
+		 * returning that value instead.
+		 *
+		 * @since 5.5.0
+		 *
+		 * @param array[]|null $url_list The URL list. Default null.
+		 * @param int        $page_num Page of results.
+		 */
+		$url_list = apply_filters(
+			'wp_sitemaps_users_pre_url_list',
+			null,
+			$page_num
+		);
+
+		if ( null !== $url_list ) {
+			return $url_list;
+		}
+
+		$args          = $this-&gt;get_users_query_args();
+		$args['paged'] = $page_num;
+
+		$query    = new WP_User_Query( $args );
+		$users    = $query-&gt;get_results();
+		$url_list = array();
+
+		foreach ( $users as $user ) {
+			$sitemap_entry = array(
+				'loc' =&gt; get_author_posts_url( $user-&gt;ID ),
+			);
+
+			/**
+			 * Filters the sitemap entry for an individual user.
+			 *
+			 * @since 5.5.0
+			 *
+			 * @param array   $sitemap_entry Sitemap entry for the user.
+			 * @param WP_User $user          User object.
+			 */
+			$sitemap_entry = apply_filters( 'wp_sitemaps_users_entry', $sitemap_entry, $user );
+			$url_list[]    = $sitemap_entry;
+		}
+
+		return $url_list;
+	}
+
+	/**
+	 * Gets the max number of pages available for the object type.
+	 *
+	 * @since 5.5.0
+	 *
+	 * @see WP_Sitemaps_Provider::max_num_pages
+	 *
+	 * @param string $object_subtype Optional. Not applicable for Users but
+	 *                               required for compatibility with the parent
+	 *                               provider class. Default empty.
+	 * @return int Total page count.
+	 */
+	public function get_max_num_pages( $object_subtype = '' ) {
+		/**
+		 * Filters the max number of pages for a user sitemap before it is generated.
+		 *
+		 * Returning a non-null value will effectively short-circuit the generation,
+		 * returning that value instead.
+		 *
+		 * @since 5.5.0
+		 *
+		 * @param int|null $max_num_pages The maximum number of pages. Default null.
+		 */
+		$max_num_pages = apply_filters( 'wp_sitemaps_users_pre_max_num_pages', null );
+
+		if ( null !== $max_num_pages ) {
+			return $max_num_pages;
+		}
+
+		$args  = $this-&gt;get_users_query_args();
+		$query = new WP_User_Query( $args );
+
+		$total_users = $query-&gt;get_total();
+
+		return (int) ceil( $total_users / wp_sitemaps_get_max_urls( $this-&gt;object_type ) );
+	}
+
+	/**
+	 * Returns the query args for retrieving users to list in the sitemap.
+	 *
+	 * @since 5.5.0
+	 *
+	 * @return array Array of WP_User_Query arguments.
+	 */
+	protected function get_users_query_args() {
+		$public_post_types = get_post_types(
+			array(
+				'public' =&gt; true,
+			)
+		);
+
+		// We're not supporting sitemaps for author pages for attachments and pages.
+		unset( $public_post_types['attachment'] );
+		unset( $public_post_types['page'] );
+
+		/**
+		 * Filters the query arguments for authors with public posts.
+		 *
+		 * Allows modification of the authors query arguments before querying.
+		 *
+		 * @see WP_User_Query for a full list of arguments
+		 *
+		 * @since 5.5.0
+		 *
+		 * @param array $args Array of WP_User_Query arguments.
+		 */
+		$args = apply_filters(
+			'wp_sitemaps_users_query_args',
+			array(
+				'has_published_posts' =&gt; array_keys( $public_post_types ),
+				'number'              =&gt; wp_sitemaps_get_max_urls( $this-&gt;object_type ),
+			)
+		);
+
+		return $args;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/sitemaps/providers/class-wp-sitemaps-users.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/sitemaps/providers/class-wp-sitemaps-users.php#L17">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/sitemaps/providers/class-wp-sitemaps-users.php#L17-L164">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_provider/">WP_Sitemaps_Provider</a><code>wp-includes/sitemaps/class-wp-sitemaps-provider.php</code></td><td><p>Class <a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_provider/" rel="class">WP_Sitemaps_Provider</a>.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.5.0/">5.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

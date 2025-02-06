@@ -1,0 +1,363 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_categories()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_categories()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_categories( <span class="arg-type">string|array</span> <span class="arg-name">$args</span> = <span class="arg-default">''</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves a list of category objects.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If you set the ‘taxonomy’ argument to ‘link_category’, the link categories will be returned instead.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/get_terms">get_terms()</a>: Type of arguments that can be changed.</li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$args</code><span class="type"><span class="string">string</span>|<span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Arguments to retrieve categories. See <a href="https://developer.notmatt.press/reference/functions/get_terms/" rel="function">get_terms()</a>  for additional options.<br/>
+<ul class="param-hash"><li><code>taxonomy</code> <span class="type">string</span><div class="desc">Taxonomy to retrieve terms for. Default <code>'category'</code>.</div></li>
+</ul>
+</span><details class="extended-description"><summary>More Arguments from get_terms( … $args )</summary><span class="description">Array or string of arguments. See <a href="https://developer.notmatt.press/reference/classes/wp_term_query/__construct/" rel="method">WP_Term_Query::__construct()</a>                                 for information on accepted arguments. </span></details></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> List of category objects.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="26"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_categories( $args = '' ) {
+	$defaults = array( 'taxonomy' =&gt; 'category' );
+	$args     = wp_parse_args( $args, $defaults );
+
+	/**
+	 * Filters the taxonomy used to retrieve terms when calling get_categories().
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string $taxonomy Taxonomy to retrieve terms from.
+	 * @param array  $args     An array of arguments. See get_terms().
+	 */
+	$args['taxonomy'] = apply_filters( 'get_categories_taxonomy', $args['taxonomy'], $args );
+
+	// Back compat.
+	if ( isset( $args['type'] ) &amp;&amp; 'link' === $args['type'] ) {
+		_deprecated_argument(
+			__FUNCTION__,
+			'3.0.0',
+			sprintf(
+				/* translators: 1: "type =&gt; link", 2: "taxonomy =&gt; link_category" */
+				__( '%1$s is deprecated. Use %2$s instead.' ),
+				'&lt;code&gt;type =&gt; link&lt;/code&gt;',
+				'&lt;code&gt;taxonomy =&gt; link_category&lt;/code&gt;'
+			)
+		);
+		$args['taxonomy'] = 'link_category';
+	}
+
+	$categories = get_terms( $args );
+
+	if ( is_wp_error( $categories ) ) {
+		$categories = array();
+	} else {
+		$categories = (array) $categories;
+		foreach ( array_keys( $categories ) as $k ) {
+			_make_cat_compat( $categories[ $k ] );
+		}
+	}
+
+	return $categories;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/category.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/category.php#L26">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/category.php#L26-L67">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_categories_taxonomy/"><span class="hook-func">apply_filters</span>( ‘get_categories_taxonomy’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the taxonomy used to retrieve terms when calling <a href="https://developer.notmatt.press/reference/functions/get_categories/" rel="function">get_categories()</a> .</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_make_cat_compat/">_make_cat_compat()</a><code>wp-includes/category.php</code></td><td><p>Updates category structure to old pre-2.3 from new taxonomy structure.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_terms/">get_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the terms in a given taxonomy or list of taxonomies.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_argument/">_deprecated_argument()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_dropdown_cats/">wp_dropdown_cats()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Legacy function used for generating a categories drop-down control.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_list_categories/">wp_list_categories()</a><code>wp-includes/category-template.php</code></td><td><p>Displays or retrieves the HTML list of categories.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_links_list/">get_links_list()</a><code>wp-includes/deprecated.php</code></td><td><p>Output entire list of links by category.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_getcategories/">wp_xmlrpc_server::mw_getCategories()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves the list of categories on a given blog.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_getcategorylist/">wp_xmlrpc_server::mt_getCategoryList()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves the list of all categories on a blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_suggestcategories/">wp_xmlrpc_server::wp_suggestCategories()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves category list.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="333" id="comment-333">
+<article class="comment-body" id="div-comment-333">
+<a class="screen-reader-text" href="#comment-content-333">Skip to note 9 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-333">
+<p><strong>List Categories and Descriptions</strong><br>
+This example will list, in alphabetic order, all categories presented as links to the corresponding category archive. Each category description is listed after the category link.</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+$categories = get_categories( array(
+	'orderby' =&gt; 'name',
+	'order'   =&gt; 'ASC'
+) );
+
+foreach( $categories as $category ) {
+	$category_link = sprintf( 
+		'&lt;a href="%1$s" alt="%2$s"&gt;%3$s&lt;/a&gt;',
+		esc_url( get_category_link( $category-&gt;term_id ) ),
+		esc_attr( sprintf( __( 'View all posts in %s', 'textdomain' ), $category-&gt;name ) ),
+		esc_html( $category-&gt;name )
+	);
+	
+	echo '&lt;p&gt;' . sprintf( esc_html__( 'Category: %s', 'textdomain' ), $category_link ) . '&lt;/p&gt; ';
+	echo '&lt;p&gt;' . sprintf( esc_html__( 'Description: %s', 'textdomain' ), $category-&gt;description ) . '&lt;/p&gt;';
+	echo '&lt;p&gt;' . sprintf( esc_html__( 'Post Count: %s', 'textdomain' ), $category-&gt;count ) . '&lt;/p&gt;';
+} </code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-333">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-sleekdevigner odd alt thread-odd thread-alt depth-1" data-comment-id="3081" id="comment-3081">
+<article class="comment-body" id="div-comment-3081">
+<a class="screen-reader-text" href="#comment-content-3081">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3081">
+<p><strong>Function only returns categories in use by posts</strong></p>
+<p>It is very important to note that by default, the <code>get_category()</code> will ONLY return categories that ARE IN USE. This means if no post is assigned to the category, then the category object for that category is not returned.</p>
+<p>This means if you are developer, and you created a category (maybe during testing), you should supply an argument array having the <code>'hide_empty' =&gt; false</code> in it. Check the example usage below.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$args = array(
+			'hide_empty'      =&gt; false,
+		);
+		get_categories($args); //This returns both used and unused categories</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3081">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="334" id="comment-334">
+<article class="comment-body" id="div-comment-334">
+<a class="screen-reader-text" href="#comment-content-334">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-334">
+<p><strong>Get only top level categories</strong><br/>
+To get the top level categories only, set parent value to zero. This example gets link and name of top level categories.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$categories = get_categories( array(
+	'orderby' =&gt; 'name',
+	'parent'  =&gt; 0
+) );
+
+foreach ( $categories as $category ) {
+	printf( '&lt;a href="%1$s"&gt;%2$s&lt;/a&gt;&lt;br /&gt;',
+		esc_url( get_category_link( $category-&gt;term_id ) ),
+		esc_html( $category-&gt;name )
+	);
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-334">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-boundlessink odd alt thread-odd thread-alt depth-1" data-comment-id="4977" id="comment-4977">
+<article class="comment-body" id="div-comment-4977">
+<a class="screen-reader-text" href="#comment-content-4977">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4977">
+<p><strong>Specific category parent title with linked menu of subcategories</strong></p>
+<p>– could be used in a sidebar application</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;div class="category-menu-container"&gt;
+
+			&lt;ul class="category-menu"&gt;
+				&lt;li class="unstyled"&gt;
+					&lt;h4 class="category-menu-heading"&gt;
+						&lt;?php echo get_cat_name( $category_id = 130 );?&gt;
+					&lt;/h4&gt;
+				&lt;/li&gt;
+				&lt;?php 
+				$categories = get_categories( array(
+					'orderby' =&gt; 'name',
+					'order'   =&gt; 'ASC',
+					'parent'  =&gt; 130,
+				) );
+
+				foreach( $categories as $category ) {
+					$category_link = sprintf( 
+						'&lt;a href="%1$s" alt="%2$s"&gt;%3$s&lt;/a&gt;',
+						esc_url( get_category_link( $category-&gt;term_id ) ),
+						esc_attr( sprintf( __( 'View all posts in %s', 'textdomain' ), $category-&gt;name ) ),
+						esc_html( $category-&gt;name )
+					);
+
+					echo '&lt;p&gt;' . sprintf( esc_html__( '%s', 'textdomain' ), $category_link ) . '&lt;/p&gt; ';
+				}
+				?&gt;
+			&lt;/ul&gt;
+
+		&lt;/div&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4977">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-cameronamcintyre even thread-even depth-1" data-comment-id="2711" id="comment-2711">
+<article class="comment-body" id="div-comment-2711">
+<a class="screen-reader-text" href="#comment-content-2711">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2711">
+<p>If there are no categories to display, <code>get_categories()</code> will return an empty array.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2711">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-hemant-ahir odd alt thread-odd thread-alt depth-1" data-comment-id="6398" id="comment-6398">
+<article class="comment-body" id="div-comment-6398">
+<a class="screen-reader-text" href="#comment-content-6398">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6398">
+<p>get all parent categories, and then based on parent id you can write a recurring function that gives you the child category of given id.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function wpdocs_get_child_categories( $parent_category_id ) {
+    $html = '';
+    $child_categories = get_categories( array( 'parent' =&gt; $parent_category_id, 'hide_empty' =&gt; false, 'taxonomy' =&gt; $taxonomy ) );
+    if ( ! empty( $child_categories ) ) {
+        $html .= '&lt;ul&gt;';
+        foreach ( $child_categories as $child_category ) {
+            $html .= '&lt;li&gt;'.$child_category-&gt;name;
+            $html .= get_child_categories( $child_category-&gt;term_id );
+            $html .= '&lt;/li&gt;';
+        }
+        $html .= '&lt;/ul&gt;';
+    }
+    return $html;
+}
+
+function wpdocs_list_categories() {
+    $html = '';
+    $parent_categories = get_categories( array( 'parent' =&gt; 0, 'hide_empty' =&gt; false, 'taxonomy' =&gt; $taxonomy ) );
+    $html .= '&lt;ul&gt;';
+    foreach ( $parent_categories as $parent_category ) {
+        $html .= '&lt;li&gt;';
+        $html .= $parent_category-&gt;name;
+        $html .= wpdocs_get_child_categories( $parent_category-&gt;term_id  );
+        $html .= '&lt;/li&gt;';
+    }
+    $html.= '&lt;/ul&gt;';
+    return $html;
+}
+add_shortcode( 'wpdocs_list_categories', 'wpdocs_list_categories' );</code></pre>
+<p>Output look like this:</p>
+<p>A – Main category<br/>
+B      – Child Category<br/>
+C      – Child Category<br/>
+D          – Nested Child Category( if available )<br/>
+E – Main category<br/>
+F      – Child Category<br/>
+G      – Child Category<br/>
+H         – Nested Child Category( if available )</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6398">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1 bad-note" data-comment-id="331" id="comment-331">
+<article class="comment-body" id="div-comment-331">
+<a class="screen-reader-text" href="#comment-content-331">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-331">
+<p><strong>Drop-down box as used in Parent category at post category page</strong><br/>
+This is the code used in the built-in category page.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">wp_dropdown_categories( array(
+	'hide_empty'       =&gt; 0,
+	'name'             =&gt; 'category_parent',
+	'orderby'          =&gt; 'name',
+	'selected'         =&gt; $category-&gt;parent,
+	'hierarchical'     =&gt; true,
+	'show_option_none' =&gt; __('None')
+) );</code></pre>
+<p>The slightly altered code below will grab all categories and display them with indent for a new level (child category). The select box will have name and id attribute values of ‘select_name’. This select element will not display a default “none” as the original code was used to attach a category as a child to another category (or none).</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">wp_dropdown_categories( array(
+	'hide_empty'   =&gt; 0,
+	'name'         =&gt; 'select_name',
+	'id'           =&gt; 'select_name',
+	'hierarchical' =&gt; true
+) );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-331">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1 bad-note" data-comment-id="332" id="comment-332">
+<article class="comment-body" id="div-comment-332">
+<a class="screen-reader-text" href="#comment-content-332">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-332">
+<p><strong>Drop-down Box</strong><br/>
+Here’s how to create a drop-down box of the subcategories of, say, a category that archives information on past events.<br/>
+This mirrors the example of the drop-down example of <code><a href="https://developer.notmatt.press/reference/functions/wp_get_archives/">wp_get_archives()</a></code> which shows how to create a drop-down box for monthly archives.</p>
+<p>Suppose the category whose subcategories you want to show is category 10, and that its category “nicename” is “archives”.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;select name="event-dropdown"&gt; 
+	&lt;option value=""&gt;&lt;?php echo esc_attr_e( 'Select Event', 'textdomain' ); ?&gt;&lt;/option&gt; 
+	&lt;?php 
+	$categories = get_categories( array( 'child_of' =&gt; 10 ) ); 
+	foreach ( $categories as $category ) {
+		printf( '&lt;option value="%1$s"&gt;%2$s (%3$s)&lt;/option&gt;',
+			esc_attr( '/category/archives/' . $category-&gt;category_nicename ),
+			esc_html( $category-&gt;cat_name ),
+			esc_html( $category-&gt;category_count )
+		);
+  	}
+ 	?&gt;
+&lt;/select&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-332">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

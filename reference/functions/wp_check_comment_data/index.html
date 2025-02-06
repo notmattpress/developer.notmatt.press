@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_check_comment_data()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_check_comment_data()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_check_comment_data( <span class="arg-type">array</span> <span class="arg-name">$comment_data</span> ): <span class="return-type">int|string|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Checks whether comment data passes internal checks or has disallowed content.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$comment_data</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Array of arguments for inserting a comment.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">int|string|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> The approval status on success (<code>0|1|<code>'spam'</code>|<code>'trash'</code></code>),                            <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1254"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_check_comment_data( $comment_data ) {
+	global $wpdb;
+
+	if ( ! empty( $comment_data['user_id'] ) ) {
+		$user        = get_userdata( $comment_data['user_id'] );
+		$post_author = $wpdb-&gt;get_var(
+			$wpdb-&gt;prepare(
+				"SELECT post_author FROM $wpdb-&gt;posts WHERE ID = %d LIMIT 1",
+				$comment_data['comment_post_ID']
+			)
+		);
+	}
+
+	if ( isset( $user ) &amp;&amp; ( $comment_data['user_id'] == $post_author || $user-&gt;has_cap( 'moderate_comments' ) ) ) {
+		// The author and the admins get respect.
+		$approved = 1;
+	} else {
+		// Everyone else's comments will be checked.
+		if ( check_comment(
+			$comment_data['comment_author'],
+			$comment_data['comment_author_email'],
+			$comment_data['comment_author_url'],
+			$comment_data['comment_content'],
+			$comment_data['comment_author_IP'],
+			$comment_data['comment_agent'],
+			$comment_data['comment_type']
+		) ) {
+			$approved = 1;
+		} else {
+			$approved = 0;
+		}
+
+		if ( wp_check_comment_disallowed_list(
+			$comment_data['comment_author'],
+			$comment_data['comment_author_email'],
+			$comment_data['comment_author_url'],
+			$comment_data['comment_content'],
+			$comment_data['comment_author_IP'],
+			$comment_data['comment_agent']
+		) ) {
+			$approved = EMPTY_TRASH_DAYS ? 'trash' : 'spam';
+		}
+	}
+
+	/**
+	 * Filters a comment's approval status before it is set.
+	 *
+	 * @since 2.1.0
+	 * @since 4.9.0 Returning a WP_Error value from the filter will short-circuit comment insertion
+	 *              and allow skipping further processing.
+	 *
+	 * @param int|string|WP_Error $approved    The approval status. Accepts 1, 0, 'spam', 'trash',
+	 *                                         or WP_Error.
+	 * @param array               $commentdata Comment data.
+	 */
+	return apply_filters( 'pre_comment_approved', $approved, $comment_data );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/comment.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/comment.php#L1254">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/comment.php#L1254-L1310">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_comment_approved/"><span class="hook-func">apply_filters</span>( ‘pre_comment_approved’,  <nobr><span class="arg-type">int|string|WP_Error</span> <span class="arg-name">$approved</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$commentdata</span></nobr> )</a></dt><dd><p>Filters a comment’s approval status before it is set.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_check_comment_disallowed_list/">wp_check_comment_disallowed_list()</a><code>wp-includes/comment.php</code></td><td><p>Checks if a comment contains disallowed characters or words.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/check_comment/">check_comment()</a><code>wp-includes/comment.php</code></td><td><p>Checks whether a comment passes internal checks to be allowed to add.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_userdata/">get_userdata()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves user info by user ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_var/">wpdb::get_var()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one value from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_new_comment/">wp_new_comment()</a><code>wp-includes/comment.php</code></td><td><p>Adds a new comment to the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_allow_comment/">wp_allow_comment()</a><code>wp-includes/comment.php</code></td><td><p>Validates whether this comment is allowed to be made.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

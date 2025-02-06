@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_update_comment_count()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_update_comment_count()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_update_comment_count( <span class="arg-type">int|null</span> <span class="arg-name">$post_id</span>,  <span class="arg-type">bool</span> <span class="arg-name">$do_deferred</span> = <span class="arg-default">false</span> ): <span class="return-type">bool|void</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Updates the comment count for post(s).</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>When $do_deferred is false (is by default) and the comments have been set to be deferred, the post_id will be added to a queue, which will be updated at a later date and only updated once per post ID.</p>
+<p>If the comments have not be set up to be deferred, then the post will be updated. When $do_deferred is set to true, then all previous deferred post IDs will be updated along with the current $post_id.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/wp_update_comment_count_now">wp_update_comment_count_now()</a>: For what could cause a false return value</li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post_id</code><span class="type"><span class="int">int</span>|<span class="null">null</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Post ID.</span></div></dd><dt><code>$do_deferred</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to process previously deferred                              post comment counts. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool|void</span> True on success, false on failure or if post with ID does                   not exist.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2711"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_update_comment_count( $post_id, $do_deferred = false ) {
+	static $_deferred = array();
+
+	if ( empty( $post_id ) &amp;&amp; ! $do_deferred ) {
+		return false;
+	}
+
+	if ( $do_deferred ) {
+		$_deferred = array_unique( $_deferred );
+		foreach ( $_deferred as $i =&gt; $_post_id ) {
+			wp_update_comment_count_now( $_post_id );
+			unset( $_deferred[ $i ] );
+			/** @todo Move this outside of the foreach and reset $_deferred to an array instead */
+		}
+	}
+
+	if ( wp_defer_comment_counting() ) {
+		$_deferred[] = $post_id;
+		return true;
+	} elseif ( $post_id ) {
+		return wp_update_comment_count_now( $post_id );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/comment.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/comment.php#L2711">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/comment.php#L2711-L2733">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_comment_count_now/">wp_update_comment_count_now()</a><code>wp-includes/comment.php</code></td><td><p>Updates the comment count for the post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_defer_comment_counting/">wp_defer_comment_counting()</a><code>wp-includes/comment.php</code></td><td><p>Determines whether to defer comment counting.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_set_comment_status/">wp_set_comment_status()</a><code>wp-includes/comment.php</code></td><td><p>Sets the status of a comment.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_comment/">wp_update_comment()</a><code>wp-includes/comment.php</code></td><td><p>Updates an existing comment in the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_defer_comment_counting/">wp_defer_comment_counting()</a><code>wp-includes/comment.php</code></td><td><p>Determines whether to defer comment counting.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_comment/">wp_insert_comment()</a><code>wp-includes/comment.php</code></td><td><p>Inserts a comment into the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_comment/">wp_delete_comment()</a><code>wp-includes/comment.php</code></td><td><p>Trashes or deletes a comment.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,222 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">insert_with_markers()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>insert_with_markers()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">insert_with_markers( <span class="arg-type">string</span> <span class="arg-name">$filename</span>,  <span class="arg-type">string</span> <span class="arg-name">$marker</span>,  <span class="arg-type">array|string</span> <span class="arg-name">$insertion</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Inserts an array of strings into a file (.htaccess), placing it between BEGIN and END markers.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Replaces existing marked info. Retains surrounding data. Creates file if none exists.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$filename</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Filename to alter.</span></div></dd><dt><code>$marker</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The marker to alter.</span></div></dd><dt><code>$insertion</code><span class="type"><span class="array">array</span>|<span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The new content to insert.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True on write success, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="114"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function insert_with_markers( $filename, $marker, $insertion ) {
+	if ( ! file_exists( $filename ) ) {
+		if ( ! is_writable( dirname( $filename ) ) ) {
+			return false;
+		}
+
+		if ( ! touch( $filename ) ) {
+			return false;
+		}
+
+		// Make sure the file is created with a minimum set of permissions.
+		$perms = fileperms( $filename );
+
+		if ( $perms ) {
+			chmod( $filename, $perms | 0644 );
+		}
+	} elseif ( ! is_writable( $filename ) ) {
+		return false;
+	}
+
+	if ( ! is_array( $insertion ) ) {
+		$insertion = explode( "\n", $insertion );
+	}
+
+	$switched_locale = switch_to_locale( get_locale() );
+
+	$instructions = sprintf(
+		/* translators: 1: Marker. */
+		__(
+			'The directives (lines) between "BEGIN %1$s" and "END %1$s" are
+dynamically generated, and should only be modified via WordPress filters.
+Any changes to the directives between these markers will be overwritten.'
+		),
+		$marker
+	);
+
+	$instructions = explode( "\n", $instructions );
+
+	foreach ( $instructions as $line =&gt; $text ) {
+		$instructions[ $line ] = '# ' . $text;
+	}
+
+	/**
+	 * Filters the inline instructions inserted before the dynamically generated content.
+	 *
+	 * @since 5.3.0
+	 *
+	 * @param string[] $instructions Array of lines with inline instructions.
+	 * @param string   $marker       The marker being inserted.
+	 */
+	$instructions = apply_filters( 'insert_with_markers_inline_instructions', $instructions, $marker );
+
+	if ( $switched_locale ) {
+		restore_previous_locale();
+	}
+
+	$insertion = array_merge( $instructions, $insertion );
+
+	$start_marker = "# BEGIN {$marker}";
+	$end_marker   = "# END {$marker}";
+
+	$fp = fopen( $filename, 'r+' );
+
+	if ( ! $fp ) {
+		return false;
+	}
+
+	// Attempt to get a lock. If the filesystem supports locking, this will block until the lock is acquired.
+	flock( $fp, LOCK_EX );
+
+	$lines = array();
+
+	while ( ! feof( $fp ) ) {
+		$lines[] = rtrim( fgets( $fp ), "\r\n" );
+	}
+
+	// Split out the existing file into the preceding lines, and those that appear after the marker.
+	$pre_lines        = array();
+	$post_lines       = array();
+	$existing_lines   = array();
+	$found_marker     = false;
+	$found_end_marker = false;
+
+	foreach ( $lines as $line ) {
+		if ( ! $found_marker &amp;&amp; str_contains( $line, $start_marker ) ) {
+			$found_marker = true;
+			continue;
+		} elseif ( ! $found_end_marker &amp;&amp; str_contains( $line, $end_marker ) ) {
+			$found_end_marker = true;
+			continue;
+		}
+
+		if ( ! $found_marker ) {
+			$pre_lines[] = $line;
+		} elseif ( $found_marker &amp;&amp; $found_end_marker ) {
+			$post_lines[] = $line;
+		} else {
+			$existing_lines[] = $line;
+		}
+	}
+
+	// Check to see if there was a change.
+	if ( $existing_lines === $insertion ) {
+		flock( $fp, LOCK_UN );
+		fclose( $fp );
+
+		return true;
+	}
+
+	// Generate the new file data.
+	$new_file_data = implode(
+		"\n",
+		array_merge(
+			$pre_lines,
+			array( $start_marker ),
+			$insertion,
+			array( $end_marker ),
+			$post_lines
+		)
+	);
+
+	// Write to the start of the file, and truncate it to that length.
+	fseek( $fp, 0 );
+	$bytes = fwrite( $fp, $new_file_data );
+
+	if ( $bytes ) {
+		ftruncate( $fp, ftell( $fp ) );
+	}
+
+	fflush( $fp );
+	flock( $fp, LOCK_UN );
+	fclose( $fp );
+
+	return (bool) $bytes;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/misc.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/misc.php#L114">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/misc.php#L114-L248">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/insert_with_markers_inline_instructions/"><span class="hook-func">apply_filters</span>( ‘insert_with_markers_inline_instructions’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$instructions</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$marker</span></nobr> )</a></dt><dd><p>Filters the inline instructions inserted before the dynamically generated content.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/save_mod_rewrite_rules/">save_mod_rewrite_rules()</a><code>wp-admin/includes/misc.php</code></td><td><p>Updates the htaccess file with the current rules if it is writable.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-zeno001 odd alt thread-odd thread-alt depth-1" data-comment-id="5740" id="comment-5740">
+<article class="comment-body" id="div-comment-5740">
+<a class="screen-reader-text" href="#comment-content-5740">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5740">
+<p>I don’t think this is classed as a bug but worth noting.</p>
+<p>When splitting out the htaccess file, the code searches for: <code>$start_marker = "# BEGIN {$marker}";</code> and will find the first instance of it in the file, regardless of where it is and even if this is in a commented line before the actual WordPress section.</p>
+<p>For example, if I add the <a href="https://www.wordfence.com/help/advanced/system-requirements/litespeed/" rel="nofollow ugc">code suggested by Wordfence</a> to solve an issue with Wordfence scans and updates and LiteSpeed, and I want to add a comment to explain what this code does and where it needs to go (ie before the WordPress section), I may add:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php"># Add fix to stop Litespeed aborting Wordfence scans and updates
+# <a href="https://www.wordfence.com/help/advanced/system-requirements/litespeed/" rel="nofollow ugc">https://www.wordfence.com/help/advanced/system-requirements/litespeed/</a>
+# Insert just before # BEGIN WordPress
+... Wordfence noabort code...</code></pre>
+<p>The <code># BEGIN WordPress</code> in this comment is found first by insert_with_markers and the new WordPress section is appended to the next line, overwriting the Wordfence noabort code.</p>
+<p>The workaround is not to have <code># BEGIN WordPress</code> in a comment before the WordPress section, but ideally the function would be altered so that it only matches # BEGIN WordPress at the start of a line.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5740">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

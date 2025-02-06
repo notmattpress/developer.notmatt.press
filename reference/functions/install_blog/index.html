@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">install_blog()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>install_blog()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">install_blog( <span class="arg-type">int</span> <span class="arg-name">$blog_id</span>,  <span class="arg-type">string</span> <span class="arg-name">$blog_title</span> = <span class="arg-default">''</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Install an empty blog.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Creates the new blog tables and options. If calling this function directly, be sure to use <a href="https://developer.notmatt.press/reference/functions/switch_to_blog/" rel="function">switch_to_blog()</a>  first, so that $<a href="https://developer.notmatt.press/reference/classes/wpdb/" rel="class">wpdb</a> points to the new blog.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$blog_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The value returned by <a href="https://developer.notmatt.press/reference/functions/wp_insert_site/" rel="function">wp_insert_site()</a> .</span></div></dd><dt><code>$blog_title</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The title of the new site.</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="607"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function install_blog( $blog_id, $blog_title = '' ) {
+	global $wpdb, $wp_roles;
+
+	_deprecated_function( __FUNCTION__, '5.1.0' );
+
+	// Cast for security.
+	$blog_id = (int) $blog_id;
+
+	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+	$suppress = $wpdb-&gt;suppress_errors();
+	if ( $wpdb-&gt;get_results( "DESCRIBE {$wpdb-&gt;posts}" ) ) {
+		die( '&lt;h1&gt;' . __( 'Already Installed' ) . '&lt;/h1&gt;&lt;p&gt;' . __( 'You appear to have already installed WordPress. To reinstall please clear your old database tables first.' ) . '&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;' );
+	}
+	$wpdb-&gt;suppress_errors( $suppress );
+
+	$url = get_blogaddress_by_id( $blog_id );
+
+	// Set everything up.
+	make_db_current_silent( 'blog' );
+	populate_options();
+	populate_roles();
+
+	// populate_roles() clears previous role definitions so we start over.
+	$wp_roles = new WP_Roles();
+
+	$siteurl = $home = untrailingslashit( $url );
+
+	if ( ! is_subdomain_install() ) {
+
+		if ( 'https' === parse_url( get_site_option( 'siteurl' ), PHP_URL_SCHEME ) ) {
+			$siteurl = set_url_scheme( $siteurl, 'https' );
+		}
+		if ( 'https' === parse_url( get_home_url( get_network()-&gt;site_id ), PHP_URL_SCHEME ) ) {
+			$home = set_url_scheme( $home, 'https' );
+		}
+	}
+
+	update_option( 'siteurl', $siteurl );
+	update_option( 'home', $home );
+
+	if ( get_site_option( 'ms_files_rewriting' ) ) {
+		update_option( 'upload_path', UPLOADBLOGSDIR . "/$blog_id/files" );
+	} else {
+		update_option( 'upload_path', get_blog_option( get_network()-&gt;site_id, 'upload_path' ) );
+	}
+
+	update_option( 'blogname', wp_unslash( $blog_title ) );
+	update_option( 'admin_email', '' );
+
+	// Remove all permissions.
+	$table_prefix = $wpdb-&gt;get_blog_prefix();
+	delete_metadata( 'user', 0, $table_prefix . 'user_level', null, true );   // Delete all.
+	delete_metadata( 'user', 0, $table_prefix . 'capabilities', null, true ); // Delete all.
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/ms-deprecated.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/ms-deprecated.php#L607">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/ms-deprecated.php#L607-L661">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_network/">get_network()</a><code>wp-includes/ms-network.php</code></td><td><p>Retrieves network data given a network ID or network object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/populate_roles/">populate_roles()</a><code>wp-admin/includes/schema.php</code></td><td><p>Execute WordPress role creation for the various WordPress versions.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/populate_options/">populate_options()</a><code>wp-admin/includes/schema.php</code></td><td><p>Create WordPress options and set the default values.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/make_db_current_silent/">make_db_current_silent()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Updates the database tables to a new schema, but without displaying results.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_roles/__construct/">WP_Roles::__construct()</a><code>wp-includes/class-wp-roles.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/untrailingslashit/">untrailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Removes trailing forward slashes and backslashes if they exist.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_url_scheme/">set_url_scheme()</a><code>wp-includes/link-template.php</code></td><td><p>Sets the scheme for a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_home_url/">get_home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for a given site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_subdomain_install/">is_subdomain_install()</a><code>wp-includes/ms-load.php</code></td><td><p>Whether a subdomain configuration is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_blog_option/">get_blog_option()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Retrieves option value for a given blog id based on name of option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_blogaddress_by_id/">get_blogaddress_by_id()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Gets a full site URL, given a site ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/suppress_errors/">wpdb::suppress_errors()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Enables or disables suppressing of database errors.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_blog_prefix/">wpdb::get_blog_prefix()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Gets blog prefix.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_metadata/">delete_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Deletes metadata for the specified object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_function/">_deprecated_function()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_site_option/">get_site_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieve an option value for the current network based on name of option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_results/">wpdb::get_results()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves an entire SQL result set from the database (i.e., many rows).</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 14 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/create_empty_blog/">create_empty_blog()</a><code>wp-includes/ms-deprecated.php</code></td><td><p>Create an empty blog.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.1.0/">5.1.0</a></td><td>This function has been deprecated.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/mu.3.0.0/">MU (3.0.0)</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-drewapicture odd alt thread-odd thread-alt depth-1" data-comment-id="1790" id="comment-1790">
+<article class="comment-body" id="div-comment-1790">
+<a class="screen-reader-text" href="#comment-content-1790">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1790">
+<p>Hi. I’d suggest checking out this ticket for progress on this issue: <a href="https://core.trac.wordpress.org/ticket/27499" rel="nofollow ugc">https://core.trac.wordpress.org/ticket/27499</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1790">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

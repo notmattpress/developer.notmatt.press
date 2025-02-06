@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_customize_manager/">WP_Customize_Manager</a></span><span class="is-current-page">WP_Customize_Manager::setup_theme()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Customize_Manager::setup_theme()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Customize_Manager::setup_theme()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Starts preview and customize theme.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Check if customize query variable exist. Init filters to filter the active theme.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="515"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function setup_theme() {
+	global $pagenow;
+
+	// Check permissions for customize.php access since this method is called before customize.php can run any code.
+	if ( 'customize.php' === $pagenow &amp;&amp; ! current_user_can( 'customize' ) ) {
+		if ( ! is_user_logged_in() ) {
+			auth_redirect();
+		} else {
+			wp_die(
+				'&lt;h1&gt;' . __( 'You need a higher level of permission.' ) . '&lt;/h1&gt;' .
+				'&lt;p&gt;' . __( 'Sorry, you are not allowed to customize this site.' ) . '&lt;/p&gt;',
+				403
+			);
+		}
+		return;
+	}
+
+	// If a changeset was provided is invalid.
+	if ( isset( $this-&gt;_changeset_uuid ) &amp;&amp; false !== $this-&gt;_changeset_uuid &amp;&amp; ! wp_is_uuid( $this-&gt;_changeset_uuid ) ) {
+		$this-&gt;wp_die( -1, __( 'Invalid changeset UUID' ) );
+	}
+
+	/*
+	 * Clear incoming post data if the user lacks a CSRF token (nonce). Note that the customizer
+	 * application will inject the customize_preview_nonce query parameter into all Ajax requests.
+	 * For similar behavior elsewhere in WordPress, see rest_cookie_check_errors() which logs out
+	 * a user when a valid nonce isn't present.
+	 */
+	$has_post_data_nonce = (
+		check_ajax_referer( 'preview-customize_' . $this-&gt;get_stylesheet(), 'nonce', false )
+		||
+		check_ajax_referer( 'save-customize_' . $this-&gt;get_stylesheet(), 'nonce', false )
+		||
+		check_ajax_referer( 'preview-customize_' . $this-&gt;get_stylesheet(), 'customize_preview_nonce', false )
+	);
+	if ( ! current_user_can( 'customize' ) || ! $has_post_data_nonce ) {
+		unset( $_POST['customized'] );
+		unset( $_REQUEST['customized'] );
+	}
+
+	/*
+	 * If unauthenticated then require a valid changeset UUID to load the preview.
+	 * In this way, the UUID serves as a secret key. If the messenger channel is present,
+	 * then send unauthenticated code to prompt re-auth.
+	 */
+	if ( ! current_user_can( 'customize' ) &amp;&amp; ! $this-&gt;changeset_post_id() ) {
+		$this-&gt;wp_die( $this-&gt;messenger_channel ? 0 : -1, __( 'Non-existent changeset UUID.' ) );
+	}
+
+	if ( ! headers_sent() ) {
+		send_origin_headers();
+	}
+
+	// Hide the admin bar if we're embedded in the customizer iframe.
+	if ( $this-&gt;messenger_channel ) {
+		show_admin_bar( false );
+	}
+
+	if ( $this-&gt;is_theme_active() ) {
+		// Once the theme is loaded, we'll validate it.
+		add_action( 'after_setup_theme', array( $this, 'after_setup_theme' ) );
+	} else {
+		/*
+		 * If the requested theme is not the active theme and the user doesn't have
+		 * the switch_themes cap, bail.
+		 */
+		if ( ! current_user_can( 'switch_themes' ) ) {
+			$this-&gt;wp_die( -1, __( 'Sorry, you are not allowed to edit theme options on this site.' ) );
+		}
+
+		// If the theme has errors while loading, bail.
+		if ( $this-&gt;theme()-&gt;errors() ) {
+			$this-&gt;wp_die( -1, $this-&gt;theme()-&gt;errors()-&gt;get_error_message() );
+		}
+
+		// If the theme isn't allowed per multisite settings, bail.
+		if ( ! $this-&gt;theme()-&gt;is_allowed() ) {
+			$this-&gt;wp_die( -1, __( 'The requested theme does not exist.' ) );
+		}
+	}
+
+	// Make sure changeset UUID is established immediately after the theme is loaded.
+	add_action( 'after_setup_theme', array( $this, 'establish_loaded_changeset' ), 5 );
+
+	/*
+	 * Import theme starter content for fresh installations when landing in the customizer.
+	 * Import starter content at after_setup_theme:100 so that any
+	 * add_theme_support( 'starter-content' ) calls will have been made.
+	 */
+	if ( get_option( 'fresh_site' ) &amp;&amp; 'customize.php' === $pagenow ) {
+		add_action( 'after_setup_theme', array( $this, 'import_theme_starter_content' ), 100 );
+	}
+
+	$this-&gt;start_previewing_theme();
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-customize-manager.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-customize-manager.php#L515">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-customize-manager.php#L515-L609">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_uuid/">wp_is_uuid()</a><code>wp-includes/functions.php</code></td><td><p>Validates that a UUID is valid.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/changeset_post_id/">WP_Customize_Manager::changeset_post_id()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Gets the changeset post ID for the loaded changeset.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/get_stylesheet/">WP_Customize_Manager::get_stylesheet()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Retrieves the stylesheet name of the previewed theme.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/wp_die/">WP_Customize_Manager::wp_die()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Custom wp_die wrapper. Returns either the standard message for UI or the Ajax message.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/is_theme_active/">WP_Customize_Manager::is_theme_active()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Checks if the current theme is active.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/theme/">WP_Customize_Manager::theme()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Gets the theme being customized.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/start_previewing_theme/">WP_Customize_Manager::start_previewing_theme()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>If the theme to be previewed isn’t the active theme, add filter callbacks to swap it out at runtime.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/auth_redirect/">auth_redirect()</a><code>wp-includes/pluggable.php</code></td><td><p>Checks if a user is logged in, if not it redirects them to the login page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/send_origin_headers/">send_origin_headers()</a><code>wp-includes/http.php</code></td><td><p>Sends Access-Control-Allow-Origin and related headers if the current request is from an allowed origin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/show_admin_bar/">show_admin_bar()</a><code>wp-includes/admin-bar.php</code></td><td><p>Sets the display status of the admin bar.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_ajax_referer/">check_ajax_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Verifies the Ajax request to prevent processing requests external of the blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_die/">wp_die()</a><code>wp-includes/functions.php</code></td><td><p>Kills WordPress execution and displays HTML page with an error message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_action/">add_action()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 11 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.4.0/">3.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

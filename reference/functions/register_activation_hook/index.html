@@ -1,0 +1,600 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">register_activation_hook()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>register_activation_hook()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">register_activation_hook( <span class="arg-type">string</span> <span class="arg-name">$file</span>,  <span class="arg-type">callable</span> <span class="arg-name">$callback</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Set the activation hook for a plugin.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>When a plugin is activated, the action ‘activate_PLUGINNAME’ hook is called. In the name of this hook, PLUGINNAME is replaced with the name of the plugin, including the optional subdirectory. For example, when the plugin is located in wp-content/plugins/sampleplugin/sample.php, then the name of this hook will become ‘activate_sampleplugin/sample.php’.</p>
+<p>When the plugin consists of only one file and is (as by default) located at wp-content/plugins/sample.php the name of this hook will be ‘activate_sample.php’.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$file</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The filename of the plugin including the path.</span></div></dd><dt><code>$callback</code><span class="type"><span class="callable">callable</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The function hooked to the <code>'activate_PLUGIN'</code> action.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>For more information on what will be passed to your <code>$callback</code>, please see the <a href="https://developer.notmatt.press/reference/hooks/activate_plugin/">activate_{$plugin} hook</a>.</p>
+<p>Related discussion with another sample of working code: <a class="external free" href="https://wordpress.org/support/topic/312342" rel="nofollow">https://wordpress.org/support/topic/312342</a></p>
+<p><strong>Registering the hook inside the ‘plugins_loaded’ hook will not work.</strong> You can’t call <tt><a href="https://developer.notmatt.press/reference/functions/register_activation_hook/" rel="function">register_activation_hook()</a> </tt> inside a function hooked to the <tt><a href="https://codex.wordpress.org/Plugin_API/Action_Reference/plugins_loaded" title="Plugin API/Action Reference/plugins loaded"> 'plugins_loaded'</a></tt> or <tt><a href="https://codex.wordpress.org/Plugin_API/Action_Reference/init" title="Plugin API/Action Reference/init"> 'init'</a></tt> hooks (or any other hook). These hooks are called <i>before</i> the plugin is loaded or activated.</p>
+<p>When a plugin is activated, all active plugins are loaded, then the plugin is activated. The plugin’s activation hook is run and then the page is immediately redirected</p>
+<h3 class="is-toc-heading wp-block-heading" id="process-flow" tabindex="-1"><a href="#process-flow">Process Flow</a></h3>
+<p>If you are interested in doing something just after a plugin has been activated it is important to note that the hook process performs an instant redirect after it fires. So it is impossible to use <tt><a href="https://codex.wordpress.org/Function_Reference/add_action" title="Function Reference/add action"> add_action()</a></tt> or <tt><a href="https://codex.wordpress.org/Function_Reference/add_filter" title="Function Reference/add filter"> add_filter()</a></tt> type calls until the redirect has occurred (e.g., only two hooks are fired after the plugin’s activation hook: <tt><a href="https://codex.wordpress.org/Plugin_API/Action_Reference/activated_plugin" title="Plugin API/Action Reference/activated plugin"> 'activated_plugin'</a></tt> and <tt><a href="https://codex.wordpress.org/Plugin_API/Action_Reference/shutdown" title="Plugin API/Action Reference/shutdown"> 'shutdown'</a></tt>). A quick workaround to this quirk is to use <tt><a href="https://codex.wordpress.org/Function_Reference/add_option" title="Function Reference/add option"> add_option()</a></tt> like so:</p>
+<pre class="wp-block-preformatted">/* Main Plugin File */
+...
+function my_plugin_activate() {
+
+  add_option( 'Activated_Plugin', 'Plugin-Slug' );
+
+  /* activation code here */
+}
+register_activation_hook( __FILE__, 'my_plugin_activate' );
+
+function load_plugin() {
+
+    if ( is_admin() &amp;&amp; get_option( 'Activated_Plugin' ) == 'Plugin-Slug' ) {
+
+        delete_option( 'Activated_Plugin' );
+
+        /* do stuff once right after activation */
+        // example: add_action( 'init', 'my_init_function' );
+    }
+}
+add_action( 'admin_init', 'load_plugin' );
+</pre>
+<p>You can check out the full post @ <a class="external free" href="http://stackoverflow.com/questions/7738953/is-there-a-way-to-determine-if-a-wordpress-plugin-is-just-installed/13927297#13927297" rel="nofollow">http://stackoverflow.com/questions/7738953/is-there-a-way-to-determine-if-a-wordpress-plugin-is-just-installed/13927297#13927297</a>.</p>
+<p>However, it <b>is</b> possible to use <tt><a href="https://codex.wordpress.org/Function_Reference/do_action" title="Function Reference/do action"> do_action()</a></tt>, like this:</p>
+<pre class="wp-block-preformatted">function my_plugin_activate() {
+
+     do_action( 'my_plugin_activate' );
+}
+register_activation_hook( __FILE__, 'my_plugin_activate' );
+</pre>
+<p>Included plugin files and even other plugins <i>will</i> be able to hook into this action.</p>
+<h3 class="is-toc-heading wp-block-heading" id="a-note-on-variable-scope" tabindex="-1"><a href="#a-note-on-variable-scope">A Note on Variable Scope</a></h3>
+<p>If you’re using global variables, you may find that the function you pass to <tt><a href="https://developer.notmatt.press/reference/functions/register_activation_hook/" rel="function">register_activation_hook()</a> </tt> does not have access to global variables at the point when it is called, even though you state their global scope within the function like this:</p>
+<pre class="wp-block-preformatted">$myvar = 'whatever';
+
+function myplugin_activate() {
+
+  global $myvar;
+  echo $myvar; // this will NOT be 'whatever'!
+}
+
+register_activation_hook( __FILE__, 'myplugin_activate' );
+</pre>
+<p>This is because on that very first include, your plugin is NOT included within the global scope. It’s included in the <tt><a href="https://developer.notmatt.press/reference/functions/activate_plugin/" title="Function Reference/activate plugin"> activate_plugin()</a></tt> function, and so its “main body” is not automatically in the global scope.</p>
+<p>This is why you should <i>always</i> be explicit. If you want a variable to be global, then you need to declare it as such, and that means anywhere and everywhere you use it. If you use it in the main body of the plugin, then you need to declare it global there too.</p>
+<p>When activation occurs, your plugin is included from another function and then your <tt>myplugin_activate()</tt> is called from within that function (specifically, within the <tt><a href="https://developer.notmatt.press/reference/functions/activate_plugin/" rel="function">activate_plugin()</a> </tt> function) at the point where your plugin is activated. The main body variables are therefore in the scope of the <tt><a href="https://developer.notmatt.press/reference/functions/activate_plugin/" rel="function">activate_plugin()</a> </tt> function and are not global, unless you explicitly declare their global scope:</p>
+<pre class="wp-block-preformatted">global $myvar;
+$myvar = 'whatever';
+
+function myplugin_activate() {
+
+   global $myvar;
+   echo $myvar; // this will be 'whatever'
+}
+register_activation_hook( __FILE__, 'myplugin_activate' );
+</pre>
+<p>More information on this is available here: <a class="external free" href="https://wordpress.org/support/topic/201309" rel="nofollow">https://wordpress.org/support/topic/201309</a></p>
+<h2 class="is-toc-heading wp-block-heading" id="discussions-external-resources" tabindex="-1"><a href="#discussions-external-resources">Discussions – External Resources</a></h2>
+<ul class="wp-block-list">
+<li>A good example for a basic activation/deactivation/uninstall class by “kaiser” can be found here on WPSE: <a class="external free" href="http://wordpress.stackexchange.com/questions/25910/uninstall-a-plugin-method-typical-features-how-to/25979#25979" rel="nofollow">http://wordpress.stackexchange.com/questions/25910/uninstall-a-plugin-method-typical-features-how-to/25979#25979</a></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="869"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function register_activation_hook( $file, $callback ) {
+	$file = plugin_basename( $file );
+	add_action( 'activate_' . $file, $callback );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/plugin.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/plugin.php#L869">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/plugin.php#L869-L872">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/plugin_basename/">plugin_basename()</a><code>wp-includes/plugin.php</code></td><td><p>Gets the basename of a plugin.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/add_action/">add_action()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to an action hook.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.0/">2.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-orionrush even thread-odd thread-alt depth-1" data-comment-id="1610" id="comment-1610">
+<article class="comment-body" id="div-comment-1610">
+<a class="screen-reader-text" href="#comment-content-1610">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1610">
+<p>Note that register_activation_hook must not be registered from within another hook for example ‘plugins_loaded’ or ‘init’ as these will have all been called before the plugin is loaded or activated. </p>
+<p>This will NOT work:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function pluginInit() {
+    require_once dirname(__FILE__) . '/includes/Activator.php';
+    register_activation_hook( __FILE__, 'Activator', 'activate' ) );
+}
+add_action( 'plugins_loaded', 'pluginInit' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1610">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-even depth-1" data-comment-id="1090" id="comment-1090">
+<article class="comment-body" id="div-comment-1090">
+<a class="screen-reader-text" href="#comment-content-1090">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1090">
+<p><strong>Singleton class pattern</strong></p>
+<p>If your plugin uses the singleton class pattern, add the activation hook like so:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">class MyPlugin {
+     static function install() {
+            // do not generate any output here
+     }
+}
+register_activation_hook( __FILE__, array( 'MyPlugin', 'install' ) );</code></pre>
+<p>If the class that holds your activation function/method is in some additional file, register your activation function like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">include_once dirname( __FILE__ ) . '/your_additional_file.php';
+register_activation_hook( __FILE__, array( 'YourAdditionalClass', 'on_activate_function' ) );</code></pre>
+<p>Or, because the activation hook requires a static function, if you’re inside of a __construct():</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_activation_hook( __FILE__, array( 'MyPlugin', 'YOUR_METHOD_NAME' ) );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1090">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-ics1010 even thread-odd thread-alt depth-1" data-comment-id="1956" id="comment-1956">
+<article class="comment-body" id="div-comment-1956">
+<a class="screen-reader-text" href="#comment-content-1956">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1956">
+<p>There’s a comment here that could make this confusing by giving incorrect information. The code does NOT have to be in the main file, unless you’re doing something like a single file plugin. The thing to know is that the first argument is the name required to get your code to fire, not what file the code is in. Example:<br/>
+<code><br/>
+Main plugin file: plugin/myplugin/myplugin.php<br/>
+include 'some_class.php';<br/>
+$obj = new other_class();</code></p>
+<p>Other plugin file: plugin/myplugin/some_class.php<br/>
+class some_class {<br/>
+	__constructor() {<br/>
+		register_activation_hook(__DIR__.'/myplugin.php',array($this,'activate');<br/>
+	}<br/>
+	public function activate() { ... }<br/>
+}<br/>
+</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1956">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tjkwebdev odd alt thread-even depth-1" data-comment-id="2167" id="comment-2167">
+<article class="comment-body" id="div-comment-2167">
+<a class="screen-reader-text" href="#comment-content-2167">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2167">
+<p>If calling this within a namespace:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_activation_hook( __FILE__, __NAMESPACE__ . '\my_activate_callback' );</code></pre>
+<p>Source: <a href="http://stackoverflow.com/questions/37863766/wordpress-not-recognizing-function-during-plugin-activation" rel="nofollow ugc">http://stackoverflow.com/questions/37863766/wordpress-not-recognizing-function-during-plugin-activation</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2167">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tomdxw even thread-odd thread-alt depth-1" data-comment-id="2100" id="comment-2100">
+<article class="comment-body" id="div-comment-2100">
+<a class="screen-reader-text" href="#comment-content-2100">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2100">
+<p>According to @nacin (a lead developer for WordPress), you shouldn’t use activation hooks (especially on multisite). You should do this instead:</p>
+<p>“It’s far better to use an upgrade routine fired on admin_init, and handle that per-site, basing it on a stored option.”</p>
+<p>Source: <a href="https://core.trac.wordpress.org/ticket/14170#comment:68" rel="nofollow ugc">https://core.trac.wordpress.org/ticket/14170#comment:68</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="2" id="feedback-2100">
+<ul class="children">
+<li class="comment byuser comment-author-evcode odd alt depth-2" data-comment-id="5664" id="comment-5664">
+<article class="comment-body" id="div-comment-5664">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5664">
+<div>This issue with WP Multisite are solved and today don’t have any problem.</div>
+<div><a class="url" href="https://profiles.wordpress.org/evcode/" rel="external nofollow">Eduardo Villão</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/register_activation_hook/#comment-5664"><time datetime="2022-02-02T19:23:05+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment even depth-2" data-comment-id="6590" id="comment-6590">
+<article class="comment-body" id="div-comment-6590">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6590">
+<div>Just because it is a god’s statement, does not mean it is correct.    &gt; It’s far better to use an upgrade routine fired on admin_init, and handle that per-site, basing it on a stored option.    1. No, it is not far better. It is far worse! `admin_init` is fired _every time admin is initiated_. An activation hook, is fired _every time the plugin is activated_. This is an entirely different thing!   2. That problem surged on Multisite, and it is actually due to wrong handling of plugin activation hook by core (IMO) and this is fixed with some user contributed plugin: <a href="https://core.trac.wordpress.org/ticket/14170#comment:21" rel="nofollow ugc">https://core.trac.wordpress.org/ticket/14170#comment:21</a>    In other words, no, it is not “better” to not use the activation hooks. They are there for reasons and they are there because they are the right thing to use for when you want to run code _on activation of the plugin_, or in other words, _just once, and with it, preserve performance_</div>
+<div>Anonymous User <a class="comment-date" href="https://developer.notmatt.press/reference/functions/register_activation_hook/#comment-6590"><time datetime="2023-08-01T09:25:03+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-koen12344 odd alt thread-even depth-1" data-comment-id="3621" id="comment-3621">
+<article class="comment-body" id="div-comment-3621">
+<a class="screen-reader-text" href="#comment-content-3621">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3621">
+<p>The hooked function has one boolean argument, <code>$network_wide</code> which indicates if the plugin is network activated.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">register_activation_hook(__FILE__, 'my_plugin_activate');
+function my_plugin_activate($network_wide){
+	if($network_wide){ //Plugin is network activated
+		$site_ids = get_sites(array('fields' =&gt; 'ids'));
+	    foreach($site_ids as $site_id){
+			//Perform something on all sites within the network
+      		switch_to_blog($site_id);
+      		my_plugin_install_site();
+      		restore_current_blog();
+    	}
+		return;
+	}
+
+	my_plugin_install_site();
+
+}
+
+function my_plugin_install_site(){
+	//Do something
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-3621">
+<ul class="children">
+<li class="comment byuser comment-author-crstauf even depth-2" data-comment-id="6591" id="comment-6591">
+<article class="comment-body" id="div-comment-6591">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6591">
+<div>@Beda True, <code>admin_init</code> fires on every admin page load, but if you follow Nacin’s recommendation and condition the callback on a stored option, then the cost is near-zero.</div>
+<div><a class="url" href="https://profiles.wordpress.org/crstauf/" rel="external nofollow">crstauf</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/register_activation_hook/#comment-6591"><time datetime="2023-08-01T12:38:17+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-msn6060 odd alt thread-odd thread-alt depth-1" data-comment-id="3673" id="comment-3673">
+<article class="comment-body" id="div-comment-3673">
+<a class="screen-reader-text" href="#comment-content-3673">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3673">
+<p><strong><br/>
+Sending arguments with callable function</strong></p>
+<p>Imagine that you have OOP structure for your plugin and need to observe <strong>SOLID</strong> principle inside it.<br/>
+For this reason, you need to <strong>Dependency Injection</strong> with callable function inside your register_activation_hook function.<br/>
+Sample code is like in the following: </p>
+<ul>
+<strong>Note</strong><em>: I used both way to show calling callable function with argument and without it in activation and deactivation hooks to bold using each of them. <strong>Usage of callable function with argument is in register_activation_hook</strong>.<br/>
+</em></ul>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+/**
+ * OOP WordPress Plugin Boilerplate
+ *
+ * Description for OOP Plugin
+ *
+ * @link              <a href="https://github.com/msn60/oop-wordpress-plugin-boilerplate" rel="nofollow ugc">https://github.com/msn60/oop-wordpress-plugin-boilerplate</a>
+ * @since             1.0.0
+ * @package           Plugin_Name_Name_Space
+ *
+ * @wordpress-plugin
+ * Plugin Name:       OOP WordPress Plugin Boilerplate
+ * Plugin URI:        <a href="https://github.com/msn60/oop-wordpress-pluging-boilerplate-light-version" rel="nofollow ugc">https://github.com/msn60/oop-wordpress-pluging-boilerplate-light-version</a>
+ * Description:       Description for OOP Plugin
+ * Version:           1.0.2
+ * Author:            Mehdi Soltani &lt;soltani.n.mehdi@gmail.com&gt;
+ * Author URI:        <a href="https://wpwebmaster.ir" rel="nofollow ugc">https://wpwebmaster.ir</a>
+ * License:           GPL-2.0+
+ * License URI:       <a href="http://www.gnu.org/licenses/gpl-2.0.txt" rel="nofollow ugc">http://www.gnu.org/licenses/gpl-2.0.txt</a>
+ */
+
+/*
+ * Define your namespaces here by use keyword
+ * */
+
+use Plugin_Name_Name_Space\Includes\Init\{
+ Constant, Activator
+};
+use Plugin_Name_Name_Space\Includes\Config\Initial_Value;
+use Plugin_Name_Name_Space\Includes\Uninstall\{
+	Deactivator, Uninstall
+};
+
+/**
+ * If this file is called directly, then abort execution.
+ */
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+
+/**
+ * Class Plugin_Name_Plugin
+ *
+ * This class is primary file of plugin which is used from
+ * singletone design pattern.
+ *
+ * @package    Plugin_Name_Name_Space
+ * @author     Your_Name &lt;youremail@nomail.com&gt;
+ * @see        Plugin_Name_Name_Space\Includes\Init\Core Class
+ * @see        Plugin_Name_Name_Space\Includes\Init\Constant Class
+ * @see        Plugin_Name_Name_Space\Includes\Init\Activator Class
+ * @see        Plugin_Name_Name_Space\Includes\Uninstall\Deactivator Class
+ * @see        Plugin_Name_Name_Space\Includes\Uninstall\Uninstall Class
+ */
+final class Plugin_Name_Plugin {
+	/**
+	 * Instance property of Plugin_Name_Plugin Class.
+	 * This is a property in your plugin primary class. You will use to create
+	 * one object from Plugin_Name_Plugin class in whole of program execution.
+	 *
+	 * @access private
+	 * @var    Plugin_Name_Plugin $instance create only one instance from plugin primary class
+	 * @static
+	 */
+	private static $instance;
+	/**
+	 * @var Initial_Value $initial_values An object  to keep all of initial values for theme
+	 */
+	protected $initial_values;
+
+
+	/**
+	 * Plugin_Name_Plugin constructor.
+	 * It defines related constant, include autoloader class, register activation hook,
+	 * deactivation hook and uninstall hook and call Core class to run dependencies for plugin
+	 *
+	 * @access private
+	 */
+	public function __construct() {
+		/*Define Autoloader class for plugin*/
+		$autoloader_path = 'includes/class-autoloader.php';
+		/**
+		 * Include autoloader class to load all of classes inside this plugin
+		 */
+		require_once trailingslashit( plugin_dir_path( __FILE__ ) ) . $autoloader_path;
+		/*Define required constant for plugin*/
+		Constant::define_constant();
+
+		/**
+		 * Register activation hook.
+		 * Register activation hook for this plugin by invoking activate
+		 * in Plugin_Name_Plugin class.
+		 *
+		 * @param string   $file     path to the plugin file.
+		 * @param callback $function The function to be run when the plugin is activated.
+		 */
+		register_activation_hook(
+			__FILE__,
+			function () {
+				$this-&gt;activate(
+					new Activator( intval( get_option( 'last_your_plugin_name_dbs_version' ) ) )
+				);
+			}
+		);
+		/**
+		 * Register deactivation hook.
+		 * Register deactivation hook for this plugin by invoking deactivate
+		 * in Plugin_Name_Plugin class.
+		 *
+		 * @param string   $file     path to the plugin file.
+		 * @param callback $function The function to be run when the plugin is deactivated.
+		 */
+		register_deactivation_hook(
+			__FILE__,
+			array( $this, 'deactivate' )
+		);
+	}
+
+	/**
+	 * Call activate method.
+	 * This function calls activate method from Activator class.
+	 * You can use from this method to run every thing you need when plugin is activated.
+	 *
+	 * @access public
+	 * @since  1.0.0
+	 * @see    Plugin_Name_Name_Space\Includes\Init\Activator Class
+	 */
+	public function activate( Activator $activator_object ) {
+		global $wpdb;
+		$activator_object-&gt;activate(
+			true,
+			new Table( $wpdb, PLUGIN_NAME_DB_VERSION, get_option( 'has_table_name' ) )
+		);
+	}
+
+	/**
+	 * Create an instance from Plugin_Name_Plugin class.
+	 *
+	 * @access public
+	 * @since  1.0.0
+	 * @return Plugin_Name_Plugin
+	 */
+	public static function instance() {
+		if ( is_null( ( self::$instance ) ) ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+	
+
+	/**
+	 * Load Core plugin class.
+	 *
+	 * @access public
+	 * @since  1.0.0
+	 */
+	public function run_plugin_name_plugin() {
+		// TODO: Do you codes here to run the plugin
+	}
+
+	/**
+	 * Call deactivate method.
+	 * This function calls deactivate method from Dectivator class.
+	 * You can use from this method to run every thing you need when plugin is deactivated.
+	 *
+	 * @access public
+	 * @since  1.0.0
+	 */
+	public function deactivate() {
+		Deactivator::deactivate();
+	}
+}
+
+
+$plugin_name_plugin_object = Plugin_Name_Plugin::instance();
+$plugin_name_plugin_object-&gt;run_plugin_name_plugin();</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3673">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-rajankarmakar even thread-even depth-1" data-comment-id="5015" id="comment-5015">
+<article class="comment-body" id="div-comment-5015">
+<a class="screen-reader-text" href="#comment-content-5015">Skip to note 21 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5015">
+<p>You can flush permalink if you have custom rewrite rules in your plugin</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">register_activation_hook( __FILE__, 'wpdocs_myplugin_activate' );
+
+function wpdocs_myplugin_activate() {
+	flush_rewrite_rules();
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5015">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-algato333 odd alt thread-odd thread-alt depth-1" data-comment-id="5861" id="comment-5861">
+<article class="comment-body" id="div-comment-5861">
+<a class="screen-reader-text" href="#comment-content-5861">Skip to note 22 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5861">
+<p>Really useful when, for example, when we need to <strong>create a DB table for our plugin functionalities</strong>:<br/>
+<code><br/>
+function create_ourtable(){</code></p>
+<p>    global $wpdb;<br/>
+    $prefix = $wpdb-&gt;prefix;<br/>
+    $form_db = $prefix . "ourtable";</p>
+<p>	//Check if table exists. In case it's false we create it<br/>
+	if($wpdb-&gt;get_var("SHOW TABLES LIKE '$form_db'") !==  $form_db){</p>
+<p>        $sql = "CREATE TABLE $form_db(id mediumint unsigned not null primary key auto_increment, dates timestamp, names varchar(500), wp_user mediumint unsigned)";</p>
+<p>        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');<br/>
+        dbDelta($sql);<br/>
+    }<br/>
+</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5861">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-natewr even thread-even depth-1" data-comment-id="1802" id="comment-1802">
+<article class="comment-body" id="div-comment-1802">
+<a class="screen-reader-text" href="#comment-content-1802">Skip to note 23 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1802">
+<p>If you’re looking for a similar hook that fires when a <em>theme</em> is activated, see <a href="https://developer.notmatt.press/reference/hooks/after_switch_theme/">after_switch_theme</a>.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1802">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-samwilson odd alt thread-odd thread-alt depth-1" data-comment-id="2163" id="comment-2163">
+<article class="comment-body" id="div-comment-2163">
+<a class="screen-reader-text" href="#comment-content-2163">Skip to note 24 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2163">
+<p>Note that the <a>WordPress code sniffer rules</a> will reject the hook name that is constructed by this function, if you ever have to call the hook manually (for example, from a test). The <code>WordPress.NamingConventions.ValidHookName.UseUnderscores</code> rule rejects slashes and dots in hook names.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2163">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-daprela even thread-even depth-1 bad-note" data-comment-id="1002" id="comment-1002">
+<article class="comment-body" id="div-comment-1002">
+<a class="screen-reader-text" href="#comment-content-1002">Skip to note 25 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1002">
+<p>Please note that <a href="https://developer.notmatt.press/reference/functions/register_activation_hook/" rel="function">register_activation_hook()</a>  must be called from the main plugin file – the one that has “Plugin Name: …” directive.<br/>
+This code added in the main plugin file will work:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">require_once ( dirname( __FILE__ ) . '/includes/class-my-class.php' );
+
+register_activation_hook( __FILE__, array ( $my_class, 'function_to_call') );</code></pre>
+<p>However, if you try to add <a href="https://developer.notmatt.press/reference/functions/register_activation_hook/" rel="function">register_activation_hook()</a>  in the constructor of the class it won’t work because it’s not in the main plugin file.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1002">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-rinkuyadav999 odd alt thread-odd thread-alt depth-1 bad-note" data-comment-id="943" id="comment-943">
+<article class="comment-body" id="div-comment-943">
+<a class="screen-reader-text" href="#comment-content-943">Skip to note 26 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-943">
+<p>If you have a function called <code>myplugin_activate()</code> in the main plugin file at either</p>
+<p><em>wp-content/plugins/myplugin.php or<br/>
+wp-content/plugins/myplugin/myplugin.php</em><br/>
+use this code:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_activation_hook( __FILE__, 'myplugin_deactivate' );</code></pre>
+<p>This will call the <code>myplugin_activate()</code> function on activation of the plugin.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-943">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,626 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">do_action()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>do_action()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">do_action( <span class="arg-type">string</span> <span class="arg-name">$hook_name</span>,  <span class="arg-type">mixed</span> <span class="arg-name">$arg</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Calls the callback functions that have been added to an action hook.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This function invokes all functions attached to action hook <code>$hook_name</code>.<br/>It is possible to create new action hooks by simply calling this function, specifying the name of the new hook using the <code>$hook_name</code> parameter.</p> <p>You can pass extra arguments to the hooks, much like you can with <code>apply_filters()</code>.</p> <p>Example usage:</p> <pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// The action callback function.
+function example_callback( $arg1, $arg2 ) {
+    // (maybe) do something with the args.
+}
+add_action( 'example_action', 'example_callback', 10, 2 );
+
+/*
+ * Trigger the actions by calling the 'example_callback()' function
+ * that's hooked onto `example_action` above.
+ *
+ * - 'example_action' is the action hook.
+ * - $arg1 and $arg2 are the additional arguments passed to the callback.
+do_action( 'example_action', $arg1, $arg2 );</code></pre></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$hook_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The name of the action to be executed.</span></div></dd><dt><code>$arg</code><span class="type"><span class="mixed">mixed</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Additional arguments which are passed on to the                          functions hooked to the action. Default empty.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="482"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function do_action( $hook_name, ...$arg ) {
+	global $wp_filter, $wp_actions, $wp_current_filter;
+
+	if ( ! isset( $wp_actions[ $hook_name ] ) ) {
+		$wp_actions[ $hook_name ] = 1;
+	} else {
+		++$wp_actions[ $hook_name ];
+	}
+
+	// Do 'all' actions first.
+	if ( isset( $wp_filter['all'] ) ) {
+		$wp_current_filter[] = $hook_name;
+		$all_args            = func_get_args(); // phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue.NeedsInspection
+		_wp_call_all_hook( $all_args );
+	}
+
+	if ( ! isset( $wp_filter[ $hook_name ] ) ) {
+		if ( isset( $wp_filter['all'] ) ) {
+			array_pop( $wp_current_filter );
+		}
+
+		return;
+	}
+
+	if ( ! isset( $wp_filter['all'] ) ) {
+		$wp_current_filter[] = $hook_name;
+	}
+
+	if ( empty( $arg ) ) {
+		$arg[] = '';
+	} elseif ( is_array( $arg[0] ) &amp;&amp; 1 === count( $arg[0] ) &amp;&amp; isset( $arg[0][0] ) &amp;&amp; is_object( $arg[0][0] ) ) {
+		// Backward compatibility for PHP4-style passing of `array( &amp;$this )` as action `$arg`.
+		$arg[0] = $arg[0][0];
+	}
+
+	$wp_filter[ $hook_name ]-&gt;do_action( $arg );
+
+	array_pop( $wp_current_filter );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/plugin.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/plugin.php#L482">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/plugin.php#L482-L520">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_call_all_hook/">_wp_call_all_hook()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the ‘all’ hook, which will process the functions hooked into it.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_notice/">wp_admin_notice()</a><code>wp-includes/functions.php</code></td><td><p>Outputs an admin notice.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_trigger_error/">wp_trigger_error()</a><code>wp-includes/functions.php</code></td><td><p>Generates a user-level error/warning/notice/deprecation message.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_class/">_deprecated_class()</a><code>wp-includes/functions.php</code></td><td><p>Marks a class as deprecated and informs when it has been used.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set_last_changed/">wp_cache_set_last_changed()</a><code>wp-includes/functions.php</code></td><td><p>Sets last changed date for the specified cache group to now.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_get_iframed_editor_assets/">_wp_get_iframed_editor_assets()</a><code>wp-includes/block-editor.php</code></td><td><p>Collect the block editor assets that need to be loaded into the editor’s iframe.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/create_item/">WP_REST_Menu_Items_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Creates a single nav menu item.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/update_item/">WP_REST_Menu_Items_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Updates a single nav menu item.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/delete_item/">WP_REST_Menu_Items_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Deletes a single nav menu item.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menus_controller/create_item/">WP_REST_Menus_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menus-controller.php</code></td><td><p>Creates a single term in a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menus_controller/update_item/">WP_REST_Menus_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menus-controller.php</code></td><td><p>Updates a single term from a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menus_controller/delete_item/">WP_REST_Menus_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menus-controller.php</code></td><td><p>Deletes a single term from a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menus_controller/handle_auto_add/">WP_REST_Menus_Controller::handle_auto_add()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menus-controller.php</code></td><td><p>Updates the menu’s auto add from a REST request.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_widgets_controller/delete_item/">WP_REST_Widgets_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-widgets-controller.php</code></td><td><p>Deletes a widget.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_widgets_controller/save_widget/">WP_REST_Widgets_Controller::save_widget()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-widgets-controller.php</code></td><td><p>Saves the widget in the request object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_sidebars_controller/update_item/">WP_REST_Sidebars_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-sidebars-controller.php</code></td><td><p>Updates a sidebar.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_templates_controller/update_item/">WP_REST_Templates_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-templates-controller.php</code></td><td><p>Updates a single template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_templates_controller/create_item/">WP_REST_Templates_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-templates-controller.php</code></td><td><p>Creates a single template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_render_widget/">wp_render_widget()</a><code>wp-includes/widgets.php</code></td><td><p>Calls the render callback of a widget and returns the output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_application_passwords_controller/create_item/">WP_REST_Application_Passwords_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-application-passwords-controller.php</code></td><td><p>Creates an application password.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_application_passwords_controller/update_item/">WP_REST_Application_Passwords_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-application-passwords-controller.php</code></td><td><p>Updates an application password.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_application_passwords/delete_application_password/">WP_Application_Passwords::delete_application_password()</a><code>wp-includes/class-wp-application-passwords.php</code></td><td><p>Deletes an application password.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_application_passwords/delete_all_application_passwords/">WP_Application_Passwords::delete_all_application_passwords()</a><code>wp-includes/class-wp-application-passwords.php</code></td><td><p>Deletes all application passwords for the given user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_application_passwords/create_new_application_password/">WP_Application_Passwords::create_new_application_password()</a><code>wp-includes/class-wp-application-passwords.php</code></td><td><p>Creates a new application password.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_application_passwords/update_application_password/">WP_Application_Passwords::update_application_password()</a><code>wp-includes/class-wp-application-passwords.php</code></td><td><p>Updates an application password.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_authenticate_application_password/">wp_authenticate_application_password()</a><code>wp-includes/user.php</code></td><td><p>Authenticates the user using an application password.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_after_insert_post/">wp_after_insert_post()</a><code>wp-includes/post.php</code></td><td><p>Fires actions after a post, its terms and meta data has been saved.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_application_passwords_list_table/column_default/">WP_Application_Passwords_List_Table::column_default()</a><code>wp-admin/includes/class-wp-application-passwords-list-table.php</code></td><td><p>Generates content for a single row of the table</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_application_passwords_list_table/print_js_template_row/">WP_Application_Passwords_List_Table::print_js_template_row()</a><code>wp-admin/includes/class-wp-application-passwords-list-table.php</code></td><td><p>Prints the JavaScript template for the new row item.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_is_authorize_application_password_request_valid/">wp_is_authorize_application_password_request_valid()</a><code>wp-admin/includes/user.php</code></td><td><p>Checks if the Authorize Application Password request is valid.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/core_auto_updates_settings/">core_auto_updates_settings()</a><code>wp-admin/update-core.php</code></td><td><p>Display WordPress auto-updates settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_check_comment_disallowed_list/">wp_check_comment_disallowed_list()</a><code>wp-includes/comment.php</code></td><td><p>Checks if a comment contains disallowed characters or words.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_sitemaps_get_server/">wp_sitemaps_get_server()</a><code>wp-includes/sitemaps.php</code></td><td><p>Retrieves the current Sitemaps server instance.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_favicon/">do_favicon()</a><code>wp-includes/functions.php</code></td><td><p>Displays the favicon.ico file content.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_attachments_controller/insert_attachment/">WP_REST_Attachments_Controller::insert_attachment()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-attachments-controller.php</code></td><td><p>Inserts the attachment post in the database. Does not update the attachment meta.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_sites_list_table/extra_tablenav/">WP_MS_Sites_List_Table::extra_tablenav()</a><code>wp-admin/includes/class-wp-ms-sites-list-table.php</code></td><td><p>Displays extra controls between bulk actions and pagination.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_recovery_mode_key_service/generate_and_store_recovery_mode_key/">WP_Recovery_Mode_Key_Service::generate_and_store_recovery_mode_key()</a><code>wp-includes/class-wp-recovery-mode-key-service.php</code></td><td><p>Creates a recovery mode key.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_body_open/">wp_body_open()</a><code>wp-includes/general-template.php</code></td><td><p>Fires the wp_body_open action.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_maybe_transition_site_statuses_on_update/">wp_maybe_transition_site_statuses_on_update()</a><code>wp-includes/ms-site.php</code></td><td><p>Triggers actions on site status updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_prepare_site_data/">wp_prepare_site_data()</a><code>wp-includes/ms-site.php</code></td><td><p>Prepares site data for insertion or update in the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_site/">wp_insert_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Inserts a new site into the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_site/">wp_update_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Updates a site in the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_site/">wp_delete_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Deletes a site from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_autosaves_controller/create_post_autosave/">WP_REST_Autosaves_Controller::create_post_autosave()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-autosaves-controller.php</code></td><td><p>Creates autosave for the specified post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_common_block_scripts_and_styles/">wp_common_block_scripts_and_styles()</a><code>wp-includes/script-loader.php</code></td><td><p>Handles the enqueueing of block scripts and styles that are common to both the editor and the front-end.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_block_editor_meta_box_post_form_hidden_fields/">the_block_editor_meta_box_post_form_hidden_fields()</a><code>wp-admin/includes/post.php</code></td><td><p>Renders the hidden form required for the meta boxes form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_and_do_post_meta_boxes/">register_and_do_post_meta_boxes()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Registers the default post meta boxes, and runs the <code>do_meta_boxes</code> actions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_process_personal_data_export_page/">wp_privacy_process_personal_data_export_page()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Intercept personal data exporter page Ajax responses in order to assemble the personal data export file.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_generate_personal_data_export_file/">wp_privacy_generate_personal_data_export_file()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Generate the personal data export file.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_requests_table/column_default/">WP_Privacy_Requests_Table::column_default()</a><code>wp-admin/includes/class-wp-privacy-requests-table.php</code></td><td><p>Handles the default column.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_process_personal_data_erasure_page/">wp_privacy_process_personal_data_erasure_page()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Mark erasure requests as completed after processing is finished.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/trash_changeset_post/">WP_Customize_Manager::trash_changeset_post()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Trashes or deletes a changeset post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_taxonomy_cache/">clean_taxonomy_cache()</a><code>wp-includes/taxonomy.php</code></td><td><p>Cleans the caches for a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_enqueue_code_editor/">wp_enqueue_code_editor()</a><code>wp-includes/general-template.php</code></td><td><p>Enqueues assets needed by the code editor for the given settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_roles/init_roles/">WP_Roles::init_roles()</a><code>wp-includes/class-wp-roles.php</code></td><td><p>Initializes all of the available roles.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/_wp_editors/print_default_editor_scripts/">_WP_Editors::print_default_editor_scripts()</a><code>wp-includes/class-wp-editor.php</code></td><td><p>Print (output) all editor scripts and default settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/_publish_changeset_values/">WP_Customize_Manager::_publish_changeset_values()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Publishes the values of a changeset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/save_changeset_post/">WP_Customize_Manager::save_changeset_post()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Saves the post for the loaded changeset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_customize_publish_changeset/">_wp_customize_publish_changeset()</a><code>wp-includes/theme.php</code></td><td><p>Publishes a snapshot’s changes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_users_controller/delete_item/">WP_REST_Users_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php</code></td><td><p>Deletes a single user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_users_controller/create_item/">WP_REST_Users_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php</code></td><td><p>Creates a single user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_users_controller/update_item/">WP_REST_Users_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php</code></td><td><p>Updates a single user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_revisions_controller/delete_item/">WP_REST_Revisions_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-revisions-controller.php</code></td><td><p>Deletes a single revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_attachments_controller/create_item/">WP_REST_Attachments_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-attachments-controller.php</code></td><td><p>Creates a single attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_attachments_controller/update_item/">WP_REST_Attachments_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-attachments-controller.php</code></td><td><p>Updates a single attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_terms_controller/delete_item/">WP_REST_Terms_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-terms-controller.php</code></td><td><p>Deletes a single term from a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_terms_controller/create_item/">WP_REST_Terms_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-terms-controller.php</code></td><td><p>Creates a single term in a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_terms_controller/update_item/">WP_REST_Terms_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-terms-controller.php</code></td><td><p>Updates a single term from a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_posts_controller/create_item/">WP_REST_Posts_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php</code></td><td><p>Creates a single post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_posts_controller/update_item/">WP_REST_Posts_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php</code></td><td><p>Updates a single post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_posts_controller/delete_item/">WP_REST_Posts_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php</code></td><td><p>Deletes a single post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_comments_controller/update_item/">WP_REST_Comments_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-comments-controller.php</code></td><td><p>Updates a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_comments_controller/delete_item/">WP_REST_Comments_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-comments-controller.php</code></td><td><p>Deletes a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_comments_controller/create_item/">WP_REST_Comments_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-comments-controller.php</code></td><td><p>Creates a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_locale_switcher/change_locale/">WP_Locale_Switcher::change_locale()</a><code>wp-includes/class-wp-locale-switcher.php</code></td><td><p>Changes the site’s locale to the given one.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_locale_switcher/switch_to_locale/">WP_Locale_Switcher::switch_to_locale()</a><code>wp-includes/class-wp-locale-switcher.php</code></td><td><p>Switches the translations according to the given locale.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_locale_switcher/restore_previous_locale/">WP_Locale_Switcher::restore_previous_locale()</a><code>wp-includes/class-wp-locale-switcher.php</code></td><td><p>Restores the translations according to the previous locale.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_check_comment_flood/">wp_check_comment_flood()</a><code>wp-includes/comment.php</code></td><td><p>Checks whether comment flooding is occurring.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_term_query/parse_query/">WP_Term_Query::parse_query()</a><code>wp-includes/class-wp-term-query.php</code></td><td><p>Parse arguments passed to the term query with default query parameters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_network_cache/">clean_network_cache()</a><code>wp-includes/ms-network.php</code></td><td><p>Removes a network from the object cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_hook/">_deprecated_hook()</a><code>wp-includes/functions.php</code></td><td><p>Marks a deprecated action or filter hook as deprecated and throws a notice.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/ms_load_current_site_and_network/">ms_load_current_site_and_network()</a><code>wp-includes/ms-load.php</code></td><td><p>Identifies the network and site of a requested domain and path and populates the corresponding network and site global objects as part of the multisite bootstrap process.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/rest_get_server/">rest_get_server()</a><code>wp-includes/rest-api.php</code></td><td><p>Retrieves the current REST server instance.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_metadata_lazyloader/queue_objects/">WP_Metadata_Lazyloader::queue_objects()</a><code>wp-includes/class-wp-metadata-lazyloader.php</code></td><td><p>Adds objects to the metadata lazy-load queue.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/unregister_taxonomy/">unregister_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Unregisters a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/unregister_post_type/">unregister_post_type()</a><code>wp-includes/post.php</code></td><td><p>Unregisters a post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_selective_refresh/handle_render_partials_request/">WP_Customize_Selective_Refresh::handle_render_partials_request()</a><code>wp-includes/customize/class-wp-customize-selective-refresh.php</code></td><td><p>Handles the Ajax request to return the rendered partials for the requested placements.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/enqueue_embed_scripts/">enqueue_embed_scripts()</a><code>wp-includes/embed.php</code></td><td><p>Enqueues embed iframe default CSS and JS.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_password_reset_key/">get_password_reset_key()</a><code>wp-includes/user.php</code></td><td><p>Creates, stores, then returns a password reset key for user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_handle_comment_submission/">wp_handle_comment_submission()</a><code>wp-includes/comment.php</code></td><td><p>Handles the submission of a comment, usually posted to wp-comments-post.php via a comment form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_network_option/">update_network_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of a network option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_network_option/">add_network_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new network option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_network_option/">delete_network_option()</a><code>wp-includes/option.php</code></td><td><p>Removes a network option by name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_inactive_widgets/">wp_ajax_delete_inactive_widgets()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles removing inactive widgets via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menu_item_control/content_template/">WP_Customize_Nav_Menu_Item_Control::content_template()</a><code>wp-includes/customize/class-wp-customize-nav-menu-item-control.php</code></td><td><p>JS/Underscore template for the control UI.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_constructor/">_deprecated_constructor()</a><code>wp-includes/functions.php</code></td><td><p>Marks a constructor as deprecated and informs when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/column_default/">WP_Posts_List_Table::column_default()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td><p>Handles the default column output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_links_list_table/column_default/">WP_Links_List_Table::column_default()</a><code>wp-admin/includes/class-wp-links-list-table.php</code></td><td><p>Handles the default column output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_themes_list_table/column_default/">WP_MS_Themes_List_Table::column_default()</a><code>wp-admin/includes/class-wp-ms-themes-list-table.php</code></td><td><p>Handles default column output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_crop_image/">wp_ajax_crop_image()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles cropping an image via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_sites_list_table/column_default/">WP_MS_Sites_List_Table::column_default()</a><code>wp-admin/includes/class-wp-ms-sites-list-table.php</code></td><td><p>Handles output for the default column.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_sites_list_table/column_plugins/">WP_MS_Sites_List_Table::column_plugins()</a><code>wp-admin/includes/class-wp-ms-sites-list-table.php</code></td><td><p>Handles the plugins column output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_media_list_table/column_default/">WP_Media_List_Table::column_default()</a><code>wp-admin/includes/class-wp-media-list-table.php</code></td><td><p>Handles output for the default column.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/set_post_value/">WP_Customize_Manager::set_post_value()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Overrides a setting’s value in the current customized state.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_media_attach_action/">wp_media_attach_action()</a><code>wp-admin/includes/media.php</code></td><td><p>Encapsulates the logic for Attach/Detach actions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_panel/maybe_render/">WP_Customize_Panel::maybe_render()</a><code>wp-includes/class-wp-customize-panel.php</code></td><td><p>Check capabilities and render the panel.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/login_footer/">login_footer()</a><code>wp-login.php</code></td><td><p>Outputs the footer for the login page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/retrieve_password/">retrieve_password()</a><code>wp-includes/user.php</code></td><td><p>Handles sending a password retrieval email to a user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/login_header/">login_header()</a><code>wp-login.php</code></td><td><p>Outputs the login page header.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/show_user_form/">show_user_form()</a><code>wp-signup.php</code></td><td><p>Displays the fields for the new user account registration form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/signup_another_blog/">signup_another_blog()</a><code>wp-signup.php</code></td><td><p>Shows a form for returning users to sign up for another site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/confirm_another_blog_signup/">confirm_another_blog_signup()</a><code>wp-signup.php</code></td><td><p>Shows a message confirming that the new site has been created.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/signup_user/">signup_user()</a><code>wp-signup.php</code></td><td><p>Shows a form for a visitor to sign up for a new user account.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/confirm_user_signup/">confirm_user_signup()</a><code>wp-signup.php</code></td><td><p>Shows a message confirming that the new user has been registered and is awaiting activation.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/signup_blog/">signup_blog()</a><code>wp-signup.php</code></td><td><p>Shows a form for a user or visitor to sign up for a new site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/confirm_blog_signup/">confirm_blog_signup()</a><code>wp-signup.php</code></td><td><p>Shows a message confirming that the new site has been registered and is awaiting activation.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_signup_header/">do_signup_header()</a><code>wp-signup.php</code></td><td><p>Prints signup_header via wp_head.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/show_blog_form/">show_blog_form()</a><code>wp-signup.php</code></td><td><p>Generates and displays the Sign-up and Create Site forms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/display_setup_form/">display_setup_form()</a><code>wp-admin/install.php</code></td><td><p>Displays installer setup form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/update/">WP_Automatic_Updater::update()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Updates an item, if appropriate.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/run/">WP_Automatic_Updater::run()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Kicks off the background update process, looping through all pending updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/core_upgrader/upgrade/">Core_Upgrader::upgrade()</a><code>wp-admin/includes/class-core-upgrader.php</code></td><td><p>Upgrades WordPress core.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/language_pack_upgrader/bulk_upgrade/">Language_Pack_Upgrader::bulk_upgrade()</a><code>wp-admin/includes/class-language-pack-upgrader.php</code></td><td><p>Upgrades several language packs at once.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/plugin_upgrader/bulk_upgrade/">Plugin_Upgrader::bulk_upgrade()</a><code>wp-admin/includes/class-plugin-upgrader.php</code></td><td><p>Upgrades several plugins at once.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/theme_upgrader/install/">Theme_Upgrader::install()</a><code>wp-admin/includes/class-theme-upgrader.php</code></td><td><p>Install a theme package.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/theme_upgrader/bulk_upgrade/">Theme_Upgrader::bulk_upgrade()</a><code>wp-admin/includes/class-theme-upgrader.php</code></td><td><p>Upgrades several themes at once.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/run/">WP_Upgrader::run()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Runs an upgrade/installation.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/plugin_upgrader/install/">Plugin_Upgrader::install()</a><code>wp-admin/includes/class-plugin-upgrader.php</code></td><td><p>Install a plugin package.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_theme/">delete_theme()</a><code>wp-admin/includes/theme.php</code></td><td><p>Removes a theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_screen/set_current_screen/">WP_Screen::set_current_screen()</a><code>wp-admin/includes/class-wp-screen.php</code></td><td><p>Makes the screen object the current screen.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_plugins_list_table/single_row/">WP_Plugins_List_Table::single_row()</a><code>wp-admin/includes/class-wp-plugins-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/grant_super_admin/">grant_super_admin()</a><code>wp-includes/capabilities.php</code></td><td><p>Grants Super Admin privileges.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/revoke_super_admin/">revoke_super_admin()</a><code>wp-includes/capabilities.php</code></td><td><p>Revokes Super Admin privileges.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_delete_user/">wpmu_delete_user()</a><code>wp-admin/includes/ms.php</code></td><td><p>Deletes a user and all of their posts from the network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_user_status/">update_user_status()</a><code>wp-includes/ms-deprecated.php</code></td><td><p>Update the status of a user in the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_themes_list_table/single_row/">WP_MS_Themes_List_Table::single_row()</a><code>wp-admin/includes/class-wp-ms-themes-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/populate_options/">populate_options()</a><code>wp-admin/includes/schema.php</code></td><td><p>Create WordPress options and set the default values.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_install_list_table/display/">WP_Theme_Install_List_Table::display()</a><code>wp-admin/includes/class-wp-theme-install-list-table.php</code></td><td><p>Displays the theme install table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_plugin_update_row/">wp_plugin_update_row()</a><code>wp-admin/includes/update.php</code></td><td><p>Displays update information for a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_theme_update_row/">wp_theme_update_row()</a><code>wp-admin/includes/update.php</code></td><td><p>Displays update information for a theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_right_now/">wp_dashboard_right_now()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Dashboard widget that displays some basic stats about the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_network_dashboard_right_now/">wp_network_dashboard_right_now()</a><code>wp-admin/includes/dashboard.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_setup/">wp_dashboard_setup()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Registers dashboard widgets.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_upgrade/">wp_upgrade()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Runs WordPress Upgrade functions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_install/">wp_install()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Installs the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_setting/">register_setting()</a><code>wp-includes/option.php</code></td><td><p>Registers a setting and its data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/unregister_setting/">unregister_setting()</a><code>wp-includes/option.php</code></td><td><p>Unregisters a setting.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/uninstall_plugin/">uninstall_plugin()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Uninstalls a single plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/deactivate_plugins/">deactivate_plugins()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Deactivates a single plugin or multiple plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_plugins/">delete_plugins()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Removes directory and files of a plugin for a list of plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/activate_plugin/">activate_plugin()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Attempts activation of plugin in a “sandbox” and redirects on success.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/edit_user/">edit_user()</a><code>wp-admin/includes/user.php</code></td><td><p>Edit user settings based on contents of $_POST</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_user/">wp_delete_user()</a><code>wp-admin/includes/user.php</code></td><td><p>Delete user and optionally reassign posts and links to another user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_install_list_table/display_tablenav/">WP_Plugin_Install_List_Table::display_tablenav()</a><code>wp-admin/includes/class-wp-plugin-install-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_admin_html_begin/">_wp_admin_html_begin()</a><code>wp-admin/includes/template.php</code></td><td><p>Prints out the beginning of the admin HTML header.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/iframe_header/">iframe_header()</a><code>wp-admin/includes/template.php</code></td><td><p>Generic Iframe header for use with Thickbox.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/iframe_footer/">iframe_footer()</a><code>wp-admin/includes/template.php</code></td><td><p>Generic Iframe footer for use with Thickbox.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_inline_data/">get_inline_data()</a><code>wp-admin/includes/template.php</code></td><td><p>Adds hidden fields with the data for use in the inline editor for posts and pages.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_users_list_table/extra_tablenav/">WP_Users_List_Table::extra_tablenav()</a><code>wp-admin/includes/class-wp-users-list-table.php</code></td><td><p>Outputs the controls to allow user roles to be changed in bulk.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/edit_form_image_editor/">edit_form_image_editor()</a><code>wp-admin/includes/media.php</code></td><td><p>Displays the image and editor in the post editor</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/media_upload_form/">media_upload_form()</a><code>wp-admin/includes/media.php</code></td><td><p>Outputs the legacy media upload form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_iframe/">wp_iframe()</a><code>wp-admin/includes/media.php</code></td><td><p>Outputs the iframe to display the media upload page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_admin_notice_post_locked/">_admin_notice_post_locked()</a><code>wp-admin/includes/post.php</code></td><td><p>Outputs the HTML for the notice to say that someone else is editing or has taken over editing of this post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_create_post_autosave/">wp_create_post_autosave()</a><code>wp-admin/includes/post.php</code></td><td><p>Creates autosave data for the specified post from <code>$_POST</code> data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/bulk_edit_posts/">bulk_edit_posts()</a><code>wp-admin/includes/post.php</code></td><td><p>Processes the post data for the bulk editing of posts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_heartbeat/">wp_ajax_heartbeat()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles the Heartbeat API via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_widget/">wp_ajax_save_widget()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving a widget via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_nopriv_heartbeat/">wp_ajax_nopriv_heartbeat()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles the Heartbeat API in the no-privilege context via AJAX .</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_core/">update_core()</a><code>wp-admin/includes/update-core.php</code></td><td><p>Upgrades the core of WordPress.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_comment_status_meta_box/">post_comment_status_meta_box()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays comments status form fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/page_attributes_meta_box/">page_attributes_meta_box()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays page attributes form fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/link_submit_meta_box/">link_submit_meta_box()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays link create form fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_link/">wp_insert_link()</a><code>wp-admin/includes/bookmark.php</code></td><td><p>Inserts a link into the database, or updates an existing link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_submit_meta_box/">post_submit_meta_box()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays post submit form fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/attachment_submit_meta_box/">attachment_submit_meta_box()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays attachment submit form fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_link/">wp_delete_link()</a><code>wp-admin/includes/bookmark.php</code></td><td><p>Deletes a specified link from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_media_list_table/extra_tablenav/">WP_Media_List_Table::extra_tablenav()</a><code>wp-admin/includes/class-wp-media-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_comments_list_table/column_default/">WP_Comments_List_Table::column_default()</a><code>wp-admin/includes/class-wp-comments-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_comments_list_table/extra_tablenav/">WP_Comments_List_Table::extra_tablenav()</a><code>wp-admin/includes/class-wp-comments-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_terms_list_table/inline_edit/">WP_Terms_List_Table::inline_edit()</a><code>wp-admin/includes/class-wp-terms-list-table.php</code></td><td><p>Outputs the hidden row displayed when inline editing</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/walker_nav_menu_edit/start_el/">Walker_Nav_Menu_Edit::start_el()</a><code>wp-admin/includes/class-walker-nav-menu-edit.php</code></td><td><p>Start the element output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nav_menu_update_menu_items/">wp_nav_menu_update_menu_items()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Saves nav menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/inline_edit/">WP_Posts_List_Table::inline_edit()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td><p>Outputs the hidden row displayed when inline editing</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/extra_tablenav/">WP_Posts_List_Table::extra_tablenav()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/custom_image_header/step_1/">Custom_Image_Header::step_1()</a><code>wp-admin/includes/class-custom-image-header.php</code></td><td><p>Displays first step of custom header image page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/confirm_delete_users/">confirm_delete_users()</a><code>wp-admin/includes/ms.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_activate_header/">do_activate_header()</a><code>wp-activate.php</code></td><td><p>Adds an action hook specific to this page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/add_role/">WP_User::add_role()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Adds role to user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/remove_role/">WP_User::remove_role()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Removes role from user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/set_role/">WP_User::set_role()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Sets the role of the user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/customize_preview_init/">WP_Customize_Manager::customize_preview_init()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Prints JavaScript settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/start_previewing_theme/">WP_Customize_Manager::start_previewing_theme()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>If the theme to be previewed isn’t the active theme, add filter callbacks to swap it out at runtime.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/stop_previewing_theme/">WP_Customize_Manager::stop_previewing_theme()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Stops previewing the selected theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/wp_loaded/">WP_Customize_Manager::wp_loaded()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Registers styles/scripts and initialize the preview of each setting</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_theme_switched/">check_theme_switched()</a><code>wp-includes/theme.php</code></td><td><p>Checks if a theme has been changed and runs ‘after_switch_theme’ hook on the next WP load.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/switch_theme/">switch_theme()</a><code>wp-includes/theme.php</code></td><td><p>Switches the theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_password/">wp_set_password()</a><code>wp-includes/pluggable.php</code></td><td><p>Updates the user’s password with a new hashed one.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_verify_nonce/">wp_verify_nonce()</a><code>wp-includes/pluggable.php</code></td><td><p>Verifies that a correct security nonce was used with time limit.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_auth_cookie/">wp_set_auth_cookie()</a><code>wp-includes/pluggable.php</code></td><td><p>Sets the authentication cookies based on user ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_clear_auth_cookie/">wp_clear_auth_cookie()</a><code>wp-includes/pluggable.php</code></td><td><p>Removes all of the cookies associated with authentication.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/auth_redirect/">auth_redirect()</a><code>wp-includes/pluggable.php</code></td><td><p>Checks if a user is logged in, if not it redirects them to the login page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_admin_referer/">check_admin_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Ensures intent by verifying that a user was referred from another admin page with the correct security nonce.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_ajax_referer/">check_ajax_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Verifies the Ajax request to prevent processing requests external of the blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_authenticate/">wp_authenticate()</a><code>wp-includes/pluggable.php</code></td><td><p>Authenticates a user, confirming the login credentials are valid.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_logout/">wp_logout()</a><code>wp-includes/pluggable.php</code></td><td><p>Logs the current user out.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_validate_auth_cookie/">wp_validate_auth_cookie()</a><code>wp-includes/pluggable.php</code></td><td><p>Validates authentication cookie.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_current_user/">wp_set_current_user()</a><code>wp-includes/pluggable.php</code></td><td><p>Changes the current user by ID or name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_mail/">wp_mail()</a><code>wp-includes/pluggable.php</code></td><td><p>Sends an email, similar to PHP’s mail function.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_head/">wp_head()</a><code>wp-includes/general-template.php</code></td><td><p>Fires the wp_head action.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_footer/">wp_footer()</a><code>wp-includes/general-template.php</code></td><td><p>Fires the wp_footer action.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_meta/">wp_meta()</a><code>wp-includes/general-template.php</code></td><td><p>Theme container function for the ‘wp_meta’ action.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_header/">get_header()</a><code>wp-includes/general-template.php</code></td><td><p>Loads header template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_footer/">get_footer()</a><code>wp-includes/general-template.php</code></td><td><p>Loads footer template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_sidebar/">get_sidebar()</a><code>wp-includes/general-template.php</code></td><td><p>Loads sidebar template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_template_part/">get_template_part()</a><code>wp-includes/general-template.php</code></td><td><p>Loads a template part into a template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_search_form/">get_search_form()</a><code>wp-includes/general-template.php</code></td><td><p>Displays search form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_usermeta/">delete_usermeta()</a><code>wp-includes/deprecated.php</code></td><td><p>Remove user meta data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_usermeta/">update_usermeta()</a><code>wp-includes/deprecated.php</code></td><td><p>Update metadata of user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/have_posts/">WP_Query::have_posts()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Determines whether there are more posts available in the loop.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/the_comment/">WP_Query::the_comment()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Sets up the current comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get_posts/">WP_Query::get_posts()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves an array of posts based on query variables.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/parse_tax_query/">WP_Query::parse_tax_query()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Parses various taxonomy related query vars.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/shutdown_action_hook/">shutdown_action_hook()</a><code>wp-includes/load.php</code></td><td><p>Runs just before PHP shuts down execution.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_http/_dispatch_request/">WP_Http::_dispatch_request()</a><code>wp-includes/class-wp-http.php</code></td><td><p>Dispatches a HTTP request to a supporting transport.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_http/request/">WP_Http::request()</a><code>wp-includes/class-wp-http.php</code></td><td><p>Send an HTTP request to a URI.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_print_scripts/">wp_print_scripts()</a><code>wp-includes/functions.wp-scripts.php</code></td><td><p>Prints scripts in document head that are in the $handles queue.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_function/">_deprecated_function()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_file/">_deprecated_file()</a><code>wp-includes/functions.php</code></td><td><p>Marks a file as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_argument/">_deprecated_argument()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_robots/">do_robots()</a><code>wp-includes/functions.php</code></td><td><p>Displays the default robots.txt file content.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_feed/">do_feed()</a><code>wp-includes/functions.php</code></td><td><p>Loads the feed template from the use of an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_widgets_init/">wp_widgets_init()</a><code>wp-includes/widgets.php</code></td><td><p>Registers all of the default WordPress widgets on startup.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_section/maybe_render/">WP_Customize_Section::maybe_render()</a><code>wp-includes/class-wp-customize-section.php</code></td><td><p>Check capabilities and render the section.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_update_post_term_count/">_update_post_term_count()</a><code>wp-includes/taxonomy.php</code></td><td><p>Updates term count based on object types of the current taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_update_generic_term_count/">_update_generic_term_count()</a><code>wp-includes/taxonomy.php</code></td><td><p>Updates term count based on number of objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_object_term_cache/">clean_object_term_cache()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes the taxonomy relationship to terms from the cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_term_cache/">clean_term_cache()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes all of the term IDs from the cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_term/">wp_update_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Updates term based on arguments provided.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_object_terms/">wp_set_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Creates term and taxonomy relationships.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_remove_object_terms/">wp_remove_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes term(s) associated with a given object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_term/">wp_insert_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Adds a new term to the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_term/">wp_delete_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes a term from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_taxonomy/">register_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Creates or modifies a taxonomy object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_taxonomy_for_object_type/">register_taxonomy_for_object_type()</a><code>wp-includes/taxonomy.php</code></td><td><p>Adds an already registered taxonomy to an object type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/unregister_taxonomy_for_object_type/">unregister_taxonomy_for_object_type()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes an already registered taxonomy from an object type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/add_menus/">WP_Admin_Bar::add_menus()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td><p>Adds menus to the admin bar.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/initialize/">WP_Admin_Bar::initialize()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td><p>Initializes the admin bar.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_version_check/">wp_version_check()</a><code>wp-includes/update.php</code></td><td><p>Checks WordPress version against the newest version.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_print_styles/">wp_print_styles()</a><code>wp-includes/functions.wp-styles.php</code></td><td><p>Displays styles that are in the $handles queue.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_bar_render/">wp_admin_bar_render()</a><code>wp-includes/admin-bar.php</code></td><td><p>Renders the admin bar to the page based on the $wp_admin_bar-&gt;menu member var.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_setting/preview/">WP_Customize_Setting::preview()</a><code>wp-includes/class-wp-customize-setting.php</code></td><td><p>Add filters to supply the setting’s value when accessed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_setting/save/">WP_Customize_Setting::save()</a><code>wp-includes/class-wp-customize-setting.php</code></td><td><p>Checks user capabilities and theme supports, and then saves the value of the setting.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_setting/update/">WP_Customize_Setting::update()</a><code>wp-includes/class-wp-customize-setting.php</code></td><td><p>Save the value of the setting, using the related API.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_site_transient/">set_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_site_transient/">delete_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Deletes a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_transient/">set_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_option/">add_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_option/">delete_option()</a><code>wp-includes/option.php</code></td><td><p>Removes an option by name. Prevents removal of protected WordPress options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_transient/">delete_transient()</a><code>wp-includes/option.php</code></td><td><p>Deletes a transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_user/">wp_update_user()</a><code>wp-includes/user.php</code></td><td><p>Updates a user in the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/reset_password/">reset_password()</a><code>wp-includes/user.php</code></td><td><p>Handles resetting the user’s password.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_new_user/">register_new_user()</a><code>wp-includes/user.php</code></td><td><p>Handles registering a new user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_user_cache/">clean_user_cache()</a><code>wp-includes/user.php</code></td><td><p>Cleans all user caches.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_user/">wp_insert_user()</a><code>wp-includes/user.php</code></td><td><p>Inserts a user into the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_signon/">wp_signon()</a><code>wp-includes/user.php</code></td><td><p>Authenticates and logs a user in with ‘remember’ capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/load_template/">load_template()</a><code>wp-includes/template.php</code></td><td><p>Requires the template file with WordPress environment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_post_thumbnail/">get_the_post_thumbnail()</a><code>wp-includes/post-thumbnail-template.php</code></td><td><p>Retrieves the post thumbnail.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_post_cache/">clean_post_cache()</a><code>wp-includes/post.php</code></td><td><p>Will clean the post in the cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_attachment_cache/">clean_attachment_cache()</a><code>wp-includes/post.php</code></td><td><p>Will clean the attachment in the cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_publish_post_hook/">_publish_post_hook()</a><code>wp-includes/post.php</code></td><td><p>Hook to schedule pings and enclosures when a post is published.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_attachment/">wp_delete_attachment()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_publish_post/">wp_publish_post()</a><code>wp-includes/post.php</code></td><td><p>Publishes a post by transitioning the post status.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_transition_post_status/">wp_transition_post_status()</a><code>wp-includes/post.php</code></td><td><p>Fires actions related to the transitioning of a post’s status.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_untrash_post_comments/">wp_untrash_post_comments()</a><code>wp-includes/post.php</code></td><td><p>Restores comments for a post from the Trash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_post/">wp_insert_post()</a><code>wp-includes/post.php</code></td><td><p>Inserts or update a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post/">wp_delete_post()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes a post or page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_trash_post/">wp_trash_post()</a><code>wp-includes/post.php</code></td><td><p>Moves a post or page to the Trash</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_untrash_post/">wp_untrash_post()</a><code>wp-includes/post.php</code></td><td><p>Restores a post from the Trash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_trash_post_comments/">wp_trash_post_comments()</a><code>wp-includes/post.php</code></td><td><p>Moves comments for a post to the Trash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/stick_post/">stick_post()</a><code>wp-includes/post.php</code></td><td><p>Makes a post sticky.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/unstick_post/">unstick_post()</a><code>wp-includes/post.php</code></td><td><p>Un-sticks a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_post_type/">register_post_type()</a><code>wp-includes/post.php</code></td><td><p>Registers a post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/set_permalink_structure/">WP_Rewrite::set_permalink_structure()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Sets the main permalink structure for the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_put_post_revision/">_wp_put_post_revision()</a><code>wp-includes/revision.php</code></td><td><p>Inserts post data into the posts table as a post revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_restore_post_revision/">wp_restore_post_revision()</a><code>wp-includes/revision.php</code></td><td><p>Restores a post to the specified revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post_revision/">wp_delete_post_revision()</a><code>wp-includes/revision.php</code></td><td><p>Deletes a revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_existing_user_to_blog/">add_existing_user_to_blog()</a><code>wp-includes/ms-functions.php</code></td><td><p>Adds a user to a blog based on details from <a href="https://developer.notmatt.press/reference/functions/maybe_add_existing_user_to_blog/" rel="function">maybe_add_existing_user_to_blog()</a> .</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_activate_signup/">wpmu_activate_signup()</a><code>wp-includes/ms-functions.php</code></td><td><p>Activates a signup.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_create_user/">wpmu_create_user()</a><code>wp-includes/ms-functions.php</code></td><td><p>Creates a user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_signup_blog/">wpmu_signup_blog()</a><code>wp-includes/ms-functions.php</code></td><td><p>Records site signup information for future activation.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_signup_user/">wpmu_signup_user()</a><code>wp-includes/ms-functions.php</code></td><td><p>Records user signup information for future activation.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_user_to_blog/">add_user_to_blog()</a><code>wp-includes/ms-functions.php</code></td><td><p>Adds a user to a blog, along with specifying the user’s role.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_user_from_blog/">remove_user_from_blog()</a><code>wp-includes/ms-functions.php</code></td><td><p>Removes a user from a blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/switch_to_blog/">switch_to_blog()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Switches the current blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/restore_current_blog/">restore_current_blog()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Restores the current blog, after calling <a href="https://developer.notmatt.press/reference/functions/switch_to_blog/" rel="function">switch_to_blog()</a> .</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_blog_cache/">clean_blog_cache()</a><code>wp-includes/ms-site.php</code></td><td><p>Clean the blog cache</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_update_blogs_date/">wpmu_update_blogs_date()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Updates the last_updated field for the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_nav_menu/">wp_delete_nav_menu()</a><code>wp-includes/nav-menu.php</code></td><td><p>Deletes a navigation menu.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_nav_menu_object/">wp_update_nav_menu_object()</a><code>wp-includes/nav-menu.php</code></td><td><p>Saves the properties of a menu or create a new menu with those properties.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_nav_menu_item/">wp_update_nav_menu_item()</a><code>wp-includes/nav-menu.php</code></td><td><p>Saves the properties of a menu item or create a new one.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_getpostcategories/">wp_xmlrpc_server::mt_getPostCategories()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves post categories.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_setpostcategories/">wp_xmlrpc_server::mt_setPostCategories()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Sets categories for a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_supportedmethods/">wp_xmlrpc_server::mt_supportedMethods()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves an array of methods supported by this server.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_supportedtextfilters/">wp_xmlrpc_server::mt_supportedTextFilters()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves an empty array because we don’t support per-post text filters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_gettrackbackpings/">wp_xmlrpc_server::mt_getTrackbackPings()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves trackbacks sent to a given post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_publishpost/">wp_xmlrpc_server::mt_publishPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Sets a post’s publish status to ‘publish’.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/pingback_ping/">wp_xmlrpc_server::pingback_ping()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a pingback and registers it.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/pingback_extensions_getpingbacks/">wp_xmlrpc_server::pingback_extensions_getPingbacks()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves an array of URLs that pingbacked the given URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_editpost/">wp_xmlrpc_server::mw_editPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Edits a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_getpost/">wp_xmlrpc_server::mw_getPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_getrecentposts/">wp_xmlrpc_server::mw_getRecentPosts()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves list of recent posts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_getcategories/">wp_xmlrpc_server::mw_getCategories()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves the list of categories on a given blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_newmediaobject/">wp_xmlrpc_server::mw_newMediaObject()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Uploads a file, following your settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_getrecentposttitles/">wp_xmlrpc_server::mt_getRecentPostTitles()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves the post titles of recent posts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mt_getcategorylist/">wp_xmlrpc_server::mt_getCategoryList()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves the list of all categories on a blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/blogger_getuserinfo/">wp_xmlrpc_server::blogger_getUserInfo()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves user’s data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/blogger_getpost/">wp_xmlrpc_server::blogger_getPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/blogger_getrecentposts/">wp_xmlrpc_server::blogger_getRecentPosts()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves the list of recent posts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/blogger_newpost/">wp_xmlrpc_server::blogger_newPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Creates a new post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/blogger_editpost/">wp_xmlrpc_server::blogger_editPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Edits a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/blogger_deletepost/">wp_xmlrpc_server::blogger_deletePost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_newpost/">wp_xmlrpc_server::mw_newPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Creates a new post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getmediaitem/">wp_xmlrpc_server::wp_getMediaItem()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a media item by ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getpostformats/">wp_xmlrpc_server::wp_getPostFormats()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a list of post formats used by the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getposttype/">wp_xmlrpc_server::wp_getPostType()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getposttypes/">wp_xmlrpc_server::wp_getPostTypes()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves post types.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getrevisions/">wp_xmlrpc_server::wp_getRevisions()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves revisions for a specific post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getmedialibrary/">wp_xmlrpc_server::wp_getMediaLibrary()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a collection of media library items (or attachments).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_restorerevision/">wp_xmlrpc_server::wp_restoreRevision()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Restores a post revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/blogger_getusersblogs/">wp_xmlrpc_server::blogger_getUsersBlogs()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves blogs that user owns.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getcomments/">wp_xmlrpc_server::wp_getComments()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_deletecomment/">wp_xmlrpc_server::wp_deleteComment()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_editcomment/">wp_xmlrpc_server::wp_editComment()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Edits a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_newcomment/">wp_xmlrpc_server::wp_newComment()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Creates a new comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getcommentstatuslist/">wp_xmlrpc_server::wp_getCommentStatusList()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves all of the comment status.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getcommentcount/">wp_xmlrpc_server::wp_getCommentCount()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves comment counts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getpoststatuslist/">wp_xmlrpc_server::wp_getPostStatusList()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves post statuses.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getpagestatuslist/">wp_xmlrpc_server::wp_getPageStatusList()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves page statuses.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getpages/">wp_xmlrpc_server::wp_getPages()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves Pages.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_newpage/">wp_xmlrpc_server::wp_newPage()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Creates a new page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_deletepage/">wp_xmlrpc_server::wp_deletePage()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_editpage/">wp_xmlrpc_server::wp_editPage()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Edits a page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getpagelist/">wp_xmlrpc_server::wp_getPageList()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves page list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getauthors/">wp_xmlrpc_server::wp_getAuthors()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves authors list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_gettags/">wp_xmlrpc_server::wp_getTags()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Gets the list of all tags.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_newcategory/">wp_xmlrpc_server::wp_newCategory()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Creates a new category.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_deletecategory/">wp_xmlrpc_server::wp_deleteCategory()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a category.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_suggestcategories/">wp_xmlrpc_server::wp_suggestCategories()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves category list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getcomment/">wp_xmlrpc_server::wp_getComment()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getposts/">wp_xmlrpc_server::wp_getPosts()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves posts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_newterm/">wp_xmlrpc_server::wp_newTerm()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Creates a new term.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_editterm/">wp_xmlrpc_server::wp_editTerm()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Edits a term.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_deleteterm/">wp_xmlrpc_server::wp_deleteTerm()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a term.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getterm/">wp_xmlrpc_server::wp_getTerm()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a term.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getterms/">wp_xmlrpc_server::wp_getTerms()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves all terms for a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_gettaxonomy/">wp_xmlrpc_server::wp_getTaxonomy()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_gettaxonomies/">wp_xmlrpc_server::wp_getTaxonomies()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves all taxonomies.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getuser/">wp_xmlrpc_server::wp_getUser()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getusers/">wp_xmlrpc_server::wp_getUsers()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves users.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getprofile/">wp_xmlrpc_server::wp_getProfile()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves information about the requesting user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_editprofile/">wp_xmlrpc_server::wp_editProfile()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Edits user’s profile.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getpage/">wp_xmlrpc_server::wp_getPage()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_newpost/">wp_xmlrpc_server::wp_newPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Creates a new post for any registered post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_editpost/">wp_xmlrpc_server::wp_editPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Edits a post for any registered post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_deletepost/">wp_xmlrpc_server::wp_deletePost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a post for any registered post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getpost/">wp_xmlrpc_server::wp_getPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getusersblogs/">wp_xmlrpc_server::wp_getUsersBlogs()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves the blogs of the user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_control/maybe_render/">WP_Customize_Control::maybe_render()</a><code>wp-includes/class-wp-customize-control.php</code></td><td><p>Check capabilities and render the control.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/dynamic_sidebar/">dynamic_sidebar()</a><code>wp-includes/widgets.php</code></td><td><p>Display dynamic sidebar.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_widget/">the_widget()</a><code>wp-includes/widgets.php</code></td><td><p>Output an arbitrary widget as a template tag.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_sidebar/">register_sidebar()</a><code>wp-includes/widgets.php</code></td><td><p>Builds the definition for a single sidebar and returns the ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_register_sidebar_widget/">wp_register_sidebar_widget()</a><code>wp-includes/widgets.php</code></td><td><p>Register an instance of a widget.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unregister_sidebar_widget/">wp_unregister_sidebar_widget()</a><code>wp-includes/widgets.php</code></td><td><p>Remove widget from sidebar.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/comment_form/">comment_form()</a><code>wp-includes/comment-template.php</code></td><td><p>Outputs a complete commenting form for use within a template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/wp_ajax_update_widget/">WP_Customize_Widgets::wp_ajax_update_widget()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Updates widget settings asynchronously.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/print_styles/">WP_Customize_Widgets::print_styles()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Calls admin_print_styles-widgets.php and admin_print_styles hooks to allow custom styles from plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/print_scripts/">WP_Customize_Widgets::print_scripts()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Calls admin_print_scripts-widgets.php and admin_print_scripts hooks to allow custom scripts from plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/enqueue_scripts/">WP_Customize_Widgets::enqueue_scripts()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Enqueues scripts and styles for Customizer panel and export data to JavaScript.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/print_footer_scripts/">WP_Customize_Widgets::print_footer_scripts()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Calls admin_print_footer_scripts and admin_print_scripts hooks to allow custom scripts from plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/customize_controls_init/">WP_Customize_Widgets::customize_controls_init()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Ensures all widgets get loaded into the Customizer.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/print_head_scripts/">print_head_scripts()</a><code>wp-includes/script-loader.php</code></td><td><p>Prints the script queue in the HTML head on admin pages.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_print_head_scripts/">wp_print_head_scripts()</a><code>wp-includes/script-loader.php</code></td><td><p>Prints the script queue in the HTML head on the front end.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_print_footer_scripts/">wp_print_footer_scripts()</a><code>wp-includes/script-loader.php</code></td><td><p>Hooks to print the scripts and styles in the footer.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_enqueue_scripts/">wp_enqueue_scripts()</a><code>wp-includes/script-loader.php</code></td><td><p>Wrapper for do_action( ‘wp_enqueue_scripts’ ).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/clean_comment_cache/">clean_comment_cache()</a><code>wp-includes/comment.php</code></td><td><p>Removes a comment from the object cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_comment_status/">wp_set_comment_status()</a><code>wp-includes/comment.php</code></td><td><p>Sets the status of a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_new_comment/">wp_new_comment()</a><code>wp-includes/comment.php</code></td><td><p>Adds a new comment to the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_comment/">wp_update_comment()</a><code>wp-includes/comment.php</code></td><td><p>Updates an existing comment in the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_comment_count_now/">wp_update_comment_count_now()</a><code>wp-includes/comment.php</code></td><td><p>Updates the comment count for the post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_all_pings/">do_all_pings()</a><code>wp-includes/comment.php</code></td><td><p>Performs all pingbacks, enclosures, trackbacks, and sends to pingback services.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_spam_comment/">wp_spam_comment()</a><code>wp-includes/comment.php</code></td><td><p>Marks a comment as Spam.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unspam_comment/">wp_unspam_comment()</a><code>wp-includes/comment.php</code></td><td><p>Removes a comment from the Spam.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_comment/">wp_insert_comment()</a><code>wp-includes/comment.php</code></td><td><p>Inserts a comment into the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_transition_comment_status/">wp_transition_comment_status()</a><code>wp-includes/comment.php</code></td><td><p>Calls hooks for when a comment status transition occurs.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_comment/">wp_delete_comment()</a><code>wp-includes/comment.php</code></td><td><p>Trashes or deletes a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_trash_comment/">wp_trash_comment()</a><code>wp-includes/comment.php</code></td><td><p>Moves a comment to the Trash</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_untrash_comment/">wp_untrash_comment()</a><code>wp-includes/comment.php</code></td><td><p>Removes a comment from the Trash</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_allow_comment/">wp_allow_comment()</a><code>wp-includes/comment.php</code></td><td><p>Validates whether this comment is allowed to be made.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_metadata/">delete_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Deletes metadata for the specified object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_metadata_by_mid/">update_metadata_by_mid()</a><code>wp-includes/meta.php</code></td><td><p>Updates metadata by meta ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_metadata_by_mid/">delete_metadata_by_mid()</a><code>wp-includes/meta.php</code></td><td><p>Deletes metadata by meta ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_metadata/">add_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Adds metadata for the specified object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_metadata/">update_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Updates metadata for the specified object. If no value already exists for the specified object ID and metadata key, the metadata will be added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/_wp_editors/enqueue_scripts/">_WP_Editors::enqueue_scripts()</a><code>wp-includes/class-wp-editor.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/_wp_editors/editor_js/">_WP_Editors::editor_js()</a><code>wp-includes/class-wp-editor.php</code></td><td><p>Print (output) the TinyMCE configuration and initialization scripts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/add/">WP_Error::add()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Adds an error or appends an additional message to an existing error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/_wp_editors/editor/">_WP_Editors::editor()</a><code>wp-includes/class-wp-editor.php</code></td><td><p>Outputs the HTML for a single instance of the editor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_print_media_templates/">wp_print_media_templates()</a><code>wp-includes/media-template.php</code></td><td><p>Prints the templates used in the media manager.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 405 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.3.0/">5.3.0</a></td><td><span class="since-description">Formalized the existing and already documented <code>...$arg</code> parameter              by adding it to the function signature.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.2.0/">1.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="473" id="comment-473">
+<article class="comment-body" id="div-comment-473">
+<a class="screen-reader-text" href="#comment-content-473">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-473">
+<p><strong>Example</strong></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php"># ======= Somewhere in a (mu-)plugin, theme or the core ======= #
+
+/**
+ * You can have as many arguments as you want,
+ * but your callback function and the add_action call need to agree in number of arguments.
+ * Note: `add_action` above has 2 and 'i_am_hook' accepts 2. 
+ * You will find action hooks like these in a lot of themes &amp; plugins and in many place @core
+ * @see: <a href="https://codex.wordpress.org/Plugin_API/Action_Reference" rel="nofollow ugc">https://codex.wordpress.org/Plugin_API/Action_Reference</a>
+ */
+
+# ======= e.g., inside your functions.php file ======= #
+
+/**
+ * Define callback function
+ * Inside this function you can do whatever you can imagine
+ * with the variables that are loaded in the do_action() call above.
+ */
+function wpdocs_who_is_hook( $a, $b ) {
+	echo '&lt;code&gt;';
+		print_r( $a ); // `print_r` the array data inside the 1st argument
+	echo '&lt;/code&gt;';
+
+	echo '&lt;br /&gt;'.$b; // echo linebreak and value of 2nd argument
+}
+
+// then add it to the action hook, matching the defined number (2) of arguments in do_action
+// see [https://codex.wordpress.org/Function_Reference/add_action] in the Codex 
+
+// add_action( $tag, $function_to_add, $priority, $accepted_args );
+add_action( 'wpdocs_i_am_hook', 'wpdocs_who_is_hook', 10, 2 );
+
+// Define the arguments for the action hook
+$a = array(
+	'eye patch'  =&gt; 'yes',
+	'parrot'     =&gt; true,
+	'wooden leg' =&gt; 1
+);
+$b = __( 'And Hook said: "I ate ice cream with Peter Pan."', 'textdomain' ); 
+
+// Executes the action hook named 'i_am_hook'
+do_action( 'wpdocs_i_am_hook', $a, $b );</code></pre>
+<p>Result: </p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">Array ( 
+	['eye patch'] =&amp;gt; 'yes'
+	['parrot'] =&amp;gt; true
+	['wooden leg'] =&amp;gt; 1
+)
+And hook said: "I ate ice cream with Peter Pan."</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-473">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-mnelson4 odd alt thread-even depth-1" data-comment-id="2371" id="comment-2371">
+<article class="comment-body" id="div-comment-2371">
+<a class="screen-reader-text" href="#comment-content-2371">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2371">
+<p>BIG GOTCHA:</p>
+<p>When calling <code>do_action</code>, if the <code>$arg</code> you pass in is an array with a single object, it will instead pass that obejct in and NOT an array. It doesn’t do the same switcheroo, however, if the array’s single item is anything other than an array</p>
+<p>E.g., </p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function my_callback( $should_be_an_array ){
+   var_dump($should_be_an_array);
+}
+add_action( 'my_action', 'my_callback' );
+do_action( 'my_action', array(new stdclass()) );
+do_action( 'my_action', array( 'array_item_thats_not_an_object') );</code></pre>
+<p>echoes out</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">object(stdClass)[420]
+array (size=1)
+  0 =&gt; string 'array_item_thats_not_an_object' (length=30)</code></pre>
+<p>notice that the first time we passed in an array with an <code>stdclass</code> in it, but the callback function only received the <code>stdclass</code>, NOT an array</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2371">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-ahortin even thread-odd thread-alt depth-1" data-comment-id="2351" id="comment-2351">
+<article class="comment-body" id="div-comment-2351">
+<a class="screen-reader-text" href="#comment-content-2351">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2351">
+<p>Related:</p>
+<p><a href="https://developer.notmatt.press/reference/functions/add_action/">add_action()</a><br>
+<a href="https://developer.notmatt.press/reference/functions/remove_action/">remove_action()</a></br></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-2351">
+<ul class="children">
+<li class="comment byuser comment-author-binsaifullah odd alt depth-2" data-comment-id="3444" id="comment-3444">
+<article class="comment-body" id="div-comment-3444">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3444">
+<div><code>do_action</code> allows you to create a custom action hook. Suppose I want to create custom hook called <code>my_custom_hook</code> and want to work with it. So the codes will be something like this- 
+<pre class="wp-block-code"><code class="language-php" lang="php"> /* call the action where you want to put the hook */ do_action( 'my_custom_hook' ); /* Now work with this custom hook */ function wporg_my_custom_hook_function() { /* write what you want */ } add_action( 'my_custom_hook', 'wporg_my_custom_hook_function' );</code></pre>
+</div>
+<div><a class="url" href="https://profiles.wordpress.org/binsaifullah/" rel="external nofollow">Binsaifullah</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/do_action/#comment-3444"><time datetime="2019-11-03T16:44:59+00:00">5 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

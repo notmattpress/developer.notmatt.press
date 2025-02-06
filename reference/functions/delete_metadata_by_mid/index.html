@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">delete_metadata_by_mid()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>delete_metadata_by_mid()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">delete_metadata_by_mid( <span class="arg-type">string</span> <span class="arg-name">$meta_type</span>,  <span class="arg-type">int</span> <span class="arg-name">$meta_id</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Deletes metadata by meta ID.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$meta_type</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Type of object metadata is for. Accepts <code>'post'</code>, <code>'comment'</code>, <code>'term'</code>, <code>'user'</code>,                          or any other object type with an associated meta table.</span></div></dd><dt><code>$meta_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">ID for a specific meta row.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True on successful delete, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="985"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function delete_metadata_by_mid( $meta_type, $meta_id ) {
+	global $wpdb;
+
+	// Make sure everything is valid.
+	if ( ! $meta_type || ! is_numeric( $meta_id ) || floor( $meta_id ) != $meta_id ) {
+		return false;
+	}
+
+	$meta_id = (int) $meta_id;
+	if ( $meta_id &lt;= 0 ) {
+		return false;
+	}
+
+	$table = _get_meta_table( $meta_type );
+	if ( ! $table ) {
+		return false;
+	}
+
+	// Object and ID columns.
+	$column    = sanitize_key( $meta_type . '_id' );
+	$id_column = ( 'user' === $meta_type ) ? 'umeta_id' : 'meta_id';
+
+	/**
+	 * Short-circuits deleting metadata of a specific type by meta ID.
+	 *
+	 * The dynamic portion of the hook name, `$meta_type`, refers to the meta object type
+	 * (post, comment, term, user, or any other type with an associated meta table).
+	 * Returning a non-null value will effectively short-circuit the function.
+	 *
+	 * Possible hook names include:
+	 *
+	 *  - `delete_post_metadata_by_mid`
+	 *  - `delete_comment_metadata_by_mid`
+	 *  - `delete_term_metadata_by_mid`
+	 *  - `delete_user_metadata_by_mid`
+	 *
+	 * @since 5.0.0
+	 *
+	 * @param null|bool $delete  Whether to allow metadata deletion of the given type.
+	 * @param int       $meta_id Meta ID.
+	 */
+	$check = apply_filters( "delete_{$meta_type}_metadata_by_mid", null, $meta_id );
+	if ( null !== $check ) {
+		return (bool) $check;
+	}
+
+	// Fetch the meta and go on if it's found.
+	$meta = get_metadata_by_mid( $meta_type, $meta_id );
+	if ( $meta ) {
+		$object_id = (int) $meta-&gt;{$column};
+
+		/** This action is documented in wp-includes/meta.php */
+		do_action( "delete_{$meta_type}_meta", (array) $meta_id, $object_id, $meta-&gt;meta_key, $meta-&gt;meta_value );
+
+		// Old-style action.
+		if ( 'post' === $meta_type || 'comment' === $meta_type ) {
+			/**
+			 * Fires immediately before deleting post or comment metadata of a specific type.
+			 *
+			 * The dynamic portion of the hook name, `$meta_type`, refers to the meta
+			 * object type (post or comment).
+			 *
+			 * Possible hook names include:
+			 *
+			 *  - `delete_postmeta`
+			 *  - `delete_commentmeta`
+			 *  - `delete_termmeta`
+			 *  - `delete_usermeta`
+			 *
+			 * @since 3.4.0
+			 *
+			 * @param int $meta_id ID of the metadata entry to delete.
+			 */
+			do_action( "delete_{$meta_type}meta", $meta_id );
+		}
+
+		// Run the query, will return true if deleted, false otherwise.
+		$result = (bool) $wpdb-&gt;delete( $table, array( $id_column =&gt; $meta_id ) );
+
+		// Clear the caches.
+		wp_cache_delete( $object_id, $meta_type . '_meta' );
+
+		/** This action is documented in wp-includes/meta.php */
+		do_action( "deleted_{$meta_type}_meta", (array) $meta_id, $object_id, $meta-&gt;meta_key, $meta-&gt;meta_value );
+
+		// Old-style action.
+		if ( 'post' === $meta_type || 'comment' === $meta_type ) {
+			/**
+			 * Fires immediately after deleting post or comment metadata of a specific type.
+			 *
+			 * The dynamic portion of the hook name, `$meta_type`, refers to the meta
+			 * object type (post or comment).
+			 *
+			 * Possible hook names include:
+			 *
+			 *  - `deleted_postmeta`
+			 *  - `deleted_commentmeta`
+			 *  - `deleted_termmeta`
+			 *  - `deleted_usermeta`
+			 *
+			 * @since 3.4.0
+			 *
+			 * @param int $meta_id Deleted metadata entry ID.
+			 */
+			do_action( "deleted_{$meta_type}meta", $meta_id );
+		}
+
+		return $result;
+
+	}
+
+	// Meta ID was not found.
+	return false;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/meta.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/meta.php#L985">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/meta.php#L985-L1098">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/deleted_meta_typemeta/"><span class="hook-func">do_action</span>( “deleted_{$meta_type}meta”,  <nobr><span class="arg-type">int</span> <span class="arg-name">$meta_id</span></nobr> )</a></dt><dd><p>Fires immediately after deleting post or comment metadata of a specific type.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/deleted_meta_type_meta/"><span class="hook-func">do_action</span>( “deleted_{$meta_type}_meta”,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$meta_ids</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$object_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$meta_key</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$_meta_value</span></nobr> )</a></dt><dd><p>Fires immediately after deleting metadata of a specific type.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/delete_meta_typemeta/"><span class="hook-func">do_action</span>( “delete_{$meta_type}meta”,  <nobr><span class="arg-type">int</span> <span class="arg-name">$meta_id</span></nobr> )</a></dt><dd><p>Fires immediately before deleting post or comment metadata of a specific type.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/delete_meta_type_meta/"><span class="hook-func">do_action</span>( “delete_{$meta_type}_meta”,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$meta_ids</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$object_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$meta_key</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$_meta_value</span></nobr> )</a></dt><dd><p>Fires immediately before deleting metadata of a specific type.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/delete_meta_type_metadata_by_mid/"><span class="hook-func">apply_filters</span>( “delete_{$meta_type}_metadata_by_mid”,  <nobr><span class="arg-type">null|bool</span> <span class="arg-name">$delete</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$meta_id</span></nobr> )</a></dt><dd><p>Short-circuits deleting metadata of a specific type by meta ID.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_delete/">wp_cache_delete()</a><code>wp-includes/cache.php</code></td><td><p>Removes the cache contents matching key and group.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/delete/">wpdb::delete()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Deletes a row in the table.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_get_meta_table/">_get_meta_table()</a><code>wp-includes/meta.php</code></td><td><p>Retrieves the name of the metadata table for the specified object type.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_metadata_by_mid/">get_metadata_by_mid()</a><code>wp-includes/meta.php</code></td><td><p>Retrieves metadata by meta ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_key/">sanitize_key()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string key.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_site/">wp_delete_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Deletes a site from the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/set_term_custom_fields/">wp_xmlrpc_server::set_term_custom_fields()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Sets custom fields for a term.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wpmu_delete_user/">wpmu_delete_user()</a><code>wp-admin/includes/ms.php</code></td><td><p>Deletes a user and all of their posts from the network.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_user/">wp_delete_user()</a><code>wp-admin/includes/user.php</code></td><td><p>Delete user and optionally reassign posts and links to another user.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/delete_meta/">delete_meta()</a><code>wp-admin/includes/post.php</code></td><td><p>Deletes post meta data by meta ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_enclose/">do_enclose()</a><code>wp-includes/functions.php</code></td><td><p>Checks content for video and audio links to add as enclosures.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_term/">wp_delete_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes a term from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_attachment/">wp_delete_attachment()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post/">wp_delete_post()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes a post or page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/set_custom_fields/">wp_xmlrpc_server::set_custom_fields()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Sets custom fields for post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_comment/">wp_delete_comment()</a><code>wp-includes/comment.php</code></td><td><p>Trashes or deletes a comment.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.3.0/">3.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

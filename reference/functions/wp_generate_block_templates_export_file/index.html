@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_generate_block_templates_export_file()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_generate_block_templates_export_file()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_generate_block_templates_export_file(): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a>|string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Creates an export of the current templates and template parts from the site editor at the specified path in a ZIP file.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a>|string</span> Path of the ZIP file or error on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1409"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_generate_block_templates_export_file() {
+	$wp_version = wp_get_wp_version();
+
+	if ( ! class_exists( 'ZipArchive' ) ) {
+		return new WP_Error( 'missing_zip_package', __( 'Zip Export not supported.' ) );
+	}
+
+	$obscura    = wp_generate_password( 12, false, false );
+	$theme_name = basename( get_stylesheet() );
+	$filename   = get_temp_dir() . $theme_name . $obscura . '.zip';
+
+	$zip = new ZipArchive();
+	if ( true !== $zip-&gt;open( $filename, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
+		return new WP_Error( 'unable_to_create_zip', __( 'Unable to open export file (archive) for writing.' ) );
+	}
+
+	$zip-&gt;addEmptyDir( 'templates' );
+	$zip-&gt;addEmptyDir( 'parts' );
+
+	// Get path of the theme.
+	$theme_path = wp_normalize_path( get_stylesheet_directory() );
+
+	// Create recursive directory iterator.
+	$theme_files = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $theme_path ),
+		RecursiveIteratorIterator::LEAVES_ONLY
+	);
+
+	// Make a copy of the current theme.
+	foreach ( $theme_files as $file ) {
+		// Skip directories as they are added automatically.
+		if ( ! $file-&gt;isDir() ) {
+			// Get real and relative path for current file.
+			$file_path     = wp_normalize_path( $file );
+			$relative_path = substr( $file_path, strlen( $theme_path ) + 1 );
+
+			if ( ! wp_is_theme_directory_ignored( $relative_path ) ) {
+				$zip-&gt;addFile( $file_path, $relative_path );
+			}
+		}
+	}
+
+	// Load templates into the zip file.
+	$templates = get_block_templates();
+	foreach ( $templates as $template ) {
+		$template-&gt;content = traverse_and_serialize_blocks(
+			parse_blocks( $template-&gt;content ),
+			'_remove_theme_attribute_from_template_part_block'
+		);
+
+		$zip-&gt;addFromString(
+			'templates/' . $template-&gt;slug . '.html',
+			$template-&gt;content
+		);
+	}
+
+	// Load template parts into the zip file.
+	$template_parts = get_block_templates( array(), 'wp_template_part' );
+	foreach ( $template_parts as $template_part ) {
+		$zip-&gt;addFromString(
+			'parts/' . $template_part-&gt;slug . '.html',
+			$template_part-&gt;content
+		);
+	}
+
+	// Load theme.json into the zip file.
+	$tree = WP_Theme_JSON_Resolver::get_theme_data( array(), array( 'with_supports' =&gt; false ) );
+	// Merge with user data.
+	$tree-&gt;merge( WP_Theme_JSON_Resolver::get_user_data() );
+
+	$theme_json_raw = $tree-&gt;get_data();
+	// If a version is defined, add a schema.
+	if ( $theme_json_raw['version'] ) {
+		$theme_json_version = 'wp/' . substr( $wp_version, 0, 3 );
+		$schema             = array( '$schema' =&gt; 'https://schemas.wp.org/' . $theme_json_version . '/theme.json' );
+		$theme_json_raw     = array_merge( $schema, $theme_json_raw );
+	}
+
+	// Convert to a string.
+	$theme_json_encoded = wp_json_encode( $theme_json_raw, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+	// Replace 4 spaces with a tab.
+	$theme_json_tabbed = preg_replace( '~(?:^|\G)\h{4}~m', "\t", $theme_json_encoded );
+
+	// Add the theme.json file to the zip.
+	$zip-&gt;addFromString(
+		'theme.json',
+		$theme_json_tabbed
+	);
+
+	// Save changes to the zip file.
+	$zip-&gt;close();
+
+	return $filename;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/block-template-utils.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/block-template-utils.php#L1409">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/block-template-utils.php#L1409-L1503">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_wp_version/">wp_get_wp_version()</a><code>wp-includes/functions.php</code></td><td><p>Returns the current WordPress version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/traverse_and_serialize_blocks/">traverse_and_serialize_blocks()</a><code>wp-includes/blocks.php</code></td><td><p>Given an array of parsed block trees, applies callbacks before and after serializing them and returns their concatenated output.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_theme_directory_ignored/">wp_is_theme_directory_ignored()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Determines whether a theme directory should be ignored during export.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/get_user_data/">WP_Theme_JSON_Resolver::get_user_data()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Returns the user’s origin config.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/get_theme_data/">WP_Theme_JSON_Resolver::get_theme_data()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Returns the theme’s data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_block_templates/">get_block_templates()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Retrieves a list of unified template objects based on a query.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/parse_blocks/">parse_blocks()</a><code>wp-includes/blocks.php</code></td><td><p>Parses blocks out of a content string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_stylesheet_directory/">get_stylesheet_directory()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves stylesheet directory path for the active theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_stylesheet/">get_stylesheet()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves name of the current stylesheet.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_generate_password/">wp_generate_password()</a><code>wp-includes/pluggable.php</code></td><td><p>Generates a random password drawn from the defined set of characters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_temp_dir/">get_temp_dir()</a><code>wp-includes/functions.php</code></td><td><p>Determines a writable directory for temporary files.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_normalize_path/">wp_normalize_path()</a><code>wp-includes/functions.php</code></td><td><p>Normalizes a filesystem path.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_json_encode/">wp_json_encode()</a><code>wp-includes/functions.php</code></td><td><p>Encodes a variable into JSON, with some confidence checks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 9 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_edit_site_export_controller/export/">WP_REST_Edit_Site_Export_Controller::export()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-edit-site-export-controller.php</code></td><td><p>Output a ZIP file with an export of the current templates and template parts from the site editor, and close the connection.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.0.0/">6.0.0</a></td><td><span class="since-description">Adds the whole theme to the export archive.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.9.0/">5.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

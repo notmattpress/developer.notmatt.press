@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_url_details_controller/">WP_REST_URL_Details_Controller</a></span><span class="is-current-page">WP_REST_URL_Details_Controller::get_remote_url()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_URL_Details_Controller::get_remote_url()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_URL_Details_Controller::get_remote_url( <span class="arg-type">string</span> <span class="arg-name">$url</span> ): <span class="return-type">string|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the document title from a remote URL.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$url</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The website URL whose HTML to access.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> The HTTP response from the remote URL on success.<br/>
+<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> if no response or no content.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="224"><code class="language-php line-numbers" id="wporg-source-code" lang="php">private function get_remote_url( $url ) {
+
+	/*
+	 * Provide a modified UA string to workaround web properties which block WordPress "Pingbacks".
+	 * Why? The UA string used for pingback requests contains `WordPress/` which is very similar
+	 * to that used as the default UA string by the WP HTTP API. Therefore requests from this
+	 * REST endpoint are being unintentionally blocked as they are misidentified as pingback requests.
+	 * By slightly modifying the UA string, but still retaining the "WordPress" identification (via "WP")
+	 * we are able to work around this issue.
+	 * Example UA string: `WP-URLDetails/5.9-alpha-51389 (+http://localhost:8888)`.
+	*/
+	$modified_user_agent = 'WP-URLDetails/' . get_bloginfo( 'version' ) . ' (+' . get_bloginfo( 'url' ) . ')';
+
+	$args = array(
+		'limit_response_size' =&gt; 150 * KB_IN_BYTES,
+		'user-agent'          =&gt; $modified_user_agent,
+	);
+
+	/**
+	 * Filters the HTTP request args for URL data retrieval.
+	 *
+	 * Can be used to adjust response size limit and other WP_Http::request() args.
+	 *
+	 * @since 5.9.0
+	 *
+	 * @param array  $args Arguments used for the HTTP request.
+	 * @param string $url  The attempted URL.
+	 */
+	$args = apply_filters( 'rest_url_details_http_request_args', $args, $url );
+
+	$response = wp_safe_remote_get( $url, $args );
+
+	if ( WP_Http::OK !== wp_remote_retrieve_response_code( $response ) ) {
+		// Not saving the error response to cache since the error might be temporary.
+		return new WP_Error(
+			'no_response',
+			__( 'URL not found. Response returned a non-200 status code for this URL.' ),
+			array( 'status' =&gt; WP_Http::NOT_FOUND )
+		);
+	}
+
+	$remote_body = wp_remote_retrieve_body( $response );
+
+	if ( empty( $remote_body ) ) {
+		return new WP_Error(
+			'no_content',
+			__( 'Unable to retrieve body from response at this URL.' ),
+			array( 'status' =&gt; WP_Http::NOT_FOUND )
+		);
+	}
+
+	return $remote_body;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php#L224">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php#L224-L276">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/rest_url_details_http_request_args/"><span class="hook-func">apply_filters</span>( ‘rest_url_details_http_request_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$url</span></nobr> )</a></dt><dd><p>Filters the HTTP request args for URL data retrieval.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_safe_remote_get/">wp_safe_remote_get()</a><code>wp-includes/http.php</code></td><td><p>Retrieves the raw response from a safe HTTP request using the GET method.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_remote_retrieve_response_code/">wp_remote_retrieve_response_code()</a><code>wp-includes/http.php</code></td><td><p>Retrieves only the response code from the raw response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_remote_retrieve_body/">wp_remote_retrieve_body()</a><code>wp-includes/http.php</code></td><td><p>Retrieves only the body from the raw response.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bloginfo/">get_bloginfo()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves information about the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_url_details_controller/parse_url_details/">WP_REST_URL_Details_Controller::parse_url_details()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php</code></td><td><p>Retrieves the contents of the title tag from the HTML response.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.9.0/">5.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Block_Metadata_Registry</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Block_Metadata_Registry</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Block_Metadata_Registry {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Class used for managing block metadata collections.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The <a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/" rel="class">WP_Block_Metadata_Registry</a> allows plugins to register metadata for large collections of blocks (e.g., 50-100+) using a single PHP file. This approach reduces the need to read and decode multiple <code>block.json</code> files, enhancing performance through opcode caching.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/default_identifier_callback/">WP_Block_Metadata_Registry::default_identifier_callback</a></td><td>Default identifier function to determine the block identifier from a given path.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/find_collection_path/">WP_Block_Metadata_Registry::find_collection_path</a></td><td>Finds the collection path for a given file or folder.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/get_metadata/">WP_Block_Metadata_Registry::get_metadata</a></td><td>Retrieves block metadata for a given block within a specific collection.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/get_plugin_dir/">WP_Block_Metadata_Registry::get_plugin_dir</a></td><td>Gets the normalized WordPress plugin directory path.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/get_wpinc_dir/">WP_Block_Metadata_Registry::get_wpinc_dir</a></td><td>Gets the WordPress ‘wp-includes’ directory path.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/has_metadata/">WP_Block_Metadata_Registry::has_metadata</a></td><td>Checks if metadata exists for a given block name in a specific collection.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/register_collection/">WP_Block_Metadata_Registry::register_collection</a></td><td>Registers a block metadata collection.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="20"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Block_Metadata_Registry {
+
+	/**
+	 * Container for storing block metadata collections.
+	 *
+	 * Each entry maps a base path to its corresponding metadata and callback.
+	 *
+	 * @since 6.7.0
+	 * @var array&lt;string, array&lt;string, mixed&gt;&gt;
+	 */
+	private static $collections = array();
+
+	/**
+	 * Caches the last matched collection path for performance optimization.
+	 *
+	 * @since 6.7.0
+	 * @var string|null
+	 */
+	private static $last_matched_collection = null;
+
+	/**
+	 * Stores the WordPress 'wp-includes' directory path.
+	 *
+	 * @since 6.7.0
+	 * @var string|null
+	 */
+	private static $wpinc_dir = null;
+
+	/**
+	 * Stores the normalized WordPress plugin directory path.
+	 *
+	 * @since 6.7.0
+	 * @var string|null
+	 */
+	private static $plugin_dir = null;
+
+	/**
+	 * Registers a block metadata collection.
+	 *
+	 * This method allows registering a collection of block metadata from a single
+	 * manifest file, improving performance for large sets of blocks.
+	 *
+	 * The manifest file should be a PHP file that returns an associative array, where
+	 * the keys are the block identifiers (without their namespace) and the values are
+	 * the corresponding block metadata arrays. The block identifiers must match the
+	 * parent directory name for the respective `block.json` file.
+	 *
+	 * Example manifest file structure:
+	 * ```
+	 * return array(
+	 *     'example-block' =&gt; array(
+	 *         'title' =&gt; 'Example Block',
+	 *         'category' =&gt; 'widgets',
+	 *         'icon' =&gt; 'smiley',
+	 *         // ... other block metadata
+	 *     ),
+	 *     'another-block' =&gt; array(
+	 *         'title' =&gt; 'Another Block',
+	 *         'category' =&gt; 'formatting',
+	 *         'icon' =&gt; 'star-filled',
+	 *         // ... other block metadata
+	 *     ),
+	 *     // ... more block metadata entries
+	 * );
+	 * ```
+	 *
+	 * @since 6.7.0
+	 *
+	 * @param string $path     The absolute base path for the collection ( e.g., WP_PLUGIN_DIR . '/my-plugin/blocks/' ).
+	 * @param string $manifest The absolute path to the manifest file containing the metadata collection.
+	 * @return bool True if the collection was registered successfully, false otherwise.
+	 */
+	public static function register_collection( $path, $manifest ) {
+		$path = wp_normalize_path( rtrim( $path, '/' ) );
+
+		$wpinc_dir  = self::get_wpinc_dir();
+		$plugin_dir = self::get_plugin_dir();
+
+		// Check if the path is valid:
+		if ( str_starts_with( $path, $plugin_dir ) ) {
+			// For plugins, ensure the path is within a specific plugin directory and not the base plugin directory.
+			$relative_path = substr( $path, strlen( $plugin_dir ) + 1 );
+			$plugin_name   = strtok( $relative_path, '/' );
+
+			if ( empty( $plugin_name ) || $plugin_name === $relative_path ) {
+				_doing_it_wrong(
+					__METHOD__,
+					__( 'Block metadata collections can only be registered for a specific plugin. The provided path is neither a core path nor a valid plugin path.' ),
+					'6.7.0'
+				);
+				return false;
+			}
+		} elseif ( ! str_starts_with( $path, $wpinc_dir ) ) {
+			// If it's neither a plugin directory path nor within 'wp-includes', the path is invalid.
+			_doing_it_wrong(
+				__METHOD__,
+				__( 'Block metadata collections can only be registered for a specific plugin. The provided path is neither a core path nor a valid plugin path.' ),
+				'6.7.0'
+			);
+			return false;
+		}
+
+		if ( ! file_exists( $manifest ) ) {
+			_doing_it_wrong(
+				__METHOD__,
+				__( 'The specified manifest file does not exist.' ),
+				'6.7.0'
+			);
+			return false;
+		}
+
+		self::$collections[ $path ] = array(
+			'manifest' =&gt; $manifest,
+			'metadata' =&gt; null,
+		);
+
+		return true;
+	}
+
+	/**
+	 * Retrieves block metadata for a given block within a specific collection.
+	 *
+	 * This method uses the registered collections to efficiently lookup
+	 * block metadata without reading individual `block.json` files.
+	 *
+	 * @since 6.7.0
+	 *
+	 * @param string $file_or_folder The path to the file or folder containing the block.
+	 * @return array|null The block metadata for the block, or null if not found.
+	 */
+	public static function get_metadata( $file_or_folder ) {
+		$path = self::find_collection_path( $file_or_folder );
+		if ( ! $path ) {
+			return null;
+		}
+
+		$collection = &amp;self::$collections[ $path ];
+
+		if ( null === $collection['metadata'] ) {
+			// Load the manifest file if not already loaded
+			$collection['metadata'] = require $collection['manifest'];
+		}
+
+		// Get the block name from the path.
+		$block_name = self::default_identifier_callback( $file_or_folder );
+
+		return isset( $collection['metadata'][ $block_name ] ) ? $collection['metadata'][ $block_name ] : null;
+	}
+
+	/**
+	 * Finds the collection path for a given file or folder.
+	 *
+	 * @since 6.7.0
+	 *
+	 * @param string $file_or_folder The path to the file or folder.
+	 * @return string|null The collection path if found, or null if not found.
+	 */
+	private static function find_collection_path( $file_or_folder ) {
+		if ( empty( $file_or_folder ) ) {
+			return null;
+		}
+
+		// Check the last matched collection first, since block registration usually happens in batches per plugin or theme.
+		$path = wp_normalize_path( rtrim( $file_or_folder, '/' ) );
+		if ( self::$last_matched_collection &amp;&amp; str_starts_with( $path, self::$last_matched_collection ) ) {
+			return self::$last_matched_collection;
+		}
+
+		$collection_paths = array_keys( self::$collections );
+		foreach ( $collection_paths as $collection_path ) {
+			if ( str_starts_with( $path, $collection_path ) ) {
+				self::$last_matched_collection = $collection_path;
+				return $collection_path;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Checks if metadata exists for a given block name in a specific collection.
+	 *
+	 * @since 6.7.0
+	 *
+	 * @param string $file_or_folder The path to the file or folder containing the block metadata.
+	 * @return bool True if metadata exists for the block, false otherwise.
+	 */
+	public static function has_metadata( $file_or_folder ) {
+		return null !== self::get_metadata( $file_or_folder );
+	}
+
+	/**
+	 * Default identifier function to determine the block identifier from a given path.
+	 *
+	 * This function extracts the block identifier from the path:
+	 * - For 'block.json' files, it uses the parent directory name.
+	 * - For directories, it uses the directory name itself.
+	 * - For empty paths, it returns an empty string.
+	 *
+	 * For example:
+	 * - Path: '/wp-content/plugins/my-plugin/blocks/example/block.json'
+	 *   Identifier: 'example'
+	 * - Path: '/wp-content/plugins/my-plugin/blocks/another-block'
+	 *   Identifier: 'another-block'
+	 *
+	 * This default behavior matches the standard WordPress block structure.
+	 *
+	 * @since 6.7.0
+	 *
+	 * @param string $path The file or folder path to determine the block identifier from.
+	 * @return string The block identifier, or an empty string if the path is empty.
+	 */
+	private static function default_identifier_callback( $path ) {
+		// Ensure $path is not empty to prevent unexpected behavior.
+		if ( empty( $path ) ) {
+			return '';
+		}
+
+		if ( str_ends_with( $path, 'block.json' ) ) {
+			// Return the parent directory name if it's a block.json file.
+			return basename( dirname( $path ) );
+		}
+
+		// Otherwise, assume it's a directory and return its name.
+		return basename( $path );
+	}
+
+	/**
+	 * Gets the WordPress 'wp-includes' directory path.
+	 *
+	 * @since 6.7.0
+	 *
+	 * @return string The WordPress 'wp-includes' directory path.
+	 */
+	private static function get_wpinc_dir() {
+		if ( ! isset( self::$wpinc_dir ) ) {
+			self::$wpinc_dir = wp_normalize_path( ABSPATH . WPINC );
+		}
+		return self::$wpinc_dir;
+	}
+
+	/**
+	 * Gets the normalized WordPress plugin directory path.
+	 *
+	 * @since 6.7.0
+	 *
+	 * @return string The normalized WordPress plugin directory path.
+	 */
+	private static function get_plugin_dir() {
+		if ( ! isset( self::$plugin_dir ) ) {
+			self::$plugin_dir = wp_normalize_path( WP_PLUGIN_DIR );
+		}
+		return self::$plugin_dir;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-block-metadata-registry.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-block-metadata-registry.php#L20">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-block-metadata-registry.php#L20-L273">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Selectors</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Selectors</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Block Selectors is the API that allows blocks to customize the CSS selector used<br/>
+when their styles are generated.</p>
+<p>A block may customize its CSS selectors at three levels: root, feature, and<br/>
+subfeature.</p>
+<h2 class="is-toc-heading" id="root-selector" tabindex="-1"><a href="#root-selector">Root selector</a></h2>
+<p>The root selector is the block’s primary CSS selector.</p>
+<p>All blocks require a primary CSS selector for their style declarations to be<br/>
+included under. If one is not provided through the Block Selectors API, a<br/>
+default is generated in the form of <code>.wp-block-&lt;name&gt;</code>.</p>
+<h3 class="is-toc-heading" id="example" tabindex="-1"><a href="#example">Example</a></h3>
+<pre><code class="language-json">{
+    ...
+    "selectors": {
+        "root": ".my-custom-block-selector"
+    }
+}
+</code></pre>
+<h2 class="is-toc-heading" id="feature-selectors" tabindex="-1"><a href="#feature-selectors">Feature selectors</a></h2>
+<p>Feature selectors relate to styles for a block support, e.g. border, color,<br/>
+typography, etc.</p>
+<p>A block may wish to apply the styles for specific features to different<br/>
+elements within a block. An example might be using colors on the block’s wrapper<br/>
+but applying the typography styles to an inner heading only.</p>
+<h3 class="is-toc-heading" id="example-2" tabindex="-1"><a href="#example-2">Example</a></h3>
+<pre><code class="language-json">{
+    ...
+    "selectors": {
+        "root": ".my-custom-block-selector",
+        "color": ".my-custom-block-selector",
+        "typography": ".my-custom-block-selector &gt; h2"
+    }
+}
+</code></pre>
+<h2 class="is-toc-heading" id="subfeature-selectors" tabindex="-1"><a href="#subfeature-selectors">Subfeature selectors</a></h2>
+<p>These selectors relate to individual styles provided by a block support e.g.<br/>
+<code>background-color</code></p>
+<p>A subfeature can have styles generated under its own unique selector. This is<br/>
+especially useful where one block support subfeature can’t be applied to the<br/>
+same element as the support’s other subfeatures.</p>
+<p>A great example of this is <code>text-decoration</code>. Web browsers render this style<br/>
+differently, making it difficult to override if added to a wrapper element. By<br/>
+assigning <code>text-decoration</code> a custom selector, its style can target only the<br/>
+elements to which it should be applied.</p>
+<h3 class="is-toc-heading" id="example-3" tabindex="-1"><a href="#example-3">Example</a></h3>
+<pre><code class="language-json">{
+    ...
+    "selectors": {
+        "root": ".my-custom-block-selector",
+        "color": ".my-custom-block-selector",
+        "typography": {
+            "root": ".my-custom-block-selector &gt; h2",
+            "text-decoration": ".my-custom-block-selector &gt; h2 span"
+        }
+    }
+}
+</code></pre>
+<h2 class="is-toc-heading" id="shorthand" tabindex="-1"><a href="#shorthand">Shorthand</a></h2>
+<p>Rather than specify a CSS selector for every subfeature, you can set a single<br/>
+selector as a string value for the relevant feature. This is the approach<br/>
+demonstrated for the <code>color</code> feature in the earlier examples above.</p>
+<h2 class="is-toc-heading" id="fallbacks" tabindex="-1"><a href="#fallbacks">Fallbacks</a></h2>
+<p>A selector that hasn’t been configured for a specific feature will fall back to<br/>
+the block’s root selector. Similarly, if a subfeature hasn’t had a custom<br/>
+selector set, it will fall back to its parent feature’s selector and, if unavailable, fall back further to the block’s root selector.</p>
+<p>Rather than repeating selectors for multiple subfeatures, you can set the<br/>
+common selector as the parent feature’s <code>root</code> selector and only define the<br/>
+unique selectors for the subfeatures that differ.</p>
+<h3 class="is-toc-heading" id="example-4" tabindex="-1"><a href="#example-4">Example</a></h3>
+<pre><code class="language-json">{
+    ...
+    "selectors": {
+        "root": ".my-custom-block-selector",
+        "color": {
+            "text": ".my-custom-block-selector p"
+        },
+        "typography": {
+            "root": ".my-custom-block-selector &gt; h2",
+            "text-decoration": ".my-custom-block-selector &gt; h2 span"
+        }
+    }
+}
+</code></pre>
+<p>The <code>color.background-color</code> subfeature isn’t explicitly set in the above<br/>
+example. As the <code>color</code> feature also doesn’t define a <code>root</code> selector,<br/>
+<code>color.background-color</code> would be included under the block’s primary root<br/>
+selector, <code>.my-custom-block-selector</code>.</p>
+<p>For a subfeature such as <code>typography.font-size</code>, it would fallback to its parent<br/>
+feature’s selector given that is present, i.e. <code>.my-custom-block-selector &gt; h2</code>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

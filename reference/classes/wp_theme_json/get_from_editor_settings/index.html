@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_theme_json/">WP_Theme_JSON</a></span><span class="is-current-page">WP_Theme_JSON::get_from_editor_settings()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Theme_JSON::get_from_editor_settings()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Theme_JSON::get_from_editor_settings( <span class="arg-type">array</span> <span class="arg-name">$settings</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Transforms the given editor settings according the add_theme_support format to the theme.json format.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$settings</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Existing editor settings.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Config that adheres to the theme.json schema.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3097"><code class="language-php line-numbers" id="wporg-source-code" lang="php">/**
+ * For metadata values that can either be booleans or paths to booleans, gets the value.
+ *
+ *     $data = array(
+ *       'color' =&gt; array(
+ *         'defaultPalette' =&gt; true
+ *       )
+ *     );
+ *
+ *     static::get_metadata_boolean( $data, false );
+ *     // =&gt; false
+ *
+ *     static::get_metadata_boolean( $data, array( 'color', 'defaultPalette' ) );
+ *     // =&gt; true
+ *
+ * @since 6.0.0
+ *
+ * @param array      $data          The data to inspect.
+ * @param bool|array $path          Boolean or path to a boolean.
+ * @param bool       $default_value Default value if the referenced path is missing.
+ *                                  Default false.
+ * @return bool Value of boolean metadata.
+ */
+protected static function get_metadata_boolean( $data, $path, $default_value = false ) {
+	if ( is_bool( $path ) ) {
+		return $path;
+	}
+
+	if ( is_array( $path ) ) {
+		$value = _wp_array_get( $data, $path );
+		if ( null !== $value ) {
+			return $value;
+		}
+	}
+
+	return $default_value;
+}
+
+/**
+ * Merges new incoming data.
+ *
+ * @since 5.8.0
+ * @since 5.9.0 Duotone preset also has origins.
+ * @since 6.7.0 Replace background image objects during merge.
+ *
+ * @param WP_Theme_JSON $incoming Data to merge.
+ */
+public function merge( $incoming ) {
+	$incoming_data    = $incoming-&gt;get_raw_data();
+	$this-&gt;theme_json = array_replace_recursive( $this-&gt;theme_json, $incoming_data );
+
+	/*
+	 * Recompute all the spacing sizes based on the new hierarchy of data. In the constructor
+	 * spacingScale and spacingSizes are both keyed by origin and VALID_ORIGINS is ordered, so
+	 * we can allow partial spacingScale data to inherit missing data from earlier layers when
+	 * computing the spacing sizes.
+	 *
+	 * This happens before the presets are merged to ensure that default spacing sizes can be
+	 * removed from the theme origin if $prevent_override is true.
+	 */
+	$flattened_spacing_scale = array();
+	foreach ( static::VALID_ORIGINS as $origin ) {
+		$scale_path = array( 'settings', 'spacing', 'spacingScale', $origin );
+
+		// Apply the base spacing scale to the current layer.
+		$base_spacing_scale      = _wp_array_get( $this-&gt;theme_json, $scale_path, array() );
+		$flattened_spacing_scale = array_replace( $flattened_spacing_scale, $base_spacing_scale );
+
+		$spacing_scale = _wp_array_get( $incoming_data, $scale_path, null );
+		if ( ! isset( $spacing_scale ) ) {
+			continue;
+		}
+
+		// Allow partial scale settings by merging with lower layers.
+		$flattened_spacing_scale = array_replace( $flattened_spacing_scale, $spacing_scale );
+
+		// Generate and merge the scales for this layer.
+		$sizes_path           = array( 'settings', 'spacing', 'spacingSizes', $origin );
+		$spacing_sizes        = _wp_array_get( $incoming_data, $sizes_path, array() );
+		$spacing_scale_sizes  = static::compute_spacing_sizes( $flattened_spacing_scale );
+		$merged_spacing_sizes = static::merge_spacing_sizes( $spacing_scale_sizes, $spacing_sizes );
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-theme-json.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-theme-json.php#L3097">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-theme-json.php#L3097-L3177">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

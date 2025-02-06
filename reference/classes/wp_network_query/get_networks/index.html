@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_network_query/">WP_Network_Query</a></span><span class="is-current-page">WP_Network_Query::get_networks()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Network_Query::get_networks()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Network_Query::get_networks(): <span class="return-type">array|int</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Gets a list of networks matching the query vars.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|int</span> List of <a href="https://developer.notmatt.press/reference/classes/wp_network/" rel="class">WP_Network</a> objects, a list of network IDs when <code>'fields'</code> is set to <code>'ids'</code>,                   or the number of networks when <code>'count'</code> is passed as a query var.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="189"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_networks() {
+	$this-&gt;parse_query();
+
+	/**
+	 * Fires before networks are retrieved.
+	 *
+	 * @since 4.6.0
+	 *
+	 * @param WP_Network_Query $query Current instance of WP_Network_Query (passed by reference).
+	 */
+	do_action_ref_array( 'pre_get_networks', array( &amp;$this ) );
+
+	$network_data = null;
+
+	/**
+	 * Filters the network data before the query takes place.
+	 *
+	 * Return a non-null value to bypass WordPress' default network queries.
+	 *
+	 * The expected return type from this filter depends on the value passed
+	 * in the request query vars:
+	 * - When `$this-&gt;query_vars['count']` is set, the filter should return
+	 *   the network count as an integer.
+	 * - When `'ids' === $this-&gt;query_vars['fields']`, the filter should return
+	 *   an array of network IDs.
+	 * - Otherwise the filter should return an array of WP_Network objects.
+	 *
+	 * Note that if the filter returns an array of network data, it will be assigned
+	 * to the `networks` property of the current WP_Network_Query instance.
+	 *
+	 * Filtering functions that require pagination information are encouraged to set
+	 * the `found_networks` and `max_num_pages` properties of the WP_Network_Query object,
+	 * passed to the filter by reference. If WP_Network_Query does not perform a database
+	 * query, it will not have enough information to generate these values itself.
+	 *
+	 * @since 5.2.0
+	 * @since 5.6.0 The returned array of network data is assigned to the `networks` property
+	 *              of the current WP_Network_Query instance.
+	 *
+	 * @param array|int|null   $network_data Return an array of network data to short-circuit WP's network query,
+	 *                                       the network count as an integer if `$this-&gt;query_vars['count']` is set,
+	 *                                       or null to allow WP to run its normal queries.
+	 * @param WP_Network_Query $query        The WP_Network_Query instance, passed by reference.
+	 */
+	$network_data = apply_filters_ref_array( 'networks_pre_query', array( $network_data, &amp;$this ) );
+
+	if ( null !== $network_data ) {
+		if ( is_array( $network_data ) &amp;&amp; ! $this-&gt;query_vars['count'] ) {
+			$this-&gt;networks = $network_data;
+		}
+
+		return $network_data;
+	}
+
+	// $args can include anything. Only use the args defined in the query_var_defaults to compute the key.
+	$_args = wp_array_slice_assoc( $this-&gt;query_vars, array_keys( $this-&gt;query_var_defaults ) );
+
+	// Ignore the $fields, $update_network_cache arguments as the queried result will be the same regardless.
+	unset( $_args['fields'], $_args['update_network_cache'] );
+
+	$key          = md5( serialize( $_args ) );
+	$last_changed = wp_cache_get_last_changed( 'networks' );
+
+	$cache_key   = "get_network_ids:$key:$last_changed";
+	$cache_value = wp_cache_get( $cache_key, 'network-queries' );
+
+	if ( false === $cache_value ) {
+		$network_ids = $this-&gt;get_network_ids();
+		if ( $network_ids ) {
+			$this-&gt;set_found_networks();
+		}
+
+		$cache_value = array(
+			'network_ids'    =&gt; $network_ids,
+			'found_networks' =&gt; $this-&gt;found_networks,
+		);
+		wp_cache_add( $cache_key, $cache_value, 'network-queries' );
+	} else {
+		$network_ids          = $cache_value['network_ids'];
+		$this-&gt;found_networks = $cache_value['found_networks'];
+	}
+
+	if ( $this-&gt;found_networks &amp;&amp; $this-&gt;query_vars['number'] ) {
+		$this-&gt;max_num_pages = (int) ceil( $this-&gt;found_networks / $this-&gt;query_vars['number'] );
+	}
+
+	// If querying for a count only, there's nothing more to do.
+	if ( $this-&gt;query_vars['count'] ) {
+		// $network_ids is actually a count in this case.
+		return (int) $network_ids;
+	}
+
+	$network_ids = array_map( 'intval', $network_ids );
+
+	if ( 'ids' === $this-&gt;query_vars['fields'] ) {
+		$this-&gt;networks = $network_ids;
+		return $this-&gt;networks;
+	}
+
+	if ( $this-&gt;query_vars['update_network_cache'] ) {
+		_prime_network_caches( $network_ids );
+	}
+
+	// Fetch full network objects from the primed cache.
+	$_networks = array();
+	foreach ( $network_ids as $network_id ) {
+		$_network = get_network( $network_id );
+		if ( $_network ) {
+			$_networks[] = $_network;
+		}
+	}
+
+	/**
+	 * Filters the network query results.
+	 *
+	 * @since 4.6.0
+	 *
+	 * @param WP_Network[]     $_networks An array of WP_Network objects.
+	 * @param WP_Network_Query $query     Current instance of WP_Network_Query (passed by reference).
+	 */
+	$_networks = apply_filters_ref_array( 'the_networks', array( $_networks, &amp;$this ) );
+
+	// Convert to WP_Network instances.
+	$this-&gt;networks = array_map( 'get_network', $_networks );
+
+	return $this-&gt;networks;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-network-query.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-network-query.php#L189">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-network-query.php#L189-L315">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/networks_pre_query/"><span class="hook-func">apply_filters_ref_array</span>( ‘networks_pre_query’,  <nobr><span class="arg-type">array|int|null</span> <span class="arg-name">$network_data</span></nobr>,  <nobr><span class="arg-type">WP_Network_Query</span> <span class="arg-name">$query</span></nobr> )</a></dt><dd><p>Filters the network data before the query takes place.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_get_networks/"><span class="hook-func">do_action_ref_array</span>( ‘pre_get_networks’,  <nobr><span class="arg-type">WP_Network_Query</span> <span class="arg-name">$query</span></nobr> )</a></dt><dd><p>Fires before networks are retrieved.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/the_networks/"><span class="hook-func">apply_filters_ref_array</span>( ‘the_networks’,  <nobr><span class="arg-type">WP_Network[]</span> <span class="arg-name">$_networks</span></nobr>,  <nobr><span class="arg-type">WP_Network_Query</span> <span class="arg-name">$query</span></nobr> )</a></dt><dd><p>Filters the network query results.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get_last_changed/">wp_cache_get_last_changed()</a><code>wp-includes/functions.php</code></td><td><p>Gets last changed date for the specified cache group.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_network_query/set_found_networks/">WP_Network_Query::set_found_networks()</a><code>wp-includes/class-wp-network-query.php</code></td><td><p>Populates found_networks and max_num_pages properties for the current query if the limit clause was used.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_network_query/get_network_ids/">WP_Network_Query::get_network_ids()</a><code>wp-includes/class-wp-network-query.php</code></td><td><p>Used internally to get a list of network IDs matching the query vars.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_network_query/parse_query/">WP_Network_Query::parse_query()</a><code>wp-includes/class-wp-network-query.php</code></td><td><p>Parses arguments passed to the network query with default query parameters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_prime_network_caches/">_prime_network_caches()</a><code>wp-includes/ms-network.php</code></td><td><p>Adds any networks from the given IDs to the cache that do not already exist in cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_network/">get_network()</a><code>wp-includes/ms-network.php</code></td><td><p>Retrieves network data given a network ID or network object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_add/">wp_cache_add()</a><code>wp-includes/cache.php</code></td><td><p>Adds data to the cache, if the cache key doesn’t already exist.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_array_slice_assoc/">wp_array_slice_assoc()</a><code>wp-includes/functions.php</code></td><td><p>Extracts a slice of an array, given a list of keys.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action_ref_array/">do_action_ref_array()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook, specifying arguments in an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters_ref_array/">apply_filters_ref_array()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook, specifying arguments in an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_network_query/query/">WP_Network_Query::query()</a><code>wp-includes/class-wp-network-query.php</code></td><td><p>Sets up the WordPress query for retrieving networks.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.6.0/">4.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

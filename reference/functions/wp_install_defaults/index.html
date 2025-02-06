@@ -1,0 +1,406 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_install_defaults()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_install_defaults()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_install_defaults( <span class="arg-type">int</span> <span class="arg-name">$user_id</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Creates the initial content for a newly-installed site.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Adds the default "Uncategorized" category, the first post (with comment), first page, and default widgets for default theme for the current version.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$user_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">User ID.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="169"><code class="language-php line-numbers" id="wporg-source-code" lang="php">	function wp_install_defaults( $user_id ) {
+		global $wpdb, $wp_rewrite, $table_prefix;
+
+		// Default category.
+		$cat_name = __( 'Uncategorized' );
+		/* translators: Default category slug. */
+		$cat_slug = sanitize_title( _x( 'Uncategorized', 'Default category slug' ) );
+
+		$cat_id = 1;
+
+		$wpdb-&gt;insert(
+			$wpdb-&gt;terms,
+			array(
+				'term_id'    =&gt; $cat_id,
+				'name'       =&gt; $cat_name,
+				'slug'       =&gt; $cat_slug,
+				'term_group' =&gt; 0,
+			)
+		);
+		$wpdb-&gt;insert(
+			$wpdb-&gt;term_taxonomy,
+			array(
+				'term_id'     =&gt; $cat_id,
+				'taxonomy'    =&gt; 'category',
+				'description' =&gt; '',
+				'parent'      =&gt; 0,
+				'count'       =&gt; 1,
+			)
+		);
+		$cat_tt_id = $wpdb-&gt;insert_id;
+
+		// First post.
+		$now             = current_time( 'mysql' );
+		$now_gmt         = current_time( 'mysql', 1 );
+		$first_post_guid = get_option( 'home' ) . '/?p=1';
+
+		if ( is_multisite() ) {
+			$first_post = get_site_option( 'first_post' );
+
+			if ( ! $first_post ) {
+				$first_post = "&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;" .
+				/* translators: First post content. %s: Site link. */
+				__( 'Welcome to %s. This is your first post. Edit or delete it, then start writing!' ) .
+				"&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;";
+			}
+
+			$first_post = sprintf(
+				$first_post,
+				sprintf( '&lt;a href="%s"&gt;%s&lt;/a&gt;', esc_url( network_home_url() ), get_network()-&gt;site_name )
+			);
+
+			// Back-compat for pre-4.4.
+			$first_post = str_replace( 'SITE_URL', esc_url( network_home_url() ), $first_post );
+			$first_post = str_replace( 'SITE_NAME', get_network()-&gt;site_name, $first_post );
+		} else {
+			$first_post = "&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;" .
+			/* translators: First post content. %s: Site link. */
+			__( 'Welcome to WordPress. This is your first post. Edit or delete it, then start writing!' ) .
+			"&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;";
+		}
+
+		$wpdb-&gt;insert(
+			$wpdb-&gt;posts,
+			array(
+				'post_author'           =&gt; $user_id,
+				'post_date'             =&gt; $now,
+				'post_date_gmt'         =&gt; $now_gmt,
+				'post_content'          =&gt; $first_post,
+				'post_excerpt'          =&gt; '',
+				'post_title'            =&gt; __( 'Hello world!' ),
+				/* translators: Default post slug. */
+				'post_name'             =&gt; sanitize_title( _x( 'hello-world', 'Default post slug' ) ),
+				'post_modified'         =&gt; $now,
+				'post_modified_gmt'     =&gt; $now_gmt,
+				'guid'                  =&gt; $first_post_guid,
+				'comment_count'         =&gt; 1,
+				'to_ping'               =&gt; '',
+				'pinged'                =&gt; '',
+				'post_content_filtered' =&gt; '',
+			)
+		);
+
+		if ( is_multisite() ) {
+			update_posts_count();
+		}
+
+		$wpdb-&gt;insert(
+			$wpdb-&gt;term_relationships,
+			array(
+				'term_taxonomy_id' =&gt; $cat_tt_id,
+				'object_id'        =&gt; 1,
+			)
+		);
+
+		// Default comment.
+		if ( is_multisite() ) {
+			$first_comment_author = get_site_option( 'first_comment_author' );
+			$first_comment_email  = get_site_option( 'first_comment_email' );
+			$first_comment_url    = get_site_option( 'first_comment_url', network_home_url() );
+			$first_comment        = get_site_option( 'first_comment' );
+		}
+
+		$first_comment_author = ! empty( $first_comment_author ) ? $first_comment_author : __( 'A WordPress Commenter' );
+		$first_comment_email  = ! empty( $first_comment_email ) ? $first_comment_email : 'wapuu@wordpress.example';
+		$first_comment_url    = ! empty( $first_comment_url ) ? $first_comment_url : esc_url( __( 'https://wordpress.org/' ) );
+		$first_comment        = ! empty( $first_comment ) ? $first_comment : sprintf(
+			/* translators: %s: Gravatar URL. */
+			__(
+				'Hi, this is a comment.
+To get started with moderating, editing, and deleting comments, please visit the Comments screen in the dashboard.
+Commenter avatars come from &lt;a href="%s"&gt;Gravatar&lt;/a&gt;.'
+			),
+			/* translators: The localized Gravatar URL. */
+			esc_url( __( 'https://gravatar.com/' ) )
+		);
+		$wpdb-&gt;insert(
+			$wpdb-&gt;comments,
+			array(
+				'comment_post_ID'      =&gt; 1,
+				'comment_author'       =&gt; $first_comment_author,
+				'comment_author_email' =&gt; $first_comment_email,
+				'comment_author_url'   =&gt; $first_comment_url,
+				'comment_date'         =&gt; $now,
+				'comment_date_gmt'     =&gt; $now_gmt,
+				'comment_content'      =&gt; $first_comment,
+				'comment_type'         =&gt; 'comment',
+			)
+		);
+
+		// First page.
+		if ( is_multisite() ) {
+			$first_page = get_site_option( 'first_page' );
+		}
+
+		if ( empty( $first_page ) ) {
+			$first_page = "&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;";
+			/* translators: First page content. */
+			$first_page .= __( "This is an example page. It's different from a blog post because it will stay in one place and will show up in your site navigation (in most themes). Most people start with an About page that introduces them to potential site visitors. It might say something like this:" );
+			$first_page .= "&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n";
+
+			$first_page .= "&lt;!-- wp:quote --&gt;\n&lt;blockquote class=\"wp-block-quote\"&gt;&lt;p&gt;";
+			/* translators: First page content. */
+			$first_page .= __( "Hi there! I'm a bike messenger by day, aspiring actor by night, and this is my website. I live in Los Angeles, have a great dog named Jack, and I like pi&amp;#241;a coladas. (And gettin' caught in the rain.)" );
+			$first_page .= "&lt;/p&gt;&lt;/blockquote&gt;\n&lt;!-- /wp:quote --&gt;\n\n";
+
+			$first_page .= "&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;";
+			/* translators: First page content. */
+			$first_page .= __( '...or something like this:' );
+			$first_page .= "&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;\n\n";
+
+			$first_page .= "&lt;!-- wp:quote --&gt;\n&lt;blockquote class=\"wp-block-quote\"&gt;&lt;p&gt;";
+			/* translators: First page content. */
+			$first_page .= __( 'The XYZ Doohickey Company was founded in 1971, and has been providing quality doohickeys to the public ever since. Located in Gotham City, XYZ employs over 2,000 people and does all kinds of awesome things for the Gotham community.' );
+			$first_page .= "&lt;/p&gt;&lt;/blockquote&gt;\n&lt;!-- /wp:quote --&gt;\n\n";
+
+			$first_page .= "&lt;!-- wp:paragraph --&gt;\n&lt;p&gt;";
+			$first_page .= sprintf(
+				/* translators: First page content. %s: Site admin URL. */
+				__( 'As a new WordPress user, you should go to &lt;a href="%s"&gt;your dashboard&lt;/a&gt; to delete this page and create new pages for your content. Have fun!' ),
+				admin_url()
+			);
+			$first_page .= "&lt;/p&gt;\n&lt;!-- /wp:paragraph --&gt;";
+		}
+
+		$first_post_guid = get_option( 'home' ) . '/?page_id=2';
+		$wpdb-&gt;insert(
+			$wpdb-&gt;posts,
+			array(
+				'post_author'           =&gt; $user_id,
+				'post_date'             =&gt; $now,
+				'post_date_gmt'         =&gt; $now_gmt,
+				'post_content'          =&gt; $first_page,
+				'post_excerpt'          =&gt; '',
+				'comment_status'        =&gt; 'closed',
+				'post_title'            =&gt; __( 'Sample Page' ),
+				/* translators: Default page slug. */
+				'post_name'             =&gt; __( 'sample-page' ),
+				'post_modified'         =&gt; $now,
+				'post_modified_gmt'     =&gt; $now_gmt,
+				'guid'                  =&gt; $first_post_guid,
+				'post_type'             =&gt; 'page',
+				'to_ping'               =&gt; '',
+				'pinged'                =&gt; '',
+				'post_content_filtered' =&gt; '',
+			)
+		);
+		$wpdb-&gt;insert(
+			$wpdb-&gt;postmeta,
+			array(
+				'post_id'    =&gt; 2,
+				'meta_key'   =&gt; '_wp_page_template',
+				'meta_value' =&gt; 'default',
+			)
+		);
+
+		// Privacy Policy page.
+		if ( is_multisite() ) {
+			// Disable by default unless the suggested content is provided.
+			$privacy_policy_content = get_site_option( 'default_privacy_policy_content' );
+		} else {
+			if ( ! class_exists( 'WP_Privacy_Policy_Content' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/class-wp-privacy-policy-content.php';
+			}
+
+			$privacy_policy_content = WP_Privacy_Policy_Content::get_default_content();
+		}
+
+		if ( ! empty( $privacy_policy_content ) ) {
+			$privacy_policy_guid = get_option( 'home' ) . '/?page_id=3';
+
+			$wpdb-&gt;insert(
+				$wpdb-&gt;posts,
+				array(
+					'post_author'           =&gt; $user_id,
+					'post_date'             =&gt; $now,
+					'post_date_gmt'         =&gt; $now_gmt,
+					'post_content'          =&gt; $privacy_policy_content,
+					'post_excerpt'          =&gt; '',
+					'comment_status'        =&gt; 'closed',
+					'post_title'            =&gt; __( 'Privacy Policy' ),
+					/* translators: Privacy Policy page slug. */
+					'post_name'             =&gt; __( 'privacy-policy' ),
+					'post_modified'         =&gt; $now,
+					'post_modified_gmt'     =&gt; $now_gmt,
+					'guid'                  =&gt; $privacy_policy_guid,
+					'post_type'             =&gt; 'page',
+					'post_status'           =&gt; 'draft',
+					'to_ping'               =&gt; '',
+					'pinged'                =&gt; '',
+					'post_content_filtered' =&gt; '',
+				)
+			);
+			$wpdb-&gt;insert(
+				$wpdb-&gt;postmeta,
+				array(
+					'post_id'    =&gt; 3,
+					'meta_key'   =&gt; '_wp_page_template',
+					'meta_value' =&gt; 'default',
+				)
+			);
+			update_option( 'wp_page_for_privacy_policy', 3 );
+		}
+
+		// Set up default widgets for default theme.
+		update_option(
+			'widget_block',
+			array(
+				2              =&gt; array( 'content' =&gt; '&lt;!-- wp:search /--&gt;' ),
+				3              =&gt; array( 'content' =&gt; '&lt;!-- wp:group --&gt;&lt;div class="wp-block-group"&gt;&lt;!-- wp:heading --&gt;&lt;h2&gt;' . __( 'Recent Posts' ) . '&lt;/h2&gt;&lt;!-- /wp:heading --&gt;&lt;!-- wp:latest-posts /--&gt;&lt;/div&gt;&lt;!-- /wp:group --&gt;' ),
+				4              =&gt; array( 'content' =&gt; '&lt;!-- wp:group --&gt;&lt;div class="wp-block-group"&gt;&lt;!-- wp:heading --&gt;&lt;h2&gt;' . __( 'Recent Comments' ) . '&lt;/h2&gt;&lt;!-- /wp:heading --&gt;&lt;!-- wp:latest-comments {"displayAvatar":false,"displayDate":false,"displayExcerpt":false} /--&gt;&lt;/div&gt;&lt;!-- /wp:group --&gt;' ),
+				5              =&gt; array( 'content' =&gt; '&lt;!-- wp:group --&gt;&lt;div class="wp-block-group"&gt;&lt;!-- wp:heading --&gt;&lt;h2&gt;' . __( 'Archives' ) . '&lt;/h2&gt;&lt;!-- /wp:heading --&gt;&lt;!-- wp:archives /--&gt;&lt;/div&gt;&lt;!-- /wp:group --&gt;' ),
+				6              =&gt; array( 'content' =&gt; '&lt;!-- wp:group --&gt;&lt;div class="wp-block-group"&gt;&lt;!-- wp:heading --&gt;&lt;h2&gt;' . __( 'Categories' ) . '&lt;/h2&gt;&lt;!-- /wp:heading --&gt;&lt;!-- wp:categories /--&gt;&lt;/div&gt;&lt;!-- /wp:group --&gt;' ),
+				'_multiwidget' =&gt; 1,
+			)
+		);
+		update_option(
+			'sidebars_widgets',
+			array(
+				'wp_inactive_widgets' =&gt; array(),
+				'sidebar-1'           =&gt; array(
+					0 =&gt; 'block-2',
+					1 =&gt; 'block-3',
+					2 =&gt; 'block-4',
+				),
+				'sidebar-2'           =&gt; array(
+					0 =&gt; 'block-5',
+					1 =&gt; 'block-6',
+				),
+				'array_version'       =&gt; 3,
+			)
+		);
+
+		if ( ! is_multisite() ) {
+			update_user_meta( $user_id, 'show_welcome_panel', 1 );
+		} elseif ( ! is_super_admin( $user_id ) &amp;&amp; ! metadata_exists( 'user', $user_id, 'show_welcome_panel' ) ) {
+			update_user_meta( $user_id, 'show_welcome_panel', 2 );
+		}
+
+		if ( is_multisite() ) {
+			// Flush rules to pick up the new page.
+			$wp_rewrite-&gt;init();
+			$wp_rewrite-&gt;flush_rules();
+
+			$user = new WP_User( $user_id );
+			$wpdb-&gt;update( $wpdb-&gt;options, array( 'option_value' =&gt; $user-&gt;user_email ), array( 'option_name' =&gt; 'admin_email' ) );
+
+			// Remove all perms except for the login user.
+			$wpdb-&gt;query( $wpdb-&gt;prepare( "DELETE FROM $wpdb-&gt;usermeta WHERE user_id != %d AND meta_key = %s", $user_id, $table_prefix . 'user_level' ) );
+			$wpdb-&gt;query( $wpdb-&gt;prepare( "DELETE FROM $wpdb-&gt;usermeta WHERE user_id != %d AND meta_key = %s", $user_id, $table_prefix . 'capabilities' ) );
+
+			/*
+			 * Delete any caps that snuck into the previously active blog. (Hardcoded to blog 1 for now.)
+			 * TODO: Get previous_blog_id.
+			 */
+			if ( ! is_super_admin( $user_id ) &amp;&amp; 1 !== $user_id ) {
+				$wpdb-&gt;delete(
+					$wpdb-&gt;usermeta,
+					array(
+						'user_id'  =&gt; $user_id,
+						'meta_key' =&gt; $wpdb-&gt;base_prefix . '1_capabilities',
+					)
+				);
+			}
+		}
+	}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/upgrade.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/upgrade.php#L169">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/upgrade.php#L169-L473">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_policy_content/get_default_content/">WP_Privacy_Policy_Content::get_default_content()</a><code>wp-admin/includes/class-wp-privacy-policy-content.php</code></td><td><p>Returns the default suggested privacy policy content.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_network/">get_network()</a><code>wp-includes/ms-network.php</code></td><td><p>Retrieves network data given a network ID or network object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_user/__construct/">WP_User::__construct()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_super_admin/">is_super_admin()</a><code>wp-includes/capabilities.php</code></td><td><p>Determines whether user is a site admin.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_title/">sanitize_title()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string into a slug, which can be used in URLs or HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_time/">current_time()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the current time based on specified type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/network_home_url/">network_home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the home URL for the current network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_user_meta/">update_user_meta()</a><code>wp-includes/user.php</code></td><td><p>Updates user meta field based on user ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/init/">WP_Rewrite::init()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Sets up the object’s properties.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/flush_rules/">WP_Rewrite::flush_rules()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Removes rewrite rules and then recreate rewrite rules.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_posts_count/">update_posts_count()</a><code>wp-includes/ms-functions.php</code></td><td><p>Updates a blog’s post count.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/insert/">wpdb::insert()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Inserts a row into the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/update/">wpdb::update()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Updates a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/query/">wpdb::query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Performs a database query, using current database connection.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/delete/">wpdb::delete()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Deletes a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/metadata_exists/">metadata_exists()</a><code>wp-includes/meta.php</code></td><td><p>Determines if a meta field with the given key exists for the given object ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_url/">admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_site_option/">get_site_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieve an option value for the current network based on name of option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 18 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_initialize_site/">wp_initialize_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Runs the initialization routine for a given site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_install/">wp_install()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Installs the site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/install_blog_defaults/">install_blog_defaults()</a><code>wp-includes/ms-deprecated.php</code></td><td><p>Set blog defaults.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-carstenbach odd alt thread-odd thread-alt depth-1" data-comment-id="6313" id="comment-6313">
+<article class="comment-body" id="div-comment-6313">
+<a class="screen-reader-text" href="#comment-content-6313">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6313">
+<p>Maybe interesting to note, that this is a <a href="https://codex.wordpress.org/Pluggable_Functions" rel="nofollow ugc">pluggable function</a>. </p>
+<p>You can easily apply your own custom defaults for a new WordPress install, by declaring your own <code>wp_install_defaults()</code> function.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6313">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

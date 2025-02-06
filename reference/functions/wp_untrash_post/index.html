@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_untrash_post()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_untrash_post()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_untrash_post( <span class="arg-type">int</span> <span class="arg-name">$post_id</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_post/" rel="class">WP_Post</a>|false|null</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Restores a post from the Trash.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post_id</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID. Default is the ID of the global <code>$post</code>.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a>|false|null</span> Post data on success, false or null on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3968"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_untrash_post( $post_id = 0 ) {
+	$post = get_post( $post_id );
+
+	if ( ! $post ) {
+		return $post;
+	}
+
+	$post_id = $post-&gt;ID;
+
+	if ( 'trash' !== $post-&gt;post_status ) {
+		return false;
+	}
+
+	$previous_status = get_post_meta( $post_id, '_wp_trash_meta_status', true );
+
+	/**
+	 * Filters whether a post untrashing should take place.
+	 *
+	 * @since 4.9.0
+	 * @since 5.6.0 Added the `$previous_status` parameter.
+	 *
+	 * @param bool|null $untrash         Whether to go forward with untrashing.
+	 * @param WP_Post   $post            Post object.
+	 * @param string    $previous_status The status of the post at the point where it was trashed.
+	 */
+	$check = apply_filters( 'pre_untrash_post', null, $post, $previous_status );
+	if ( null !== $check ) {
+		return $check;
+	}
+
+	/**
+	 * Fires before a post is restored from the Trash.
+	 *
+	 * @since 2.9.0
+	 * @since 5.6.0 Added the `$previous_status` parameter.
+	 *
+	 * @param int    $post_id         Post ID.
+	 * @param string $previous_status The status of the post at the point where it was trashed.
+	 */
+	do_action( 'untrash_post', $post_id, $previous_status );
+
+	$new_status = ( 'attachment' === $post-&gt;post_type ) ? 'inherit' : 'draft';
+
+	/**
+	 * Filters the status that a post gets assigned when it is restored from the trash (untrashed).
+	 *
+	 * By default posts that are restored will be assigned a status of 'draft'. Return the value of `$previous_status`
+	 * in order to assign the status that the post had before it was trashed. The `wp_untrash_post_set_previous_status()`
+	 * function is available for this.
+	 *
+	 * Prior to WordPress 5.6.0, restored posts were always assigned their original status.
+	 *
+	 * @since 5.6.0
+	 *
+	 * @param string $new_status      The new status of the post being restored.
+	 * @param int    $post_id         The ID of the post being restored.
+	 * @param string $previous_status The status of the post at the point where it was trashed.
+	 */
+	$post_status = apply_filters( 'wp_untrash_post_status', $new_status, $post_id, $previous_status );
+
+	delete_post_meta( $post_id, '_wp_trash_meta_status' );
+	delete_post_meta( $post_id, '_wp_trash_meta_time' );
+
+	$post_updated = wp_update_post(
+		array(
+			'ID'          =&gt; $post_id,
+			'post_status' =&gt; $post_status,
+		)
+	);
+
+	if ( ! $post_updated ) {
+		return false;
+	}
+
+	wp_untrash_post_comments( $post_id );
+
+	/**
+	 * Fires after a post is restored from the Trash.
+	 *
+	 * @since 2.9.0
+	 * @since 5.6.0 Added the `$previous_status` parameter.
+	 *
+	 * @param int    $post_id         Post ID.
+	 * @param string $previous_status The status of the post at the point where it was trashed.
+	 */
+	do_action( 'untrashed_post', $post_id, $previous_status );
+
+	return $post;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/post.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/post.php#L3968">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/post.php#L3968-L4056">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_untrash_post/"><span class="hook-func">apply_filters</span>( ‘pre_untrash_post’,  <nobr><span class="arg-type">bool|null</span> <span class="arg-name">$untrash</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$previous_status</span></nobr> )</a></dt><dd><p>Filters whether a post untrashing should take place.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/untrashed_post/"><span class="hook-func">do_action</span>( ‘untrashed_post’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$previous_status</span></nobr> )</a></dt><dd><p>Fires after a post is restored from the Trash.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/untrash_post/"><span class="hook-func">do_action</span>( ‘untrash_post’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$previous_status</span></nobr> )</a></dt><dd><p>Fires before a post is restored from the Trash.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_untrash_post_status/"><span class="hook-func">apply_filters</span>( ‘wp_untrash_post_status’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$new_status</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$previous_status</span></nobr> )</a></dt><dd><p>Filters the status that a post gets assigned when it is restored from the trash (untrashed).</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_post/">wp_update_post()</a><code>wp-includes/post.php</code></td><td><p>Updates a post with new post data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_untrash_post_comments/">wp_untrash_post_comments()</a><code>wp-includes/post.php</code></td><td><p>Restores comments for a post from the Trash.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/delete_post_meta/">delete_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Deletes a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_meta/">get_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_trash_post/">wp_ajax_trash_post()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles sending a post to the Trash via AJAX.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.6.0/">5.6.0</a></td><td><span class="since-description">An untrashed post is now returned to <code>'draft'</code> status by default, except for              attachments which are returned to their original <code>'inherit'</code> status.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.9.0/">2.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-rodrigomct odd alt thread-odd thread-alt depth-1" data-comment-id="6771" id="comment-6771">
+<article class="comment-body" id="div-comment-6771">
+<a class="screen-reader-text" href="#comment-content-6771">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6771">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Assume $post_id is the ID of the post you want to restore
+$post_id = 123;
+
+// Try to restore the post
+$restored_post = wp_untrash_post( $post_id );
+
+if ( false !== $restored_post ) {
+    // The post was restored successfully, you can now do something with $restored_post
+    echo 'Post restored successfully!';
+} else {
+    // Restore failed or post does not exist
+    echo 'Failed to restore post or post does not exist.';
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6771">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

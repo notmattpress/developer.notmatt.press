@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wpmu_signup_blog()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wpmu_signup_blog()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wpmu_signup_blog( <span class="arg-type">string</span> <span class="arg-name">$domain</span>,  <span class="arg-type">string</span> <span class="arg-name">$path</span>,  <span class="arg-type">string</span> <span class="arg-name">$title</span>,  <span class="arg-type">string</span> <span class="arg-name">$user</span>,  <span class="arg-type">string</span> <span class="arg-name">$user_email</span>,  <span class="arg-type">array</span> <span class="arg-name">$meta</span> = <span class="arg-default">array()</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Records site signup information for future activation.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$domain</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The requested domain.</span></div></dd><dt><code>$path</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The requested path.</span></div></dd><dt><code>$title</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The requested site title.</span></div></dd><dt><code>$user</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The user’s requested login name.</span></div></dd><dt><code>$user_email</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The user’s email address.</span></div></dd><dt><code>$meta</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Signup meta data. By default, contains the requested privacy setting and lang_id.</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="785"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wpmu_signup_blog( $domain, $path, $title, $user, $user_email, $meta = array() ) {
+	global $wpdb;
+
+	$key = substr( md5( time() . wp_rand() . $domain ), 0, 16 );
+
+	/**
+	 * Filters the metadata for a site signup.
+	 *
+	 * The metadata will be serialized prior to storing it in the database.
+	 *
+	 * @since 4.8.0
+	 *
+	 * @param array  $meta       Signup meta data. Default empty array.
+	 * @param string $domain     The requested domain.
+	 * @param string $path       The requested path.
+	 * @param string $title      The requested site title.
+	 * @param string $user       The user's requested login name.
+	 * @param string $user_email The user's email address.
+	 * @param string $key        The user's activation key.
+	 */
+	$meta = apply_filters( 'signup_site_meta', $meta, $domain, $path, $title, $user, $user_email, $key );
+
+	$wpdb-&gt;insert(
+		$wpdb-&gt;signups,
+		array(
+			'domain'         =&gt; $domain,
+			'path'           =&gt; $path,
+			'title'          =&gt; $title,
+			'user_login'     =&gt; $user,
+			'user_email'     =&gt; $user_email,
+			'registered'     =&gt; current_time( 'mysql', true ),
+			'activation_key' =&gt; $key,
+			'meta'           =&gt; serialize( $meta ),
+		)
+	);
+
+	/**
+	 * Fires after site signup information has been written to the database.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param string $domain     The requested domain.
+	 * @param string $path       The requested path.
+	 * @param string $title      The requested site title.
+	 * @param string $user       The user's requested login name.
+	 * @param string $user_email The user's email address.
+	 * @param string $key        The user's activation key.
+	 * @param array  $meta       Signup meta data. By default, contains the requested privacy setting and lang_id.
+	 */
+	do_action( 'after_signup_site', $domain, $path, $title, $user, $user_email, $key, $meta );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/ms-functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/ms-functions.php#L785">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/ms-functions.php#L785-L835">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/after_signup_site/"><span class="hook-func">do_action</span>( ‘after_signup_site’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$domain</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$path</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$title</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$user</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$user_email</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$key</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$meta</span></nobr> )</a></dt><dd><p>Fires after site signup information has been written to the database.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/signup_site_meta/"><span class="hook-func">apply_filters</span>( ‘signup_site_meta’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$meta</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$domain</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$path</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$title</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$user</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$user_email</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$key</span></nobr> )</a></dt><dd><p>Filters the metadata for a site signup.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_rand/">wp_rand()</a><code>wp-includes/pluggable.php</code></td><td><p>Generates a random non-negative number.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/current_time/">current_time()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the current time based on specified type.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/insert/">wpdb::insert()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Inserts a row into the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/validate_blog_signup/">validate_blog_signup()</a><code>wp-signup.php</code></td><td><p>Validates new site signup.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/mu.3.0.0/">MU (3.0.0)</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

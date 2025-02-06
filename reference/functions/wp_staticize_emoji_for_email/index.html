@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_staticize_emoji_for_email()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_staticize_emoji_for_email()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_staticize_emoji_for_email( <span class="arg-type">array</span> <span class="arg-name">$mail</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Converts emoji in emails into static images.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$mail</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The email data array.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The email data array, with emoji in the message staticized.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="6077"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_staticize_emoji_for_email( $mail ) {
+	if ( ! isset( $mail['message'] ) ) {
+		return $mail;
+	}
+
+	/*
+	 * We can only transform the emoji into images if it's a `text/html` email.
+	 * To do that, here's a cut down version of the same process that happens
+	 * in wp_mail() - get the `Content-Type` from the headers, if there is one,
+	 * then pass it through the <a href="https://developer.notmatt.press/reference/functions/wp_mail_content_type">'wp_mail_content_type'</a> filter, in case
+	 * a plugin is handling changing the `Content-Type`.
+	 */
+	$headers = array();
+	if ( isset( $mail['headers'] ) ) {
+		if ( is_array( $mail['headers'] ) ) {
+			$headers = $mail['headers'];
+		} else {
+			$headers = explode( "\n", str_replace( "\r\n", "\n", $mail['headers'] ) );
+		}
+	}
+
+	foreach ( $headers as $header ) {
+		if ( ! str_contains( $header, ':' ) ) {
+			continue;
+		}
+
+		// Explode them out.
+		list( $name, $content ) = explode( ':', trim( $header ), 2 );
+
+		// Cleanup crew.
+		$name    = trim( $name );
+		$content = trim( $content );
+
+		if ( 'content-type' === strtolower( $name ) ) {
+			if ( str_contains( $content, ';' ) ) {
+				list( $type, $charset ) = explode( ';', $content );
+				$content_type           = trim( $type );
+			} else {
+				$content_type = trim( $content );
+			}
+			break;
+		}
+	}
+
+	// Set Content-Type if we don't have a content-type from the input headers.
+	if ( ! isset( $content_type ) ) {
+		$content_type = 'text/plain';
+	}
+
+	/** This filter is documented in wp-includes/pluggable.php */
+	$content_type = apply_filters( 'wp_mail_content_type', $content_type );
+
+	if ( 'text/html' === $content_type ) {
+		$mail['message'] = wp_staticize_emoji( $mail['message'] );
+	}
+
+	return $mail;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/formatting.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/formatting.php#L6077">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/formatting.php#L6077-L6134">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_mail_content_type/"><span class="hook-func">apply_filters</span>( ‘wp_mail_content_type’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$content_type</span></nobr> )</a></dt><dd><p>Filters the <a href="https://developer.notmatt.press/reference/functions/wp_mail/" rel="function">wp_mail()</a>  content type.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_staticize_emoji/">wp_staticize_emoji()</a><code>wp-includes/formatting.php</code></td><td><p>Converts emoji to a static img element.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.2.0/">4.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

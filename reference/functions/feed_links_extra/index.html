@@ -1,0 +1,321 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">feed_links_extra()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>feed_links_extra()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">feed_links_extra( <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Displays the links to the extra feeds such as category feeds.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Optional arguments.</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3171"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function feed_links_extra( $args = array() ) {
+	$defaults = array(
+		/* translators: Separator between site name and feed type in feed links. */
+		'separator'     =&gt; _x( '&amp;raquo;', 'feed link' ),
+		/* translators: 1: Site name, 2: Separator (raquo), 3: Post title. */
+		'singletitle'   =&gt; __( '%1$s %2$s %3$s Comments Feed' ),
+		/* translators: 1: Site name, 2: Separator (raquo), 3: Category name. */
+		'cattitle'      =&gt; __( '%1$s %2$s %3$s Category Feed' ),
+		/* translators: 1: Site name, 2: Separator (raquo), 3: Tag name. */
+		'tagtitle'      =&gt; __( '%1$s %2$s %3$s Tag Feed' ),
+		/* translators: 1: Site name, 2: Separator (raquo), 3: Term name, 4: Taxonomy singular name. */
+		'taxtitle'      =&gt; __( '%1$s %2$s %3$s %4$s Feed' ),
+		/* translators: 1: Site name, 2: Separator (raquo), 3: Author name. */
+		'authortitle'   =&gt; __( '%1$s %2$s Posts by %3$s Feed' ),
+		/* translators: 1: Site name, 2: Separator (raquo), 3: Search query. */
+		'searchtitle'   =&gt; __( '%1$s %2$s Search Results for &amp;#8220;%3$s&amp;#8221; Feed' ),
+		/* translators: 1: Site name, 2: Separator (raquo), 3: Post type name. */
+		'posttypetitle' =&gt; __( '%1$s %2$s %3$s Feed' ),
+	);
+
+	$args = wp_parse_args( $args, $defaults );
+
+	/**
+	 * Filters the extra feed links arguments.
+	 *
+	 * @since 6.7.0
+	 *
+	 * @param array $args An array of extra feed links arguments.
+	 */
+	$args = apply_filters( 'feed_links_extra_args', $args );
+
+	if ( is_singular() ) {
+		$id   = 0;
+		$post = get_post( $id );
+
+		/** This filter is documented in wp-includes/general-template.php */
+		$show_comments_feed = apply_filters( 'feed_links_show_comments_feed', true );
+
+		/**
+		 * Filters whether to display the post comments feed link.
+		 *
+		 * This filter allows to enable or disable the feed link for a singular post
+		 * in a way that is independent of <a href="https://developer.notmatt.press/reference/functions/feed_links_show_comments_feed">'feed_links_show_comments_feed'</a>
+		 * (which controls the global comments feed). The result of that filter
+		 * is accepted as a parameter.
+		 *
+		 * @since 6.1.0
+		 *
+		 * @param bool $show_comments_feed Whether to display the post comments feed link. Defaults to
+		 *                                 the <a href="https://developer.notmatt.press/reference/functions/feed_links_show_comments_feed">'feed_links_show_comments_feed'</a> filter result.
+		 */
+		$show_post_comments_feed = apply_filters( 'feed_links_extra_show_post_comments_feed', $show_comments_feed );
+
+		if ( $show_post_comments_feed &amp;&amp; ( comments_open() || pings_open() || $post-&gt;comment_count &gt; 0 ) ) {
+			$title = sprintf(
+				$args['singletitle'],
+				get_bloginfo( 'name' ),
+				$args['separator'],
+				the_title_attribute( array( 'echo' =&gt; false ) )
+			);
+
+			$feed_link = get_post_comments_feed_link( $post-&gt;ID );
+
+			if ( $feed_link ) {
+				$href = $feed_link;
+			}
+		}
+	} elseif ( is_post_type_archive() ) {
+		/**
+		 * Filters whether to display the post type archive feed link.
+		 *
+		 * @since 6.1.0
+		 *
+		 * @param bool $show Whether to display the post type archive feed link. Default true.
+		 */
+		$show_post_type_archive_feed = apply_filters( 'feed_links_extra_show_post_type_archive_feed', true );
+
+		if ( $show_post_type_archive_feed ) {
+			$post_type = get_query_var( 'post_type' );
+
+			if ( is_array( $post_type ) ) {
+				$post_type = reset( $post_type );
+			}
+
+			$post_type_obj = get_post_type_object( $post_type );
+
+			$title = sprintf(
+				$args['posttypetitle'],
+				get_bloginfo( 'name' ),
+				$args['separator'],
+				$post_type_obj-&gt;labels-&gt;name
+			);
+
+			$href = get_post_type_archive_feed_link( $post_type_obj-&gt;name );
+		}
+	} elseif ( is_category() ) {
+		/**
+		 * Filters whether to display the category feed link.
+		 *
+		 * @since 6.1.0
+		 *
+		 * @param bool $show Whether to display the category feed link. Default true.
+		 */
+		$show_category_feed = apply_filters( 'feed_links_extra_show_category_feed', true );
+
+		if ( $show_category_feed ) {
+			$term = get_queried_object();
+
+			if ( $term ) {
+				$title = sprintf(
+					$args['cattitle'],
+					get_bloginfo( 'name' ),
+					$args['separator'],
+					$term-&gt;name
+				);
+
+				$href = get_category_feed_link( $term-&gt;term_id );
+			}
+		}
+	} elseif ( is_tag() ) {
+		/**
+		 * Filters whether to display the tag feed link.
+		 *
+		 * @since 6.1.0
+		 *
+		 * @param bool $show Whether to display the tag feed link. Default true.
+		 */
+		$show_tag_feed = apply_filters( 'feed_links_extra_show_tag_feed', true );
+
+		if ( $show_tag_feed ) {
+			$term = get_queried_object();
+
+			if ( $term ) {
+				$title = sprintf(
+					$args['tagtitle'],
+					get_bloginfo( 'name' ),
+					$args['separator'],
+					$term-&gt;name
+				);
+
+				$href = get_tag_feed_link( $term-&gt;term_id );
+			}
+		}
+	} elseif ( is_tax() ) {
+		/**
+		 * Filters whether to display the custom taxonomy feed link.
+		 *
+		 * @since 6.1.0
+		 *
+		 * @param bool $show Whether to display the custom taxonomy feed link. Default true.
+		 */
+		$show_tax_feed = apply_filters( 'feed_links_extra_show_tax_feed', true );
+
+		if ( $show_tax_feed ) {
+			$term = get_queried_object();
+
+			if ( $term ) {
+				$tax = get_taxonomy( $term-&gt;taxonomy );
+
+				$title = sprintf(
+					$args['taxtitle'],
+					get_bloginfo( 'name' ),
+					$args['separator'],
+					$term-&gt;name,
+					$tax-&gt;labels-&gt;singular_name
+				);
+
+				$href = get_term_feed_link( $term-&gt;term_id, $term-&gt;taxonomy );
+			}
+		}
+	} elseif ( is_author() ) {
+		/**
+		 * Filters whether to display the author feed link.
+		 *
+		 * @since 6.1.0
+		 *
+		 * @param bool $show Whether to display the author feed link. Default true.
+		 */
+		$show_author_feed = apply_filters( 'feed_links_extra_show_author_feed', true );
+
+		if ( $show_author_feed ) {
+			$author_id = (int) get_query_var( 'author' );
+
+			$title = sprintf(
+				$args['authortitle'],
+				get_bloginfo( 'name' ),
+				$args['separator'],
+				get_the_author_meta( 'display_name', $author_id )
+			);
+
+			$href = get_author_feed_link( $author_id );
+		}
+	} elseif ( is_search() ) {
+		/**
+		 * Filters whether to display the search results feed link.
+		 *
+		 * @since 6.1.0
+		 *
+		 * @param bool $show Whether to display the search results feed link. Default true.
+		 */
+		$show_search_feed = apply_filters( 'feed_links_extra_show_search_feed', true );
+
+		if ( $show_search_feed ) {
+			$title = sprintf(
+				$args['searchtitle'],
+				get_bloginfo( 'name' ),
+				$args['separator'],
+				get_search_query( false )
+			);
+
+			$href = get_search_feed_link();
+		}
+	}
+
+	if ( isset( $title ) &amp;&amp; isset( $href ) ) {
+		printf(
+			'&lt;link rel="alternate" type="%s" title="%s" href="%s" /&gt;' . "\n",
+			feed_content_type(),
+			esc_attr( $title ),
+			esc_url( $href )
+		);
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/general-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/general-template.php#L3171">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/general-template.php#L3171-L3393">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_extra_args/"><span class="hook-func">apply_filters</span>( ‘feed_links_extra_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the extra feed links arguments.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_extra_show_author_feed/"><span class="hook-func">apply_filters</span>( ‘feed_links_extra_show_author_feed’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show</span></nobr> )</a></dt><dd><p>Filters whether to display the author feed link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_extra_show_category_feed/"><span class="hook-func">apply_filters</span>( ‘feed_links_extra_show_category_feed’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show</span></nobr> )</a></dt><dd><p>Filters whether to display the category feed link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_extra_show_post_comments_feed/"><span class="hook-func">apply_filters</span>( ‘feed_links_extra_show_post_comments_feed’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show_comments_feed</span></nobr> )</a></dt><dd><p>Filters whether to display the post comments feed link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_extra_show_post_type_archive_feed/"><span class="hook-func">apply_filters</span>( ‘feed_links_extra_show_post_type_archive_feed’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show</span></nobr> )</a></dt><dd><p>Filters whether to display the post type archive feed link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_extra_show_search_feed/"><span class="hook-func">apply_filters</span>( ‘feed_links_extra_show_search_feed’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show</span></nobr> )</a></dt><dd><p>Filters whether to display the search results feed link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_extra_show_tag_feed/"><span class="hook-func">apply_filters</span>( ‘feed_links_extra_show_tag_feed’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show</span></nobr> )</a></dt><dd><p>Filters whether to display the tag feed link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_extra_show_tax_feed/"><span class="hook-func">apply_filters</span>( ‘feed_links_extra_show_tax_feed’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show</span></nobr> )</a></dt><dd><p>Filters whether to display the custom taxonomy feed link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/feed_links_show_comments_feed/"><span class="hook-func">apply_filters</span>( ‘feed_links_show_comments_feed’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show</span></nobr> )</a></dt><dd><p>Filters whether to display the comments feed link.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_search_query/">get_search_query()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves the contents of the search WordPress query variable.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_singular/">is_singular()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing single post of any post type (post, attachment, page, custom post types).</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_search/">is_search()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for a search.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_category/">is_category()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing category archive page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_tag/">is_tag()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing tag archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_tax/">is_tax()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing custom taxonomy archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_author/">is_author()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing author archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_post_type_archive/">is_post_type_archive()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing post type archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_query_var/">get_query_var()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the value of a query variable in the <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_queried_object/">get_queried_object()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the currently queried object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_archive_feed_link/">get_post_type_archive_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for a post type archive feed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_tag_feed_link/">get_tag_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for a tag feed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_term_feed_link/">get_term_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the feed link for a term.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_search_feed_link/">get_search_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for the search results feed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_comments_feed_link/">get_post_comments_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for the post comments feed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_category_feed_link/">get_category_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the feed link for a category.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_author_feed_link/">get_author_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the feed link for a given author.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/feed_content_type/">feed_content_type()</a><code>wp-includes/feed.php</code></td><td><p>Returns the content type for specified feed type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_title_attribute/">the_title_attribute()</a><code>wp-includes/post-template.php</code></td><td><p>Sanitizes the current title when retrieving or displaying.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_author_meta/">get_the_author_meta()</a><code>wp-includes/author-template.php</code></td><td><p>Retrieves the requested data of the author of the current post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/comments_open/">comments_open()</a><code>wp-includes/comment-template.php</code></td><td><p>Determines whether the current post is open for comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/pings_open/">pings_open()</a><code>wp-includes/comment-template.php</code></td><td><p>Determines whether the current post is open for pings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bloginfo/">get_bloginfo()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves information about the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomy/">get_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the taxonomy object of $taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_object/">get_post_type_object()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post type object by name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 25 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

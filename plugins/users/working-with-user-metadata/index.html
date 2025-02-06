@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/users/">Users</a></span><span class="is-current-page">Working with User Metadata</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Working with User Metadata</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="introduction" tabindex="-1"><a href="#introduction">Introduction</a></h2>
+<p>WordPress’ <code>users</code> table was designed to contain only the essential information about the user.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+As of WP 4.7 the table contains: <code>ID</code>, <code>user_login</code>, <code>user_pass</code>, <code>user_nicename</code>, <code>user_email</code>, <code>user_url</code>, <code>user_registered</code>, <code>user_activation_key</code>, <code>user_status</code> and <code>display_name</code>.<br/>
+</div></div>
+<p>Because of this, to store additional data, the <code>usermeta</code> table was introduced, which can store any arbitrary amount of data about a user.</p>
+<p>Both tables are tied together using one-to-many relationship based on the <code>ID</code> in the <code>users</code> table.</p>
+<h2 class="is-toc-heading wp-block-heading" id="manipulating-user-metadata" tabindex="-1"><a href="#manipulating-user-metadata">Manipulating User Metadata</a></h2>
+<p>There are two main ways for manipulating User Metadata.</p>
+<ol class="wp-block-list">
+<li>A form field in the user’s profile screen.</li>
+<li>Programmatically, via a function call.</li>
+</ol>
+<h3 class="is-toc-heading wp-block-heading" id="via-a-form-field" tabindex="-1"><a href="#via-a-form-field">via a Form Field</a></h3>
+<p>The form field option is suitable for cases where the user will have access to the WordPress admin area, in which he will be able to view and edit profiles.</p>
+<p>Before we dive into an example, it’s important to understand the hooks involved in the process and why they are there.</p>
+<h4 class="wp-block-heading"><code>show_user_profile</code> hook</h4>
+<p>This action hook is fired whenever a user edits <strong>it’s own</strong> user profile.</p>
+<p><strong>Remember,</strong> a user that doesn’t have the capability of editing his own profile won’t fire this hook.</p>
+<h4 class="wp-block-heading"><code>edit_user_profile</code> hook</h4>
+<p>This action hook is fired whenever a user edits a user profile of <strong>somebody else</strong>.</p>
+<p><strong>Remember,</strong> a user that doesn’t have the capability for editing 3rd party profiles won’t fire this hook.</p>
+<h4 class="wp-block-heading">Example Form Field</h4>
+<p>In the example below we will be adding a birthday field to the all profile screens. Saving it to the database on profile updates.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">/**
+ * The field on the editing screens.
+ *
+ * @param $user WP_User user object
+ */
+function wporg_usermeta_form_field_birthday( $user ) {
+    ?&gt;
+    &lt;h3&gt;It's Your Birthday&lt;/h3&gt;
+    &lt;table class="form-table"&gt;
+        &lt;tr&gt;
+            &lt;th&gt;
+                &lt;label for="birthday"&gt;Birthday&lt;/label&gt;
+            &lt;/th&gt;
+            &lt;td&gt;
+                &lt;input type="date"
+                       class="regular-text ltr"
+                       id="birthday"
+                       name="birthday"
+                       value="&lt;?= esc_attr( get_user_meta( $user-&gt;ID, 'birthday', true ) ) ?&gt;"
+                       title="Please use YYYY-MM-DD as the date format."
+                       pattern="(19[0-9][0-9]|20[0-9][0-9])-(1[0-2]|0[1-9])-(3[01]|[21][0-9]|0[1-9])"
+                       required&gt;
+                &lt;p class="description"&gt;
+                    Please enter your birthday date.
+                &lt;/p&gt;
+            &lt;/td&gt;
+        &lt;/tr&gt;
+    &lt;/table&gt;
+    &lt;?php
+}
+ 
+/**
+ * The save action.
+ *
+ * @param $user_id int the ID of the current user.
+ *
+ * @return bool Meta ID if the key didn't exist, true on successful update, false on failure.
+ */
+function wporg_usermeta_form_field_birthday_update( $user_id ) {
+    // check that the current user have the capability to edit the $user_id
+    if ( ! current_user_can( 'edit_user', $user_id ) ) {
+        return false;
+    }
+ 
+    // create/update user meta for the $user_id
+    return update_user_meta(
+        $user_id,
+        'birthday',
+        $_POST['birthday']
+    );
+}
+ 
+// Add the field to user's own profile editing screen.
+add_action(
+    'show_user_profile',
+    'wporg_usermeta_form_field_birthday'
+);
+ 
+// Add the field to user profile editing screen.
+add_action(
+    'edit_user_profile',
+    'wporg_usermeta_form_field_birthday'
+);
+ 
+// Add the save action to user's own profile editing screen update.
+add_action(
+    'personal_options_update',
+    'wporg_usermeta_form_field_birthday_update'
+);
+ 
+// Add the save action to user profile editing screen update.
+add_action(
+    'edit_user_profile_update',
+    'wporg_usermeta_form_field_birthday_update'
+);</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="programmatically" tabindex="-1"><a href="#programmatically">Programmatically</a></h3>
+<p>This option is suitable for cases where you’re building a custom user area and/or plan to disable access to the WordPress admin area.</p>
+<p>The functions available for manipulating User Metadata are: <code><a href="/reference/functions/add_user_meta/">add_user_meta()</a></code>, <code><a href="/reference/functions/update_user_meta/">update_user_meta()</a></code>, <code><a href="/reference/functions/delete_user_meta/">delete_user_meta()</a></code> and <code><a href="/reference/functions/get_user_meta/">get_user_meta()</a></code>.</p>
+<h4 class="wp-block-heading">Add</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_user_meta(
+    int $user_id,
+    string $meta_key,
+    mixed $meta_value,
+    bool $unique = false
+);</code></pre>
+<p>Please refer to the Function Reference about <code><a href="/reference/functions/add_user_meta/">add_user_meta()</a></code> for full explanation about the used parameters.</p>
+<h4 class="wp-block-heading">Update</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">update_user_meta(
+    int $user_id,
+    string $meta_key,
+    mixed $meta_value,
+    mixed $prev_value = ''
+);</code></pre>
+<p>Please refer to the Function Reference about <code><a href="/reference/functions/update_user_meta/">update_user_meta()</a></code> for full explanation about the used parameters.</p>
+<h4 class="wp-block-heading">Delete</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">delete_user_meta(
+    int $user_id,
+    string $meta_key,
+    mixed $meta_value = ''
+);</code></pre>
+<p>Please refer to the Function Reference about <code><a href="/reference/functions/delete_user_meta/">delete_user_meta()</a></code> for full explanation about the used parameters.</p>
+<h4 class="wp-block-heading">Get</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">get_user_meta(
+    int $user_id,
+    string $key = '',
+    bool $single = false
+);</code></pre>
+<p>Please refer to the Function Reference about <code><a href="/reference/functions/get_user_meta/">get_user_meta()</a></code> for full explanation about the used parameters.</p>
+<p>Please note, if you pass only the <code>$user_id</code>, the function will retrieve all Metadata as an associative array.</p>
+<p>You can render User Metadata anywhere in your plugin or theme.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

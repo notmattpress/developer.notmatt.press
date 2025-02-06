@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/apis/">Common APIs Handbook</a></span><span class="is-current-page">Site Health</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Site Health</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Since WordPress 5.8, developers are allowed to extend Site Health screen. This API allows developers to add their own tabs to the Site Health interface.</p>
+<figure class="wp-block-image size-large"><img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/make.wordpress.org/core/files/2021/06/4-menu-items.png?ssl=1"/></figure>
+<h2 class="is-toc-heading wp-block-heading" id="registering-a-custom-tab-navigation" tabindex="-1"><a href="#registering-a-custom-tab-navigation">Registering a custom tab navigation</a></h2>
+<p>Developers need to start by creating a navigation element, so that users may access the new tab. This is done using the <code>site_health_navigation_tabs</code> filter, which is an associated array of tab keys, and their label.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+function wporg_example_site_health_navigation_tabs( $tabs ) {
+    // translators: Tab heading for Site Health navigation.
+    $tabs['example-site-health-tab'] = esc_html_x( 'My New Tab', 'Site Health', 'text-domain' );
+ 
+    return $tabs;
+}
+add_filter( 'site_health_navigation_tabs', 'wporg_example_site_health_navigation_tabs' );</code></pre>
+<p>The above example will add the identifier <code>example-site-health-tab</code> with the label <code>My New Tab</code> to the header navigation located in Site Health screens.</p>
+<p>It is also possible to re-order what tabs are displayed first using this filter, or even remove tabs. By default core has two tabs, the <code>Status</code> and <code>Info</code> screens. The <code>Status</code> screen is the default, and therefore has no slug.</p>
+<p>To not overburden the navigation area, if there are more than 4 items added, only the first three will be displayed directly, with the remaining items being wrapped inside a sub-navigation. This is based on usage testing in the Health Check plugin, where 4 items have shown to be enough to cover most use cases, but not so many as to become confusing.</p>
+<h2 class="is-toc-heading wp-block-heading" id="displaying-the-content-of-a-custom-tab" tabindex="-1"><a href="#displaying-the-content-of-a-custom-tab">Displaying the content of a custom tab</a></h2>
+<p>When a user visits a Site Health tab, other than the default screen, the <code>site_health_tab_content</code> action triggers. This action includes a single argument being the slug, as defined by the tab navigation in the previous filter, to help developers to identify which page is being requested.</p>
+<p>The action fires after the header itself has been loaded, but does not include any wrappers. This gives you as a developer the full width of the screen (not counting the admin menu) to work with.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+function wporg_example_site_health_tab_content( $tab ) {
+    // Do nothing if this is not our tab.
+    if ( 'example-site-health-tab' !== $tab ) {
+        return;
+    }
+ 
+    // Include the interface, kept in a separate file just to differentiate code from views.
+    include trailingslashit( plugin_dir_path( __FILE__ ) ) . 'views/site-health-tab.php';
+}
+add_action( 'site_health_tab_content', 'wporg_example_site_health_tab_content' );</code></pre>
+<p>The above example loads in a file with your tab content from your plugin, but only if the tab matches the tab key (or slug if you will) which was defined in the previous example.</p>
+<p>It is possible to provide output on any tab this way, or on another tab not your own, for example if they interact with each other.</p>
+<p>Another example might be to extend the default <code>Info</code> tab, which has the slug <code>debug</code>, and add a button to copy some information specific to only your plugin or theme:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+function wporg_add_button_to_site_health_info_tab( $tab ) {
+    // Do nothing if this is not the "debug" tab.
+    if ( 'debug' !== $tab ) {
+        return;
+    }
+    ?&gt;
+    &lt;button class="copy-my-plugin-info"&gt;
+        &lt;?php esc_html_e( 'Click to copy plugin info', 'text-domain' ); ?&gt;
+    &lt;/button&gt;
+    &lt;?php
+}
+add_action( 'site_health_tab_content', 'wporg_add_button_to_site_health_info_tab' );</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,249 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_password_change_notification()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_password_change_notification()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_password_change_notification( <span class="arg-type">WP_User</span> <span class="arg-name">$user</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Notifies the blog admin of a user changing password, normally via email.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$user</code><span class="type"><span class="WP_User"><a href="https://developer.notmatt.press/reference/classes/wp_user/" rel="class">WP_User</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">User object.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<ul class="wp-block-list">
+<li>This function is normally called when a user resets a lost password, not if the password is changed on their profile page.</li>
+<li>This function can be replaced via plugins. If plugins do not redefine these functions, then this will be used instead.</li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2073"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_password_change_notification( $user ) {
+	/*
+	 * Send a copy of password change notification to the admin,
+	 * but check to see if it's the admin whose password we're changing, and skip this.
+	 */
+	if ( 0 !== strcasecmp( $user-&gt;user_email, get_option( 'admin_email' ) ) ) {
+
+		$admin_user = get_user_by( 'email', get_option( 'admin_email' ) );
+
+		if ( $admin_user ) {
+			$switched_locale = switch_to_user_locale( $admin_user-&gt;ID );
+		} else {
+			$switched_locale = switch_to_locale( get_locale() );
+		}
+
+		/* translators: %s: User name. */
+		$message = sprintf( __( 'Password changed for user: %s' ), $user-&gt;user_login ) . "\r\n";
+		/*
+		 * The blogname option is escaped with esc_html() on the way into the database in sanitize_option().
+		 * We want to reverse this for the plain text arena of emails.
+		 */
+		$blogname = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+
+		$wp_password_change_notification_email = array(
+			'to'      =&gt; get_option( 'admin_email' ),
+			/* translators: Password change notification email subject. %s: Site title. */
+			'subject' =&gt; __( '[%s] Password Changed' ),
+			'message' =&gt; $message,
+			'headers' =&gt; '',
+		);
+
+		/**
+		 * Filters the contents of the password change notification email sent to the site admin.
+		 *
+		 * @since 4.9.0
+		 *
+		 * @param array   $wp_password_change_notification_email {
+		 *     Used to build wp_mail().
+		 *
+		 *     @type string $to      The intended recipient - site admin email address.
+		 *     @type string $subject The subject of the email.
+		 *     @type string $message The body of the email.
+		 *     @type string $headers The headers of the email.
+		 * }
+		 * @param WP_User $user     User object for user whose password was changed.
+		 * @param string  $blogname The site title.
+		 */
+		$wp_password_change_notification_email = apply_filters( 'wp_password_change_notification_email', $wp_password_change_notification_email, $user, $blogname );
+
+		wp_mail(
+			$wp_password_change_notification_email['to'],
+			wp_specialchars_decode( sprintf( $wp_password_change_notification_email['subject'], $blogname ) ),
+			$wp_password_change_notification_email['message'],
+			$wp_password_change_notification_email['headers']
+		);
+
+		if ( $switched_locale ) {
+			restore_previous_locale();
+		}
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/pluggable.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/pluggable.php#L2073">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/pluggable.php#L2073-L2133">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_password_change_notification_email/"><span class="hook-func">apply_filters</span>( ‘wp_password_change_notification_email’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$wp_password_change_notification_email</span></nobr>,  <nobr><span class="arg-type">WP_User</span> <span class="arg-name">$user</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$blogname</span></nobr> )</a></dt><dd><p>Filters the contents of the password change notification email sent to the site admin.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_specialchars_decode/">wp_specialchars_decode()</a><code>wp-includes/formatting.php</code></td><td><p>Converts a number of HTML entities into their special characters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_user_by/">get_user_by()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves user info by a given field.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_mail/">wp_mail()</a><code>wp-includes/pluggable.php</code></td><td><p>Sends an email, similar to PHP’s mail function.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.7.0/">2.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-geisthanen odd alt thread-even depth-1" data-comment-id="5962" id="comment-5962">
+<article class="comment-body" id="div-comment-5962">
+<a class="screen-reader-text" href="#comment-content-5962">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5962">
+<p>The function is hooked to the <code>'after_password_reset'</code> action, so I think a simpler way to disable it would be just:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">remove_action( 'after_password_reset', 'wp_password_change_notification' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-5962">
+<ul class="children">
+<li class="comment byuser comment-author-geisthanen even depth-2" data-comment-id="5964" id="comment-5964">
+<article class="comment-body" id="div-comment-5964">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5964">
+<div>Note: Removing this action affects mainly the native core email sent when changing the password, but it won’t prevent other implementations of the function, such as the one used by WooCommerce.</div>
+<div><a class="url" href="https://profiles.wordpress.org/geisthanen/" rel="external nofollow">Creative Andrew</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/wp_password_change_notification/#comment-5964"><time datetime="2022-08-05T11:10:25+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-rsm0128 odd alt thread-odd thread-alt depth-1" data-comment-id="5164" id="comment-5164">
+<article class="comment-body" id="div-comment-5164">
+<a class="screen-reader-text" href="#comment-content-5164">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5164">
+<p>By default, WordPress sends a notification to the blog admin whenever a user changed the password.<br/>
+To disable this just add below code to your theme or plugin.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">if ( ! function_exists( 'wp_password_change_notification' ) ) :
+    function wp_password_change_notification( $user ) {
+        return;
+    }
+endif;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="3" id="feedback-5164">
+<ul class="children">
+<li class="comment byuser comment-author-fixitdik even depth-2" data-comment-id="5900" id="comment-5900">
+<article class="comment-body" id="div-comment-5900">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5900">
+<div>Sorry – Nope, this does not work and there are no plugins or themes in my site that define the function but the <code>function_exists(...</code> returns true so WordPress must already define this function before the functions.php of a theme is called.</div>
+<div><a class="url" href="https://profiles.wordpress.org/fixitdik/" rel="external nofollow">FixItDik</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/wp_password_change_notification/#comment-5900"><time datetime="2022-07-01T15:30:43+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-devplus_timo odd alt depth-2" data-comment-id="6444" id="comment-6444">
+<article class="comment-body" id="div-comment-6444">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6444">
+<div>Adding this to your theme won’t work, since pluggable functions are defined earlier, right after the <code>plugins_loaded</code> action, occurs before <code>setup_theme</code>.</div>
+<div><a class="url" href="https://profiles.wordpress.org/devplus_timo/" rel="external nofollow">Timothy Couckuyt</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/wp_password_change_notification/#comment-6444"><time datetime="2023-04-17T15:00:28+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-vivamundo even depth-2" data-comment-id="7069" id="comment-7069">
+<article class="comment-body" id="div-comment-7069">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7069">
+<div>For this solution to deactivate admin notfication if user changed email you have to write it into a plugin. Suppressing this email notification has to handled with a plugin because pluggable.php is loaded earlier than a theme’s functions.php file.</div>
+<div><a class="url" href="https://profiles.wordpress.org/vivamundo/" rel="external nofollow">Mario Wolf</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/wp_password_change_notification/#comment-7069"><time datetime="2024-06-20T15:48:52+00:00">8 months ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-fixitdik odd alt thread-even depth-1" data-comment-id="5901" id="comment-5901">
+<article class="comment-body" id="div-comment-5901">
+<a class="screen-reader-text" href="#comment-content-5901">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5901">
+<p>Alternative method to prevent these emails being sent, put the following code in your functions.php file of your theme or plugin:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// disable the email notification to admin when user changes password
+add_filter( 'wp_password_change_notification_email', 'wpdocs_stop_email' );
+function wpdocs_stop_email( $email ) {
+	$email['to'] = ''; //empty the TO: part, will fail to send
+	return $email;
+}</code></pre>
+<p>(I found rsm0128’s suggestion did not work for me in WordPress 6.0)</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-5901">
+<ul class="children">
+<li class="comment byuser comment-author-fixitdik even depth-2" data-comment-id="6710" id="comment-6710">
+<article class="comment-body" id="div-comment-6710">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6710">
+<div><a href="https://profiles.wordpress.org/geisthanen/" rel="nofollow ugc">@Creative Andrew</a>‘s <a href="https://developer.notmatt.press/reference/functions/wp_password_change_notification/#comment-5962" rel="ugc">solution</a> is better.</div>
+<div><a class="url" href="https://profiles.wordpress.org/fixitdik/" rel="external nofollow">FixItDik</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/wp_password_change_notification/#comment-6710"><time datetime="2023-10-03T13:40:21+00:00">1 year ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-vivamundo odd alt thread-odd thread-alt depth-1" data-comment-id="7070" id="comment-7070">
+<article class="comment-body" id="div-comment-7070">
+<a class="screen-reader-text" href="#comment-content-7070">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7070">
+<p>The email this notification will send after password changed, looks like:</p>
+<p>    From: WordPress<br/>
+    To: <a href="mailto:admin@example.com">admin@example.com</a><br/>
+    Subject: [WordPress] Password Changed</p>
+<p>    Password changed for user: username</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-7070">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_query/">WP_Query</a></span><span class="is-current-page">WP_Query::parse_orderby()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Query::parse_orderby()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Query::parse_orderby( <span class="arg-type">string</span> <span class="arg-name">$orderby</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Converts the given orderby alias (if allowed) to a properly-prefixed value.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$orderby</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Alias for the field to order by.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> Table-prefixed value to used in the ORDER clause. False otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1659"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function parse_orderby( $orderby ) {
+	global $wpdb;
+
+	// Used to filter values.
+	$allowed_keys = array(
+		'post_name',
+		'post_author',
+		'post_date',
+		'post_title',
+		'post_modified',
+		'post_parent',
+		'post_type',
+		'name',
+		'author',
+		'date',
+		'title',
+		'modified',
+		'parent',
+		'type',
+		'ID',
+		'menu_order',
+		'comment_count',
+		'rand',
+		'post__in',
+		'post_parent__in',
+		'post_name__in',
+	);
+
+	$primary_meta_key   = '';
+	$primary_meta_query = false;
+	$meta_clauses       = $this-&gt;meta_query-&gt;get_clauses();
+	if ( ! empty( $meta_clauses ) ) {
+		$primary_meta_query = reset( $meta_clauses );
+
+		if ( ! empty( $primary_meta_query['key'] ) ) {
+			$primary_meta_key = $primary_meta_query['key'];
+			$allowed_keys[]   = $primary_meta_key;
+		}
+
+		$allowed_keys[] = 'meta_value';
+		$allowed_keys[] = 'meta_value_num';
+		$allowed_keys   = array_merge( $allowed_keys, array_keys( $meta_clauses ) );
+	}
+
+	// If RAND() contains a seed value, sanitize and add to allowed keys.
+	$rand_with_seed = false;
+	if ( preg_match( '/RAND\(([0-9]+)\)/i', $orderby, $matches ) ) {
+		$orderby        = sprintf( 'RAND(%s)', (int) $matches[1] );
+		$allowed_keys[] = $orderby;
+		$rand_with_seed = true;
+	}
+
+	if ( ! in_array( $orderby, $allowed_keys, true ) ) {
+		return false;
+	}
+
+	$orderby_clause = '';
+
+	switch ( $orderby ) {
+		case 'post_name':
+		case 'post_author':
+		case 'post_date':
+		case 'post_title':
+		case 'post_modified':
+		case 'post_parent':
+		case 'post_type':
+		case 'ID':
+		case 'menu_order':
+		case 'comment_count':
+			$orderby_clause = "{$wpdb-&gt;posts}.{$orderby}";
+			break;
+		case 'rand':
+			$orderby_clause = 'RAND()';
+			break;
+		case $primary_meta_key:
+		case 'meta_value':
+			if ( ! empty( $primary_meta_query['type'] ) ) {
+				$orderby_clause = "CAST({$primary_meta_query['alias']}.meta_value AS {$primary_meta_query['cast']})";
+			} else {
+				$orderby_clause = "{$primary_meta_query['alias']}.meta_value";
+			}
+			break;
+		case 'meta_value_num':
+			$orderby_clause = "{$primary_meta_query['alias']}.meta_value+0";
+			break;
+		case 'post__in':
+			if ( ! empty( $this-&gt;query_vars['post__in'] ) ) {
+				$orderby_clause = "FIELD({$wpdb-&gt;posts}.ID," . implode( ',', array_map( 'absint', $this-&gt;query_vars['post__in'] ) ) . ')';
+			}
+			break;
+		case 'post_parent__in':
+			if ( ! empty( $this-&gt;query_vars['post_parent__in'] ) ) {
+				$orderby_clause = "FIELD( {$wpdb-&gt;posts}.post_parent," . implode( ', ', array_map( 'absint', $this-&gt;query_vars['post_parent__in'] ) ) . ' )';
+			}
+			break;
+		case 'post_name__in':
+			if ( ! empty( $this-&gt;query_vars['post_name__in'] ) ) {
+				$post_name__in        = array_map( 'sanitize_title_for_query', $this-&gt;query_vars['post_name__in'] );
+				$post_name__in_string = "'" . implode( "','", $post_name__in ) . "'";
+				$orderby_clause       = "FIELD( {$wpdb-&gt;posts}.post_name," . $post_name__in_string . ' )';
+			}
+			break;
+		default:
+			if ( array_key_exists( $orderby, $meta_clauses ) ) {
+				// $orderby corresponds to a meta_query clause.
+				$meta_clause    = $meta_clauses[ $orderby ];
+				$orderby_clause = "CAST({$meta_clause['alias']}.meta_value AS {$meta_clause['cast']})";
+			} elseif ( $rand_with_seed ) {
+				$orderby_clause = $orderby;
+			} else {
+				// Default: order by post field.
+				$orderby_clause = "{$wpdb-&gt;posts}.post_" . sanitize_key( $orderby );
+			}
+
+			break;
+	}
+
+	return $orderby_clause;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-query.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-query.php#L1659">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-query.php#L1659-L1777">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_key/">sanitize_key()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string key.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get_posts/">WP_Query::get_posts()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves an array of posts based on query variables.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.0.0/">4.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-pjohanneson odd alt thread-odd thread-alt depth-1" data-comment-id="949" id="comment-949">
+<article class="comment-body" id="div-comment-949">
+<a class="screen-reader-text" href="#comment-content-949">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-949">
+<p>WordPress 4.0.0 introduced a more powerful <code>orderby</code> parameter to <code>WP_Query</code>, allowing you to specify the ordering for each <code>orderby</code> parameter individually.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$args = array(
+	'orderby' =&gt; array( 'title' =&gt; 'DESC', 'menu_order' =&gt; 'ASC' )
+);
+$query = new WP_Query( $args );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-949">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

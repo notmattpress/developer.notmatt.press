@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_widget_media_video/">WP_Widget_Media_Video</a></span><span class="is-current-page">WP_Widget_Media_Video::render_media()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Widget_Media_Video::render_media()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Widget_Media_Video::render_media( <span class="arg-type">array</span> <span class="arg-name">$instance</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Render the media on the frontend.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$instance</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Widget instance props.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="112"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function render_media( $instance ) {
+	$instance   = array_merge( wp_list_pluck( $this-&gt;get_instance_schema(), 'default' ), $instance );
+	$attachment = null;
+
+	if ( $this-&gt;is_attachment_with_mime_type( $instance['attachment_id'], $this-&gt;widget_options['mime_type'] ) ) {
+		$attachment = get_post( $instance['attachment_id'] );
+	}
+
+	$src = $instance['url'];
+	if ( $attachment ) {
+		$src = wp_get_attachment_url( $attachment-&gt;ID );
+	}
+
+	if ( empty( $src ) ) {
+		return;
+	}
+
+	$youtube_pattern = '#^https?://(?:www\.)?(?:youtube\.com/watch|youtu\.be/)#';
+	$vimeo_pattern   = '#^https?://(.+\.)?vimeo\.com/.*#';
+
+	if ( $attachment || preg_match( $youtube_pattern, $src ) || preg_match( $vimeo_pattern, $src ) ) {
+		add_filter( 'wp_video_shortcode', array( $this, 'inject_video_max_width_style' ) );
+
+		echo wp_video_shortcode(
+			array_merge(
+				$instance,
+				compact( 'src' )
+			),
+			$instance['content']
+		);
+
+		remove_filter( 'wp_video_shortcode', array( $this, 'inject_video_max_width_style' ) );
+	} else {
+		echo $this-&gt;inject_video_max_width_style( wp_oembed_get( $src ) );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/widgets/class-wp-widget-media-video.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/widgets/class-wp-widget-media-video.php#L112">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/widgets/class-wp-widget-media-video.php#L112-L147">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_media_video/get_instance_schema/">WP_Widget_Media_Video::get_instance_schema()</a><code>wp-includes/widgets/class-wp-widget-media-video.php</code></td><td><p>Get schema for properties of a widget instance (item).</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_media_video/inject_video_max_width_style/">WP_Widget_Media_Video::inject_video_max_width_style()</a><code>wp-includes/widgets/class-wp-widget-media-video.php</code></td><td><p>Inject max-width and remove height for videos too constrained to fit inside sidebars on frontend.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_list_pluck/">wp_list_pluck()</a><code>wp-includes/functions.php</code></td><td><p>Plucks a certain field out of each object or array in an array.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_oembed_get/">wp_oembed_get()</a><code>wp-includes/embed.php</code></td><td><p>Attempts to fetch the embed HTML for a provided URL using oEmbed.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_url/">wp_get_attachment_url()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the URL for an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_filter/">remove_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Removes a callback function from a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.8.0/">4.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,702 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Metadata in block.json</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Metadata in block.json</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Starting with the WordPress 5.8 release, we recommend using the <code>block.json</code> metadata file as the canonical way to register block types with both PHP (server-side) and JavaScript (client-side). Here is an example <code>block.json</code> file that would define the metadata for a plugin create a notice block.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-json">{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "my-plugin/notice",
+    "title": "Notice",
+    "category": "text",
+    "parent": [ "core/group" ],
+    "icon": "star",
+    "description": "Shows warning, error or success notices...",
+    "keywords": [ "alert", "message" ],
+    "version": "1.0.3",
+    "textdomain": "my-plugin",
+    "attributes": {
+        "message": {
+            "type": "string",
+            "source": "html",
+            "selector": ".message"
+        }
+    },
+    "providesContext": {
+        "my-plugin/message": "message"
+    },
+    "usesContext": [ "groupId" ],
+    "selectors": {
+        "root": ".wp-block-my-plugin-notice"
+    },
+    "supports": {
+        "align": true
+    },
+    "styles": [
+        { "name": "default", "label": "Default", "isDefault": true },
+        { "name": "other", "label": "Other" }
+    ],
+    "example": {
+        "attributes": {
+            "message": "This is a notice!"
+        }
+    },
+    "variations": [
+        {
+            "name": "example",
+            "title": "Example",
+            "attributes": {
+                "message": "This is an example!"
+            }
+        }
+    ],
+    "editorScript": "file:./index.js",
+    "script": "file:./script.js",
+    "viewScript": [ "file:./view.js", "example-shared-view-script" ],
+    "editorStyle": "file:./index.css",
+    "style": [ "file:./style.css", "example-shared-style" ],
+    "viewStyle": [ "file:./view.css", "example-view-style" ],
+    "render": "file:./render.php"
+}
+</code></pre>
+<h2 class="is-toc-heading" id="benefits-of-using-the-metadata-file" tabindex="-1"><a href="#benefits-of-using-the-metadata-file">Benefits of using the metadata file</a></h2>
+<p>The block definition allows code sharing between JavaScript, PHP, and other languages when processing block types stored as JSON, and registering blocks with the <code>block.json</code> metadata file provides multiple benefits on top of it.</p>
+<p>From a performance perspective, when themes support lazy loading assets, blocks registered with <code>block.json</code> will have their asset enqueuing optimized out of the box. The frontend CSS and JavaScript assets listed in the <code>style</code> or <code>script</code> properties will only be enqueued when the block is present on the page, resulting in reduced page sizes.</p>
+<p>Furthermore, because the <a href="https://developer.notmatt.press/rest-api/reference/block-types/">Block Type REST API Endpoint</a> can only list blocks registered on the server, registering blocks server-side is recommended; using the <code>block.json</code> file simplifies this registration.</p>
+<p>The <a href="https://wordpress.org/plugins/">WordPress Plugins Directory</a> can detect <code>block.json</code> files, highlight blocks included in plugins, and extract their metadata. If you wish to submit your block(s) to the Block Directory all blocks contained in your plugin must have a <code>block.json</code> file for the Block Directory to recognize them.</p>
+<p>Development is improved by using a defined schema definition file. Supported editors can provide help like tooltips, autocomplete, and schema validation. To use the schema, add the following to the top of the <code>block.json</code>.</p>
+<pre><code class="language-json">"$schema": "https://schemas.wp.org/trunk/block.json"
+</code></pre>
+<div class="callout callout-info">
+Check <a href="https://developer.notmatt.press/block-editor/getting-started/fundamentals-block-development/registration-of-a-block">Registration of a block</a> to learn more about how to register a block using its metadata.
+</div>
+<h2 class="is-toc-heading" id="block-api" tabindex="-1"><a href="#block-api">Block API</a></h2>
+<p>This section describes all the properties that can be added to the <code>block.json</code> file to define the behavior and metadata of block types.</p>
+<h3 class="is-toc-heading" id="api-version" tabindex="-1"><a href="#api-version">API version</a></h3>
+<ul>
+<li>Type: <code>number</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>apiVersion</code></li>
+<li>Default: <code>1</code></li>
+</ul>
+<pre><code class="language-json">{ "apiVersion": 3 }
+</code></pre>
+<p>The version of the Block API used by the block. The most recent version is <code>3</code> and it was introduced in WordPress 6.3.</p>
+<p>See <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-api-versions/">the API versions documentation</a> for more details.</p>
+<h3 class="is-toc-heading" id="name" tabindex="-1"><a href="#name">Name</a></h3>
+<ul>
+<li>Type: <code>string</code></li>
+<li>Required</li>
+<li>Localized: No</li>
+<li>Property: <code>name</code></li>
+</ul>
+<pre><code class="language-json">{ "name": "core/heading" }
+</code></pre>
+<p>The name for a block is a unique string that identifies a block. Names have to be structured as <code>namespace/block-name</code>, where namespace is the name of your plugin or theme.</p>
+<p><strong>Note:</strong> A block name can only contain lowercase alphanumeric characters, dashes, and at most one forward slash to designate the plugin-unique namespace prefix. It must begin with a letter.</p>
+<p><strong>Note:</strong> This name is used on the comment delimiters as <code>&lt;!-- wp:my-plugin/book --&gt;</code>. Block types in the <code>core</code> namespace do not include a namespace when serialized.</p>
+<h3 class="is-toc-heading" id="title" tabindex="-1"><a href="#title">Title</a></h3>
+<ul>
+<li>Type: <code>string</code></li>
+<li>Required</li>
+<li>Localized: Yes</li>
+<li>Property: <code>title</code></li>
+</ul>
+<pre><code class="language-json">{ "title": "Heading" }
+</code></pre>
+<p>This is the display title for your block, which can be translated with our translation functions. The title will display in the Inserter and in other areas of the editor.</p>
+<p><strong>Note:</strong> To keep your block titles readable and accessible in the UI, try to avoid very long titles.</p>
+<h3 class="is-toc-heading" id="category" tabindex="-1"><a href="#category">Category</a></h3>
+<ul>
+<li>Type: <code>string</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>category</code></li>
+</ul>
+<pre><code class="language-json">{ "category": "text" }
+</code></pre>
+<p>Blocks are grouped into categories to help users browse and discover them.</p>
+<p>The core provided categories are:</p>
+<ul>
+<li>text</li>
+<li>media</li>
+<li>design</li>
+<li>widgets</li>
+<li>theme</li>
+<li>embed</li>
+</ul>
+<p>Plugins and Themes can also register <a href="https://developer.notmatt.press/block-editor/reference-guides/filters/block-filters/#managing-block-categories">custom block categories</a>.</p>
+<p>An implementation should expect and tolerate unknown categories, providing some reasonable fallback behavior (e.g. a “text” category).</p>
+<h3 class="is-toc-heading" id="parent" tabindex="-1"><a href="#parent">Parent</a></h3>
+<ul>
+<li>Type: <code>string[]</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>parent</code></li>
+</ul>
+<pre><code class="language-json">{ "parent": [ "my-block/product" ] }
+</code></pre>
+<p>Setting <code>parent</code> lets a block require that it is only available when nested within the specified blocks. For example, you might want to allow an ‘Add to Cart’ block to only be available within a ‘Product’ block.</p>
+<h3 class="is-toc-heading" id="ancestor" tabindex="-1"><a href="#ancestor">Ancestor</a></h3>
+<ul>
+<li>Type: <code>string[]</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>ancestor</code></li>
+<li>Since: <code>WordPress 6.0.0</code></li>
+</ul>
+<pre><code class="language-json">{ "ancestor": [ "my-block/product" ] }
+</code></pre>
+<p>The <code>ancestor</code> property makes a block available inside the specified block types at any position of the ancestor block subtree. That allows, for example, to place a ‘Comment Content’ block inside a ‘Column’ block, as long as ‘Column’ is somewhere within a ‘Comment Template’ block. In comparison to the <code>parent</code> property blocks that specify their <code>ancestor</code> can be placed anywhere in the subtree whilst blocks with a specified <code>parent</code> need to be direct children.</p>
+<h3 class="is-toc-heading" id="allowed-blocks" tabindex="-1"><a href="#allowed-blocks">Allowed Blocks</a></h3>
+<ul>
+<li>Type: <code>string[]</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>allowedBlocks</code></li>
+<li>Since: <code>WordPress 6.5.0</code></li>
+</ul>
+<pre><code class="language-json">{ "allowedBlocks": [ "my-block/product" ] }
+</code></pre>
+<p>The <code>allowedBlocks</code> specifies which block types can be the direct children of the block. For example, a ‘List’ block can allow only ‘List Item’ blocks as children.</p>
+<h3 class="is-toc-heading" id="icon" tabindex="-1"><a href="#icon">Icon</a></h3>
+<ul>
+<li>Type: <code>string</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>icon</code></li>
+</ul>
+<pre><code class="language-json">{ "icon": "smile" }
+</code></pre>
+<p>An icon property should be specified to make it easier to identify a block. These can be any of <a href="https://developer.notmatt.press/resource/dashicons/">WordPress’ Dashicons</a> (slug serving also as a fallback in non-js contexts).</p>
+<p><strong>Note:</strong> It’s also possible to override this property on the client-side with the source of the SVG element. In addition, this property can be defined with JavaScript as an object containing background and foreground colors. These colors will appear with the icon when they are applicable e.g.: in the inserter. Custom SVG icons are automatically wrapped in the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-primitives/">wp.primitives.SVG</a> component to add accessibility attributes (aria-hidden, role, and focusable).</p>
+<h3 class="is-toc-heading" id="description" tabindex="-1"><a href="#description">Description</a></h3>
+<ul>
+<li>Type: <code>string</code></li>
+<li>Optional</li>
+<li>Localized: Yes</li>
+<li>Property: <code>description</code></li>
+</ul>
+<pre><code class="language-json">{
+    "description": "Introduce new sections and organize content to help visitors"
+}
+</code></pre>
+<p>This is a short description for your block, which can be translated with our translation functions. This will be shown in the block inspector.</p>
+<h3 class="is-toc-heading" id="keywords" tabindex="-1"><a href="#keywords">Keywords</a></h3>
+<ul>
+<li>Type: <code>string[]</code></li>
+<li>Optional</li>
+<li>Localized: Yes</li>
+<li>Property: <code>keywords</code></li>
+<li>Default: <code>[]</code></li>
+</ul>
+<pre><code class="language-json">{ "keywords": [ "keyword1", "keyword2" ] }
+</code></pre>
+<p>Sometimes a block could have aliases that help users discover it while searching. For example, an image block could also want to be discovered by photo. You can do so by providing an array of unlimited terms (which are translated).</p>
+<h3 class="is-toc-heading" id="version" tabindex="-1"><a href="#version">Version</a></h3>
+<ul>
+<li>Type: <code>string</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>version</code></li>
+<li>Since: <code>WordPress 5.8.0</code></li>
+</ul>
+<pre><code class="language-json">{ "version": "1.0.3" }
+</code></pre>
+<p>The current version number of the block, such as 1.0 or 1.0.3. It’s similar to how plugins are versioned. This field might be used with block assets to control cache invalidation, and when the block author omits it, then the installed version of WordPress is used instead.</p>
+<h3 class="is-toc-heading" id="text-domain" tabindex="-1"><a href="#text-domain">Text Domain</a></h3>
+<ul>
+<li>Type: <code>string</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>textdomain</code></li>
+<li>Since: <code>WordPress 5.7.0</code></li>
+</ul>
+<pre><code class="language-json">{ "textdomain": "my-plugin" }
+</code></pre>
+<p>The <a href="https://www.gnu.org/software/gettext/">gettext</a> text domain of the plugin/block. More information can be found in the <a href="https://developer.notmatt.press/plugins/internationalization/how-to-internationalize-your-plugin/#text-domains">Text Domain</a> section of the <a href="https://developer.notmatt.press/plugins/internationalization/how-to-internationalize-your-plugin/">How to Internationalize your Plugin</a> page.</p>
+<h3 class="is-toc-heading" id="attributes" tabindex="-1"><a href="#attributes">Attributes</a></h3>
+<ul>
+<li>Type: <code>object</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>attributes</code></li>
+<li>Default: <code>{}</code></li>
+</ul>
+<pre><code class="language-json">{
+    "attributes": {
+        "cover": {
+            "type": "string",
+            "source": "attribute",
+            "selector": "img",
+            "attribute": "src"
+        },
+        "author": {
+            "type": "string",
+            "source": "html",
+            "selector": ".book-author"
+        }
+    }
+}
+</code></pre>
+<p>Attributes provide the structured data needs of a block. They can exist in different forms when they are serialized, but they are declared together under a common interface.</p>
+<p>See <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-attributes/">the attributes documentation</a> for more details.</p>
+<h3 class="is-toc-heading" id="provides-context" tabindex="-1"><a href="#provides-context">Provides Context</a></h3>
+<ul>
+<li>Type: <code>object</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>providesContext</code></li>
+<li>Default: <code>{}</code></li>
+</ul>
+<p>Context provided for available access by descendants of blocks of this type, in the form of an object which maps a context name to one of the block’s own attributes.</p>
+<p>See <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-context/">the block context documentation</a> for more details.</p>
+<pre><code class="language-json">{
+    "providesContext": {
+        "my-plugin/recordId": "recordId"
+    }
+}
+</code></pre>
+<h3 class="is-toc-heading" id="context" tabindex="-1"><a href="#context">Context</a></h3>
+<ul>
+<li>Type: <code>string[]</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>usesContext</code></li>
+<li>Default: <code>[]</code></li>
+</ul>
+<p>Array of the names of context values to inherit from an ancestor provider.</p>
+<p>See <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-context/">the block context documentation</a> for more details.</p>
+<pre><code class="language-json">{
+    "usesContext": [ "message" ]
+}
+</code></pre>
+<h3 class="is-toc-heading" id="selectors" tabindex="-1"><a href="#selectors">Selectors</a></h3>
+<ul>
+<li>Type: <code>object</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>selectors</code></li>
+<li>Default: <code>{}</code></li>
+<li>Since: <code>WordPress 6.3.0</code></li>
+</ul>
+<p>Any custom CSS selectors, keyed by <code>root</code>, feature, or sub-feature, to be used<br/>
+when generating block styles for theme.json (global styles) stylesheets.<br/>
+Providing custom selectors allows more fine grained control over which styles<br/>
+apply to what block elements, e.g. applying typography styles only to an inner<br/>
+heading while colors are still applied on the outer block wrapper etc.</p>
+<p>See <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-selectors/">the selectors documentation</a> for more details.</p>
+<pre><code class="language-json">{
+    "selectors": {
+        "root": ".my-custom-block-selector",
+        "color": {
+            "text": ".my-custom-block-selector p"
+        },
+        "typography": {
+            "root": ".my-custom-block-selector &gt; h2",
+            "text-decoration": ".my-custom-block-selector &gt; h2 span"
+        }
+    }
+}
+</code></pre>
+<h3 class="is-toc-heading" id="supports" tabindex="-1"><a href="#supports">Supports</a></h3>
+<ul>
+<li>Type: <code>object</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>supports</code></li>
+<li>Default: <code>{}</code></li>
+</ul>
+<p>It contains a set of options to control features used in the editor. See <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-supports/">the supports documentation</a> for more details.</p>
+<h3 class="is-toc-heading" id="block-styles" tabindex="-1"><a href="#block-styles">Block Styles</a></h3>
+<ul>
+<li>Type: <code>array</code></li>
+<li>Optional</li>
+<li>Localized: Yes (<code>label</code> only)</li>
+<li>Property: <code>styles</code></li>
+<li>Default: <code>[]</code></li>
+</ul>
+<pre><code class="language-json">{
+    "styles": [
+        { "name": "default", "label": "Default", "isDefault": true },
+        { "name": "other", "label": "Other" }
+    ]
+}
+</code></pre>
+<p>Block styles can be used to provide alternative styles to block. It works by adding a class name to the block’s wrapper. Using CSS, a theme developer can target the class name for the block style if it is selected.</p>
+<p>Plugins and Themes can also register <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-styles/">custom block styles</a> for existing blocks.</p>
+<h3 class="is-toc-heading" id="example" tabindex="-1"><a href="#example">Example</a></h3>
+<ul>
+<li>Type: <code>object</code></li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>example</code></li>
+</ul>
+<pre><code class="language-json">{
+    "example": {
+        "attributes": {
+            "message": "This is a notice!"
+        }
+    }
+}
+</code></pre>
+<p>It provides structured example data for the block. This data is used to construct a preview for the block to be shown in the Inspector Help Panel when the user mouses over the block.</p>
+<p>See the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-registration/#example-optional">Example documentation</a> for more details.</p>
+<h3 class="is-toc-heading" id="variations" tabindex="-1"><a href="#variations">Variations</a></h3>
+<ul>
+<li>Type: <code>object[]|WPDefinedPath</code> (<a href="#wpdefinedpath">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: Yes (<code>title</code>, <code>description</code>, and <code>keywords</code> of each variation only)</li>
+<li>Property: <code>variations</code></li>
+<li>Since: <code>WordPress 5.9.0</code></li>
+</ul>
+<pre><code class="language-json">{
+    "variations": [
+        {
+            "name": "example",
+            "title": "Example",
+            "attributes": {
+                "level": 2,
+                "message": "This is an example!"
+            },
+            "scope": [ "block" ],
+            "isActive": [ "level" ]
+        }
+    ]
+}
+</code></pre>
+<p>Block Variations is the API that allows a block to have similar versions of it, but all these versions share some common functionality. Each block variation is differentiated from the others by setting some initial attributes or inner blocks. Then at the time when a block is inserted these attributes and/or inner blocks are applied.</p>
+<p><em>Note: In JavaScript you can provide a function for the <code>isActive</code> property, and a React element for the <code>icon</code>. In the <code>block.json</code> file both only support strings</em></p>
+<p>Starting with version 6.7, it is possible to specify a PHP file in <code>block.json</code> that generates the list of block variations on the server side:</p>
+<pre><code class="language-json">{ "variations": "file:./variations.php" }
+</code></pre>
+<p>That PHP file is expected to <code>return</code> an array that contains the block variations. Strings found in the variations returned from the PHP file will not be localized automatically; instead, use the <code>__()</code> function as usual.</p>
+<p>For example:</p>
+<pre><code class="language-php">&lt;?php
+// Generate variations for a Social Icon kind of block.
+
+return array(
+    array(
+        'isDefault'  =&gt; true,
+        'name'       =&gt; 'wordpress',
+        'title'      =&gt; 'WordPress',
+        'icon'       =&gt; 'wordpress',
+        'attributes' =&gt; array(
+            'service' =&gt; 'wordpress',
+        ),
+        'isActive'   =&gt; array( 'service' )
+    ),
+    array(
+        'name'       =&gt; 'mail',
+        'title'      =&gt; __( 'Mail' ),
+        'keywords'   =&gt; array(
+            __( 'email' ),
+            __( 'e-mail' )
+        ),
+        'icon'       =&gt; 'mail',
+        'attributes' =&gt; array(
+            'service' =&gt; 'mail',
+        ),
+        'isActive'   =&gt; array( 'mail' )
+    ),
+);
+
+</code></pre>
+<p>See <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-variations/">the variations documentation</a> for more details.</p>
+<h3 class="is-toc-heading" id="block-hooks" tabindex="-1"><a href="#block-hooks">Block Hooks</a></h3>
+<ul>
+<li>Type: <code>object</code></li>
+<li>Optional</li>
+<li>Property: <code>blockHooks</code></li>
+<li>Since: <code>WordPress 6.4.0</code></li>
+</ul>
+<pre><code class="language-json">{
+    "blockHooks": {
+        "my-plugin/banner": "after"
+    }
+}
+</code></pre>
+<p>Block Hooks is an API that allows a block to automatically insert itself next to all instances of a given block type, in a relative position also specified by the “hooked” block. That is, a block can opt to be inserted before or after a given block type, or as its first or last child (i.e. to be prepended or appended to the list of its child blocks, respectively). Hooked blocks will appear both on the frontend and in the editor (to allow for customization by the user).</p>
+<p>The key is the name of the block (<code>string</code>) to hook into, and the value is the position to hook into (<code>string</code>). Take a look at the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-registration/#block-hooks-optional">Block Hooks documentation</a> for more info about available configurations.</p>
+<h3 class="is-toc-heading" id="editor-script" tabindex="-1"><a href="#editor-script">Editor script</a></h3>
+<ul>
+<li>Type: <code>WPDefinedAsset</code>|<code>WPDefinedAsset[]</code> (<a href="#wpdefinedasset">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>editorScript</code></li>
+</ul>
+<pre><code class="language-json">{ "editorScript": "file:./index.js" }
+</code></pre>
+<p>Block type editor scripts definition. They will only be enqueued in the context of the editor.</p>
+<p>It’s possible to pass a script handle registered with the <a href="https://developer.notmatt.press/reference/functions/wp_register_script/"><code>wp_register_script</code></a> function, a path to a JavaScript file relative to the <code>block.json</code> file, or a list with a mix of both (<a href="#wpdefinedasset">learn more</a>).</p>
+<p><em>Note: An option to pass also an array of editor scripts exists since WordPress <code>6.1.0</code>.</em></p>
+<h3 class="is-toc-heading" id="script" tabindex="-1"><a href="#script">Script</a></h3>
+<ul>
+<li>Type: <code>WPDefinedAsset</code>|<code>WPDefinedAsset[]</code> (<a href="#wpdefinedasset">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>script</code></li>
+</ul>
+<pre><code class="language-json">{ "script": "file:./script.js" }
+</code></pre>
+<p>Block type frontend and editor scripts definition. They will be enqueued both in the editor and when viewing the content on the front of the site.</p>
+<p>It’s possible to pass a script handle registered with the <a href="https://developer.notmatt.press/reference/functions/wp_register_script/"><code>wp_register_script</code></a> function, a path to a JavaScript file relative to the <code>block.json</code> file, or a list with a mix of both (<a href="#wpdefinedasset">learn more</a>).</p>
+<p><em>Note: An option to pass also an array of scripts exists since WordPress <code>6.1.0</code>.</em></p>
+<h3 class="is-toc-heading" id="view-script" tabindex="-1"><a href="#view-script">View script</a></h3>
+<ul>
+<li>Type: <code>WPDefinedAsset</code>|<code>WPDefinedAsset[]</code> (<a href="#wpdefinedasset">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>viewScript</code></li>
+<li>Since: <code>WordPress 5.9.0</code></li>
+</ul>
+<pre><code class="language-json">{ "viewScript": [ "file:./view.js", "example-shared-view-script" ] }
+</code></pre>
+<p>Block type frontend scripts definition. They will be enqueued only when viewing the content on the front of the site.</p>
+<p>It’s possible to pass a script handle registered with the <a href="https://developer.notmatt.press/reference/functions/wp_register_script/"><code>wp_register_script</code></a> function, a path to a JavaScript file relative to the <code>block.json</code> file, or a list with a mix of both (<a href="#wpdefinedasset">learn more</a>).</p>
+<p><em>Note: An option to pass also an array of view scripts exists since WordPress <code>6.1.0</code>.</em></p>
+<h3 class="is-toc-heading" id="view-script-module" tabindex="-1"><a href="#view-script-module">View script module</a></h3>
+<ul>
+<li>Type: <code>WPDefinedAsset</code>|<code>WPDefinedAsset[]</code> (<a href="#wpdefinedasset">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>viewScriptModule</code></li>
+<li>Since: <code>WordPress 6.5.0</code></li>
+</ul>
+<pre><code class="language-json">{ "viewScriptModule": [ "file:./view.js", "example-shared-script-module-id" ] }
+</code></pre>
+<p>Block type frontend script module definition. They will be enqueued only when viewing the content on the front of the site.</p>
+<p>It’s possible to pass a script module ID registered with the <a href="https://developer.notmatt.press/reference/functions/wp_register_script_module/"><code>wp_register_script_module</code></a> function, a path to a JavaScript module relative to the <code>block.json</code> file, or a list with a mix of both (<a href="#wpdefinedasset">learn more</a>).</p>
+<p>WordPress scripts and WordPress script modules are not compatible at the moment. If frontend view assets depend on WordPress scripts, <code>viewScript</code> should be used. If they depend on WordPress script modules —the Interactivity API at this time— <code>viewScriptModule</code> should be used. <a href="https://core.trac.wordpress.org/ticket/60647">More functionality</a> will gradually become available to Script Modules.</p>
+<p><em>Note: Available since WordPress <code>6.5.0</code>.</em></p>
+<h3 class="is-toc-heading" id="editor-style" tabindex="-1"><a href="#editor-style">Editor style</a></h3>
+<ul>
+<li>Type: <code>WPDefinedAsset</code>|<code>WPDefinedAsset[]</code> (<a href="#wpdefinedasset">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>editorStyle</code></li>
+</ul>
+<pre><code class="language-json">{ "editorStyle": "file:./index.css" }
+</code></pre>
+<p>Block type editor styles definition. They will only be enqueued in the context of the editor.</p>
+<p>It’s possible to pass a style handle registered with the <a href="https://developer.notmatt.press/reference/functions/wp_register_style/"><code>wp_register_style</code></a> function, a path to a CSS file relative to the <code>block.json</code> file, or a list with a mix of both (<a href="#wpdefinedasset">learn more</a>).</p>
+<p><em>Note: An option to pass also an array of editor styles exists since WordPress <code>5.9.0</code>.</em></p>
+<h3 class="is-toc-heading" id="style" tabindex="-1"><a href="#style">Style</a></h3>
+<ul>
+<li>Type: <code>WPDefinedAsset</code>|<code>WPDefinedAsset[]</code> (<a href="#wpdefinedasset">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>style</code></li>
+</ul>
+<pre><code class="language-json">{ "style": [ "file:./style.css", "example-shared-style" ] }
+</code></pre>
+<p>Block type frontend and editor styles definition. They will be enqueued both in the editor and when viewing the content on the front of the site.</p>
+<p>It’s possible to pass a style handle registered with the <a href="https://developer.notmatt.press/reference/functions/wp_register_style/"><code>wp_register_style</code></a> function, a path to a CSS file relative to the <code>block.json</code> file, or a list with a mix of both (<a href="#wpdefinedasset">learn more</a>).</p>
+<p><em>Note: An option to pass also an array of styles exists since WordPress <code>5.9.0</code>.</em></p>
+<h3 class="is-toc-heading" id="view-style" tabindex="-1"><a href="#view-style">View Style</a></h3>
+<ul>
+<li>Type: <code>WPDefinedAsset</code>|<code>WPDefinedAsset[]</code> (<a href="#wpdefinedasset">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>viewStyle</code></li>
+<li>Since: <code>WordPress 6.5.0</code></li>
+</ul>
+<pre><code class="language-json">{ "viewStyle": [ "file:./view.css", "example-view-style" ] }
+</code></pre>
+<p>Block type frontend styles definition. They will be enqueued only when viewing the content on the front of the site.</p>
+<p>It’s possible to pass a style handle registered with the <a href="https://developer.notmatt.press/reference/functions/wp_register_style/"><code>wp_register_style</code></a> function, a path to a CSS file relative to the <code>block.json</code> file, or a list with a mix of both (<a href="#wpdefinedasset">learn more</a>).</p>
+<p>Frontend-only styles are especially useful for interactive blocks, to style parts that will only be visible after a user performs some action and where those styles will never be needed in the editor. You can start with using the <code>style</code> property to put all your common styles in one stylesheet. Only when you need editor-specific styling or frontend-specific styling, you can expand to <code>editorStyle</code> and <code>viewStyle</code>, but still keep the common part of your styling in the main stylesheet.</p>
+<h3 class="is-toc-heading" id="render" tabindex="-1"><a href="#render">Render</a></h3>
+<ul>
+<li>Type: <code>WPDefinedPath</code> (<a href="#wpdefinedpath">learn more</a>)</li>
+<li>Optional</li>
+<li>Localized: No</li>
+<li>Property: <code>render</code></li>
+<li>Since: <code>WordPress 6.1.0</code></li>
+</ul>
+<pre><code class="language-json">{ "render": "file:./render.php" }
+</code></pre>
+<p>PHP file to use when rendering the block type on the server to show on the front end. The following variables are exposed to the file:</p>
+<ul>
+<li><code>$attributes</code> (<code>array</code>): The block attributes.</li>
+<li><code>$content</code> (<code>string</code>): The block default content.</li>
+<li><code>$block</code> (<code>WP_Block</code>): The block instance.</li>
+</ul>
+<p>An example implementation of the <code>render.php</code> file defined with <code>render</code> could look like:</p>
+<pre><code class="language-php">&lt;div &lt;?php echo get_block_wrapper_attributes(); ?&gt;&gt;
+    &lt;?php echo esc_html( $attributes['label'] ); ?&gt;
+&lt;/div&gt;
+</code></pre>
+<p><em>Note: This file loads for every instance of the block type when rendering the page HTML on the server. Accounting for that is essential when declaring functions or classes in the file. The simplest way to avoid the risk of errors is to consume that shared logic from another file.</em></p>
+<h2 class="is-toc-heading" id="assets" tabindex="-1"><a href="#assets">Assets</a></h2>
+<h3 class="is-toc-heading" id="wpdefinedpath" tabindex="-1"><a href="#wpdefinedpath">WPDefinedPath</a></h3>
+<p>The <code>WPDefinedPath</code> type is a subtype of string, where the value represents a path to a JavaScript, CSS or PHP file relative to where the <code>block.json</code> file is located. The path provided must be prefixed with <code>file:</code>. This approach is based on how npm handles <a href="https://docs.npmjs.com/files/package.json#local-paths">local paths</a> for packages.</p>
+<p><strong>Example:</strong></p>
+<p>In <code>block.json</code>:</p>
+<pre><code class="language-json">{
+    "render": "file:./render.php"
+}
+</code></pre>
+<h3 class="is-toc-heading" id="wpdefinedasset" tabindex="-1"><a href="#wpdefinedasset">WPDefinedAsset</a></h3>
+<p>It extends <code>WPDefinedPath</code> for JavaScript and CSS files. An alternative to the file path would be a script handle, script module ID, or style handle referencing an already registered asset using WordPress helpers.</p>
+<p><strong>Example:</strong></p>
+<p>In <code>block.json</code>:</p>
+<pre><code class="language-json">{
+    "editorScript": "file:./index.js",
+    "script": "file:./script.js",
+    "viewScriptModule": [
+        "file:./view.js",
+        "example-registered-script-module-id"
+    ],
+    "editorStyle": "file:./index.css",
+    "style": [ "file:./style.css", "example-shared-style" ],
+    "viewStyle": [ "file:./view.css", "example-view-style" ]
+}
+</code></pre>
+<p>In the context of WordPress, when a block is registered with PHP, it will automatically register all scripts, script modules, and styles that are found in the <code>block.json</code> file and use file paths rather than asset handles.</p>
+<p>That’s why the <code>WPDefinedAsset</code> type has to offer a way to mirror the parameters necessary to register scripts, script modules, and styles using <a href="https://developer.notmatt.press/reference/functions/wp_register_script/"><code>wp_register_script</code></a>, <a href="https://developer.notmatt.press/reference/functions/wp_register_script_module/"><code>wp_register_script_module</code></a>, and <a href="https://developer.notmatt.press/reference/functions/wp_register_style/"><code>wp_register_style</code></a>, and then assign these as handles or script module IDs associated with the block.</p>
+<p>It’s possible to provide an object which takes the following shape:</p>
+<ul>
+<li><code>handle</code> (<code>string</code>) – the name of the script. If omitted, it will be auto-generated.</li>
+<li><code>dependencies</code> (<code>string[]</code>|<code>{ id: string, import?: 'dynamic'|'static' }[]</code>) – an array of registered script handles this script depends on. Script modules may use a simple string for static dependencies or the object form to indicate a dynamic dependency. Dynamic dependencies are dependencies that may or may not be used at runtime and are typically used with the dynamic <code>import('module-id')</code> syntax. Default value: <code>[]</code>.</li>
+<li><code>version</code> (<code>string</code>|<code>false</code>|<code>null</code>) – string specifying the script version number, if it has one, which is added to the URL as a query string for cache busting purposes. If the version is set to <code>false</code>, a version number is automatically added equal to the currently installed WordPress version. If set to <code>null</code>, no version is added. Default value: <code>false</code>.</li>
+</ul>
+<p>The definition is stored inside a separate PHP file which ends with <code>.asset.php</code> and is located next to the JS/CSS file listed in <code>block.json</code>. WordPress will automatically detect this file through pattern matching. This option is the preferred one as it is expected it will become an option to auto-generate those asset files with <code>@wordpress/scripts</code> package.</p>
+<p><strong>Example:</strong></p>
+<pre><code>build/
+├─ block.json
+├─ index.js
+└─ index.asset.php
+</code></pre>
+<p>In <code>block.json</code>:</p>
+<pre><code class="language-json">{ "editorScript": "file:./index.js" }
+</code></pre>
+<p>In <code>build/index.asset.php</code>:</p>
+<pre><code class="language-php">&lt;?php
+return array(
+    'dependencies' =&gt; array(
+        'react',
+        'wp-blocks',
+        'wp-i18n',
+    ),
+    'version'      =&gt; '3be55b05081a63d8f9d0ecb466c42cfd',
+);
+</code></pre>
+<h3 class="is-toc-heading" id="frontend-enqueueing" tabindex="-1"><a href="#frontend-enqueueing">Frontend enqueueing</a></h3>
+<p>Starting in the WordPress 5.8 release, it is possible to instruct WordPress to enqueue scripts and styles for a block type only when rendered on the frontend. It applies to the following asset fields in the <code>block.json</code> file:</p>
+<ul>
+<li><code>script</code></li>
+<li><code>viewScript</code></li>
+<li><code>style</code></li>
+<li><code>viewStyle</code> (Added in WordPress 6.5.0)</li>
+</ul>
+<h2 class="is-toc-heading" id="internationalization" tabindex="-1"><a href="#internationalization">Internationalization</a></h2>
+<p>WordPress string discovery system can automatically translate fields marked in this document as translatable. First, you need to set the <code>textdomain</code> property in the <code>block.json</code> file that provides block metadata.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-json">{
+    "title": "My block",
+    "description": "My block is fantastic",
+    "keywords": [ "fantastic" ],
+    "textdomain": "my-plugin"
+}
+</code></pre>
+<h3 class="is-toc-heading" id="php" tabindex="-1"><a href="#php">PHP</a></h3>
+<p>In PHP, localized properties will be automatically wrapped in <code>_x</code> function calls on the backend of WordPress when executing <code>register_block_type</code>. These translations get added as an inline script to the plugin’s script handle or to the <code>wp-block-library</code> script handle in WordPress core.</p>
+<p>The way <code>register_block_type</code> processes translatable values is roughly equivalent to the following code snippet:</p>
+<pre><code class="language-php">&lt;?php
+$metadata = array(
+    'title'       =&gt; _x( 'My block', 'block title', 'my-plugin' ),
+    'description' =&gt; _x( 'My block is fantastic!', 'block description', 'my-plugin' ),
+    'keywords'    =&gt; array( _x( 'fantastic', 'block keyword', 'my-plugin' ) ),
+);
+</code></pre>
+<p>Implementation follows the existing <a href="https://developer.notmatt.press/reference/functions/get_plugin_data">get_plugin_data</a> function which parses the plugin contents to retrieve the plugin’s metadata, and it applies translations dynamically.</p>
+<h3 class="is-toc-heading" id="javascript" tabindex="-1"><a href="#javascript">JavaScript</a></h3>
+<p>In JavaScript, you can use <code>registerBlockType</code> method from <code>@wordpress/blocks</code> package and pass the metadata object loaded from <code>block.json</code> as the first param. All localized properties get automatically wrapped in <code>_x</code> (from <code>@wordpress/i18n</code> package) function calls similar to how it works in PHP.</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-js">import { registerBlockType } from '@wordpress/blocks';
+import Edit from './edit';
+import metadata from './block.json';
+
+registerBlockType( metadata, {
+    edit: Edit,
+    // ...other client-side settings
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="backward-compatibility" tabindex="-1"><a href="#backward-compatibility">Backward compatibility</a></h2>
+<p>The existing registration mechanism (both server side and frontend) will continue to work, it will serve as low-level implementation detail for the <code>block.json</code> based registration.</p>
+<p>Once all details are ready, Core Blocks will be migrated iteratively and third-party blocks will see warnings appearing in the console to encourage them to refactor the block registration API used.</p>
+<p>The following properties are going to be supported for backward compatibility reasons on the client-side only. Some of them might be replaced with alternative APIs in the future:</p>
+<ul>
+<li><code>edit</code> – see the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-edit-save/">Edit and Save</a> documentation for more details.</li>
+<li><code>save</code> – see the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-edit-save/">Edit and Save</a> documentation for more details.</li>
+<li><code>transforms</code> – see the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-registration/#transforms-optional">Transforms</a> documentation for more details.</li>
+<li><code>deprecated</code> – see the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-deprecation/">Deprecated Blocks</a> documentation for more details.</li>
+<li><code>merge</code> – undocumented as of today. Its role is to handle merging multiple blocks into one.</li>
+<li><code>getEditWrapperProps</code> – undocumented as well. Its role is to inject additional props to the block edit’s component wrapper.</li>
+</ul>
+<p><strong>Example</strong>:</p>
+<pre><code class="language-js">import { registerBlockType } from '@wordpress/blocks';
+
+registerBlockType( 'my-plugin/block-name', {
+    edit: function () {
+        // Edit definition goes here.
+    },
+    save: function () {
+        // Save definition goes here.
+    },
+    getEditWrapperProps: function () {
+        // Implementation goes here.
+    },
+} );
+</code></pre>
+<p>In the case of <a href="https://developer.notmatt.press/block-editor/how-to-guides/block-tutorial/creating-dynamic-blocks/">dynamic blocks</a> supported by WordPress, it should still be possible to register the <code>render_callback</code> property using both <a href="https://developer.notmatt.press/reference/functions/register_block_type/"><code>register_block_type</code></a> functions on the server.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

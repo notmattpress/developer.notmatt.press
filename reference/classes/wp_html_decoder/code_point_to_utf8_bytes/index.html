@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_html_decoder/">WP_HTML_Decoder</a></span><span class="is-current-page">WP_HTML_Decoder::code_point_to_utf8_bytes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_HTML_Decoder::code_point_to_utf8_bytes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_HTML_Decoder::code_point_to_utf8_bytes( <span class="arg-type">int</span> <span class="arg-name">$code_point</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Encode a code point number into the UTF-8 encoding.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This encoder implements the UTF-8 encoding algorithm for converting a code point into a byte sequence. If it receives an invalid code point it will return the Unicode Replacement Character U+FFFD <code>�</code>.</p>
+<p>Example:</p>
+<p> <pre class="wp-block-code"><code class="language-php" lang="php">'🅰' === WP_HTML_Decoder::code_point_to_utf8_bytes( 0x1f170 );
+
+// Half of a surrogate pair is an invalid code point.
+'�' === WP_HTML_Decoder::code_point_to_utf8_bytes( 0xd83c );</code></pre></p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://www.rfc-editor.org/rfc/rfc3629">https://www.rfc-editor.org/rfc/rfc3629</a>: For the UTF-8 standard.</li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$code_point</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Which code point to convert.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Converted code point, or <code>�</code> if invalid.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="426"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function code_point_to_utf8_bytes( $code_point ): string {
+	// Pre-check to ensure a valid code point.
+	if (
+		$code_point &lt;= 0 ||
+		( $code_point &gt;= 0xD800 &amp;&amp; $code_point &lt;= 0xDFFF ) ||
+		$code_point &gt; 0x10FFFF
+	) {
+		return '�';
+	}
+
+	if ( $code_point &lt;= 0x7F ) {
+		return chr( $code_point );
+	}
+
+	if ( $code_point &lt;= 0x7FF ) {
+		$byte1 = chr( ( $code_point &gt;&gt; 6 ) | 0xC0 );
+		$byte2 = chr( $code_point &amp; 0x3F | 0x80 );
+
+		return "{$byte1}{$byte2}";
+	}
+
+	if ( $code_point &lt;= 0xFFFF ) {
+		$byte1 = chr( ( $code_point &gt;&gt; 12 ) | 0xE0 );
+		$byte2 = chr( ( $code_point &gt;&gt; 6 ) &amp; 0x3F | 0x80 );
+		$byte3 = chr( $code_point &amp; 0x3F | 0x80 );
+
+		return "{$byte1}{$byte2}{$byte3}";
+	}
+
+	// Any values above U+10FFFF are eliminated above in the pre-check.
+	$byte1 = chr( ( $code_point &gt;&gt; 18 ) | 0xF0 );
+	$byte2 = chr( ( $code_point &gt;&gt; 12 ) &amp; 0x3F | 0x80 );
+	$byte3 = chr( ( $code_point &gt;&gt; 6 ) &amp; 0x3F | 0x80 );
+	$byte4 = chr( $code_point &amp; 0x3F | 0x80 );
+
+	return "{$byte1}{$byte2}{$byte3}{$byte4}";
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/html-api/class-wp-html-decoder.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/html-api/class-wp-html-decoder.php#L426">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/html-api/class-wp-html-decoder.php#L426-L462">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_html_decoder/read_character_reference/">WP_HTML_Decoder::read_character_reference()</a><code>wp-includes/html-api/class-wp-html-decoder.php</code></td><td><p>Attempt to read a character reference at the given location in a given string, depending on the context in which it’s found.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.6.0/">6.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

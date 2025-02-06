@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/advanced-administration/">Advanced Administration Handbook</a></span><span><a href="https://developer.wordpress.org/advanced-administration/server/">Server configuration</a></span><span><a href="https://developer.wordpress.org/advanced-administration/server/web-server/">Web servers</a></span><span class="is-current-page">Apache HTTPD / .htaccess</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Apache HTTPD / .htaccess</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="htaccess" tabindex="-1"><a href="#htaccess">.htaccess</a></h2>
+<p>The <code>.htaccess</code> is a distributed configuration file, and is how Apache handles configuration changes on a per-directory basis.</p>
+<p>WordPress uses this file to manipulate how Apache serves files from its root directory, and subdirectories thereof. Most notably, WP modifies this file to be able to handle pretty permalinks.</p>
+<p>This page may be used to restore a corrupted <code>.htaccess</code> file (e.g. a misbehaving plugin).</p>
+<h3 class="is-toc-heading" id="basic-wp" tabindex="-1"><a href="#basic-wp">Basic WP</a></h3>
+<pre><code># BEGIN WordPress
+
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+
+# END WordPress
+</code></pre>
+<h3 class="is-toc-heading" id="multisite" tabindex="-1"><a href="#multisite">Multisite</a></h3>
+<h4>WordPress 3.5 and up</h4>
+<p>If you activated Multisite on WordPress 3.5 or later, use one of these.</p>
+<h5>WordPress &gt;=3.5 Subfolder Example</h5>
+<pre><code># BEGIN WordPress Multisite
+# Using subfolder network type: https://wordpress.org/documentation/article/htaccess/#multisite
+
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+
+# add a trailing slash to /wp-admin
+RewriteRule ^([_0-9a-zA-Z-]+/)?wp-admin$ $1wp-admin/ [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^([_0-9a-zA-Z-]+/)?(wp-(content|admin|includes).*) $2 [L]
+RewriteRule ^([_0-9a-zA-Z-]+/)?(.*\.php)$ $2 [L]
+RewriteRule . index.php [L]
+
+# END WordPress Multisite
+</code></pre>
+<h5>WordPress &gt;=3.5 SubDomain Example</h5>
+<pre><code># BEGIN WordPress Multisite
+# Using subdomain network type: https://wordpress.org/documentation/article/htaccess/#multisite
+
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+
+# add a trailing slash to /wp-admin
+RewriteRule ^wp-admin$ wp-admin/ [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^(wp-(content|admin|includes).*) $1 [L]
+RewriteRule ^(.*\.php)$ $1 [L]
+RewriteRule . index.php [L]
+
+# END WordPress Multisite
+</code></pre>
+<h4>WordPress 3.4 and below</h4>
+<p>If you originally installed WordPress with 3.4 or older and activated Multisite then, you need to use one of these:</p>
+<h5>WordPress &lt;=3.4 SubFolder Example</h5>
+<p>WordPress 3.0 through 3.4.2</p>
+<pre><code># BEGIN WordPress Multisite
+# Using subfolder network type: https://wordpress.org/documentation/article/htaccess/#multisite
+
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+
+# uploaded files
+RewriteRule ^([_0-9a-zA-Z-]+/)?files/(.+) wp-includes/ms-files.php?file=$2 [L]
+
+# add a trailing slash to /wp-admin
+RewriteRule ^([_0-9a-zA-Z-]+/)?wp-admin$ $1wp-admin/ [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^[_0-9a-zA-Z-]+/(wp-(content|admin|includes).*) $1 [L]
+RewriteRule ^[_0-9a-zA-Z-]+/(.*\.php)$ $1 [L]
+RewriteRule . index.php [L]
+
+# END WordPress Multisite
+</code></pre>
+<h5>WordPress &lt;=3.4 SubDomain Example</h5>
+<pre><code># BEGIN WordPress Multisite
+# Using subdomain network type: https://wordpress.org/documentation/article/htaccess/#multisite
+
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+
+# uploaded files
+RewriteRule ^files/(.+) wp-includes/ms-files.php?file=$1 [L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule . index.php [L]
+
+# END WordPress Multisite
+</code></pre>
+<h3 class="is-toc-heading" id="general-examples" tabindex="-1"><a href="#general-examples">General Examples</a></h3>
+<h4>Options</h4>
+<p>Any options preceded by a <strong>+</strong> are added to the options currently in force, and any options preceded by a <strong>–</strong> are removed from the options currently in force.</p>
+<p>Possible values for the <a href="https://httpd.apache.org/docs/trunk/mod/core.html#options">Options directive</a> are any combination of:</p>
+<p><strong>None</strong></p>
+<p>All options are turned off.</p>
+<p><strong>All</strong></p>
+<p>All options except for MultiViews. This is the default setting.</p>
+<p><strong>ExecCGI</strong></p>
+<p>Execution of CGI scripts using mod_cgi is permitted.</p>
+<p><strong>FollowSymLinks</strong></p>
+<p>The server will follow symbolic links in this directory.</p>
+<p><strong>Includes</strong></p>
+<p>Server-side includes provided by mod_include are permitted.</p>
+<p><strong>IncludesNOEXEC</strong></p>
+<p>Server-side includes are permitted, but the #exec cmd and #exec cgi are disabled.</p>
+<p><strong>Indexes</strong></p>
+<p>URL maps to a directory, and no DirectoryIndex, a formatted listing of the directory.</p>
+<p><strong>MultiViews</strong></p>
+<p>Content negotiated “MultiViews” are allowed using mod_negotiation.</p>
+<p><strong>SymLinksIfOwnerMatch</strong></p>
+<p>Only follow symbolic links where target is owned by the same user id as the link.</p>
+<p>This will disable all options, and then only enable FollowSymLinks, which is necessary for mod_rewrite.</p>
+<pre><code>Options None
+Options FollowSymLinks
+</code></pre>
+<h4>DirectoryIndex</h4>
+<p><a href="https://httpd.apache.org/docs/trunk/mod/mod_dir.html#directoryindex">DirectoryIndex Directive</a> sets the file that Apache will serve if a directory is requested.</p>
+<p>Several URLs may be given, in which case the server will return the first one that it finds.</p>
+<pre><code>DirectoryIndex index.php index.html /index.php
+</code></pre>
+<h4>DefaultLanguage</h4>
+<p><a href="https://httpd.apache.org/docs/trunk/mod/mod_mime.html#defaultlanguage">DefaultLanguage Directive</a> will cause all files that do not already have a specific language tag associated with it will use this.</p>
+<pre><code>DefaultLanguage en
+</code></pre>
+<h4>Default Charset</h4>
+<p>Set the default character encoding sent in the HTTP header. See <a href="https://www.w3.org/International/questions/qa-htaccess-charset">Setting charset information in .htaccess</a></p>
+<pre><code>AddDefaultCharset UTF-8
+</code></pre>
+<p><strong>Set Charset for Specific Files</strong></p>
+<pre><code>AddType 'text/html; charset=UTF-8' .html
+</code></pre>
+<p><strong>Set for specific files</strong></p>
+<pre><code>AddCharset UTF-8 .html
+</code></pre>
+<h4>ServerSignature</h4>
+<p>The <a href="https://httpd.apache.org/docs/trunk/mod/core.html#serversignature">ServerSignature Directive</a> allows the configuration of a trailing footer line under server-generated documents. Optionally add a line containing the server version and virtual host name to server-generated pages (internal error documents, FTP directory listings, mod_status and mod_info output etc., but not CGI generated documents or custom error documents).</p>
+<p><strong>On</strong></p>
+<p>adds a line with the server version number and ServerName of the serving virtual host</p>
+<p><strong>Off</strong></p>
+<p>suppresses the footer line</p>
+<p><strong>Email</strong></p>
+<p>creates a “mailto:” reference to the ServerAdmin of the referenced document</p>
+<pre><code>SetEnv SERVER_ADMIN admin@site.com
+ServerSignature Email
+</code></pre>
+<h4>Force Files to be Downloaded</h4>
+<p>The below will cause any requests for files ending in the specified extensions to not be displayed in the browser but instead force a “Save As” dialog so the client can download.</p>
+<pre><code>AddType application/octet-stream .avi .mpg .mov .pdf .xls .mp4
+</code></pre>
+<h4>HTTP Compression</h4>
+<p>The <a href="https://httpd.apache.org/docs/trunk/mod/mod_mime.html#addoutputfilter">AddOutputFilter Directive</a> maps the filename extension extension to the filters which will process responses from the server before they are sent to the client. This is in addition to any filters defined elsewhere, including <code>SetOutputFilter</code> and <code>AddOutputFilterByType</code>. This mapping is merged over any already in force, overriding any mappings that already exist for the same extension.</p>
+<p>See also <a href="https://developers.google.com/speed/docs/insights/EnableCompression">Enable Compression</a></p>
+<pre><code>AddOutputFilterByType DEFLATE text/html text/plain text/xml application/xml application/xhtml+xml text/javascript text/css application/x-javascript
+BrowserMatch ^Mozilla/4 gzip-only-text/html
+BrowserMatch ^Mozilla/4\.0[678] no-gzip
+BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+</code></pre>
+<p><strong>Force Compression for certain files</strong></p>
+<pre><code>SetOutputFilter DEFLATE
+</code></pre>
+<h4>Send Custom HTTP Headers</h4>
+<p>The <a href="https://httpd.apache.org/docs/trunk/mod/mod_headers.html#header">Header Directive</a> lets you send HTTP headers for every request, or just specific files. You can view a sites HTTP Headers using <a href="https://getfirebug.com/">Firebug</a>, <a href="https://developer.chrome.com/docs/devtools/">Chrome Dev Tools</a>, <a href="https://www.wireshark.org/">Wireshark</a> or <a href="https://www.askapache.com/online-tools/http-headers-tool/">Advanced HTTP Request / Response Headers</a>.</p>
+<pre><code>Header set X-Pingback "https://example.com/xmlrpc.php"
+Header set Content-Language "en-US"
+</code></pre>
+<h4>Unset HTTP Headers</h4>
+<p>This will unset HTTP headers, using <strong>always</strong> will try extra hard to remove them.</p>
+<pre><code>Header unset Pragma
+Header always unset WP-Super-Cache
+Header always unset X-Pingback
+</code></pre>
+<h4>Password Protect Login</h4>
+<p>This is very useful for protecting the <code>wp-login.php</code> file. You can use this <a href="https://www.askapache.com/online-tools/htpasswd-generator/">Advanced Htpasswd/Htdigest file creator</a>.</p>
+<p><strong>Basic Authentication</strong></p>
+<pre><code>AuthType Basic
+AuthName "Password Protected"
+AuthUserFile /full/absolute/path/to/.htpasswd
+Require valid-user
+Satisfy All
+</code></pre>
+<p><strong>Digest Authentication</strong></p>
+<pre><code>AuthType Digest
+AuthName "Password Protected"
+AuthDigestDomain /wp-login.php https://example.com/wp-login.php
+AuthUserFile /full/absolute/path/to/.htpasswd
+Require valid-user
+Satisfy All
+</code></pre>
+<h4>Require Specific IP</h4>
+<p>This is a way to only allow access for IP addresses listed. Note usage of RequireAny instead of RequireAll.</p>
+<pre><code>&lt;RequireAny&gt;
+  Require ip 192.0.2.123
+  Require ip 2001:0DB8:1111:2222:3333:4444:5555:6666
+&lt;/RequireAny&gt;
+</code></pre>
+<h4>Protect Sensitive Files</h4>
+<p>This denies all web access to your wp-config file, htaccess/htpasswd and WordPress debug.log. On installed site, consider adding install.php as well.</p>
+<pre><code>&lt;FilesMatch "^(wp-config\.php|\.htaccess|\.htpasswd|debug\.log)$"&gt;
+  Require all denied
+&lt;/FilesMatch&gt;
+</code></pre>
+<h4>Require SSL</h4>
+<p>This will force SSL, and require the exact hostname or else it will redirect to the SSL version. Useful in a <code>/wp-admin/.htaccess</code> file.</p>
+<pre><code>SSLOptions +StrictRequire
+SSLRequireSSL
+SSLRequire %{HTTP_HOST} eq "www.example.com"
+ErrorDocument 403 https://www.example.com
+</code></pre>
+<h3 class="is-toc-heading" id="external-resources" tabindex="-1"><a href="#external-resources">External Resources</a></h3>
+<ul>
+<li><a href="https://httpd.apache.org/docs/trunk/howto/htaccess.html">Official Apache HTTP Server Tutorial: .htaccess files</a></li>
+<li><a href="https://httpd.apache.org/docs/trunk/mod/quickreference.html">Official Htaccess Directive Quick Reference</a></li>
+<li><a href="https://www.askapache.com/htaccess/">Htaccess Tutorial</a></li>
+<li><a href="https://developers.google.com/speed/docs/insights/rules">Google PageSpeed for Developers</a></li>
+<li><a href="https://perishablepress.com/stupid-htaccess-tricks/">Stupid Htaccess Tricks</a></li>
+<li><a href="https://www.askapache.com/htaccess/crazy-advanced-mod_rewrite-tutorial/">Advanced Mod_Rewrite</a></li>
+</ul>
+<h3 class="is-toc-heading" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3>
+<ul>
+<li><a href="https://codex.wordpress.org/htaccess%20for%20subdirectories">htaccess for subdirectories</a></li>
+<li><a href="https://wordpress.org/documentation/article/customize-permalinks/">Using Permalinks</a></li>
+<li><a href="https://wordpress.org/documentation/article/changing-file-permissions/">Changing File Permissions</a></li>
+<li><a href="https://codex.wordpress.org/UNIX%20Shell%20Skills">UNIX Shell Skills</a></li>
+<li><a href="https://codex.wordpress.org/Rewrite%20API">Rewrite API</a></li>
+</ul>
+<h2 class="is-toc-heading" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2>
+<ul>
+<li>2023-04-25: Original content from <a href="https://wordpress.org/documentation/article/htaccess/">htaccess</a>.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

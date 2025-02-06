@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wpdb/">wpdb</a></span><span class="is-current-page">wpdb::tables()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wpdb::tables()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wpdb::tables( <span class="arg-type">string</span> <span class="arg-name">$scope</span> = <span class="arg-default">'all'</span>,  <span class="arg-type">bool</span> <span class="arg-name">$prefix</span> = <span class="arg-default">true</span>,  <span class="arg-type">int</span> <span class="arg-name">$blog_id</span> ): <span class="return-type">string[]</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns an array of WordPress tables.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Also allows for the <code>CUSTOM_USER_TABLE</code> and <code>CUSTOM_USER_META_TABLE</code> to override the WordPress users and usermeta tables that would otherwise be determined by the prefix.</p>
+<p>The <code>$scope</code> argument can take one of the following:</p>
+<ul>
+<li>‘all’ – returns ‘all’ and ‘global’ tables. No old tables are returned.</li>
+<li>‘blog’ – returns the blog-level tables for the queried blog.</li>
+<li>‘global’ – returns the global tables for the installation, returning multisite tables only on multisite.</li>
+<li>‘ms_global’ – returns the multisite global tables, regardless if current installation is multisite.</li>
+<li>‘old’ – returns tables which are deprecated.</li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$scope</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Possible values include <code>'all'</code>, <code>'global'</code>, <code>'ms_global'</code>, <code>'blog'</code>,                        or <code>'old'</code> tables. Default <code>'all'</code>.</span></div><p class="default">Default:<code>'all'</code></p></dd><dt><code>$prefix</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to include table prefixes. If blog prefix is requested,                        then the custom users and usermeta tables will be mapped. </span></div><p class="default">Default:<code>true</code></p></dd><dt><code>$blog_id</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The blog_id to prefix. Used only when prefix is requested.<br/>
+Defaults to <code>wpdb::$blogid</code>.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string[]</span> Table names. When a prefix is requested, the key is the unprefixed table name.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1123"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function tables( $scope = 'all', $prefix = true, $blog_id = 0 ) {
+	switch ( $scope ) {
+		case 'all':
+			$tables = array_merge( $this-&gt;global_tables, $this-&gt;tables );
+			if ( is_multisite() ) {
+				$tables = array_merge( $tables, $this-&gt;ms_global_tables );
+			}
+			break;
+		case 'blog':
+			$tables = $this-&gt;tables;
+			break;
+		case 'global':
+			$tables = $this-&gt;global_tables;
+			if ( is_multisite() ) {
+				$tables = array_merge( $tables, $this-&gt;ms_global_tables );
+			}
+			break;
+		case 'ms_global':
+			$tables = $this-&gt;ms_global_tables;
+			break;
+		case 'old':
+			$tables = $this-&gt;old_tables;
+			if ( is_multisite() ) {
+				$tables = array_merge( $tables, $this-&gt;old_ms_global_tables );
+			}
+			break;
+		default:
+			return array();
+	}
+
+	if ( $prefix ) {
+		if ( ! $blog_id ) {
+			$blog_id = $this-&gt;blogid;
+		}
+		$blog_prefix   = $this-&gt;get_blog_prefix( $blog_id );
+		$base_prefix   = $this-&gt;base_prefix;
+		$global_tables = array_merge( $this-&gt;global_tables, $this-&gt;ms_global_tables );
+		foreach ( $tables as $k =&gt; $table ) {
+			if ( in_array( $table, $global_tables, true ) ) {
+				$tables[ $table ] = $base_prefix . $table;
+			} else {
+				$tables[ $table ] = $blog_prefix . $table;
+			}
+			unset( $tables[ $k ] );
+		}
+
+		if ( isset( $tables['users'] ) &amp;&amp; defined( 'CUSTOM_USER_TABLE' ) ) {
+			$tables['users'] = CUSTOM_USER_TABLE;
+		}
+
+		if ( isset( $tables['usermeta'] ) &amp;&amp; defined( 'CUSTOM_USER_META_TABLE' ) ) {
+			$tables['usermeta'] = CUSTOM_USER_META_TABLE;
+		}
+	}
+
+	return $tables;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wpdb.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wpdb.php#L1123">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wpdb.php#L1123-L1179">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_blog_prefix/">wpdb::get_blog_prefix()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Gets blog prefix.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_uninitialize_site/">wp_uninitialize_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Runs the uninitialization routine for a given site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/upgrade_network/">upgrade_network()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Executes network-level upgrade routines.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/dbdelta/">dbDelta()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Modifies the database based on specified SQL statements.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_blog_installed/">is_blog_installed()</a><code>wp-includes/functions.php</code></td><td><p>Determines whether WordPress is already installed.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/ms_not_installed/">ms_not_installed()</a><code>wp-includes/ms-load.php</code></td><td><p>Displays a failure message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/set_prefix/">wpdb::set_prefix()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Sets the table prefix for the WordPress tables.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/set_blog_id/">wpdb::set_blog_id()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Sets blog ID.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td><span class="since-description"><code>old</code> now includes deprecated multisite global tables only on multisite.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-gianrftcc odd alt thread-odd thread-alt depth-1" data-comment-id="3669" id="comment-3669">
+<article class="comment-body" id="div-comment-3669">
+<a class="screen-reader-text" href="#comment-content-3669">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3669">
+<p>To list all <a href="https://developer.notmatt.press/reference/classes/wpdb/" rel="class">wpdb</a> tables :</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">global $wpdb;
+print_r($wpdb-&gt;tables);</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3669">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/jest-preset-default</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/jest-preset-default</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Default <a href="https://jestjs.io/">Jest</a> preset for WordPress development.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/jest-preset-default --save-dev
+</code></pre>
+<p><strong>Note</strong>: This package requires Node.js version with long-term support status (check <a href="https://nodejs.org/en/about/previous-releases">Active LTS or Maintenance LTS releases</a>). It is not compatible with older versions.</p>
+<h2 class="is-toc-heading" id="setup" tabindex="-1"><a href="#setup">Setup</a></h2>
+<h3 class="is-toc-heading" id="via-jest-config-json-or-jest-field-in-package-json" tabindex="-1"><a href="#via-jest-config-json-or-jest-field-in-package-json">Via jest.config.json or jest field in package.json</a></h3>
+<pre><code class="language-json">{
+    "preset": "@wordpress/jest-preset-default"
+}
+</code></pre>
+<h3 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h3>
+<h4>Brief explanations of options included</h4>
+<ul>
+<li><code>moduleNameMapper</code> – all <code>css</code> and <code>scss</code> files containing CSS styles will be stubbed out.</li>
+<li><code>modulePaths</code> – the root dir of the project is used as a location to search when resolving modules.</li>
+<li><code>setupFiles</code> – runs code before each test which sets up global variables required in the testing environment.</li>
+<li><code>setupFilesAfterEnv</code> – runs code which adds improved support for <code>Console</code> object and <code>React</code> components to the testing framework before each test.</li>
+<li><code>testEnvironment</code> – enabled the <code>jsdom</code> environment for all tests by default.</li>
+<li><code>testMatch</code> – searches for tests in <code>/test/</code> and <code>/__tests__/</code> subfolders, and also matches all files with a <code>.test.*</code> suffix. It detects test files with a <code>.js</code>, <code>.jsx</code>, <code>.ts</code> or <code>.tsx</code> suffix. Compared to default Jest configuration, it doesn’t match files with the <code>.spec.*</code> suffix.</li>
+<li><code>testPathIgnorePatterns</code> – excludes <code>node_modules</code> and <code>vendor</code> directories from searching for test files.</li>
+<li><code>transform</code> – keeps the default <a href="https://github.com/facebook/jest/tree/HEAD/packages/babel-jest">babel-jest</a> transformer.</li>
+</ul>
+<h4>Using enzyme</h4>
+<p>Historically, this package used to use <code>enzyme</code>, but support was dropped in favor of <code>@testing-library/react</code>, primary reason being unblocking the upgrade to React 18.</p>
+<p>If you wish to use <code>enzyme</code>, you can still use it by manually providing the React 17 adapter, by following the steps below.</p>
+<p>To install the enzyme dependency, run:</p>
+<pre><code class="language-bash">npm install --save enzyme
+</code></pre>
+<p>To install the React 17 adapter dependency, run:</p>
+<pre><code class="language-bash">npm install --save @wojtekmaj/enzyme-adapter-react-17
+</code></pre>
+<p>To use the React 17 adapter, use this in your <a href="https://jestjs.io/docs/configuration#setupfilesafterenv-array"><code>setupFilesAfterEnv</code></a> configuration:</p>
+<pre><code class="language-javascript">// It "mocks" enzyme, so that we can delay loading of
+// the utility functions until enzyme is imported in tests.
+// Props to @gdborton for sharing this technique in his article:
+// https://medium.com/airbnb-engineering/unlocking-test-performance-migrating-from-mocha-to-jest-2796c508ec50.
+let mockEnzymeSetup = false;
+
+jest.mock( 'enzyme', () =&gt; {
+    const actualEnzyme = jest.requireActual( 'enzyme' );
+    if ( ! mockEnzymeSetup ) {
+        mockEnzymeSetup = true;
+
+        // Configure enzyme 3 for React, from docs: http://airbnb.io/enzyme/docs/installation/index.html
+        const Adapter = jest.requireActual(
+            '@wojtekmaj/enzyme-adapter-react-17'
+        );
+        actualEnzyme.configure( { adapter: new Adapter() } );
+    }
+    return actualEnzyme;
+} );
+</code></pre>
+<p>If you also use snapshot tests with <code>enzyme</code>, you might want to add support for serializing them, through the <code>enzyme-to-json</code> package.</p>
+<p>To install the dependency, run:</p>
+<pre><code class="language-bash">npm install --save enzyme-to-json
+</code></pre>
+<p>Finally, you should add <code>enzyme-to-json/serializer</code> to the array of <a href="https://jestjs.io/docs/configuration#snapshotserializers-arraystring"><code>snapshotSerializers</code></a>:</p>
+<pre><code class="language-javascript">{
+    snapshotSerializers: [ 'enzyme-to-json/serializer' ];
+}
+</code></pre>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/patterns/">Patterns</a></span><span class="is-current-page">Block Type Patterns</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Block Type Patterns</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>One of the most useful capabilities of patterns is the ability to tie them directly to one or more block types. For example, you can assign a gallery pattern to the Gallery (<code>core/gallery</code>) block type and use that specific pattern whenever you insert a new Gallery.</p>
+<p>But the feature offers even more than that. In this article, you will learn how to add a basic connection between a block type and a pattern and how to take advantage of some special cases in WordPress.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Besides the techniques described below, block type patterns are also needed for creating starter page patterns, which you can learn more about in the <a href="https://developer.notmatt.press/themes/patterns/starter-patterns/">Starter Patterns</a> documentation.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="block-specific-patterns" tabindex="-1"><a href="#block-specific-patterns">Block-specific patterns</a></h2>
+<p>It’s important to note that patterns that are connected to a block type behave just like other patterns. What you’re doing is making WordPress aware that the pattern is meant for one or more block types.</p>
+<p>For many cases, you may simply want to create a pattern that serves as a starting point when inserting a specific block, and that’s where block type patterns are often useful.</p>
+<h3 class="is-toc-heading wp-block-heading" id="register-a-block-type-pattern" tabindex="-1"><a href="#register-a-block-type-pattern">Register a block type pattern</a></h3>
+<p>As described in <a href="https://developer.notmatt.press/themes/patterns/registering-patterns/">Registering Patterns</a>, you must assign a value to the <code>Block Types</code> header field in your pattern file. This field can accept one or more comma-separated block types, which must include the block’s namespace and slug (e.g., <code>namespace/slug</code>).</p>
+<p>Here is what the file header of pattern tied to the Cover block might look like:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Cover With Contrast Background
+ * Slug: themeslug/cover-contrast
+ * Categories: banner
+ * Block Types: core/cover
+ * Viewport Width: 1376
+ */
+?&gt;</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="build-a-block-type-pattern" tabindex="-1"><a href="#build-a-block-type-pattern">Build a block type pattern</a></h3>
+<p>Let’s take what you’ve learned so far and create a pattern for a specific block. In this example, you will create a simple Cover block with a single nested Heading and a background with the <code>contrast</code> <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/color/">color preset</a>.</p>
+<p>Create a new file named <code>cover-contrast.php</code> in your theme’s <code>/patterns</code> folder and paste this code inside it:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Cover With Contrast Background
+ * Slug: themeslug/cover-contrast
+ * Categories: banner
+ * Block Types: core/cover
+ * Viewport Width: 1376
+ */
+?&gt;
+&lt;!-- wp:cover {"overlayColor":"contrast","isUserOverlayColor":true,"align":"full","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base","layout":{"type":"constrained"}} --&gt;
+&lt;div class="wp-block-cover alignfull has-base-color has-text-color has-link-color"&gt;
+	&lt;span aria-hidden="true" class="wp-block-cover__background has-contrast-background-color has-background-dim-100 has-background-dim"&gt;&lt;/span&gt;
+	&lt;div class="wp-block-cover__inner-container"&gt;
+		&lt;!-- wp:heading {"textAlign":"center"} --&gt;
+			&lt;h2 class="wp-block-heading has-text-align-center"&gt;&lt;?php esc_html_e( 'A simple heading', 'themeslug' ); ?&gt;&lt;/h2&gt;
+		&lt;!-- /wp:heading --&gt;
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;!-- /wp:cover --&gt;</code></pre>
+<p>Once you’ve saved your pattern file, it should appear as normal in the inserter and Pattern Library. But the most important thing is to check that it’s working as a block type pattern.</p>
+<p>Open a new post or page in your WordPress admin and insert a Cover block but don’t make any change to it. Then, click the Cover block’s icon in the toolbar. You should see a <strong>Patterns</strong> menu item, and if you click that, your new pattern will appear:</p>
+<figure class="wp-block-image size-full has-custom-border"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-transform.webp?ssl=1"><img alt="Initial insertion of the Cover block in the block editor. The block's icon is selected in the toolbar and shows a dropdown. In the dropdown, the Patterns sub-menu is selected and shows a transformation option for choosing a pattern." class="has-border-color has-light-grey-2-border-color wp-image-153665" data-recalc-dims="1" decoding="async" fetchpriority="high" height="1064" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-transform.webp?resize=2048%2C1064&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-transform.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-transform.webp?resize=300%2C156&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-transform.webp?resize=1024%2C532&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-transform.webp?resize=768%2C399&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-transform.webp?resize=1536%2C798&amp;ssl=1 1536w" style="border-width:1px" width="2048"/></a></figure>
+<p>From there, if you select the pattern that you’ve registered, it will transform your inserted Cover block inside the content area:</p>
+<figure class="wp-block-image size-full has-custom-border"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-replaced.webp?ssl=1"><img alt="WordPress post editor with a Cover block inserted into the content area with a single Heading block nested inside it." class="has-border-color has-light-grey-2-border-color wp-image-153666" data-recalc-dims="1" decoding="async" height="1064" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-replaced.webp?resize=2048%2C1064&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-replaced.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-replaced.webp?resize=300%2C156&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-replaced.webp?resize=1024%2C532&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-replaced.webp?resize=768%2C399&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/cover-pattern-replaced.webp?resize=1536%2C798&amp;ssl=1 1536w" style="border-width:1px" width="2048"/></a></figure>
+<p>And that is the basics of how block type patterns work. But WordPress has some special handling for some blocks, which you will learn about below.</p>
+<h2 class="is-toc-heading wp-block-heading" id="query-loop-patterns" tabindex="-1"><a href="#query-loop-patterns">Query Loop patterns</a></h2>
+<p>The Query Loop block is one of the most unique and useful blocks to create custom patterns for. It gives you and your theme users the ability to quickly insert or replace existing Query blocks with an alternative posts layout.</p>
+<p>The technique is the same as other block type patterns. You must add the <code>core/query</code> block type to the pattern’s <code>Block Types</code> file header field.</p>
+<p>Let’s create a basic two-column grid that shows each post’s featured image, title, excerpt and date. You can, of course, use whatever layout and design that you want.</p>
+<p>For now, create a new <code>query-two-columns.php</code> file in your theme’s <code>/patterns</code> folder and paste this code into it:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Query: Two Columns
+ * Slug: themeslug/query-two-columns
+ * Categories: posts
+ * Block Types: core/query
+ * Viewport Width: 1376
+ */
+?&gt;
+&lt;!-- wp:query {"query":{"perPage":6,"pages":0,"offset":0,"postType":"post","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":false},"align":"wide"} --&gt;
+&lt;div class="wp-block-query alignwide"&gt;
+		&lt;!-- wp:post-template {"style":{"spacing":{"blockGap":"var:preset|spacing|40"}},"layout":{"type":"grid","columnCount":2}} --&gt;
+		&lt;!-- wp:post-featured-image {"isLink":true,"aspectRatio":"4/3","align":"wide"} /--&gt;
+		&lt;!-- wp:post-title {"isLink":true,"fontSize":"large"} /--&gt;
+		&lt;!-- wp:post-excerpt {"showMoreOnNewLine":false,"excerptLength":26} /--&gt;
+		&lt;!-- wp:post-date /--&gt;
+	&lt;!-- /wp:post-template --&gt;
+&lt;/div&gt;
+&lt;!-- /wp:query --&gt;</code></pre>
+<p>There are two ways to take advantage of Query Loop patterns, like the one you just created. The first is to insert a new Query Loop block into a page or template:</p>
+<figure class="wp-block-image size-full has-custom-border"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-start.webp?ssl=1"><img alt="Query Loop block inserted into the WordPress block editor with the initial prompt to choose a pattern." class="has-border-color has-light-grey-2-border-color wp-image-153667" data-recalc-dims="1" decoding="async" height="1064" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-start.webp?resize=2048%2C1064&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-start.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-start.webp?resize=300%2C156&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-start.webp?resize=1024%2C532&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-start.webp?resize=768%2C399&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-start.webp?resize=1536%2C798&amp;ssl=1 1536w" style="border-width:1px" width="2048"/></a></figure>
+<p>You should see a couple of buttons for adding a Query Loop from that point. Click the <strong>Choose</strong> button.</p>
+<p>This will bring up the <strong>Choose a pattern</strong> modal. In this modal, your pattern will appear and can be selected:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-modal.webp?ssl=1"><img alt="Modal overlaying the post editor that shows three options of different patterns for showing a list or grid of posts." class="wp-image-153668" data-recalc-dims="1" decoding="async" height="1064" loading="lazy" sizes="auto, (max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-modal.webp?resize=2048%2C1064&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-modal.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-modal.webp?resize=300%2C156&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-modal.webp?resize=1024%2C532&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-modal.webp?resize=768%2C399&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-modal.webp?resize=1536%2C798&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>Once selected, your pattern will be inserted into the canvas of the page or template that you are editing:</p>
+<figure class="wp-block-image size-full has-custom-border"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-inserted.webp?ssl=1"><img alt="WordPress post editor with a two-column grid of posts shown in the content area." class="has-border-color has-light-grey-2-border-color wp-image-153669" data-recalc-dims="1" decoding="async" height="1064" loading="lazy" sizes="auto, (max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-inserted.webp?resize=2048%2C1064&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-inserted.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-inserted.webp?resize=300%2C156&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-inserted.webp?resize=1024%2C532&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-inserted.webp?resize=768%2C399&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/query-loop-inserted.webp?resize=1536%2C798&amp;ssl=1 1536w" style="border-width:1px" width="2048"/></a></figure>
+<p>The second method of using Query Loop patterns is much the same. You can replace an existing pattern (even the one you just inserted) by clicking the <strong>Replace</strong> button in the toolbar. It will bring up the same <strong>Choose a pattern</strong> modal, and the process of choosing a pattern is the same.</p>
+<h2 class="is-toc-heading wp-block-heading" id="template-part-patterns" tabindex="-1"><a href="#template-part-patterns">Template Part patterns</a></h2>
+<p>Because <a href="https://developer.notmatt.press/themes/templates/template-parts/">template parts</a> are technically blocks themselves, you can also use them as a pattern’s block types. There is one limitation: only parts that use the Header and Footer <a href="https://developer.notmatt.press/themes/templates/template-parts/#template-part-areas">template part areas</a> are supported. But these are the most common types anyway.</p>
+<p>When targeting a specific template part, its block type name will have a third component: the template part area. So if you want to target the Header part, you will pass a block type of <code>core/template-part/header</code>. And for the Footer part, use <code>core/template-part/footer</code>.</p>
+<p>Let’s create a basic Header template part with a centered logo, title, and nav menu. You will use this to replace the existing header on your site.</p>
+<p>Create a new file named <code>header-centered.php</code> in your theme’s <code>/patterns</code> folder. Then copy and paste this code into it:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Header: Centered
+ * Slug: themeslug/header-centered
+ * Categories: header
+ * Block Types: core/template-part/header
+ * Viewport Width: 1376
+ */
+?&gt;
+&lt;!-- wp:group {"align":"wide","layout":{"type":"flex","orientation":"vertical","justifyContent":"center"}} --&gt;
+&lt;div class="wp-block-group alignwide"&gt;
+	&lt;!-- wp:site-logo {"width":60} /--&gt;
+	&lt;!-- wp:site-title {"level":0} /--&gt;
+	&lt;!-- wp:navigation {"layout":{"type":"flex","justifyContent":"right","orientation":"horizontal"},"style":{"spacing":{"margin":{"top":"0"},"blockGap":"var:preset|spacing|20"},"layout":{"selfStretch":"fit","flexSize":null}}} /--&gt;
+&lt;/div&gt;
+&lt;!-- /wp:group --&gt;</code></pre>
+<p>Once you save this file, go to <strong>Appearance &gt; Editor</strong> in your WordPress admin and select the on the Header block.</p>
+<p>Now click the <strong>Options</strong> button (<strong>⋮</strong> icon) in the toolbar. You should see a <strong>Replace</strong> option in the dropdown:</p>
+<figure class="wp-block-image size-full has-custom-border"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/header-part-replace-dropdown.webp?ssl=1"><img alt='WordPress Site Editor with the Header Template Part selected in the content area. The Options dropdown shows the "Replace" item highlighted.' class="has-border-color has-light-grey-2-border-color wp-image-153670" data-recalc-dims="1" decoding="async" height="1064" loading="lazy" sizes="auto, (max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/header-part-replace-dropdown.webp?resize=2048%2C1064&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/header-part-replace-dropdown.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/header-part-replace-dropdown.webp?resize=300%2C156&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/header-part-replace-dropdown.webp?resize=1024%2C532&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/header-part-replace-dropdown.webp?resize=768%2C399&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/header-part-replace-dropdown.webp?resize=1536%2C798&amp;ssl=1 1536w" style="border-width:1px" width="2048"/></a></figure>
+<p>Once you click the <strong>Replace</strong> dropdown menu item, a new modal titled <strong>Choose a header</strong> will appear, and you should see your <strong>Header: Centered</strong> pattern in the available patterns grid:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/header-pattern-replace.webp?ssl=1"><img alt='A modal overlaying the Site Editor screen that reads "Choose a header." Below, it shows a grid of various site header designs to choose from.' class="wp-image-153671" data-recalc-dims="1" decoding="async" height="1064" loading="lazy" sizes="auto, (max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/header-pattern-replace.webp?resize=2048%2C1064&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/header-pattern-replace.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/header-pattern-replace.webp?resize=300%2C156&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/header-pattern-replace.webp?resize=1024%2C532&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/header-pattern-replace.webp?resize=768%2C399&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/header-pattern-replace.webp?resize=1536%2C798&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>By selecting this pattern or another, you can replace the entire Header template part. This process works the same for Footer template parts.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Parts for custom <a href="https://developer.notmatt.press/themes/templates/template-parts/#template-part-areas">template part areas</a> cannot yet take advantage of this feature. There is an <a href="https://github.com/WordPress/gutenberg/issues/44689">open ticket</a> that has not been patched to handle areas other than Header and Footer.</p></div></div>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

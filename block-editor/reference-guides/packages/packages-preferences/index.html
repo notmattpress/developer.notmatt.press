@@ -1,0 +1,240 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/preferences</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/preferences</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>A key/value store for application preferences.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/preferences --save
+</code></pre>
+<p><em>This package assumes that your code will run in an <strong>ES2015+</strong> environment. If you’re using an environment that has limited or no support for such language features and APIs, you should include <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default#polyfill">the polyfill shipped in <code>@wordpress/babel-preset-default</code></a> in your code.</em></p>
+<h2 class="is-toc-heading" id="key-concepts" tabindex="-1"><a href="#key-concepts">Key concepts</a></h2>
+<h3 class="is-toc-heading" id="scope" tabindex="-1"><a href="#scope">Scope</a></h3>
+<p>Many API calls require a ‘scope’ parameter that acts like a namespace. If you have multiple parameters with the same key but they apply to different parts of your application, using scopes is the best way to segregate them.</p>
+<h3 class="is-toc-heading" id="key" tabindex="-1"><a href="#key">Key</a></h3>
+<p>Each preference is set against a key that should be a string.</p>
+<h3 class="is-toc-heading" id="value" tabindex="-1"><a href="#value">Value</a></h3>
+<p>Values can be of any type, but the types supported may be limited by the persistence layer configure. For example if preferences are saved to browser localStorage in JSON format, only JSON serializable types should be used.</p>
+<h3 class="is-toc-heading" id="defaults" tabindex="-1"><a href="#defaults">Defaults</a></h3>
+<p>Defaults are the value returned when a preference is <code>undefined</code>. These are not persisted, they are only kept in memory. They should be during the initialization of an application.</p>
+<h2 class="is-toc-heading" id="examples" tabindex="-1"><a href="#examples">Examples</a></h2>
+<h3 class="is-toc-heading" id="data-store" tabindex="-1"><a href="#data-store">Data store</a></h3>
+<p>Set the default preferences for any features on initialization by dispatching an action:</p>
+<pre><code class="language-js">import { dispatch } from '@wordpress/data';
+import { store as preferencesStore } from '@wordpress/preferences';
+
+function initialize() {
+    // ...
+
+    dispatch( preferencesStore ).setDefaults(
+        'namespace/editor-or-plugin-name',
+        {
+            myBooleanFeature: true,
+        }
+    );
+
+    // ...
+}
+</code></pre>
+<p>Use the <code>get</code> selector to get a preference value, and the <code>set</code> action to update a preference:</p>
+<pre><code class="language-js">wp.data
+    .select( 'core/preferences' )
+    .get( 'namespace/editor-or-plugin-name', 'myPreferenceName' ); // 1
+wp.data
+    .dispatch( 'core/preferences' )
+    .set( 'namespace/editor-or-plugin-name', 'myPreferenceName', 2 );
+wp.data
+    .select( 'core/preferences' )
+    .get( 'namespace/editor-or-plugin-name', 'myPreferenceName' ); // 2
+</code></pre>
+<p>Use the <code>toggle</code> action to flip a boolean preference between <code>true</code> and <code>false</code>:</p>
+<pre><code class="language-js">wp.data
+    .select( 'core/preferences' )
+    .get( 'namespace/editor-or-plugin-name', 'myPreferenceName' ); // true
+wp.data
+    .dispatch( 'core/preferences' )
+    .toggle( 'namespace/editor-or-plugin-name', 'myPreferenceName' );
+wp.data
+    .select( 'core/preferences' )
+    .get( 'namespace/editor-or-plugin-name', 'myPreferenceName' ); // false
+</code></pre>
+<h4>Setting up a persistence layer</h4>
+<p>By default, this package only stores values in-memory. But it can be configured to persist preferences to browser storage or a database via an optional persistence layer.</p>
+<p>Use the <code>setPersistenceLayer</code> action to configure how the store persists its preference values.</p>
+<pre><code class="language-js">wp.data.dispatch( 'core/preferences' ).setPersistenceLayer( {
+    // `get` is asynchronous to support persisting preferences using a REST API.
+    // it will immediately be called by `setPersistenceLayer` and the returned
+    // value used as the initial state of the preferences.
+    async get() {
+        return JSON.parse( window.localStorage.getItem( 'MY_PREFERENCES' ) );
+    },
+
+    // `set` is synchronous. It's ok to use asynchronous code, but the
+    // preferences store won't wait for a promise to resolve, the function is
+    // 'fire and forget'.
+    set( preferences ) {
+        window.localStorage.setItem(
+            'MY_PREFERENCES',
+            JSON.stringify( preferences )
+        );
+    },
+} );
+</code></pre>
+<p>For application that persist data to an asynchronous API, a concern is that loading preferences can lead to slower application start up.</p>
+<p>A recommendation is to pre-load any persistence layer data and keep it in a local cache particularly if you’re using an asynchronous API to persist data.</p>
+<p>Note: currently <code>get</code> is called only when <code>setPersistenceLayer</code> is triggered. This may change in the future, so it’s sensible to optimize <code>get</code> using a local cache, as shown in the example below.</p>
+<pre><code class="language-js">// Preloaded data from the server.
+let cache = preloadedData;
+wp.data.dispatch( 'core/preferences' ).setPersistenceLayer( {
+    async get() {
+        if ( cache ) {
+            return cache;
+        }
+
+        // Call to a made-up async API.
+        return await api.preferences.get();
+    },
+    set( preferences ) {
+        cache = preferences;
+        api.preferences.set( { data: preferences } );
+    },
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="components" tabindex="-1"><a href="#components">Components</a></h3>
+<p>The <code>PreferenceToggleMenuItem</code> components can be used with a <code>DropdownMenu</code> to implement a menu for changing preferences.</p>
+<pre><code class="language-jsx">function MyEditorMenu() {
+    return (
+        &lt;DropdownMenu&gt;
+            { () =&gt; (
+                &lt;MenuGroup label={ __( 'Features' ) }&gt;
+                    &lt;PreferenceToggleMenuItem
+                        scope="namespace/editor-or-plugin-name"
+                        name="myPreferenceName"
+                        label={ __( 'My feature' ) }
+                        info={ __( 'A really awesome feature' ) }
+                        messageActivated={ __( 'My feature activated' ) }
+                        messageDeactivated={ __( 'My feature deactivated' ) }
+                    /&gt;
+                &lt;/MenuGroup&gt;
+            ) }
+        &lt;/DropdownMenu&gt;
+    );
+}
+</code></pre>
+<h2 class="is-toc-heading" id="api-reference" tabindex="-1"><a href="#api-reference">API Reference</a></h2>
+<h3 class="is-toc-heading" id="actions" tabindex="-1"><a href="#actions">Actions</a></h3>
+<p>The following set of dispatching action creators are available on the object returned by <code>wp.data.dispatch( 'core/preferences' )</code>:</p>
+<p><!-- START TOKEN(Autogenerated actions|src/store/actions.js) --></p>
+<h4>set</h4>
+<p>Returns an action object used in signalling that a preference should be set to a value</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>scope</em> <code>string</code>: The preference scope (e.g. core/edit-post).</li>
+<li><em>name</em> <code>string</code>: The preference name.</li>
+<li><em>value</em> <code>*</code>: The value to set.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h4>setDefaults</h4>
+<p>Returns an action object used in signalling that preference defaults should be set.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>scope</em> <code>string</code>: The preference scope (e.g. core/edit-post).</li>
+<li><em>defaults</em> <code>Object&lt;string, *&gt;</code>: A key/value map of preference names to values.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h4>setPersistenceLayer</h4>
+<p>Sets the persistence layer.</p>
+<p>When a persistence layer is set, the preferences store will:</p>
+<ul>
+<li>call <code>get</code> immediately and update the store state to the value returned.</li>
+<li>call <code>set</code> with all preferences whenever a preference changes value.</li>
+</ul>
+<p><code>setPersistenceLayer</code> should ideally be dispatched at the start of an application’s lifecycle, before any other actions have been dispatched to the preferences store.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>persistenceLayer</em> <code>WPPreferencesPersistenceLayer</code>: The persistence layer.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h4>toggle</h4>
+<p>Returns an action object used in signalling that a preference should be toggled.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>scope</em> <code>string</code>: The preference scope (e.g. core/edit-post).</li>
+<li><em>name</em> <code>string</code>: The preference name.</li>
+</ul>
+<p><!-- END TOKEN(Autogenerated actions|src/store/actions.js) --></p>
+<h3 class="is-toc-heading" id="selectors" tabindex="-1"><a href="#selectors">Selectors</a></h3>
+<p>The following selectors are available on the object returned by <code>wp.data.select( 'core/preferences' )</code>:</p>
+<p><!-- START TOKEN(Autogenerated selectors|src/store/selectors.js) --></p>
+<h4>get</h4>
+<p>Returns a boolean indicating whether a prefer is active for a particular scope.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>Object</code>: The store state.</li>
+<li><em>scope</em> <code>string</code>: The scope of the feature (e.g. core/edit-post).</li>
+<li><em>name</em> <code>string</code>: The name of the feature.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>*</code>: Is the feature enabled?</li>
+</ul>
+<p><!-- END TOKEN(Autogenerated selectors|src/store/selectors.js) --></p>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

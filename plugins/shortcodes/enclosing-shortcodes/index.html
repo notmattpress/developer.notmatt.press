@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/shortcodes/">Shortcodes</a></span><span class="is-current-page">Enclosing Shortcodes</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Enclosing Shortcodes</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>The are two scenarios for using shortcodes:</p>
+<ul class="wp-block-list">
+<li>The shortcode is a self-closing tag like we seen in the <a href="https://developer.notmatt.press/plugins/shortcodes/basic-shortcodes/">Basic Shortcodes</a> section.</li>
+<li>The shortcode is enclosing content.</li>
+</ul>
+<h2 class="is-toc-heading wp-block-heading" id="enclosing-content" tabindex="-1"><a href="#enclosing-content">Enclosing Content</a></h2>
+<p>Enclosing content with a shortcode allows manipulations on the enclosed content.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">[wporg]content to manipulate[/wporg]</code></pre>
+<p>As seen above, all you need to do in order to enclose a section of content is add a beginning <code>[$tag]</code> and an end <code>[/$tag]</code>, similar to HTML.</p>
+<h2 class="is-toc-heading wp-block-heading" id="processing-enclosed-content" tabindex="-1"><a href="#processing-enclosed-content">Processing Enclosed Content</a></h2>
+<p>Lets get back to our original [wporg] shortcode code:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function wporg_shortcode( $atts = array(), $content = null ) {
+    // do something to $content
+    // always return
+    return $content;
+}
+add_shortcode( 'wporg', 'wporg_shortcode' );</code></pre>
+<p>Looking at the callback function we see that we chose to accept two parameters, <code>$atts</code> and <code>$content</code>. The <code>$content</code> parameter is going to hold our enclosed content. We will talk about <code>$atts</code> later.</p>
+<p>The default value of <code>$content</code> is set to <code>null</code> so we can differentiate between a self-closing tag and enclosing tags by using PHP function <a href="http://php.net/is_null">is_null()</a>.</p>
+<p>The shortcode <code>[$tag]</code>, including its content and the end <code>[/$tag]</code> will be replaced with the <strong>return value</strong> of the handler function.</p>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+It is the responsibility of the handler function to <a href="https://developer.notmatt.press/plugins/security/securing-output/">secure the output</a>.<br/>
+</div></div>
+<h2 class="is-toc-heading wp-block-heading" id="shortcode-ception" tabindex="-1"><a href="#shortcode-ception">Shortcode-ception</a></h2>
+<p>The shortcode parser performs a <strong>single pass</strong> on the content of the post.</p>
+<p>This means that if the <code>$content</code> parameter of a shortcode handler contains another shortcode, it won’t be parsed. In this example, <code>[shortcode]</code> will not be processed:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">[wporg]another [shortcode] is included[/wporg]</code></pre>
+<p>Using shortcodes inside other shortcodes is possible by calling <code>do_shortcode()</code> on the <strong>final return value</strong> of the handler function.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php"><pre class="wp-block-syntaxhighlighter-code">function wporg_shortcode( $atts = array(), $content = null ) {
+	// do something to $content
+	// run shortcode parser recursively
+	$content = do_shortcode( $content );
+	// always return
+	return $content;
+}
+add_shortcode( 'wporg', 'wporg_shortcode' );</pre></code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="limitations" tabindex="-1"><a href="#limitations">Limitations</a></h2>
+<p>The shortcode parser is unable to handle mixing of enclosing and non-enclosing forms of the same <code>[$tag]</code>.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">[wporg] non-enclosed content [wporg]enclosed content[/wporg]</code></pre>
+<p>Instead of being treated as two shortcodes separated by the text “<code>non-enclosed content</code>“, the parser treats this as a single shortcode enclosing “<code>non-enclosed content [wporg]enclosed content</code>“.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

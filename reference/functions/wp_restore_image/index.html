@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_restore_image()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_restore_image()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_restore_image( <span class="arg-type">int</span> <span class="arg-name">$post_id</span> ): <span class="return-type">stdClass</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Restores the metadata for a given attachment.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Attachment post ID.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">stdClass</span> Image restoration message object.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="801"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_restore_image( $post_id ) {
+	$meta             = wp_get_attachment_metadata( $post_id );
+	$file             = get_attached_file( $post_id );
+	$backup_sizes     = get_post_meta( $post_id, '_wp_attachment_backup_sizes', true );
+	$old_backup_sizes = $backup_sizes;
+	$restored         = false;
+	$msg              = new stdClass();
+
+	if ( ! is_array( $backup_sizes ) ) {
+		$msg-&gt;error = __( 'Cannot load image metadata.' );
+		return $msg;
+	}
+
+	$parts         = pathinfo( $file );
+	$suffix        = time() . rand( 100, 999 );
+	$default_sizes = get_intermediate_image_sizes();
+
+	if ( isset( $backup_sizes['full-orig'] ) &amp;&amp; is_array( $backup_sizes['full-orig'] ) ) {
+		$data = $backup_sizes['full-orig'];
+
+		if ( $parts['basename'] !== $data['file'] ) {
+			if ( defined( 'IMAGE_EDIT_OVERWRITE' ) &amp;&amp; IMAGE_EDIT_OVERWRITE ) {
+				// Delete only if it's an edited image.
+				if ( preg_match( '/-e[0-9]{13}\./', $parts['basename'] ) ) {
+					wp_delete_file( $file );
+				}
+			} elseif ( isset( $meta['width'], $meta['height'] ) ) {
+				$backup_sizes[ "full-$suffix" ] = array(
+					'width'    =&gt; $meta['width'],
+					'height'   =&gt; $meta['height'],
+					'filesize' =&gt; $meta['filesize'],
+					'file'     =&gt; $parts['basename'],
+				);
+			}
+		}
+
+		$restored_file = path_join( $parts['dirname'], $data['file'] );
+		$restored      = update_attached_file( $post_id, $restored_file );
+
+		$meta['file']   = _wp_relative_upload_path( $restored_file );
+		$meta['width']  = $data['width'];
+		$meta['height'] = $data['height'];
+		if ( isset( $data['filesize'] ) ) {
+			/*
+			 * Restore the original filesize if it was backed up.
+			 *
+			 * See https://core.trac.wordpress.org/ticket/59684.
+			 */
+			$meta['filesize'] = $data['filesize'];
+		}
+	}
+
+	foreach ( $default_sizes as $default_size ) {
+		if ( isset( $backup_sizes[ "$default_size-orig" ] ) ) {
+			$data = $backup_sizes[ "$default_size-orig" ];
+
+			if ( isset( $meta['sizes'][ $default_size ] ) &amp;&amp; $meta['sizes'][ $default_size ]['file'] !== $data['file'] ) {
+				if ( defined( 'IMAGE_EDIT_OVERWRITE' ) &amp;&amp; IMAGE_EDIT_OVERWRITE ) {
+					// Delete only if it's an edited image.
+					if ( preg_match( '/-e[0-9]{13}-/', $meta['sizes'][ $default_size ]['file'] ) ) {
+						$delete_file = path_join( $parts['dirname'], $meta['sizes'][ $default_size ]['file'] );
+						wp_delete_file( $delete_file );
+					}
+				} else {
+					$backup_sizes[ "$default_size-{$suffix}" ] = $meta['sizes'][ $default_size ];
+				}
+			}
+
+			$meta['sizes'][ $default_size ] = $data;
+		} else {
+			unset( $meta['sizes'][ $default_size ] );
+		}
+	}
+
+	if ( ! wp_update_attachment_metadata( $post_id, $meta )
+		|| ( $old_backup_sizes !== $backup_sizes &amp;&amp; ! update_post_meta( $post_id, '_wp_attachment_backup_sizes', $backup_sizes ) )
+	) {
+		$msg-&gt;error = __( 'Cannot save image metadata.' );
+		return $msg;
+	}
+
+	if ( ! $restored ) {
+		$msg-&gt;error = __( 'Image metadata is inconsistent.' );
+	} else {
+		$msg-&gt;msg = __( 'Image restored successfully.' );
+
+		if ( defined( 'IMAGE_EDIT_OVERWRITE' ) &amp;&amp; IMAGE_EDIT_OVERWRITE ) {
+			delete_post_meta( $post_id, '_wp_attachment_backup_sizes' );
+		}
+	}
+
+	return $msg;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/image-edit.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/image-edit.php#L801">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/image-edit.php#L801-L893">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_file/">wp_delete_file()</a><code>wp-includes/functions.php</code></td><td><p>Deletes a file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/path_join/">path_join()</a><code>wp-includes/functions.php</code></td><td><p>Joins two filesystem paths together.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_metadata/">wp_get_attachment_metadata()</a><code>wp-includes/post.php</code></td><td><p>Retrieves attachment metadata for attachment ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_attachment_metadata/">wp_update_attachment_metadata()</a><code>wp-includes/post.php</code></td><td><p>Updates metadata for an attachment.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/update_post_meta/">update_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Updates a post meta field based on the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_post_meta/">delete_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Deletes a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_attached_file/">get_attached_file()</a><code>wp-includes/post.php</code></td><td><p>Retrieves attached file path based on attachment ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_attached_file/">update_attached_file()</a><code>wp-includes/post.php</code></td><td><p>Updates attachment file path based on attachment ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_relative_upload_path/">_wp_relative_upload_path()</a><code>wp-includes/post.php</code></td><td><p>Returns relative path to an uploaded file.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_meta/">get_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post meta field for the given post ID.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_image_editor/">wp_ajax_image_editor()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles image editing via AJAX.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.9.0/">2.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

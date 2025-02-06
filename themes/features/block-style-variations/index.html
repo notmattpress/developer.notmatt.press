@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/features/">Features</a></span><span class="is-current-page">Block Style Variations</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Block Style Variations</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Block style variations (block styles, for short) let you create alternate styles for individual blocks. Registered styles appear in the user interface, allowing users to quickly switch between the default style and any alternates.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Many features, unfortunately, use the term “variations” in their name. This can be confusing at times. The biggest thing to note is that block style variations are not the same thing as <a href="https://developer.notmatt.press/themes/global-settings-and-styles/style-variations/">global style variations</a> and <a href="https://developer.notmatt.press/themes/features/block-variations/">block variations</a>.</p><p>Often, you will see block style variations referred to as “block styles,” as they are in this article, but this should also not be confused with <a href="https://developer.notmatt.press/themes/features/block-stylesheets/">block stylesheets</a>. The two features can be used to work together, but they are not the same thing.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="what-are-block-styles" tabindex="-1"><a href="#what-are-block-styles">What are block styles?</a></h2>
+<p>Under the hood, block styles are nothing more than CSS classes added to a block’s wrapping element with the name of <code>.is-style-{name}</code>. This allows you to add custom CSS to alter the block’s design in some way.</p>
+<p>In this screenshot, you can see multiple block styles registered for the Image block under the <strong>Styles</strong> panel, and the core <strong>Rounded</strong> option is selected:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-rounded.jpg?ssl=1"><img alt="WordPress post editor showing an Image block with a rounded style in the content canvas." class="wp-image-149272" data-recalc-dims="1" decoding="async" fetchpriority="high" height="1071" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-rounded.jpg?resize=2048%2C1071&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-rounded.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-rounded.jpg?resize=300%2C157&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-rounded.jpg?resize=1024%2C536&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-rounded.jpg?resize=768%2C402&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-rounded.jpg?resize=1536%2C803&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>All that is happening here is that core WordPress and the theme have both registered block styles for the Image block, and the user has selected one of those styles. Then the CSS for that registered style is applied to a block.</p>
+<p>Ultimately, block styles are just a standard way to add a class to a block and customize it with CSS.</p>
+<div class="wp-block-wporg-notice is-tip-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Users can only apply one style to a block at a time. They cannot combine them using the standard design tools. If you need to allow more options, you might consider building custom design tools. Read the <a href="https://developer.notmatt.press/news/tag/beyond-block-styles/">Beyond Block Styles</a> tutorial series on the WordPress Developer Blog to learn how.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="php-based-block-styles" tabindex="-1"><a href="#php-based-block-styles">PHP-based block styles</a></h2>
+<p>Most theme authors will want to register block styles with PHP. Skip ahead to the “JavaScript-based block styles” section if you need or want to work with them via JavaScript.</p>
+<h3 class="is-toc-heading wp-block-heading" id="registering-blocks-styles-with-php" tabindex="-1"><a href="#registering-blocks-styles-with-php">Registering blocks styles with PHP</a></h3>
+<p>To register a block style, use the <a href="https://developer.notmatt.press/reference/functions/register_block_style/"><code>register_block_style()</code></a> PHP  function. The function’s signature looks like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_block_style( 
+	string $block_name, 
+	array $style_properties
+): bool</code></pre>
+<p>The function accepts two parameters and returns <code>true</code> or <code>false</code>, depending on whether the registration was successful:</p>
+<ul class="wp-block-list">
+<li><strong><code>$block_name</code>:</strong> The name of the block, including both the namespace and slug (e.g., <code>core/image</code>).</li>
+<li><strong><code>$style_properties</code>:</strong> An array of arguments that can be used to configure the style:
+<ul class="wp-block-list">
+<li><strong><code>name</code>:</strong> <em>(Required)</em> A unique identifier/slug, which is used to generate the class (e.g., <code>is-style-{name}</code>).</li>
+<li><strong><code>label</code>:</strong> <em>(Required)</em> An human-readable label, which may be translated.</li>
+<li><strong><code>inline_style</code>:</strong> Inline CSS to be printed when the style is in use.</li>
+<li><strong><code>style_handle</code>:</strong> A handle for a registered stylesheet to load for the style.</li>
+<li><strong><code>is_default</code>:</strong> Whether the style should be selected as the default for the block (defaults to <code>false</code>).</li>
+</ul>
+</li>
+</ul>
+<div class="wp-block-wporg-notice is-alert-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p><code>style_handle</code> <a href="https://github.com/WordPress/gutenberg/issues/27244#issuecomment-1407082624">currently has a bug</a> where it only enqueues the stylesheet in the editor but not on the front end. Until that linked ticket is addressed, its use is not recommended.</p></div></div>
+<p>Let’s try creating a block style that gives the Image block a “hand drawn” look so that it looks like this when selected in the editor:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-hand-drawn.jpg?ssl=1"><img alt="WordPress post editor showing an Image block with a hand-drawn style in the content canvas." class="wp-image-149273" data-recalc-dims="1" decoding="async" height="1071" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-hand-drawn.jpg?resize=2048%2C1071&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-hand-drawn.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-hand-drawn.jpg?resize=300%2C157&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-hand-drawn.jpg?resize=1024%2C536&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-hand-drawn.jpg?resize=768%2C402&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-image-hand-drawn.jpg?resize=1536%2C803&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>To register this block style, you need to configure it via the <code>register_block_style()</code> function and add it as a callback on the <code>init</code> hook. </p>
+<p>Add the following code to your theme’s <code>functions.php</code> file to test it out:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'init', 'themeslug_register_block_styles' );
+
+function themeslug_register_block_styles() {
+	register_block_style( 'core/image', array(
+		'name'         =&gt; 'hand-drawn',
+		'label'        =&gt; __( 'Hand Drawn', 'themeslug' ),
+		'inline_style' =&gt; '.wp-block-image.is-style-hand-drawn img {
+			border: 2px solid currentColor;
+			overflow: hidden;
+			box-shadow: 0 4px  10px 0 rgba( 0, 0, 0, 0.3 );
+			border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
+		}'
+    ) );
+}</code></pre>
+<p>If your <code>inline_style</code> argument is more than a few lines of CSS code, you may want to add your CSS to a custom <a href="https://developer.notmatt.press/themes/features/block-stylesheets/">block stylesheet</a> instead.</p>
+<h3 class="is-toc-heading wp-block-heading" id="unregistering-block-styles-with-php" tabindex="-1"><a href="#unregistering-block-styles-with-php">Unregistering block styles with PHP</a></h3>
+<p>To unregister a block style that has been registered with PHP, use the <a href="https://developer.notmatt.press/reference/functions/unregister_block_style/"><code>unregister_block_style()</code></a> function. Here is a look at its signature:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">unregister_block_style(
+	string $block_name, 
+	string $block_style_name 
+): bool</code></pre>
+<p>The function accepts two parameters and returns <code>true</code> or <code>false</code>, depending on whether the registration was successful:</p>
+<ul class="wp-block-list">
+<li><strong><code>$block_name</code>:</strong> The name of the block, including both its namespace and slug (e.g., <code>core/image</code>).</li>
+<li><strong><code>$block_style_name</code>:</strong> The name/slug of a block style that was registered via PHP.</li>
+</ul>
+<p>To unregister the <code>hand-drawn</code> block style you registered earlier, you need to add an action function to the <code>init</code> hook (note the action call has a later priority of <code>99</code> so that it runs after the earlier registration function, which defaults to <code>10</code>):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'init', 'themeslug_register_block_styles', 999 );
+
+function themeslug_register_block_styles() {
+	unregister_block_style( 'core/image', 'hand-drawn' );
+}</code></pre>
+<div class="wp-block-wporg-notice is-alert-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>You can only unregister block styles with PHP if they have been registered via PHP. If the block style was registered with JavaScript, you must also use JavaScript to unregister it. For more information, see the “Unregistering block styles with JavaScript” section below.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="javascript-based-block-styles" tabindex="-1"><a href="#javascript-based-block-styles">JavaScript-based block styles</a></h2>
+<p>To register or unregister block styles via JavaScript, you need to load a JavaScript file on the <code>enqueue_block_editor_assets</code> hook.</p>
+<p>First, create an <code>/assets/js/block-editor.js</code> file in your theme (you can change this name or add it anywhere, but the example below assumes this name and location).</p>
+<p>Then add this code to your theme’s <code>functions.php</code> file to enqueue your script:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'enqueue_block_editor_assets', 'themeslug_block_editor_assets' );
+
+function themeslug_block_editor_assets() {
+	wp_enqueue_script(
+		'themeslug-block-editor',
+		get_theme_file_uri( 'assets/js/block-editor.js' ),
+		array( 
+			'wp-blocks', 
+			'wp-dom-ready', 
+			'wp-edit-post' 
+		)
+	);
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="registering-block-styles-with-javascript" tabindex="-1"><a href="#registering-block-styles-with-javascript">Registering block styles with JavaScript</a></h3>
+<p>To register a block style via JavaScript, you’ll use the <code>registerBlockStyle()</code> function, which works similarly to the <code>register_block_style()</code> PHP function. It just uses JavaScript syntax.</p>
+<p>Let’s use the same example from earlier and register a “hand drawn” Image block style. Add this code to your <code>/assets/js/block-editor.js</code> file:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">wp.blocks.registerBlockStyle( 'core/image', {
+	name: 'hand-drawn',
+	label: 'Hand Drawn'
+} );</code></pre>
+<p>You can also set the <code>isDefault</code> argument to <code>true</code> if this is meant to be the default block style (it’s <code>false</code> by default).</p>
+<p>For adding your custom CSS, you’ll need to load a custom <a href="https://developer.notmatt.press/themes/features/block-stylesheets/">block stylesheet</a> or add your CSS by some other means.</p>
+<h3 class="is-toc-heading wp-block-heading" id="unregistering-block-styles-with-javascript" tabindex="-1"><a href="#unregistering-block-styles-with-javascript">Unregistering block styles with JavaScript</a></h3>
+<p>There is also an <code>unregisterBlockStyle()</code> JavaScript function that is equivalent to the <code>unregister_block_style()</code> PHP function. You can use this to unregister any block styles that have been registered via JavaScript.</p>
+<p>To avoid a race condition where there’s a conflict between when a block style is registered versus when it is unregistered, you need to ensure that you unregister a block style after it has already been registered. The best way to do this is to add it inside a function callback on <code>wp.domReady</code>, which ensures that you unregister after the DOM has loaded.</p>
+<p>To unregister the <code>hand-drawn</code> block style that you registered via JavaScript, add this to your <code>/assets/js/block-editor.js</code> file:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">wp.domReady( function () {
+	wp.blocks.unregisterBlockStyle( 'core/image', 'hand-drawn' );
+} );</code></pre>
+<div class="wp-block-wporg-notice is-alert-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>You can only unregister block styles with JavaScript if they have been registered via JavaScript. If the block style was registered with PHP, you must also use PHP to unregister it. For more information, see the “Unregistering block styles with PHP” section above.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="customizing-block-styles-via-theme-json" tabindex="-1"><a href="#customizing-block-styles-via-theme-json">Customizing block styles via theme.json</a></h2>
+<p>It’s possible to customize the design of the core WordPress block styles. This means that you might not need to add custom CSS at all to get the look you’re after.</p>
+<p>It is also recommended to use this method if possible for your customizations because they appear in the <strong>Appearance &gt; Editor &gt; Styles</strong> interface. Plus, your theme users can make their own changes to them if desired.</p>
+<p>Let’s try to modify the Outline style of core Button block so that it has a drop-shadow that creates a double-border effect:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-button-outlined.png?ssl=1"><img alt="WordPress post editor with three outlined buttons in the content canvas. Each has a solid-border drop-shadow." class="wp-image-149274" data-recalc-dims="1" decoding="async" height="1235" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-button-outlined.png?resize=2400%2C1235&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-button-outlined.png?w=2400&amp;ssl=1 2400w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-button-outlined.png?resize=300%2C154&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-button-outlined.png?resize=1024%2C527&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-button-outlined.png?resize=768%2C395&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-button-outlined.png?resize=1536%2C790&amp;ssl=1 1536w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-styles-button-outlined.png?resize=2048%2C1054&amp;ssl=1 2048w" width="2400"/></a></figure>
+<p>To do this, open your <code>theme.json</code> file. You’ll need to target the <code>styles.blocks.core/button.variations.outline</code> property. It works just like any other <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles/">style that you can add via <code>theme.json</code></a>.</p>
+<p>Try this code snippet in your <code>theme.json</code> file:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"styles": {
+		"blocks": {
+			"core/button": {
+				"variations": {
+					"outline": {
+						"border": {
+							"color": "var:preset|color|black",
+							"radius": "0",
+							"style": "solid",
+							"width": "3px"
+						},
+						"shadow": "var:preset|shadow|outlined",
+						"spacing": {
+							"padding": {
+								"top": "0.5rem",
+								"bottom": "0.5rem",
+								"left": "1.5rem",
+								"right": "1.5rem"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}</code></pre>
+<p>Feel free to adjust that and customize it to your liking. Then have fun modifying other block styles.</p>
+<div class="wp-block-wporg-notice is-alert-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>It is not currently possible to customize your custom-registered block styles via <code>theme.json</code>. You can only style those registered by core WordPress at the moment. For more information, check out the related <a href="https://github.com/WordPress/gutenberg/issues/49602">feature request on GitHub</a>.</p></div></div>
+<p>The following are the core WordPress blocks and their styles that you can customize via <code>theme.json</code>:</p>
+<ul class="wp-block-list">
+<li><strong><code>core/button</code>:</strong> <code>outline</code>, <code>fill</code></li>
+<li><strong><code>core/image</code>: </strong><code>rounded</code></li>
+<li><strong><code>core/quote</code>:</strong> <code>plain</code></li>
+<li><strong><code>core/site-logo</code>:</strong> <code>rounded</code></li>
+<li><strong><code>core/separator</code>:</strong> <code>wide</code>, <code>dots</code></li>
+<li><strong><code>core/social-links</code>:</strong> <code>logos-only</code>, <code>pill-shape</code></li>
+<li><strong><code>core/table</code>:</strong> <code>stripes</code></li>
+<li><strong><code>core/tag-cloud</code></strong>: <code>outline</code></li>
+</ul>
+<p>For a deeper dive into styling core blocks, read <a href="https://developer.notmatt.press/news/2023/02/creating-custom-block-styles-in-wordpress-themes/">Customizing core block style variations via theme.json</a> on the WordPress Developer Blog.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

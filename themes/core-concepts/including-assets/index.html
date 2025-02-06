@@ -1,0 +1,276 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/core-concepts/">Core Concepts</a></span><span class="is-current-page">Including Assets</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Including Assets</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Many block themes do not need to load any assets. For design aspects, specifically, much of this can be handled through the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/">Global Settings and Styles</a> system. But there are times when you might need to include a CSS stylesheet, custom JavaScript file, or even other types of media.</p>
+<p>If you are familiar with HTML, you might be accustomed to including CSS stylesheets via the <code>&lt;link rel=”stylesheet”/&gt;</code> or <code>&lt;style&gt;</code> tags. The same might be true for including JavaScript via the <code>&lt;script&gt;</code> tag. But you should never manually hard code these HTML elements in your theme. </p>
+<p>WordPress has specific hooks for determining when to load scripts/styles and functions for generating the markup. This ensures that WordPress, any active plugins, and your theme all play nicely together.</p>
+<p>In this document, you will learn the necessary functions for generating the proper URL to point to asset files and how to include scripts, styles, and other assets in your theme. </p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>This documentation is a leap forward in comparison to some of the previous pages in the Core Concepts chapter. You will need some baseline PHP and HTML knowledge to follow along. You must also understand how to use your <a href="https://developer.notmatt.press/themes/core-concepts/custom-functionality/">theme’s <code>functions.php</code> file</a>. This is necessary for loading CSS stylesheet and JavaScript files.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="url-and-directory-path-functions" tabindex="-1"><a href="#url-and-directory-path-functions">URL and directory path functions</a></h2>
+<p>Before including assets, you should become familiar with some of the utility functions that WordPress provides for getting URLs and directory paths within a theme. You should always use these helper functions when including any type of asset to ensure the URL or path is correct.</p>
+<p>Three of the primary URL helper functions are:</p>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/reference/functions/get_stylesheet_uri/"><code>get_stylesheet_uri()</code></a>: Returns the active theme’s <code>style.css</code> file URL.</li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_theme_file_uri/"><code>get_theme_file_uri( $file )</code></a>: Returns the active theme’s URL, with an optional <code>$file</code> parameter. Falls back to the parent theme if a child theme is active and the file doesn’t exist.</li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_parent_theme_file_uri/"><code>get_parent_theme_file_uri( $file )</code></a>: Returns the parent theme’s URL, with an optional <code>$file</code> path.</li>
+</ul>
+<p>For directory paths, which are needed less often for assets, there are two primary functions:</p>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/reference/functions/get_theme_file_path/"><code>get_theme_file_path( $file )</code></a>: Returns the active theme’s directory path, with an optional <code>$file</code> parameter. Falls back to the parent theme if a child theme is active and the file doesn’t exist.</li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_parent_theme_file_path/"><code>get_parent_theme_file_path( $file )</code></a>: Returns the parent theme’s directory path, with an optional <code>$file</code> parameter.</li>
+</ul>
+<h2 class="is-toc-heading wp-block-heading" id="including-css" tabindex="-1"><a href="#including-css">Including CSS</a></h2>
+<p><a href="https://developer.notmatt.press/reference/functions/wp_enqueue_style/"><code>wp_enqueue_style()</code></a> is the primary function for enqueueing a stylesheet, which tells WordPress that you want to put it in the queue to load. You would use this function within an action hook callback in your <code>functions.php</code> file, which you learned about in <a href="https://developer.notmatt.press/themes/core-concepts/custom-functionality/">Custom Functionality</a>. You’ll learn which action hooks to use for specific scenarios in the next sections.</p>
+<p>Take a look at the function signature:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_style( 
+	string $handle, 
+	string $src           = '', 
+	string[] $deps        = array(), 
+	string|bool|null $ver = false, 
+	string $media         = 'all'
+);</code></pre>
+<p>You can use these parameters:</p>
+<ul class="wp-block-list">
+<li><strong><code>$handle</code></strong> is a unique name/ID for the stylesheet and should be prefixed with your theme slug.</li>
+<li><strong><code>$src</code></strong> is the file URL of your stylesheet. While it is technically an optional parameter, it is required to actually load a specific stylesheet.</li>
+<li><strong><code>$deps</code></strong> is an optional array of other stylesheet handles that your stylesheet is dependent upon.</li>
+<li><strong><code>$ver</code></strong> sets the version number of your stylesheet and is used for cache busting. Defaults to the current WordPress version.</li>
+<li><strong><code>$media</code></strong> is for specifying which type of media to load this stylesheet for, such as <code>all</code> (default), <code>screen</code>, <code>print</code>, or <code>handheld</code>.</li>
+</ul>
+<p>If you were enqueuing a stylesheet located at <code>/assets/css/example.css</code> in your theme, your function call might look like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_style( 
+	'theme-slug-example',
+	get_parent_theme_file_uri( 'assets/css/example.css' ),
+	array(),
+	wp_get_theme()-&gt;get( 'Version' ),
+	'all'
+);</code></pre>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>The above code uses <a href="https://developer.notmatt.press/reference/functions/wp_get_theme/"><code>wp_get_theme()</code></a> to grab the theme’s version number for cache busting, but you can leave it at the default or use something custom altogether.</p></div></div>
+<h3 class="is-toc-heading wp-block-heading" id="front-end-stylesheets" tabindex="-1"><a href="#front-end-stylesheets">Front-end stylesheets</a></h3>
+<p>When loading stylesheets on the front end of a website, you will use the <a href="https://developer.notmatt.press/reference/hooks/wp_enqueue_scripts/"><code>wp_enqueue_scripts</code></a> hook for most scenarios.</p>
+<p>Let’s assume that you wanted to load your theme’s <code>style.css</code> file using the <code>get_stylesheet_uri()</code> function. You would do this by adding the following code to your <code>functions.php</code> file:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'wp_enqueue_scripts', 'theme_slug_enqueue_styles' );
+
+function theme_slug_enqueue_styles() {
+	wp_enqueue_style( 
+		'theme-slug-style', 
+		get_stylesheet_uri()
+	);
+}</code></pre>
+<p>Remember that you can also pass other parameters to the <code>wp_enqueue_style()</code> function if needed. The above code is the minimum needed to load the stylesheet.</p>
+<p>Let’s further suppose that you wanted to load a second stylesheet located at <code>/assets/css/primary.css</code> in your theme. For this, you would use the <code>get_parent_theme_file_uri()</code> function to get the correct URL. </p>
+<p>Here is what your code would look like with both stylesheets enqueued:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'wp_enqueue_scripts', 'theme_slug_enqueue_styles' );
+
+function theme_slug_enqueue_styles() {
+	wp_enqueue_style(
+		'theme-slug-style', 
+		get_stylesheet_uri()
+	);
+
+	wp_enqueue_style( 
+		'theme-slug-primary',
+		get_parent_theme_file_uri( 'assets/css/primary.css' )
+	);
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="inline-styles" tabindex="-1"><a href="#inline-styles">Inline styles</a></h3>
+<p>There are times when you might need to add some inline CSS to the <code>&lt;head&gt;</code> area on the front end. WordPress has the <a href="https://developer.notmatt.press/reference/functions/wp_add_inline_style/"><code>wp_add_inline_style()</code></a> function for this specific scenario.</p>
+<p>Here is a look at the function signature:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_add_inline_style( 
+	string $handle, 
+	string $data 
+);</code></pre>
+<p>In this case, you must pass in a <code>$handle</code> parameter that matches a handle of an existing stylesheet that is enqueued for the page. The <code>$data</code> parameter is your custom CSS code.</p>
+<p>Let’s extend the code from the previous section by adding a small bit of CSS that sets the body background color to a light gray:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'wp_enqueue_scripts', 'theme_slug_enqueue_styles' );
+
+function theme_slug_enqueue_styles() {
+	wp_enqueue_style(
+		'theme-slug-style', 
+		get_stylesheet_uri()
+	);
+
+	wp_enqueue_style( 
+		'theme-slug-primary',
+		get_parent_theme_file_uri( 'assets/css/primary.css' )
+	);
+
+	wp_add_inline_style( 
+		'theme-slug-primary', 
+		'body { background: #eee; }'
+	);
+}</code></pre>
+<p>In the <code>wp_add_inline_style()</code> function call, the code uses the existing <code>theme-slug-primary</code> handle to attach an inline style.</p>
+<h3 class="is-toc-heading wp-block-heading" id="editor-stylesheets" tabindex="-1"><a href="#editor-stylesheets">Editor stylesheets</a></h3>
+<p>When creating a theme with custom CSS on the front end, you will almost always want your custom styles to also appear in the editor. This will create a consistent user experience across the site. But WordPress does not automatically load your front-end stylesheets in the editor.</p>
+<p>For that, you will need to use the <a href="https://developer.notmatt.press/reference/functions/add_editor_style/"><code>add_editor_style()</code></a> function:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_editor_style( array|string $stylesheet = 'editor-style.css' );</code></pre>
+<p>It accepts a single parameter of <code>$stylesheet</code>, which can be a single stylesheet filename or an array of filenames. These can be relative to the theme folder or a full URL.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Note that when using relative URLs, a file in the child theme with the same filename will take priority. That’s why it’s generally best practice to use the full stylesheet URL.</p></div></div>
+<p>This code snippet shows how to add the active theme’s main <code>style.css</code> file as an editor style:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'after_setup_theme', 'theme_slug_setup' );
+
+function theme_slug_setup() {
+	add_editor_style( get_stylesheet_uri() );
+}</code></pre>
+<p>If you wanted to add both the <code>style.css</code> file and <code>primary.css</code> from the earlier examples, you could pass them in as an array:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'after_setup_theme', 'theme_slug_setup' );
+
+function theme_slug_setup() {
+	add_editor_style( array(
+		get_stylesheet_uri(),
+		get_parent_theme_file_uri( 'assets/css/primary.css' )
+	) );
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="block-stylesheets" tabindex="-1"><a href="#block-stylesheets">Block stylesheets</a></h3>
+<p>WordPress also includes a <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_block_style/"><code>wp_enqueue_block_style()</code></a> function for loading per-block stylesheets in the editor and on the front end. This is covered in full detail in the <a href="https://developer.notmatt.press/themes/features/block-stylesheets/">Block Stylesheets</a> documentation.</p>
+<p>For an advanced exploration of block stylesheets, read <a href="https://developer.notmatt.press/news/2022/12/leveraging-theme-json-and-per-block-styles-for-more-performant-themes/">Leveraging theme.json and per-block styles for more performant themes</a> on the WordPress Developer Blog.</p>
+<h2 class="is-toc-heading wp-block-heading" id="including-javascript" tabindex="-1"><a href="#including-javascript">Including JavaScript</a></h2>
+<p>Like stylesheets, WordPress has a primary function for enqueueing JavaScript files: <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/"><code>wp_enqueue_script()</code></a>. You would also use this function within an action hook callback in your <code>functions.php</code> file, and you’ll learn which hooks to use in the following sections.</p>
+<p>Take a look at the function signature:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_script( 
+	string $handle, 
+	string $src           = '', 
+	string[] $deps        = array(), 
+	string|bool|null $ver = false, 
+	array|bool $in_footer = false
+);</code></pre>
+<p>You can use these parameters:</p>
+<ul class="wp-block-list">
+<li><strong><code>$handle</code>:</strong> A unique name/ID for the script and should be prefixed with your theme slug.</li>
+<li><strong><code>$src</code>:</strong> The file URL of your script. While it is technically an optional parameter, it is required to actually load a specific script</li>
+<li><strong><code>$deps</code>:</strong> An optional array of other script handles that your script is dependent upon.</li>
+<li><strong><code>$ver</code>:</strong> Sets the version number of your script and is used for cache busting. Defaults to the current WordPress version.</li>
+<li><strong><code>$in_footer</code>:</strong> Determines whether to load the script in the header or footer. As of WordPress 6.3, this parameter accepts an array of values:
+<ul class="wp-block-list">
+<li><strong><code>strategy</code>:</strong> Accepts either <code>'defer'</code> (default) or <code>'async'</code> to set the script-loading strategy.</li>
+<li><strong><code>in_footer</code>:</strong> A boolean value to determine whether to load the script in the header or footer.</li>
+</ul>
+</li>
+</ul>
+<p>If you were enqueuing a script located at <code>/assets/js/example.js</code> in your theme, your function call might look like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_script( 
+	'theme-slug-example',
+	get_parent_theme_file_uri( 'assets/js/example.js' ),
+	array(),
+	wp_get_theme()-&gt;get( 'Version' ),
+	true
+);</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="front-end-javascript" tabindex="-1"><a href="#front-end-javascript">Front-end JavaScript</a></h3>
+<p>When loading stylesheets on the front end of a website, you will use the <a href="https://developer.notmatt.press/reference/hooks/wp_enqueue_scripts/"><code>wp_enqueue_scripts</code></a> hook for most scenarios.</p>
+<p>Suppose you had a custom navigation script located at <code>assets/js/navigations.js</code> in your theme. For this, you would use the <code>get_parent_theme_file_uri()</code> function to get the correct URL. </p>
+<p>Here is what your function would look like when enqueueing the script:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'wp_enqueue_scripts', 'theme_slug_enqueue_scripts' );
+
+function theme_slug_enqueue_scripts() {
+	wp_enqueue_script( 
+		'theme-slug-navigation',
+		get_parent_theme_file_uri( 'assets/js/navigation.js' ),
+		array(),
+		wp_get_theme()-&gt;get( 'Version' ),
+		true
+	);
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="inline-javascript" tabindex="-1"><a href="#inline-javascript">Inline JavaScript</a></h3>
+<p>Sometimes you might want to add some inline JavaScript to the <code>&lt;head&gt;</code> area on the front end. WordPress has the <a href="https://developer.notmatt.press/reference/functions/wp_add_inline_script/"><code>wp_add_inline_script()</code></a> function for this purpose.</p>
+<p>Take a look at the function signature:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_add_inline_script( 
+	string $handle, 
+	string $data, 
+	string $position = 'after' 
+);</code></pre>
+<p>Like its counterpart for styles, you must attach this to an enqueued script via the <code>$handle</code> parameter. The secondary parameter, <code>$data</code>, should be the JavaScript code itself. The difference here is the addition of a third parameter, <code>$position</code>, which lets you position the inline script before or after the script that it is attached to.</p>
+<p>The following code builds on top of the navigation script from the previous section by adding an inline script to it:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'wp_enqueue_scripts', 'theme_slug_enqueue_scripts' );
+
+function theme_slug_enqueue_scripts() {
+	wp_enqueue_script( 
+		'theme-slug-navigation',
+		get_parent_theme_file_uri( 'assets/js/navigation.js' ),
+		array(),
+		wp_get_theme()-&gt;get( 'Version' ),
+		true
+	);
+
+	wp_add_inline_script( 
+		'theme-slug-navigation', 
+		'console.log( "Testing" );'
+	);
+}</code></pre>
+<p>In the <code>wp_add_inline_script()</code> function call, the code uses the existing <code>theme-slug-navigation</code> handle to attach the inline style.</p>
+<h3 class="is-toc-heading wp-block-heading" id="editor-javascript" tabindex="-1"><a href="#editor-javascript">Editor JavaScript</a></h3>
+<p>When you need to load a JavaScript file for the block editor, you must use the <a href="https://developer.notmatt.press/reference/hooks/enqueue_block_editor_assets/"><code>enqueue_block_editor_assets</code></a> hook. Note that this is for loading scripts on the admin page itself and not within the content iframe.</p>
+<p>Suppose you had an <code>assets/js/editor.js</code> file that you needed to load for the editor. Your code should look like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'enqueue_block_editor_assets', 'theme_slug_enqueue_editor_scripts' );
+
+function theme_slug_enqueue_editor_scripts() {
+	wp_enqueue_script( 
+		'theme-slug-editor',
+		get_parent_theme_file_uri( 'assets/js/editor.js' ),
+		array(),
+		wp_get_theme()-&gt;get( 'Version' ),
+		true
+	);
+}</code></pre>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Generally, themes wouldn’t need to load JavaScript for the editor itself. But for advanced use cases, it may be necessary. It is also recommended to integrate with the <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-scripts/"><code>@wordpress/scripts</code></a> package for easier management. For more information on how to do this, read <a href="https://developer.notmatt.press/news/2023/07/beyond-block-styles-part-1-using-the-wordpress-scripts-package-with-themes/">Beyond block styles, part 1: using the WordPress scripts package with themes</a>.</p></div></div>
+<h3 class="is-toc-heading wp-block-heading" id="default-wordpress-scripts" tabindex="-1"><a href="#default-wordpress-scripts">Default WordPress scripts</a></h3>
+<p>WordPress bundles many custom and third-party scripts. You should always use these scripts if you need one of them instead of loading a custom version. This ensures that you avoid conflicts with plugins. </p>
+<p>Some of the scripts are referenced in the <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/"><code>wp_enqueue_script()</code> documentation</a>, but that list may not always be up to date. You can find the full list of included files in <a href="https://core.trac.wordpress.org/browser/trunk/src/wp-includes/script-loader.php">wp-includes/script-loader.php</a>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="including-images" tabindex="-1"><a href="#including-images">Including images</a></h2>
+<p>Block themes will not often need to include images, except in patterns. You will learn more about these in the <a href="https://developer.notmatt.press/themes/features/block-patterns/">Block Patterns</a> documentation. But for a quick overview, let’s take a look at how to reference an image in your theme.</p>
+<p>Assuming you had an image file located at <code>assets/img/example.webp</code>, you would use this code to reference the correct URL:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;img src="&lt;?php echo esc_url( get_parent_theme_file_uri( 'assets/img/example.webp' ) ); ?&gt;" alt="" /&gt;</code></pre>
+<p>Note that the above example uses <code>get_parent_theme_file_uri()</code>. In most cases, this will be the correct function.</p>
+<p>But if you are building a child theme or a theme where you would like to allow other child theme authors to override the image, you can use <code>get_theme_file_uri()</code> instead:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;img src="&lt;?php echo esc_url( get_theme_file_uri( 'assets/img/example.webp' ) ); ?&gt;" alt="" /&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="including-fonts" tabindex="-1"><a href="#including-fonts">Including fonts</a></h2>
+<p>Typically, you would expect fonts to fall directly under the assets documentation. But WordPress has special methods for loading fonts via the <code>theme.json</code> file that integrates with the editor. This documentation is under the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/typography/">Typography</a> page of the Global Settings and Styles chapter.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

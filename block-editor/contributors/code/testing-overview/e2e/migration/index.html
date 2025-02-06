@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/testing-overview/">Testing Overview</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/testing-overview/e2e/">End-to-End Testing</a></span><span class="is-current-page">Migration guide</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Migration guide</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>This document outlines a typical flow of migrating a Jest + Puppeteer test to Playwright. Note that the migration process is also a good opportunity to refactor or rewrite parts of the tests. Please read the <a href="https://github.com/WordPress/gutenberg/tree/HEAD/docs/contributors/code/e2e/README.md#best-practices">best practices</a> guide before starting the migration.</p>
+<h2 class="is-toc-heading" id="migration-steps-for-tests" tabindex="-1"><a href="#migration-steps-for-tests">Migration steps for tests</a></h2>
+<ol>
+<li>Choose a test suite to migrate in <code>packages/e2e-tests/specs</code>, rename <code>.test.js</code> into <code>.spec.js</code> and put it in the same folder structure inside <code>test/e2e/specs</code>.</li>
+<li>Require the test helpers from <code>@wordpress/e2e-test-utils-playwright</code>:<br/>
+<code>js<br/>
+const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );</code></li>
+<li>Change all occurrences of <code>describe</code>, <code>beforeAll</code>, <code>beforeEach</code>, <code>afterEach</code> and <code>afterAll</code> with the <code>test.</code> prefix. For instance, <code>describe</code> turns into <code>test.describe</code>.</li>
+<li>Use the <a href="https://playwright.dev/docs/test-fixtures">fixtures API</a> to require previously global variables like <code>page</code> and <code>browser</code>.</li>
+<li>Delete all the imports of <code>e2e-test-utils</code>. Instead, use the fixtures API to directly get the <code>admin</code>, <code>editor</code>, <code>pageUtils</code> and <code>requestUtils</code>. (However, <code>admin</code>, <code>editor</code> and <code>pageUtils</code> are not allowed in <code>beforeAll</code> and <code>afterAll</code>, rewrite them using <code>requestUtils</code> instead.)</li>
+<li>If there’s a missing util, try to inline the operations directly in the test if there are only a few steps. If you think it deserves to be implemented as a test util, then follow the <a href="#migration-steps-for-test-utils">guide</a> below.</li>
+<li>Manually migrate other details in the tests following the proposed <a href="https://github.com/WordPress/gutenberg/tree/HEAD/docs/contributors/code/e2e/README.md#best-practices">best practices</a>. Note that even though the differences in the API of Playwright and Puppeteer are similar, some manual changes are still required.</li>
+</ol>
+<h2 class="is-toc-heading" id="migration-steps-for-test-utils" tabindex="-1"><a href="#migration-steps-for-test-utils">Migration steps for test utils</a></h2>
+<p>Before migrating a test utility function, think twice about whether it’s necessary. Playwright offers a lot of readable and powerful APIs which make a lot of the utils obsolete. Try implementing the same thing inline directly in the test first. Only follow the below guide if that doesn’t work for you. Some examples of utils that deserve to be implemented in the <code>e2e-test-utils-playwright</code> package include complex browser APIs (like <code>pageUtils.dragFiles</code> and <code>pageUtils.pressKeys</code>) and APIs that set states (<code>requestUtils.*</code>).</p>
+<div class="callout callout-info">
+The <code>e2e-test-utils-playwright</code> package is not meant to be a drop-in replacement of the Jest + Puppeteer’s <code>e2e-test-utils</code> package. Some utils are only created to ease the migration process, but they are not necessarily required.
+</div>
+<p>Playwright utilities are organized a little differently from those in the <code>e2e-test-utils</code> package. The <code>e2e-test-utils-playwright</code> package has the following folders that utils are divided up into:<br/>
+– <code>admin</code> – Utilities related to WordPress admin or WordPress admin’s user interface (e.g. <code>visitAdminPage</code>).<br/>
+– <code>editor</code> – Utilities for the block editor (e.g. <code>clickBlockToolbarButton</code>).<br/>
+– <code>pageUtils</code> – General utilities for interacting with the browser (e.g. <code>pressKeys</code>).<br/>
+– <code>requestUtils</code> – Utilities for making REST API requests (e.g. <code>activatePlugin</code>). These utilities are used for setup and teardown of tests.</p>
+<ol>
+<li>Copy the existing file in <code>e2e-test-utils</code> and paste it in the <code>admin</code>, <code>editor</code>, <code>page</code> or <code>request</code> folder in <code>e2e-test-utils-playwright</code> depending on the type of util.</li>
+<li>Update any parts of the util that need to be rewritten:
+<ul>
+<li>The <code>page</code> and <code>browser</code> variables are available in <code>admin</code>, <code>editor</code> and <code>pageUtils</code> as <code>this.page</code> and <code>this.browser</code>.</li>
+<li>All the other utils in the same class are available in <code>this</code> and bound to the same instance. You can remove any <code>import</code> statements and use <code>this</code> to access them.</li>
+<li>Consider updating the util to use TypeScript if you’re comfortable doing so.</li>
+</ul>
+</li>
+<li>Import the newly migrated util in <code>index.ts</code> and put it inside the <code>Admin</code>/<code>Editor</code>/<code>PageUtils</code>/<code>RequestUtils</code> class as an instance field.</li>
+</ol>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

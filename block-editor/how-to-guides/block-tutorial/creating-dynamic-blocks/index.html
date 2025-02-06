@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/block-tutorial/">Blocks</a></span><span class="is-current-page">Creating dynamic blocks</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Creating dynamic blocks</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Dynamic blocks are blocks that build their structure and content on the fly when the block is rendered on the front end.</p>
+<p>There are two primary uses for dynamic blocks:</p>
+<ol>
+<li>Blocks where content should change even if a post has not been updated. One example from WordPress itself is the Latest Posts block. This block will update everywhere it is used when a new post is published.</li>
+<li>Blocks where updates to the code (HTML, CSS, JS) should be immediately shown on the front end of the website. For example, if you update the structure of a block by adding a new class, adding an HTML element, or changing the layout in any other way, using a dynamic block ensures those changes are applied immediately on all occurrences of that block across the site. (If a dynamic block is not used then when block code is updated Gutenberg’s <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-edit-save/#validation">validation process</a> generally applies, causing users to see the validation message, “This block appears to have been modified externally”).</li>
+</ol>
+<p>For many dynamic blocks, the <code>save</code> callback function should be returned as <code>null</code>, which tells the editor to save only the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-attributes/">block attributes</a> to the database. These attributes are then passed into the server-side rendering callback, so you can decide how to display the block on the front end of your site. When you return <code>null</code>, the editor will skip the block markup validation process, avoiding issues with frequently-changing markup.</p>
+<p>If you are using <a href="https://developer.notmatt.press/block-editor/how-to-guides/block-tutorial/nested-blocks-inner-blocks/">InnerBlocks</a> in a dynamic block you will need to save the <code>InnerBlocks</code> in the <code>save</code> callback function using <code>&lt;InnerBlocks.Content/&gt;</code></p>
+<p>You can also save an HTML representation of the block. If you provide a server-side rendering callback, this HTML will be replaced with the output of your callback, but will be rendered if your block is deactivated or your render callback is removed.</p>
+<p>Block attributes can be used for any content or setting you want to save for that block. In the first example above, with the latest posts block, the number of latest posts you want to show could be saved as an attribute. Or in the second example, attributes can be used for each piece of content you want to show in the front end – such as heading text, paragraph text, an image, a URL, etc.</p>
+<p>The following code example shows how to create a dynamic block that shows only the last post as a link.</p>
+<pre><code class="language-jsx">import { registerBlockType } from '@wordpress/blocks';
+import { useSelect } from '@wordpress/data';
+import { useBlockProps } from '@wordpress/block-editor';
+
+registerBlockType( 'gutenberg-examples/example-dynamic', {
+    apiVersion: 3,
+    title: 'Example: last post',
+    icon: 'megaphone',
+    category: 'widgets',
+
+    edit: () =&gt; {
+        const blockProps = useBlockProps();
+        const posts = useSelect( ( select ) =&gt; {
+            return select( 'core' ).getEntityRecords( 'postType', 'post' );
+        }, [] );
+
+        return (
+            &lt;div { ...blockProps }&gt;
+                { ! posts &amp;&amp; 'Loading' }
+                { posts &amp;&amp; posts.length === 0 &amp;&amp; 'No Posts' }
+                { posts &amp;&amp; posts.length &gt; 0 &amp;&amp; (
+                    &lt;a href={ posts[ 0 ].link }&gt;
+                        { posts[ 0 ].title.rendered }
+                    &lt;/a&gt;
+                ) }
+            &lt;/div&gt;
+        );
+    },
+} );
+</code></pre>
+<p>Because it is a dynamic block it doesn’t need to override the default <code>save</code> implementation on the client. Instead, it needs a server component. The contents in the front of your site depend on the function called by the <code>render_callback</code> property of <code>register_block_type</code>.</p>
+<pre><code class="language-php">&lt;?php
+
+/**
+ * Plugin Name: Gutenberg examples dynamic
+ */
+
+function gutenberg_examples_dynamic_render_callback( $block_attributes, $content ) {
+    $recent_posts = wp_get_recent_posts( array(
+        'numberposts' =&gt; 1,
+        'post_status' =&gt; 'publish',
+    ) );
+    if ( count( $recent_posts ) === 0 ) {
+        return 'No posts';
+    }
+    $post = $recent_posts[ 0 ];
+    $post_id = $post['ID'];
+    return sprintf(
+        '&lt;a class="wp-block-my-plugin-latest-post" href="%1$s"&gt;%2$s&lt;/a&gt;',
+        esc_url( get_permalink( $post_id ) ),
+        esc_html( get_the_title( $post_id ) )
+    );
+}
+
+function gutenberg_examples_dynamic() {
+    // automatically load dependencies and version
+    $asset_file = include( plugin_dir_path( __FILE__ ) . 'build/index.asset.php');
+
+    wp_register_script(
+        'gutenberg-examples-dynamic',
+        plugins_url( 'build/block.js', __FILE__ ),
+        $asset_file['dependencies'],
+        $asset_file['version']
+    );
+
+    register_block_type( 'gutenberg-examples/example-dynamic', array(
+        'api_version' =&gt; 3,
+        'editor_script' =&gt; 'gutenberg-examples-dynamic',
+        'render_callback' =&gt; 'gutenberg_examples_dynamic_render_callback'
+    ) );
+
+}
+add_action( 'init', 'gutenberg_examples_dynamic' );
+
+</code></pre>
+<p>There are a few things to notice:</p>
+<ul>
+<li>The <code>edit</code> function still shows a representation of the block in the editor’s context (this could be very different from the rendered version, it’s up to the block’s author)</li>
+<li>The built-in <code>save</code> function just returns <code>null</code> because the rendering is performed server-side.</li>
+<li>The server-side rendering is a function taking the block and the block inner content as arguments, and returning the markup (quite similar to shortcodes)</li>
+</ul>
+<p><strong>Note :</strong> For common customization settings including color, border, spacing customization and more, we will see on the <a href="https://developer.notmatt.press/block-editor/how-to-guides/block-tutorial/block-supports-in-dynamic-blocks/">next chapter</a> how you can rely on block supports to provide such functionality in an efficient way.</p>
+<h2>Live rendering in the block editor</h2>
+<p>Gutenberg 2.8 added the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-server-side-render/"><code>&lt;ServerSideRender&gt;</code></a> block which enables rendering to take place on the server using PHP rather than in JavaScript.</p>
+<p><em>Server-side render is meant as a fallback; client-side rendering in JavaScript is always preferred (client rendering is faster and allows better editor manipulation).</em></p>
+<pre><code class="language-jsx">import { registerBlockType } from '@wordpress/blocks';
+import ServerSideRender from '@wordpress/server-side-render';
+import { useBlockProps } from '@wordpress/block-editor';
+
+registerBlockType( 'gutenberg-examples/example-dynamic', {
+    apiVersion: 3,
+    title: 'Example: last post',
+    icon: 'megaphone',
+    category: 'widgets',
+
+    edit: function ( props ) {
+        const blockProps = useBlockProps();
+        return (
+            &lt;div { ...blockProps }&gt;
+                &lt;ServerSideRender
+                    block="gutenberg-examples/example-dynamic"
+                    attributes={ props.attributes }
+                /&gt;
+            &lt;/div&gt;
+        );
+    },
+} );
+</code></pre>
+<p>Note that this code uses the <code>wp-server-side-render</code> package but not <code>wp-data</code>. Make sure to update the dependencies in the PHP code. You can use wp-scripts to automatically build dependencies (see the <a href="https://github.com/WordPress/block-development-examples/tree/trunk/plugins/basic-esnext-a2ab62">block-development-examples repo</a> for PHP code setup).</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

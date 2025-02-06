@@ -1,0 +1,323 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">date_i18n()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>date_i18n()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">date_i18n( <span class="arg-type">string</span> <span class="arg-name">$format</span>,  <span class="arg-type">int|bool</span> <span class="arg-name">$timestamp_with_offset</span> = <span class="arg-default">false</span>,  <span class="arg-type">bool</span> <span class="arg-name">$gmt</span> = <span class="arg-default">false</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the date in localized format, based on a sum of Unix timestamp and timezone offset in seconds.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If the locale specifies the locale month and weekday, then the locale will take over the format for the date. If it isn’t, then the date format string will be used instead.</p>
+<p>Note that due to the way WP typically generates a sum of timestamp and offset with <code>strtotime()</code>, it implies offset added at a <em>current</em> time, not at the time the timestamp represents. Storing such timestamps or calculating them differently will lead to invalid output.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$format</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Format to display the date.</span></div></dd><dt><code>$timestamp_with_offset</code><span class="type"><span class="int">int</span>|<span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A sum of Unix timestamp and timezone offset                                        in seconds. </span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$gmt</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to use GMT timezone. Only applies                                        if timestamp is not provided. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The date, translated if locale specifies it.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="174"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function date_i18n( $format, $timestamp_with_offset = false, $gmt = false ) {
+	$timestamp = $timestamp_with_offset;
+
+	// If timestamp is omitted it should be current time (summed with offset, unless `$gmt` is true).
+	if ( ! is_numeric( $timestamp ) ) {
+		// phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested
+		$timestamp = current_time( 'timestamp', $gmt );
+	}
+
+	/*
+	 * This is a legacy implementation quirk that the returned timestamp is also with offset.
+	 * Ideally this function should never be used to produce a timestamp.
+	 */
+	if ( 'U' === $format ) {
+		$date = $timestamp;
+	} elseif ( $gmt &amp;&amp; false === $timestamp_with_offset ) { // Current time in UTC.
+		$date = wp_date( $format, null, new DateTimeZone( 'UTC' ) );
+	} elseif ( false === $timestamp_with_offset ) { // Current time in site's timezone.
+		$date = wp_date( $format );
+	} else {
+		/*
+		 * Timestamp with offset is typically produced by a UTC `strtotime()` call on an input without timezone.
+		 * This is the best attempt to reverse that operation into a local time to use.
+		 */
+		$local_time = gmdate( 'Y-m-d H:i:s', $timestamp );
+		$timezone   = wp_timezone();
+		$datetime   = date_create( $local_time, $timezone );
+		$date       = wp_date( $format, $datetime-&gt;getTimestamp(), $timezone );
+	}
+
+	/**
+	 * Filters the date formatted based on the locale.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $date      Formatted date string.
+	 * @param string $format    Format to display the date.
+	 * @param int    $timestamp A sum of Unix timestamp and timezone offset in seconds.
+	 *                          Might be without offset if input omitted timestamp but requested GMT.
+	 * @param bool   $gmt       Whether to use GMT timezone. Only applies if timestamp was not provided.
+	 *                          Default false.
+	 */
+	$date = apply_filters( 'date_i18n', $date, $format, $timestamp, $gmt );
+
+	return $date;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L174">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L174-L219">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/date_i18n/"><span class="hook-func">apply_filters</span>( ‘date_i18n’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$date</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$format</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$timestamp</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$gmt</span></nobr> )</a></dt><dd><p>Filters the date formatted based on the locale.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_date/">wp_date()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the date, in localized format.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_timezone/">wp_timezone()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the timezone of the site as a <code>DateTimeZone</code> object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/current_time/">current_time()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the current time based on specified type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_application_passwords_list_table/column_created/">WP_Application_Passwords_List_Table::column_created()</a><code>wp-admin/includes/class-wp-application-passwords-list-table.php</code></td><td><p>Handles the created column output.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_application_passwords_list_table/column_last_used/">WP_Application_Passwords_List_Table::column_last_used()</a><code>wp-admin/includes/class-wp-application-passwords-list-table.php</code></td><td><p>Handles the last used column output.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_user_personal_data_exporter/">wp_user_personal_data_exporter()</a><code>wp-includes/user.php</code></td><td><p>Finds and exports personal data associated with an email address from the user and user_meta table.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_policy_content/privacy_policy_guide/">WP_Privacy_Policy_Content::privacy_policy_guide()</a><code>wp-admin/includes/class-wp-privacy-policy-content.php</code></td><td><p>Outputs the privacy policy guide together with content from the theme and plugins.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_send_personal_data_export_email/">wp_privacy_send_personal_data_export_email()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Send an email to the user with a link to the personal data export file</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_requests_table/get_timestamp_as_date/">WP_Privacy_Requests_Table::get_timestamp_as_date()</a><code>wp-admin/includes/class-wp-privacy-requests-table.php</code></td><td><p>Converts a timestamp for display.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_community_events/format_event_data_time/">WP_Community_Events::format_event_data_time()</a><code>wp-admin/includes/class-wp-community-events.php</code></td><td><p>Adds formatted date and time items for each event in an API response.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/heartbeat_autosave/">heartbeat_autosave()</a><code>wp-admin/includes/misc.php</code></td><td><p>Performs autosave with heartbeat.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_recent_posts/">wp_dashboard_recent_posts()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Generates Publishing Soon and Recently Published sections.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_date_format/">wp_ajax_date_format()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles formatting a date via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_time_format/">wp_ajax_time_format()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles formatting a time via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_wp_fullscreen_save_post/">wp_ajax_wp_fullscreen_save_post()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving posts from the fullscreen editor via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_prepare_revisions_for_js/">wp_prepare_revisions_for_js()</a><code>wp-admin/includes/revision.php</code></td><td><p>Prepare revisions for JavaScript.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_submit_meta_box/">post_submit_meta_box()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays post submit form fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/attachment_submit_meta_box/">attachment_submit_meta_box()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays attachment submit form fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_archives/">wp_get_archives()</a><code>wp-includes/general-template.php</code></td><td><p>Displays archive links based on type and format.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_widget_rss_output/">wp_widget_rss_output()</a><code>wp-includes/widgets.php</code></td><td><p>Display the RSS entries in a list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_post_revision_title/">wp_post_revision_title()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves formatted date timestamp of a revision (linked to that revisions’s page).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_post_revision_title_expanded/">wp_post_revision_title_expanded()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves formatted date timestamp of a revision (linked to that revisions’s page).</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 14 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.3.0/">5.3.0</a></td><td><span class="since-description">Converted into a wrapper for <a href="https://developer.notmatt.press/reference/functions/wp_date/" rel="function">wp_date()</a> .</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/0.71/">0.71</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-otto42 even thread-even depth-1" data-comment-id="972" id="comment-972">
+<article class="comment-body" id="div-comment-972">
+<a class="screen-reader-text" href="#comment-content-972">Skip to note 9 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-972">
+<p>The <code>date_i18n()</code> function basically behaves exactly like the normal PHP <code>date()</code> function, except that it also translates things like month names and weekdays and similar into the current locale for the site. You can replace a call to <code>date()</code> with a call to <code>date_i18n()</code>, using the same arguments that <code>date()</code> normally takes.</p>
+<p>The <code>date_i18n()</code> function also takes an additional argument, which should be used only if you’re specifying GMT (UTC) time and not a local time.</p>
+<p>The core of WordPress includes the necessary pieces to translate months and days and so forth in the core code, so this function is one translation function which does not need a text-domain when used in plugins and themes. The translations will always be included in the core language packs.</p>
+<p>Note that the “format”, however, is not converted to a local one if you manually specify it. If you need a localized format, then you should use <code>get_option('date_format')</code> if you need the format set by the user in Settings-&gt;General, and thus one of their choosing. Alternatively, you can wrap your predefined format in <code>__()</code> in order to allow translators to adjust the date to the proper local format. If you do so, then you should also include a translator comment, to let the translators know what the date format is referring to and where it is used, so they can convert it accurately.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-972">
+<ul class="children">
+<li class="comment byuser comment-author-timon33 odd alt depth-2" data-comment-id="2981" id="comment-2981">
+<article class="comment-body" id="div-comment-2981">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2981">
+<div>If you need to use the genitive case of a month in Greek you can use (WHILE formatted for GREEK in General Settings page):  
+<pre class="wp-block-code"><code class="language-php" lang="php">$genitive_date = date_i18n( 'l',  strtotime( '29-11-2018' ) ) . ', ' . date_i18n( 'j F Y', strtotime( '29-11-2018' ) );</code></pre>
+<p> The above returns: <code>Πέμπτη, 29 Νοεμβρίου 2018</code>  Instead of: </p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$date = date_i18n( 'l, j F Y', strtotime( '29-11-2018' ) );</code></pre>
+<p> Which returns: <code>Πέμπτη, 29 Νοέμβριος 2018</code></p></div>
+<div><a class="url" href="https://profiles.wordpress.org/timon33/" rel="external nofollow">timon33</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/date_i18n/#comment-2981"><time datetime="2018-11-28T23:20:14+00:00">6 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-rarst even thread-odd thread-alt depth-1" data-comment-id="2403" id="comment-2403">
+<article class="comment-body" id="div-comment-2403">
+<a class="screen-reader-text" href="#comment-content-2403">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2403">
+<p>It is important to note that <code>date_i18n()</code>:</p>
+<ol>
+<li>does not have full feature parity with <code>date()</code>, not all formats are supported (such as shorthands);</li>
+<li>does not accept Unix timestamp (despite documented to), the expected value is “WordPress timestamp” (offset by time zone);</li>
+<li>has issues with certain timezone settings, such as numerical ones;</li>
+<li>does <em>nothing</em> with <code>$gmt</code> argument under normal circumstances;</li>
+</ol>
+<p>Any use of this function must be carefully audited for correctness, <em>especially</em> in regards to output of time zones.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-2403">
+<ul class="children">
+<li class="comment byuser comment-author-julianoe odd alt depth-2" data-comment-id="5455" id="comment-5455">
+<article class="comment-body" id="div-comment-5455">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5455">
+<div>If you read this, do know that since 5.3.0 WordPress also has a <a href="https://developer.notmatt.press/reference/functions/wp_date/" rel="function">wp_date()</a>  function <a href="https://developer.notmatt.press/reference/functions/wp_date/" rel="ugc">https://developer.notmatt.press/reference/functions/wp_date/</a></div>
+<div><a class="url" href="https://profiles.wordpress.org/julianoe/" rel="external nofollow">julianoe</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/date_i18n/#comment-5455"><time datetime="2021-11-08T15:57:40+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="512" id="comment-512">
+<article class="comment-body" id="div-comment-512">
+<a class="screen-reader-text" href="#comment-content-512">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-512">
+<p>Depending on your blog settings you will see the date displayed in your local format, for example: 15. november 1976.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo date_i18n( get_option( 'date_format' ), strtotime( '11/15-1976' ) ); ?&gt;
+ </code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-512">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-okvee odd alt thread-odd thread-alt depth-1" data-comment-id="2989" id="comment-2989">
+<article class="comment-body" id="div-comment-2989">
+<a class="screen-reader-text" href="#comment-content-2989">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2989">
+<pre class="wp-block-code"><code class="language-php" lang="php">$dt_gmt = '2018-12-03 00:00:00';
+
+echo 'date_i18n GMT, gmt=false: ' . date_i18n($settings_datetime_format, strtotime($dt_gmt)) . '&lt;br&gt;';
+echo 'date_i18n GMT, gmt=true: ' . date_i18n($settings_datetime_format, strtotime($dt_gmt), true) . '&lt;br&gt;';</code></pre>
+<p>Result:</p>
+<blockquote><p>date_i18n GMT, gmt=false: December 3, 2018 12:00 am<br/>
+date_i18n GMT, gmt=true: December 3, 2018 12:00 am</p></blockquote>
+<p>The third argument has no effect if second argument was set.</p>
+<p>To display translated date/time based on WP settings (time zone, format). The <code>$unixtimestamp</code> argument must be convert from GMT like this.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$dt_gmt = '2018-12-03 00:00:00';
+$dt = get_date_from_gmt($dt_gmt, 'Y-m-d H:i:s');// convert from GMT to local date/time based on WordPress time zone setting.
+echo date_i18n(get_option('date_format') . ' ' . get_option('time_format') . ' (P)', strtotime($dt));// get format from WordPress settings.</code></pre>
+<p>The result will be:</p>
+<blockquote><p>ธันวาคม 3, 2018 7:00 am (+07:00)</p></blockquote>
+<p>This is based on Thai language, Bangkok time zone.</p>
+<p>More examples are on <em>[moderated]</em></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2989">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-delmarliske even thread-even depth-1" data-comment-id="2599" id="comment-2599">
+<article class="comment-body" id="div-comment-2599">
+<a class="screen-reader-text" href="#comment-content-2599">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2599">
+<p>To get both the date and time within a single string, use <code>date_i18n</code> twice with a separator. At the same time, you can also retrieve the local Date and Time formats that are set within the General Settings page.</p>
+<p>For example, to return: ‘March 3, 2018 @ 7:18 am’ (formatted for the US, Eastern Standard Time in the General Settings page):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$datetime = date_i18n(get_option('date_format'), current_time('timestamp')) .' @ '. date_i18n(get_option('time_format'), current_time('timestamp'));</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-2599">
+<ul class="children">
+<li class="comment byuser comment-author-tofandel odd alt depth-2" data-comment-id="3691" id="comment-3691">
+<article class="comment-body" id="div-comment-3691">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3691">
+<div>Just concatenating the options is simpler  <code>date_i18n(get_option('date_format') .' @ '. get_option('time_format'), current_time('timestamp'))</code></div>
+<div><a class="url" href="https://profiles.wordpress.org/tofandel/" rel="external nofollow">Tofandel</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/date_i18n/#comment-3691"><time datetime="2020-03-10T15:06:48+00:00">5 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tradesouthwestgmailcom even thread-odd thread-alt depth-1" data-comment-id="5709" id="comment-5709">
+<article class="comment-body" id="div-comment-5709">
+<a class="screen-reader-text" href="#comment-content-5709">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5709">
+<p>A simple way to show the default format of your install date/time; and to see if it works well with i18n formatting is to pull both date and time using PHP:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$format      = get_option('date_format') . ' ' . get_option('time_format');
+$check_stamp = date_i18n($format, current_time('timestamp'));</code></pre>
+<p>Display by echoing <code> esc_html($check_stamp);</code> </p>
+<p>Result: February 25, 2022 11:36 pm</p>
+<p>If it shows incorrectly then you can go to your Setting &gt; General to make good.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5709">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-webmatpro odd alt thread-even depth-1" data-comment-id="5744" id="comment-5744">
+<article class="comment-body" id="div-comment-5744">
+<a class="screen-reader-text" href="#comment-content-5744">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5744">
+<p>For correct time zone :</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$datetime = '2022-12-03 10:00:00';
+
+date_i18n('d/m/Y H:i', strtotime( get_date_from_gmt( $datetime ) ) ); 
+// return 03/12/2022 10:00 + (add or minus hours time zone)</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5744">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-sushil-adhikari even thread-odd thread-alt depth-1" data-comment-id="3187" id="comment-3187">
+<article class="comment-body" id="div-comment-3187">
+<a class="screen-reader-text" href="#comment-content-3187">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3187">
+<p><strong>Convert another UTC time to your own timezone. </strong><br/>
+Let us suppose you are in UTC+10 timezone And want to convert another timezone to your timezone. You can do this by adding +10 on date_18n() function.</p>
+<p><code>$converted_date = date_i18n( get_option( 'date_format' ), strtotime( '2019-06-07 00:35:32' . '+11' ) )</code><br/>
+Thanks</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-3187">
+<ul class="children">
+<li class="comment byuser comment-author-sushil-adhikari odd alt depth-2" data-comment-id="3188" id="comment-3188">
+<article class="comment-body" id="div-comment-3188">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3188">
+<div>Should be: <code>$converted_date = date_i18n( get_option( 'date_format' ), (strtotime( '2020-05-06 23:42:59' ) +  get_option( 'gmt_offset', 0 ) * HOUR_IN_SECONDS) );</code></div>
+<div><a class="url" href="https://profiles.wordpress.org/sushil-adhikari/" rel="external nofollow">Sushil Adhikari</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/date_i18n/#comment-3188"><time datetime="2019-05-07T07:28:51+00:00">6 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_plugins()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_plugins()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_plugins( <span class="arg-type">string</span> <span class="arg-name">$plugin_folder</span> = <span class="arg-default">''</span> ): <span class="return-type">array[]</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Checks the plugins directory and retrieve all plugin files with plugin data.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>WordPress only supports plugin files in the base plugins directory (wp-content/plugins) and in one directory above the plugins directory (wp-content/plugins/my-plugin). The file it looks for has the plugin data and must be found in those two locations. It is recommended to keep your plugin files in their own directories.</p>
+<p>The file with the plugin data is the file that will be included and therefore needs to have the main execution for the plugin. This does not mean everything must be contained in the file and it is recommended that the file be split for maintainability. Keep everything in one file for extreme optimization purposes.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$plugin_folder</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Relative path to single plugin folder.</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array[]</span> Array of arrays of plugin data, keyed by plugin file name. See <a href="https://developer.notmatt.press/reference/functions/get_plugin_data/" rel="function">get_plugin_data()</a> .</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>If you have `<code>PHP Fatal error: Call to undefined function get_plugins()</code>` then you must include the file ‘<code>wp-admin/includes/plugin.php</code>‘ like in example.</p>
+<p>Results are cached on the first run of the function, therefore it is recommended to call the function at least after the ‘<code>after_setup_theme</code>‘ action so that plugins and themes have the ability to filter the results.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="279"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_plugins( $plugin_folder = '' ) {
+
+	$cache_plugins = wp_cache_get( 'plugins', 'plugins' );
+	if ( ! $cache_plugins ) {
+		$cache_plugins = array();
+	}
+
+	if ( isset( $cache_plugins[ $plugin_folder ] ) ) {
+		return $cache_plugins[ $plugin_folder ];
+	}
+
+	$wp_plugins  = array();
+	$plugin_root = WP_PLUGIN_DIR;
+	if ( ! empty( $plugin_folder ) ) {
+		$plugin_root .= $plugin_folder;
+	}
+
+	// Files in wp-content/plugins directory.
+	$plugins_dir  = @opendir( $plugin_root );
+	$plugin_files = array();
+
+	if ( $plugins_dir ) {
+		while ( ( $file = readdir( $plugins_dir ) ) !== false ) {
+			if ( str_starts_with( $file, '.' ) ) {
+				continue;
+			}
+
+			if ( is_dir( $plugin_root . '/' . $file ) ) {
+				$plugins_subdir = @opendir( $plugin_root . '/' . $file );
+
+				if ( $plugins_subdir ) {
+					while ( ( $subfile = readdir( $plugins_subdir ) ) !== false ) {
+						if ( str_starts_with( $subfile, '.' ) ) {
+							continue;
+						}
+
+						if ( str_ends_with( $subfile, '.php' ) ) {
+							$plugin_files[] = "$file/$subfile";
+						}
+					}
+
+					closedir( $plugins_subdir );
+				}
+			} elseif ( str_ends_with( $file, '.php' ) ) {
+				$plugin_files[] = $file;
+			}
+		}
+
+		closedir( $plugins_dir );
+	}
+
+	if ( empty( $plugin_files ) ) {
+		return $wp_plugins;
+	}
+
+	foreach ( $plugin_files as $plugin_file ) {
+		if ( ! is_readable( "$plugin_root/$plugin_file" ) ) {
+			continue;
+		}
+
+		// Do not apply markup/translate as it will be cached.
+		$plugin_data = get_plugin_data( "$plugin_root/$plugin_file", false, false );
+
+		if ( empty( $plugin_data['Name'] ) ) {
+			continue;
+		}
+
+		$wp_plugins[ plugin_basename( $plugin_file ) ] = $plugin_data;
+	}
+
+	uasort( $wp_plugins, '_sort_uname_callback' );
+
+	$cache_plugins[ $plugin_folder ] = $wp_plugins;
+	wp_cache_set( 'plugins', $cache_plugins, 'plugins' );
+
+	return $wp_plugins;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/plugin.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/plugin.php#L279">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/plugin.php#L279-L355">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_plugin_data/">get_plugin_data()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Parses the plugin contents to retrieve plugin’s metadata.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set/">wp_cache_set()</a><code>wp-includes/cache.php</code></td><td><p>Saves the data to the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/plugin_basename/">plugin_basename()</a><code>wp-includes/plugin.php</code></td><td><p>Gets the basename of a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/get_plugins/">WP_Plugin_Dependencies::get_plugins()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Gets data for installed plugins.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_templates_controller/get_wp_templates_author_text_field/">WP_REST_Templates_Controller::get_wp_templates_author_text_field()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-templates-controller.php</code></td><td><p>Returns a human readable text for the author of the template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_plugin_action_button/">wp_get_plugin_action_button()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Gets the markup for the plugin install action button.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_block_directory_controller/find_plugin_for_slug/">WP_REST_Block_Directory_Controller::find_plugin_for_slug()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-block-directory-controller.php</code></td><td><p>Finds an installed plugin for the given slug.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_plugins_controller/get_plugin_data/">WP_REST_Plugins_Controller::get_plugin_data()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-plugins-controller.php</code></td><td><p>Gets the plugin header data for a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_plugins_controller/get_items/">WP_REST_Plugins_Controller::get_items()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-plugins-controller.php</code></td><td><p>Retrieves a collection of plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/plugin_installer_skin/do_overwrite/">Plugin_Installer_Skin::do_overwrite()</a><code>wp-admin/includes/class-plugin-installer-skin.php</code></td><td><p>Checks if the plugin can be overwritten and outputs the HTML for overwriting a plugin on upload.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_toggle_auto_updates/">wp_ajax_toggle_auto_updates()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles enabling or disable plugin and theme auto-updates via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_recovery_mode_email_service/get_plugin/">WP_Recovery_Mode_Email_Service::get_plugin()</a><code>wp-includes/class-wp-recovery-mode-email-service.php</code></td><td><p>Return the details for a single plugin based on the extension data from an error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_test_plugin_version/">WP_Site_Health::get_test_plugin_version()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Tests if plugins are outdated, or unnecessary.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_block_editor_incompatible_meta_box/">do_block_editor_incompatible_meta_box()</a><code>wp-admin/includes/template.php</code></td><td><p>Renders a “fake” meta box with an information message, shown on the block editor, when an incompatible meta box is found.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_get_plugin_from_callback/">_get_plugin_from_callback()</a><code>wp-admin/includes/template.php</code></td><td><p>Internal helper function to find the plugin from a meta box callback.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_edit_theme_plugin_file/">wp_edit_theme_plugin_file()</a><code>wp-admin/includes/file.php</code></td><td><p>Attempts to edit a file for a theme or plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_update_plugin/">wp_ajax_update_plugin()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles updating a plugin via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/language_pack_upgrader/get_name_for_update/">Language_Pack_Upgrader::get_name_for_update()</a><code>wp-admin/includes/class-language-pack-upgrader.php</code></td><td><p>Gets the name of an item being updated.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/plugin_upgrader/plugin_info/">Plugin_Upgrader::plugin_info()</a><code>wp-admin/includes/class-plugin-upgrader.php</code></td><td><p>Retrieves the path to the file that contains the plugin info.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_plugins_list_table/prepare_items/">WP_Plugins_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-plugins-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_plugin_updates/">get_plugin_updates()</a><code>wp-admin/includes/update.php</code></td><td><p>Retrieves plugins with updates available.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/install_plugin_install_status/">install_plugin_install_status()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Determines the status we can perform on a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_plugins_output/">wp_dashboard_plugins_output()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Display plugins text for the WordPress news widget.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/validate_plugin/">validate_plugin()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Validates the plugin path.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_link_manager_disabled_message/">wp_link_manager_disabled_message()</a><code>wp-admin/includes/bookmark.php</code></td><td><p>Outputs the ‘disabled’ message for the WordPress Link Manager.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_plugins/">wp_update_plugins()</a><code>wp-includes/update.php</code></td><td><p>Checks for available updates to plugins based on the latest versions hosted on WordPress.org.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 18 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="1207" id="comment-1207">
+<article class="comment-body" id="div-comment-1207">
+<a class="screen-reader-text" href="#comment-content-1207">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1207">
+<p><strong>Get All Plugins</strong></p>
+<p>The following code snippet returns all plugins installed on your site (not just activated ones).</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+
+// Check if get_plugins() function exists. This is required on the front end of the
+// site, since it is in a file that is normally only loaded in the admin.
+if ( ! function_exists( 'get_plugins' ) ) {
+	require_once ABSPATH . 'wp-admin/includes/plugin.php';
+}
+
+$all_plugins = get_plugins();
+
+// Save the data to the error log so you can see what the array format is like.
+error_log( print_r( $all_plugins, true ) );</code></pre>
+<p>Example output:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">Array
+(
+    [hello-dolly/hello.php] =&gt; Array
+        (
+            [Name] =&gt; Hello Dolly
+            [PluginURI] =&gt; <a href="https://wordpress.org/extend/plugins/hello-dolly/" rel="nofollow ugc">https://wordpress.org/extend/plugins/hello-dolly/</a>
+            [Version] =&gt; 1.6
+            [Description] =&gt; This is not just a plugin, it symbolizes the hope and enthusiasm of an entire generation summed up in two words sung most famously by Louis Armstrong: Hello, Dolly. When activated you will randomly see a lyric from &lt;cite&gt;Hello, Dolly&lt;/cite&gt; in the upper right of your admin screen on every page.
+            [Author] =&gt; Matt Mullenweg
+            [AuthorURI] =&gt; <a href="http://ma.tt/" rel="nofollow ugc">http://ma.tt/</a>
+            [TextDomain] =&gt; 
+            [DomainPath] =&gt; 
+            [Network] =&gt; 
+            [Title] =&gt; Hello Dolly
+            [AuthorName] =&gt; Matt Mullenweg
+
+)</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1207">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-stiofansisland odd alt thread-odd thread-alt depth-1" data-comment-id="2862" id="comment-2862">
+<article class="comment-body" id="div-comment-2862">
+<a class="screen-reader-text" href="#comment-content-2862">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2862">
+<p>Results are cached on the first run of the function, therefore <strong>it is recommended to call the function at least after the ‘after_setup_theme’</strong> action so that plugins and themes have the ability to filter the results.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2862">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,533 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">register_setting()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>register_setting()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">register_setting( <span class="arg-type">string</span> <span class="arg-name">$option_group</span>,  <span class="arg-type">string</span> <span class="arg-name">$option_name</span>,  <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Registers a setting and its data.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$option_group</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">A settings group name. Should correspond to an allowed option key name.<br/>
+Default allowed option key names include <code>'general'</code>, <code>'discussion'</code>, <code>'media'</code>,                             <code>'reading'</code>, <code>'writing'</code>, and <code>'options'</code>.</span></div></dd><dt><code>$option_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The name of an option to sanitize and save.</span></div></dd><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Data used to describe the setting when registered.<br/>
+<ul class="param-hash"><li><code>type</code> <span class="type">string</span><div class="desc">The type of data associated with this setting.<br/>
+Valid values are <code>'string'</code>, <code>'boolean'</code>, <code>'integer'</code>, <code>'number'</code>, <code>'array'</code>, and <code>'object'</code>.</div></li>
+<li><code>label</code> <span class="type">string</span><div class="desc">A label of the data attached to this setting.</div></li>
+<li><code>description</code> <span class="type">string</span><div class="desc">A description of the data attached to this setting.</div></li>
+<li><code>sanitize_callback</code> <span class="type">callable</span><div class="desc">A callback function that sanitizes the option’s value.</div></li>
+<li><code>show_in_rest</code> <span class="type">bool|array</span><div class="desc">Whether data associated with this setting should be included in the REST API.<br/>
+When registering complex settings, this argument may optionally be an array with a <code>'schema'</code> key.</div></li>
+<li><code>default</code> <span class="type">mixed</span><div class="desc">Default value when calling <code>get_option()</code>.</div></li>
+</ul>
+</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2940"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function register_setting( $option_group, $option_name, $args = array() ) {
+	global $new_allowed_options, $wp_registered_settings;
+
+	/*
+	 * In 5.5.0, the `$new_whitelist_options` global variable was renamed to `$new_allowed_options`.
+	 * Please consider writing more inclusive code.
+	 */
+	$GLOBALS['new_whitelist_options'] = &amp;$new_allowed_options;
+
+	$defaults = array(
+		'type'              =&gt; 'string',
+		'group'             =&gt; $option_group,
+		'label'             =&gt; '',
+		'description'       =&gt; '',
+		'sanitize_callback' =&gt; null,
+		'show_in_rest'      =&gt; false,
+	);
+
+	// Back-compat: old sanitize callback is added.
+	if ( is_callable( $args ) ) {
+		$args = array(
+			'sanitize_callback' =&gt; $args,
+		);
+	}
+
+	/**
+	 * Filters the registration arguments when registering a setting.
+	 *
+	 * @since 4.7.0
+	 *
+	 * @param array  $args         Array of setting registration arguments.
+	 * @param array  $defaults     Array of default arguments.
+	 * @param string $option_group Setting group.
+	 * @param string $option_name  Setting name.
+	 */
+	$args = apply_filters( 'register_setting_args', $args, $defaults, $option_group, $option_name );
+
+	$args = wp_parse_args( $args, $defaults );
+
+	// Require an item schema when registering settings with an array type.
+	if ( false !== $args['show_in_rest'] &amp;&amp; 'array' === $args['type'] &amp;&amp; ( ! is_array( $args['show_in_rest'] ) || ! isset( $args['show_in_rest']['schema']['items'] ) ) ) {
+		_doing_it_wrong( __FUNCTION__, __( 'When registering an "array" setting to show in the REST API, you must specify the schema for each array item in "show_in_rest.schema.items".' ), '5.4.0' );
+	}
+
+	if ( ! is_array( $wp_registered_settings ) ) {
+		$wp_registered_settings = array();
+	}
+
+	if ( 'misc' === $option_group ) {
+		_deprecated_argument(
+			__FUNCTION__,
+			'3.0.0',
+			sprintf(
+				/* translators: %s: misc */
+				__( 'The "%s" options group has been removed. Use another settings group.' ),
+				'misc'
+			)
+		);
+		$option_group = 'general';
+	}
+
+	if ( 'privacy' === $option_group ) {
+		_deprecated_argument(
+			__FUNCTION__,
+			'3.5.0',
+			sprintf(
+				/* translators: %s: privacy */
+				__( 'The "%s" options group has been removed. Use another settings group.' ),
+				'privacy'
+			)
+		);
+		$option_group = 'reading';
+	}
+
+	$new_allowed_options[ $option_group ][] = $option_name;
+
+	if ( ! empty( $args['sanitize_callback'] ) ) {
+		add_filter( "sanitize_option_{$option_name}", $args['sanitize_callback'] );
+	}
+	if ( array_key_exists( 'default', $args ) ) {
+		add_filter( "default_option_{$option_name}", 'filter_default_option', 10, 3 );
+	}
+
+	/**
+	 * Fires immediately before the setting is registered but after its filters are in place.
+	 *
+	 * @since 5.5.0
+	 *
+	 * @param string $option_group Setting group.
+	 * @param string $option_name  Setting name.
+	 * @param array  $args         Array of setting registration arguments.
+	 */
+	do_action( 'register_setting', $option_group, $option_name, $args );
+
+	$wp_registered_settings[ $option_name ] = $args;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/option.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/option.php#L2940">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/option.php#L2940-L3035">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/register_setting/"><span class="hook-func">do_action</span>( ‘register_setting’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option_group</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option_name</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Fires immediately before the setting is registered but after its filters are in place.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/register_setting_args/"><span class="hook-func">apply_filters</span>( ‘register_setting_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$defaults</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option_group</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option_name</span></nobr> )</a></dt><dd><p>Filters the registration arguments when registering a setting.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_argument/">_deprecated_argument()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/register_initial_settings/">register_initial_settings()</a><code>wp-includes/option.php</code></td><td><p>Registers default settings available in WordPress.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/add_option_update_handler/">add_option_update_handler()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Register a setting and its sanitization callback</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.6.0/">6.6.0</a></td><td><span class="since-description">Added the <code>label</code> argument.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.5.0/">5.5.0</a></td><td><span class="since-description"><code>$new_whitelist_options</code> was renamed to <code>$new_allowed_options</code>.<br/>
+Please consider writing more inclusive code.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.7.0/">4.7.0</a></td><td><span class="since-description"><code>$args</code> can be passed to set flags on the setting, similar to <code>register_meta()</code>.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.5.0/">3.5.0</a></td><td><span class="since-description">The <code>privacy</code> option group was deprecated.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td><span class="since-description">The <code>misc</code> option group was deprecated.</span></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/since/2.7.0/">2.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-grapestain odd alt thread-even depth-1" data-comment-id="3050" id="comment-3050">
+<article class="comment-body" id="div-comment-3050">
+<a class="screen-reader-text" href="#comment-content-3050">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3050">
+<p>Some notes about the elements in the <strong><code>$args</code></strong> parameter:</p>
+<p><code>'type'</code>:</p>
+<ul>
+<li>Only has an effect if <code>'show_in_rest'</code> is set. So if <code>'show_in_rest'</code> is false or not part of <code>$args</code>, do not bother with setting a <code>'type'</code>.</li>
+<li>Only used by the REST API to define the schema associated with the setting and to implement sanitization over the REST API.</li>
+<li>Has no effect for the workings of the Admin pages or the way the Setting is handled by the Options API. (I.e.: although probably you shouldn’t, it is possible to submit for example a string value for a setting from the Admin forms that has the <code>'type'</code> set to <code>"boolean"</code>. WP will not complain and will store the value in the options table. It would however cause issues with the REST API, so be careful!)</li>
+<li>On top of those listed in this page, it also accepts values such as: <code>'array'</code> and <code>'object'</code>.</li>
+</ul>
+<p><code>'description'</code>:</p>
+<ul>
+<li>Only has an effect if <code>'show_in_rest'</code> is set. So if <code>'show_in_rest'</code> is false or not part of <code>$args</code>, do not bother with setting a <code>'description'</code>.</li>
+<li>Only used by the REST API.</li>
+</ul>
+<p><code>'default'</code>:</p>
+<ul>
+<li>Affects both the Options API (e.g. <code>get_option()</code>) and the REST API.</li>
+</ul>
+<p>In conclusion: if you do not plan to include your setting in the REST API, it is perfectly enough to only set the <code>'default'</code> and the <code>'sanitize_callback'</code> elements in the $args array. Anything else would be ignored anyway.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3050">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-farhannoor even thread-odd thread-alt depth-1" data-comment-id="2503" id="comment-2503">
+<article class="comment-body" id="div-comment-2503">
+<a class="screen-reader-text" href="#comment-content-2503">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2503">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+* Registers a text field setting for WordPress 4.7 and higher.
+**/
+function register_my_setting() {
+	$args = array(
+			'type' =&gt; 'string', 
+			'sanitize_callback' =&gt; 'sanitize_text_field',
+			'default' =&gt; NULL,
+			);
+    register_setting( 'my_options_group', 'my_option_name', $args ); 
+} 
+add_action( 'admin_init', 'register_my_setting' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2503">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-andy-schmidt odd alt thread-even depth-1" data-comment-id="2488" id="comment-2488">
+<article class="comment-body" id="div-comment-2488">
+<a class="screen-reader-text" href="#comment-content-2488">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2488">
+<p>The sanitize <strong>callback will be launched twice</strong>! Therefore, if sanitizing involves any performance critical or singular tasks, then measures must be taken in the callback to avoid duplicate execution of those portions. </p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">const	PLUGIN_SLUG =	'MyPlugin';
+
+/*
+ *	Setup Plug-In Hooks (Namespaced Example)
+ */
+\add_action( 'wp_loaded', __NAMESPACE__.'\on_wp_loaded' );
+
+if ( is_blog_admin() ) {
+	\register_activation_hook( __FILE__,  __NAMESPACE__.'\on_activate' );
+	\register_deactivation_hook( __FILE__,  __NAMESPACE__.'\on_deactivate' );
+	
+	\add_action( 'admin_menu', __NAMESPACE__.'\on_admin_menu' );
+	\add_action( 'admin_init', __NAMESPACE__.'\on_admin_init' );
+	\add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), __NAMESPACE__.'\action_links' );
+}
+return;
+
+/*
+ *	Add custom options to whitelist, allowing valiated settings to be saved by form.
+ */
+function on_admin_init(): void 
+{
+	\register_setting( PLUGIN_SLUG, PLUGIN_SLUG, [ 'sanitize_callback' =&gt; __NAMESPACE__.'\sanitize_settings' ] ); 
+}
+
+/*
+ *	Sanitize the form input.
+ */
+function sanitize_settings( $input = NULL ):  
+{
+	// Detect multiple sanitizing passes.
+	// Accomodates bug: <a href="https://core.trac.wordpress.org/ticket/21989" rel="nofollow ugc">https://core.trac.wordpress.org/ticket/21989</a>
+	static $pass_count = 0; $pass_count++;
+
+	if ( $pass_count &lt;= 1 ) {
+		// Handle any single-time / performane sensitive actions.
+
+	}
+
+	// Insert regular santizing code here.
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="2" id="feedback-2488">
+<ul class="children">
+<li class="comment byuser comment-author-grapestain even depth-2" data-comment-id="3051" id="comment-3051">
+<article class="comment-body" id="div-comment-3051">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3051">
+<div>As pointed out by Andy Schmidt the function defined as sanitize_callback will be launched twice, however – at least according to my tests on v4.9.9 – it is only called twice for the first time the setting is submitted and added to the options table in the database. Subsequent updates to the setting execute the sanitize_callback function only once. So unless you are performing something really-really-really heavy operation to sanitize, there’s no need to worry about it, as any workarounds would only save 1 occasion of call to the function per site per plugin installation.</div>
+<div><a class="url" href="https://profiles.wordpress.org/grapestain/" rel="external nofollow">Bence Szalai</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/register_setting/#comment-3051"><time datetime="2019-01-22T11:38:52+00:00">6 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-mohamdy odd alt depth-2" data-comment-id="6998" id="comment-6998">
+<article class="comment-body" id="div-comment-6998">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6998">
+<div>A small and very important note remains: When the function is executed the first time, the output will be considered as input to the function the second time</div>
+<div><a class="url" href="https://profiles.wordpress.org/mohamdy/" rel="external nofollow">Mohamed Hamdy</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/register_setting/#comment-6998"><time datetime="2024-05-05T06:43:26+00:00">9 months ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-salzano even thread-odd thread-alt depth-1" data-comment-id="3094" id="comment-3094">
+<article class="comment-body" id="div-comment-3094">
+<a class="screen-reader-text" href="#comment-content-3094">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3094">
+<p>If you plan to use your setting in the REST API, use both the <code>rest_api_init</code> and <code>admin_init</code> hooks when calling <code>register_setting()</code> instead of just <code>admin_init</code>. The <code>show_in_rest</code> argument is ineffective when hooked into <code>admin_init</code> alone.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3094">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-even depth-1" data-comment-id="1290" id="comment-1290">
+<article class="comment-body" id="div-comment-1290">
+<a class="screen-reader-text" href="#comment-content-1290">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1290">
+<p><strong>Basic Example</strong></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Registers a setting.
+ */
+function wpdocs_register_my_setting() {
+	register_setting( 'my_options_group', 'my_option_name', 'intval' ); 
+} 
+add_action( 'admin_init', 'wpdocs_register_my_setting' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1290">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-iandunn even thread-odd thread-alt depth-1" data-comment-id="3225" id="comment-3225">
+<article class="comment-body" id="div-comment-3225">
+<a class="screen-reader-text" href="#comment-content-3225">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3225">
+<p>If you want the setting to appear in the <code>wp-json/wp/v2/settings</code> endpoint, you’ll need to call <code>register_setting()</code> on the <code>rest_api_init</code> action, in addition to the normal <code>admin_init</code> action.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'admin_init',    'foo_register_settings' );
+add_action( 'rest_api_init', 'foo_register_settings' );
+
+function foo_register_settings() {
+	register_setting(
+		'foo',
+		'foo_my_setting',
+		array(
+			'type'              =&gt; 'string',
+			'show_in_rest'      =&gt; true,
+			'sanitize_callback' =&gt; 'sanitize_text_field',
+		)
+	);
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-3225">
+<ul class="children">
+<li class="comment byuser comment-author-bfintal odd alt depth-2" data-comment-id="6582" id="comment-6582">
+<article class="comment-body" id="div-comment-6582">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6582">
+<div>Just to add to this, you will also need to use the <code>rest_api_init</code> action if you’re using the JavaScript method for saving settings in <code>wp.api.models</code> (since behind the scenes it also uses the same endpoint)</div>
+<div><a class="url" href="https://profiles.wordpress.org/bfintal/" rel="external nofollow">Benjamin Intal</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/register_setting/#comment-6582"><time datetime="2023-07-24T10:48:16+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-gerardreches even thread-even depth-1" data-comment-id="6848" id="comment-6848">
+<article class="comment-body" id="div-comment-6848">
+<a class="screen-reader-text" href="#comment-content-6848">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6848">
+<p>Notice that the <code>sanitization_callback</code> of all the registered settings that share the same <code>$option_group</code> will be executed when saving that option group.</p>
+<p>This sounds obvious, but notice that it will also happen even when the settings that belong to this group are not present in the current page but in a different one.</p>
+<p>For example if we have the following option pages and settings:</p>
+<p><strong>admin.php?page=settings_page_1</strong> containing the <strong>optionA</strong> form<br>
+<strong>admin.php?page=settings_page_2</strong> containing the <strong>optionB</strong> form</br></p>
+<p>Where each setting has been registered with their own <code>register_setting()</code> in different files and being output in different pages but the same $option_group string has been used for both of them.</p>
+<p>Saving the page <strong>admin.php?page=settings_page_1</strong> will not only trigger the <code>sanitization_callback</code> from <strong>optionA</strong>, but also the <code>sanitization_callback</code> from <strong>optionB</strong>.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6848">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-sumanm odd alt thread-odd thread-alt depth-1" data-comment-id="4127" id="comment-4127">
+<article class="comment-body" id="div-comment-4127">
+<a class="screen-reader-text" href="#comment-content-4127">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4127">
+<p>An example of array settings. if you want to save an array in settings and also show the array setting to appear in the <code>wp-json/wp/v2/settings</code> endpoint, then you have to register show_in_rest schema.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'admin_init',    'wpdocs_foo_register_settings' );
+add_action( 'rest_api_init', 'wpdocs_foo_register_settings' );
+function wpdocs_foo_register_settings() {
+	register_setting( 'general_setting', 'id' );
+	register_setting( 'general_setting', 'order' );
+	register_setting(
+		'general_setting',
+		'slider-data',
+		array(
+			'show_in_rest' =&gt; array(
+				'name' =&gt; 'images_slide',
+				'schema' =&gt; array(
+					'type'  =&gt; 'array',
+					'items' =&gt; array(
+						'id'    =&gt; 'string',
+						'order' =&gt; 'string',
+					),
+				),
+			),
+			'type' =&gt; 'array',
+			'sanitize_callback' =&gt; array( $this, 'wpdocs_admin_post_save_data' ),
+		)
+	);
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4127">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-cloudinstone even thread-even depth-1" data-comment-id="5289" id="comment-5289">
+<article class="comment-body" id="div-comment-5289">
+<a class="screen-reader-text" href="#comment-content-5289">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5289">
+<p>Example for <code>object</code> and <code>array</code> types:  </p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">register_setting(
+	'dp_example_settings_group',
+	'dp_example_array_settings',
+	array(
+		'type'         =&gt; 'object',
+		'default'      =&gt; array(
+			'A',
+			'B',
+			'C',
+		),
+		'show_in_rest' =&gt; array(
+			'schema' =&gt; array(
+				'type'  =&gt; 'object',
+				'items' =&gt; array(
+					'type' =&gt; 'string',
+				),
+			),
+		),
+	)
+);
+
+register_setting(
+	'dp_example_settings_group',
+	'dp_example_object_settings',
+	array(
+		'type'         =&gt; 'object',
+		'default'      =&gt; array(
+			'some_str' =&gt; 'A',
+			'some_int' =&gt; 3,
+		),
+		'show_in_rest' =&gt; array(
+			'schema' =&gt; array(
+				'type'       =&gt; 'object',
+				'properties' =&gt; array(
+					'some_str' =&gt; array(
+						'type' =&gt; 'string',
+					),
+					'some_int' =&gt; array(
+						'type' =&gt; 'integer',
+					),
+				),
+			),
+		),
+	)
+);</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5289">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-kyajfx odd alt thread-odd thread-alt depth-1" data-comment-id="5349" id="comment-5349">
+<article class="comment-body" id="div-comment-5349">
+<a class="screen-reader-text" href="#comment-content-5349">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5349">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Registering the field
+function wpdocs_add_option_field_to_general_admin_page() {
+
+	register_setting( 'general', 'Field_Name_To_Add' );
+
+	add_settings_field( 
+		'field_id-to-add', 
+		'Field Name To Display', 
+		'wpdocs_setting_callback_function', //Function to Call
+		'general', 
+		'default', 
+		array( 
+			'id' =&gt; 'field_id-to-add', 
+			'option_name' =&gt; 'Field_Name_To_Add' 
+		)
+	);
+}
+
+// Adding options to registered field
+add_action( 'admin_menu', 'wpdocs_add_option_field_to_general_admin_page' ); // CallBack Function
+
+function wpdocs_setting_callback_function( $val ) {
+	$id = $val['id'];
+	$option_name = $val['option_name'];
+	?&gt;
+	&lt;input 
+		type="tel" //this can be any HTML input type: date, number, text etc.
+		name="&lt;?php echo esc_attr( $option_name ) ?&gt;"
+		id="&lt;?php echo esc_attr( $id ) ?&gt;" 
+		value="&lt;?php echo esc_attr( get_option( $option_name ) ) ?&gt;" // Displays the value stored in DB
+	/&gt; 
+	&lt;?php
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5349">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

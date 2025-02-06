@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/block-tutorial/">Blocks</a></span><span class="is-current-page">Use styles and stylesheets</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Use styles and stylesheets</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="overview" tabindex="-1"><a href="#overview">Overview</a></h2>
+<p>A block typically inserts markup (HTML) into post content that you want to style in some way. This guide walks through a few different ways you can use CSS with the block editor and how to work with styles and stylesheets.</p>
+<h2 class="is-toc-heading" id="before-you-start" tabindex="-1"><a href="#before-you-start">Before you start</a></h2>
+<p>You will need a basic block and WordPress development environment to implement the examples shown in this guide. See the <a href="https://developer.notmatt.press/block-editor/getting-started/quick-start-guide/">Quick Start Guide</a> or <a href="https://developer.notmatt.press/block-editor/getting-started/tutorial/">block tutorial</a> to get set up.</p>
+<h2 class="is-toc-heading" id="methods-to-add-style" tabindex="-1"><a href="#methods-to-add-style">Methods to add style</a></h2>
+<p>The following are different methods you can use to add style to your block, either in the editor or when saved.</p>
+<h2 class="is-toc-heading" id="method-1-inline-style" tabindex="-1"><a href="#method-1-inline-style">Method 1: Inline style</a></h2>
+<p>The first method shows adding the style inline. This transforms the defined style into a property on the element inserted.</p>
+<p>The <code>useBlockProps</code> React hook is used to set and apply properties on the block’s wrapper element. The following example shows how:</p>
+<pre><code class="language-jsx">import { registerBlockType } from '@wordpress/blocks';
+import { useBlockProps } from '@wordpress/block-editor';
+
+registerBlockType( 'gutenberg-examples/example-02-stylesheets', {
+    edit() {
+        const greenBackground = {
+            backgroundColor: '#090',
+            color: '#fff',
+            padding: '20px',
+        };
+
+        const blockProps = useBlockProps( { style: greenBackground } );
+
+        return (
+            &lt;p { ...blockProps }&gt;Hello World (from the editor, in green).&lt;/p&gt;
+        );
+    },
+    save() {
+        const redBackground = {
+            backgroundColor: '#900',
+            color: '#fff',
+            padding: '20px',
+        };
+
+        const blockProps = useBlockProps.save( { style: redBackground } );
+
+        return (
+            &lt;p { ...blockProps }&gt;Hello World (from the frontend, in red).&lt;/p&gt;
+        );
+    },
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="method-2-block-classname" tabindex="-1"><a href="#method-2-block-classname">Method 2: Block classname</a></h2>
+<p>The inline style works well for a small amount of CSS to apply. If you have much more than the above you will likely find that it is easier to manage with them in a separate stylesheet file.</p>
+<p>The <code>useBlockProps</code> hooks includes the classname for the block automatically, it generates a name for each block using the block’s name prefixed with <code>wp-block-</code>, replacing the <code>/</code> namespace separator with a single <code>-</code>.</p>
+<p>For example the block name: <code>gutenberg-examples/example-02-stylesheets</code> would get the classname: <code>wp-block-gutenberg-examples-example-02-stylesheets</code>. It might be a bit long but best to avoid conflicts with other blocks.</p>
+<pre><code class="language-jsx">import { registerBlockType } from '@wordpress/blocks';
+import { useBlockProps } from '@wordpress/block-editor';
+
+registerBlockType( 'gutenberg-examples/example-02-stylesheets', {
+    edit() {
+        const blockProps = useBlockProps();
+
+        return (
+            &lt;p { ...blockProps }&gt;Hello World (from the editor, in green).&lt;/p&gt;
+        );
+    },
+    save() {
+        const blockProps = useBlockProps.save();
+
+        return (
+            &lt;p { ...blockProps }&gt;Hello World (from the frontend, in red).&lt;/p&gt;
+        );
+    },
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="build-or-add-dependency" tabindex="-1"><a href="#build-or-add-dependency">Build or add dependency</a></h3>
+<p>In order to include the blockEditor as a dependency, make sure to run the build step, or update the asset php file.</p>
+<p>Build the scripts and update the asset file which is used to keep track of dependencies and the build version.</p>
+<pre><code class="language-bash">npm run build
+</code></pre>
+<h3 class="is-toc-heading" id="enqueue-stylesheets" tabindex="-1"><a href="#enqueue-stylesheets">Enqueue stylesheets</a></h3>
+<p>Like scripts, you can enqueue your block’s styles using the <code>block.json</code> file.</p>
+<p>Use the <code>editorStyle</code> property to a CSS file you want to load in the editor view only, use the <code>style</code> property for a CSS file you want to load both in the editor view and on the frontend when the block is used, and use the <code>viewStyle</code> property for a CSS file you want to load only on the frontend when the block is used.</p>
+<p>It is worth noting that, if the editor content is iframed, both the <code>style</code> and <code>editorStyle</code> will load in the iframe. <code>editorStyle</code> will also load outside the iframe, so it can be used for editor content as well as UI.</p>
+<p>For example:</p>
+<pre><code class="language-json">{
+    "apiVersion": 3,
+    "name": "gutenberg-examples/example-02-stylesheets",
+    "title": "Example: Stylesheets",
+    "icon": "universal-access-alt",
+    "category": "layout",
+    "editorScript": "file:./block.js",
+    "editorStyle": "file:./editor.css",
+    "style": "file:./style.css"
+}
+</code></pre>
+<p>So in your plugin directory, create an <code>editor.css</code> file to load in editor view:</p>
+<pre><code class="language-css">/* green background */
+.wp-block-gutenberg-examples-example-02-stylesheets {
+    background: #090;
+    color: white;
+    padding: 20px;
+}
+</code></pre>
+<p>And a <code>style.css</code> file to load on the frontend:</p>
+<pre><code class="language-css">/* red background */
+.wp-block-gutenberg-examples-example-02-stylesheets {
+    background: #900;
+    color: white;
+    padding: 20px;
+}
+</code></pre>
+<p>The files will automatically be enqueued when specified in the block.json.</p>
+<div class="callout callout-info">
+<p>If you are using `@wordpress/scripts` you will need to import your stylesheet within your corresponding JavaScript file in order for `@wordpress/scripts` to process the stylesheet.</p>
+<p>Example:</p>
+<p>– In `edit.js` you would place `import ‘./editor.scss’;`<br/>
+– In `index.js` you would place `import ‘./style.scss’;`<br/>
+– In `view.js` you would place `import ‘./view.scss’;` (interactive block template)
+</p></div>
+<p><strong>Note:</strong> If you have multiple files to include, you can use standard <code>wp_enqueue_style</code> functions like any other plugin or theme. You will want to use the following hooks for the block editor:</p>
+<ul>
+<li><code>enqueue_block_editor_assets</code> – to load only in editor view</li>
+<li><code>enqueue_block_assets</code> – loads both on frontend and editor view</li>
+</ul>
+<h2 class="is-toc-heading" id="conclusion" tabindex="-1"><a href="#conclusion">Conclusion</a></h2>
+<p>This guide showed a couple of different ways to apply styles to your block, by either inline or in its own style sheet. Both of these methods use the <code>useBlockProps</code> hook, see the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-edit-save/#block-wrapper-props">block wrapper reference documentation</a> for additional details.</p>
+<p>See the complete <a href="https://github.com/WordPress/block-development-examples/tree/trunk/plugins/stylesheets-79a4c3">stylesheets-79a4c3</a> code in the <a href="https://github.com/WordPress/block-development-examples">block-development-examples repository</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

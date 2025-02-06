@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wpdb/">wpdb</a></span><span class="is-current-page">wpdb::query()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wpdb::query()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wpdb::query( <span class="arg-type">string</span> <span class="arg-name">$query</span> ): <span class="return-type">int|bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Performs a database query, using current database connection.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>More information can be found on the documentation page.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$query</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Database query.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">int|bool</span> Boolean true for CREATE, ALTER, TRUNCATE and DROP queries. Number of rows                  affected/selected for all other queries. Boolean false on error.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2206"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function query( $query ) {
+	if ( ! $this-&gt;ready ) {
+		$this-&gt;check_current_query = true;
+		return false;
+	}
+
+	/**
+	 * Filters the database query.
+	 *
+	 * Some queries are made before the plugins have been loaded,
+	 * and thus cannot be filtered with this method.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $query Database query.
+	 */
+	$query = apply_filters( 'query', $query );
+
+	if ( ! $query ) {
+		$this-&gt;insert_id = 0;
+		return false;
+	}
+
+	$this-&gt;flush();
+
+	// Log how the function was called.
+	$this-&gt;func_call = "\$db-&gt;query(\"$query\")";
+
+	// If we're writing to the database, make sure the query will write safely.
+	if ( $this-&gt;check_current_query &amp;&amp; ! $this-&gt;check_ascii( $query ) ) {
+		$stripped_query = $this-&gt;strip_invalid_text_from_query( $query );
+		/*
+		 * strip_invalid_text_from_query() can perform queries, so we need
+		 * to flush again, just to make sure everything is clear.
+		 */
+		$this-&gt;flush();
+		if ( $stripped_query !== $query ) {
+			$this-&gt;insert_id  = 0;
+			$this-&gt;last_query = $query;
+
+			wp_load_translations_early();
+
+			$this-&gt;last_error = __( 'WordPress database error: Could not perform query because it contains invalid data.' );
+
+			return false;
+		}
+	}
+
+	$this-&gt;check_current_query = true;
+
+	// Keep track of the last query for debug.
+	$this-&gt;last_query = $query;
+
+	$this-&gt;_do_query( $query );
+
+	// Database server has gone away, try to reconnect.
+	$mysql_errno = 0;
+
+	if ( $this-&gt;dbh instanceof mysqli ) {
+		$mysql_errno = mysqli_errno( $this-&gt;dbh );
+	} else {
+		/*
+		 * $dbh is defined, but isn't a real connection.
+		 * Something has gone horribly wrong, let's try a reconnect.
+		 */
+		$mysql_errno = 2006;
+	}
+
+	if ( empty( $this-&gt;dbh ) || 2006 === $mysql_errno ) {
+		if ( $this-&gt;check_connection() ) {
+			$this-&gt;_do_query( $query );
+		} else {
+			$this-&gt;insert_id = 0;
+			return false;
+		}
+	}
+
+	// If there is an error then take note of it.
+	if ( $this-&gt;dbh instanceof mysqli ) {
+		$this-&gt;last_error = mysqli_error( $this-&gt;dbh );
+	} else {
+		$this-&gt;last_error = __( 'Unable to retrieve the error message from MySQL' );
+	}
+
+	if ( $this-&gt;last_error ) {
+		// Clear insert_id on a subsequent failed insert.
+		if ( $this-&gt;insert_id &amp;&amp; preg_match( '/^\s*(insert|replace)\s/i', $query ) ) {
+			$this-&gt;insert_id = 0;
+		}
+
+		$this-&gt;print_error();
+		return false;
+	}
+
+	if ( preg_match( '/^\s*(create|alter|truncate|drop)\s/i', $query ) ) {
+		$return_val = $this-&gt;result;
+	} elseif ( preg_match( '/^\s*(insert|delete|update|replace)\s/i', $query ) ) {
+		$this-&gt;rows_affected = mysqli_affected_rows( $this-&gt;dbh );
+
+		// Take note of the insert_id.
+		if ( preg_match( '/^\s*(insert|replace)\s/i', $query ) ) {
+			$this-&gt;insert_id = mysqli_insert_id( $this-&gt;dbh );
+		}
+
+		// Return number of rows affected.
+		$return_val = $this-&gt;rows_affected;
+	} else {
+		$num_rows = 0;
+
+		if ( $this-&gt;result instanceof mysqli_result ) {
+			while ( $row = mysqli_fetch_object( $this-&gt;result ) ) {
+				$this-&gt;last_result[ $num_rows ] = $row;
+				++$num_rows;
+			}
+		}
+
+		// Log and return the number of rows selected.
+		$this-&gt;num_rows = $num_rows;
+		$return_val     = $num_rows;
+	}
+
+	return $return_val;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wpdb.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wpdb.php#L2206">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wpdb.php#L2206-L2328">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/query/"><span class="hook-func">apply_filters</span>( ‘query’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$query</span></nobr> )</a></dt><dd><p>Filters the database query.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/check_ascii/">wpdb::check_ascii()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Checks if a string is ASCII.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/strip_invalid_text_from_query/">wpdb::strip_invalid_text_from_query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Strips any invalid characters from the query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_load_translations_early/">wp_load_translations_early()</a><code>wp-includes/load.php</code></td><td><p>Attempts an early load of translations.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/_do_query/">wpdb::_do_query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Internal function to perform the mysqli_query() call.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/check_connection/">wpdb::check_connection()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Checks that the connection to the database is still up. If not, try to reconnect.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/flush/">wpdb::flush()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Kills cached query results.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/print_error/">wpdb::print_error()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prints SQL/DB error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_set_option_autoload_values/">wp_set_option_autoload_values()</a><code>wp-includes/option.php</code></td><td><p>Sets the autoload values for multiple options in the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_batch_update_comment_type/">_wp_batch_update_comment_type()</a><code>wp-includes/comment.php</code></td><td><p>Updates the comment type for a batch of comments.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_uninitialize_site/">wp_uninitialize_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Runs the uninitialization routine for a given site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/populate_network_meta/">populate_network_meta()</a><code>wp-admin/includes/schema.php</code></td><td><p>Creates WordPress network meta and sets the default values.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/populate_site_meta/">populate_site_meta()</a><code>wp-admin/includes/schema.php</code></td><td><p>Creates WordPress site meta and sets the default values.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_expired_transients/">delete_expired_transients()</a><code>wp-includes/option.php</code></td><td><p>Deletes all expired transients.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/create_lock/">WP_Upgrader::create_lock()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Creates a lock using WordPress options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_batch_split_terms/">_wp_batch_split_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Splits a batch of shared taxonomy terms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_media_attach_action/">wp_media_attach_action()</a><code>wp-admin/includes/media.php</code></td><td><p>Encapsulates the logic for Attach/Detach actions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_convert_table_to_utf8mb4/">maybe_convert_table_to_utf8mb4()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>If a table only contains utf8 or utf8mb4 columns, convert it to utf8mb4.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_drop_column/">maybe_drop_column()</a><code>wp-admin/install-helper.php</code></td><td><p>Drops column from database table, if it exists.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/populate_options/">populate_options()</a><code>wp-admin/includes/schema.php</code></td><td><p>Create WordPress options and set the default values.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/pre_schema_upgrade/">pre_schema_upgrade()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Runs before the schema is upgraded.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_create_table/">maybe_create_table()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Creates a table in the database, if it doesn’t already exist.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_add_column/">maybe_add_column()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Adds column to a database table, if it doesn’t already exist.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/upgrade_network/">upgrade_network()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Executes network-level upgrade routines.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/drop_index/">drop_index()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Drops a specified index from a table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_clean_index/">add_clean_index()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Adds an index to a specified table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/dbdelta/">dbDelta()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Modifies the database based on specified SQL statements.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_install_defaults/">wp_install_defaults()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Creates the initial content for a newly-installed site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_usermeta/">delete_usermeta()</a><code>wp-includes/deprecated.php</code></td><td><p>Remove user meta data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_object_terms/">wp_set_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Creates term and taxonomy relationships.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_remove_object_terms/">wp_remove_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes term(s) associated with a given object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_option/">add_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_untrash_post_comments/">wp_untrash_post_comments()</a><code>wp-includes/post.php</code></td><td><p>Restores comments for a post from the Trash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_upgrade_revisions_of_post/">_wp_upgrade_revisions_of_post()</a><code>wp-includes/revision.php</code></td><td><p>Upgrades the revisions author, adds the current post as a revision and sets the revisions version to 1.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_user_from_blog/">remove_user_from_blog()</a><code>wp-includes/ms-functions.php</code></td><td><p>Removes a user from a blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/_insert_replace_helper/">wpdb::_insert_replace_helper()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Helper function for insert and replace.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/update/">wpdb::update()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Updates a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/delete/">wpdb::delete()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Deletes a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_var/">wpdb::get_var()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one value from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_row/">wpdb::get_row()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one row from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_col/">wpdb::get_col()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one column from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_results/">wpdb::get_results()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves an entire SQL result set from the database (i.e., many rows).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trackback/">trackback()</a><code>wp-includes/comment.php</code></td><td><p>Sends a Trackback.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_trackbacks/">do_trackbacks()</a><code>wp-includes/comment.php</code></td><td><p>Performs trackbacks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_metadata/">delete_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Deletes metadata for the specified object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 32 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/0.71/">0.71</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-meevly even thread-even depth-1" data-comment-id="3574" id="comment-3574">
+<article class="comment-body" id="div-comment-3574">
+<a class="screen-reader-text" href="#comment-content-3574">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3574">
+<p>A simple query example using prepared statements</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wpdb-&gt;query( 
+	$wpdb-&gt;prepare( 
+		"DELETE FROM $wpdb-&gt;postmeta WHERE post_id = %d AND meta_key = %s",
+	    13,
+		'gargle' 
+	)
+);</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3574">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-nobug odd alt thread-odd thread-alt depth-1" data-comment-id="4425" id="comment-4425">
+<article class="comment-body" id="div-comment-4425">
+<a class="screen-reader-text" href="#comment-content-4425">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4425">
+<p>Be aware that because of the <code>preg_match( '/^\s*(insert|delete|update|replace)\s/i', $query )</code> check inside this function, you may be surprised to not receive the expected <code>$wpdb-&gt;rows_affected</code> (and will miss the <code>$wpdb-&gt;insert_id</code> too) if you have anything except whitespace characters before the UPDATE/INSERT/etc. statement, e.g.:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$rows_affected = $wpdb-&gt;query(
+	"# this comment breaks the $return_val
+	UPDATE wp_postmeta SET meta_value = 'baz'
+	WHERE meta_key = 'foo' AND meta_value = 'bar'"
+);
+echo $rows_affected; // will output 0 (actually $num_rows)</code></pre>
+<p>This will not work as expected – it will update your records but won’t return any value.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4425">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

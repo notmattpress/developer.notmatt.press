@@ -1,0 +1,245 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">add_option()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>add_option()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">add_option( <span class="arg-type">string</span> <span class="arg-name">$option</span>,  <span class="arg-type">mixed</span> <span class="arg-name">$value</span> = <span class="arg-default">''</span>,  <span class="arg-type">string</span> <span class="arg-name">$deprecated</span> = <span class="arg-default">''</span>,  <span class="arg-type">bool|null</span> <span class="arg-name">$autoload</span> = <span class="arg-default">null</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Adds a new option.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>You do not need to serialize values. If the value needs to be serialized, then it will be serialized before it is inserted into the database.<br/>Remember, resources cannot be serialized or added as an option.</p>
+<p>You can create options without values and then update the values later.<br/>Existing options will not be updated and checks are performed to ensure that you aren’t adding a protected WordPress option. Care should be taken to not name options the same as the ones which are protected.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$option</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Name of the option to add. Expected to not be SQL-escaped.</span></div></dd><dt><code>$value</code><span class="type"><span class="mixed">mixed</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Option value. Must be serializable if non-scalar.<br/>
+Expected to not be SQL-escaped.</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$deprecated</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Description. Not used anymore.</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$autoload</code><span class="type"><span class="bool">bool</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to load the option when WordPress starts up.<br/>
+Accepts a boolean, or <code>null</code> to leave the decision up to default heuristics in                              WordPress. For backward compatibility <code>'yes'</code> and <code>'no'</code> are also accepted, though using                              these values is deprecated.<br/>
+Autoloading too many options can lead to performance problems, especially if the                              options are not frequently used. For options which are accessed across several places                              in the frontend, it is recommended to autoload them, by using true.<br/>
+For options which are accessed only on few specific URLs, it is recommended                              to not autoload them, by using false.<br/>
+Default is null, which means WordPress will determine the autoload value.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True if the option was added, false otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1061"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function add_option( $option, $value = '', $deprecated = '', $autoload = null ) {
+	global $wpdb;
+
+	if ( ! empty( $deprecated ) ) {
+		_deprecated_argument( __FUNCTION__, '2.3.0' );
+	}
+
+	if ( is_scalar( $option ) ) {
+		$option = trim( $option );
+	}
+
+	if ( empty( $option ) ) {
+		return false;
+	}
+
+	/*
+	 * Until a proper _deprecated_option() function can be introduced,
+	 * redirect requests to deprecated keys to the new, correct ones.
+	 */
+	$deprecated_keys = array(
+		'blacklist_keys'    =&gt; 'disallowed_keys',
+		'comment_whitelist' =&gt; 'comment_previously_approved',
+	);
+
+	if ( isset( $deprecated_keys[ $option ] ) &amp;&amp; ! wp_installing() ) {
+		_deprecated_argument(
+			__FUNCTION__,
+			'5.5.0',
+			sprintf(
+				/* translators: 1: Deprecated option key, 2: New option key. */
+				__( 'The "%1$s" option key has been renamed to "%2$s".' ),
+				$option,
+				$deprecated_keys[ $option ]
+			)
+		);
+		return add_option( $deprecated_keys[ $option ], $value, $deprecated, $autoload );
+	}
+
+	wp_protect_special_option( $option );
+
+	if ( is_object( $value ) ) {
+		$value = clone $value;
+	}
+
+	$value = sanitize_option( $option, $value );
+
+	/*
+	 * Make sure the option doesn't already exist.
+	 * We can check the 'notoptions' cache before we ask for a DB query.
+	 */
+	$notoptions = wp_cache_get( 'notoptions', 'options' );
+
+	if ( ! is_array( $notoptions ) || ! isset( $notoptions[ $option ] ) ) {
+		/** This filter is documented in wp-includes/option.php */
+		if ( apply_filters( "default_option_{$option}", false, $option, false ) !== get_option( $option ) ) {
+			return false;
+		}
+	}
+
+	$serialized_value = maybe_serialize( $value );
+
+	$autoload = wp_determine_option_autoload_value( $option, $value, $serialized_value, $autoload );
+
+	/**
+	 * Fires before an option is added.
+	 *
+	 * @since 2.9.0
+	 *
+	 * @param string $option Name of the option to add.
+	 * @param mixed  $value  Value of the option.
+	 */
+	do_action( 'add_option', $option, $value );
+
+	$result = $wpdb-&gt;query( $wpdb-&gt;prepare( "INSERT INTO `$wpdb-&gt;options` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, %s) ON DUPLICATE KEY UPDATE `option_name` = VALUES(`option_name`), `option_value` = VALUES(`option_value`), `autoload` = VALUES(`autoload`)", $option, $serialized_value, $autoload ) );
+	if ( ! $result ) {
+		return false;
+	}
+
+	if ( ! wp_installing() ) {
+		if ( in_array( $autoload, wp_autoload_values_to_autoload(), true ) ) {
+			$alloptions            = wp_load_alloptions( true );
+			$alloptions[ $option ] = $serialized_value;
+			wp_cache_set( 'alloptions', $alloptions, 'options' );
+		} else {
+			wp_cache_set( $option, $serialized_value, 'options' );
+		}
+	}
+
+	// This option exists now.
+	$notoptions = wp_cache_get( 'notoptions', 'options' ); // Yes, again... we need it to be fresh.
+
+	if ( is_array( $notoptions ) &amp;&amp; isset( $notoptions[ $option ] ) ) {
+		unset( $notoptions[ $option ] );
+		wp_cache_set( 'notoptions', $notoptions, 'options' );
+	}
+
+	/**
+	 * Fires after a specific option has been added.
+	 *
+	 * The dynamic portion of the hook name, `$option`, refers to the option name.
+	 *
+	 * @since 2.5.0 As "add_option_{$name}"
+	 * @since 3.0.0
+	 *
+	 * @param string $option Name of the option to add.
+	 * @param mixed  $value  Value of the option.
+	 */
+	do_action( "add_option_{$option}", $option, $value );
+
+	/**
+	 * Fires after an option has been added.
+	 *
+	 * @since 2.9.0
+	 *
+	 * @param string $option Name of the added option.
+	 * @param mixed  $value  Value of the option.
+	 */
+	do_action( 'added_option', $option, $value );
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/option.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/option.php#L1061">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/option.php#L1061-L1181">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/added_option/"><span class="hook-func">do_action</span>( ‘added_option’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr> )</a></dt><dd><p>Fires after an option has been added.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/add_option/"><span class="hook-func">do_action</span>( ‘add_option’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr> )</a></dt><dd><p>Fires before an option is added.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/add_option_option/"><span class="hook-func">do_action</span>( “add_option_{$option}”,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr> )</a></dt><dd><p>Fires after a specific option has been added.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/default_option_option/"><span class="hook-func">apply_filters</span>( “default_option_{$option}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$default_value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$passed_default</span></nobr> )</a></dt><dd><p>Filters the default value for an option.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_autoload_values_to_autoload/">wp_autoload_values_to_autoload()</a><code>wp-includes/option.php</code></td><td><p>Returns the values that trigger autoloading from the options table.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_determine_option_autoload_value/">wp_determine_option_autoload_value()</a><code>wp-includes/option.php</code></td><td><p>Determines the appropriate autoload value for an option based on input.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_installing/">wp_installing()</a><code>wp-includes/load.php</code></td><td><p>Checks or sets whether WordPress is in “installation” mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set/">wp_cache_set()</a><code>wp-includes/cache.php</code></td><td><p>Saves the data to the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_option/">sanitize_option()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes various option values based on the nature of the option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_serialize/">maybe_serialize()</a><code>wp-includes/functions.php</code></td><td><p>Serializes data, if needed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_option/">add_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_load_alloptions/">wp_load_alloptions()</a><code>wp-includes/option.php</code></td><td><p>Loads and caches all autoloaded options, if available or all options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_protect_special_option/">wp_protect_special_option()</a><code>wp-includes/option.php</code></td><td><p>Protects WordPress special option from being modified.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/query/">wpdb::query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Performs a database query, using current database connection.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_argument/">_deprecated_argument()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 11 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/add_network_option/">add_network_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new network option.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/switch_theme/">switch_theme()</a><code>wp-includes/theme.php</code></td><td><p>Switches the theme.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_transient/">set_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a transient.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/add_option/">add_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_blog_option/">add_blog_option()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Adds a new option for a given blog ID.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td><span class="since-description">The autoload values <code>'yes'</code> and <code>'no'</code> are deprecated.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.6.0/">6.6.0</a></td><td><span class="since-description">The $autoload parameter’s default value was changed to null.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.0.0/">1.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-clorith even thread-even depth-1" data-comment-id="6219" id="comment-6219">
+<article class="comment-body" id="div-comment-6219">
+<a class="screen-reader-text" href="#comment-content-6219">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6219">
+<p>The `autoload` option means that WordPress will automatically fetch this option and its value on every page request.</p>
+<p>If your code relies on the option value on every, or close to every, page request, setting this value to `yes` will save a database query from being triggered when you request the option.</p>
+<p>Take note that the value of your option entry will add to the overall memory consumed by the website, so keep this in mind when autoloading large datasets.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6219">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1132" id="comment-1132">
+<article class="comment-body" id="div-comment-1132">
+<a class="screen-reader-text" href="#comment-content-1132">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1132">
+<p><strong>Basic Example</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php add_option( 'myhack_extraction_length', '255', '', 'yes' ); ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1132">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">remove_meta_box()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>remove_meta_box()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">remove_meta_box( <span class="arg-type">string</span> <span class="arg-name">$id</span>,  <span class="arg-type">string|array|WP_Screen</span> <span class="arg-name">$screen</span>,  <span class="arg-type">string</span> <span class="arg-name">$context</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Removes a meta box from one or more screens.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$id</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Meta box ID (used in the <code>'id'</code> attribute for the meta box).</span></div></dd><dt><code>$screen</code><span class="type"><span class="string">string</span>|<span class="array">array</span>|<span class="WP_Screen"><a href="https://developer.notmatt.press/reference/classes/wp_screen/" rel="class">WP_Screen</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The screen or screens on which the meta box is shown (such as a                                        post type, <code>'link'</code>, or <code>'comment'</code>). Accepts a single screen ID,                                        <a href="https://developer.notmatt.press/reference/classes/wp_screen/" rel="class">WP_Screen</a> object, or array of screen IDs.</span></div></dd><dt><code>$context</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The context within the screen where the box is set to display.<br/>
+Contexts vary from screen to screen. Post edit screen contexts                                        include <code>'normal'</code>, <code>'side'</code>, and <code>'advanced'</code>. Comments screen contexts                                        include <code>'normal'</code> and <code>'side'</code>. Menus meta boxes (accordion sections)                                        all use the <code>'side'</code> context.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>Because you can’t remove a meta box until it’s been added, it’s important to make sure your call to <tt><a href="https://developer.notmatt.press/reference/functions/remove_meta_box/" rel="function">remove_meta_box()</a> </tt> happens in the right sequence. Just adding a call to <tt><a href="https://developer.notmatt.press/reference/functions/remove_meta_box/" rel="function">remove_meta_box()</a> </tt> bare in your <i>functions.php</i> will probably not do the trick.</p>
+<p>The <a href="https://codex.wordpress.org/Plugin_API/Action_Reference/add_meta_boxes" title="Plugin API/Action Reference/add meta boxes">add_meta_boxes</a> action hook is probably a good candidate since most of your meta boxes are generated on the edit post form page. This hook is called in the <code><a class="external text" href="https://core.trac.wordpress.org/browser/tags/5.3/src/wp-admin/edit-form-advanced.php#L0" rel="nofollow">wp-admin/edit-form-advanced.php</a></code> file <i>after</i> all the meta boxes have been successfully added to the page. This affects all meta boxes (conceivably, other than those that are custom generated by a theme or plugin) that appear on post edit pages (including custom post types edit pages) of the administration back-end.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1487"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function remove_meta_box( $id, $screen, $context ) {
+	global $wp_meta_boxes;
+
+	if ( empty( $screen ) ) {
+		$screen = get_current_screen();
+	} elseif ( is_string( $screen ) ) {
+		$screen = convert_to_screen( $screen );
+	} elseif ( is_array( $screen ) ) {
+		foreach ( $screen as $single_screen ) {
+			remove_meta_box( $id, $single_screen, $context );
+		}
+	}
+
+	if ( ! isset( $screen-&gt;id ) ) {
+		return;
+	}
+
+	$page = $screen-&gt;id;
+
+	if ( ! isset( $wp_meta_boxes ) ) {
+		$wp_meta_boxes = array();
+	}
+	if ( ! isset( $wp_meta_boxes[ $page ] ) ) {
+		$wp_meta_boxes[ $page ] = array();
+	}
+	if ( ! isset( $wp_meta_boxes[ $page ][ $context ] ) ) {
+		$wp_meta_boxes[ $page ][ $context ] = array();
+	}
+
+	foreach ( array( 'high', 'core', 'default', 'low' ) as $priority ) {
+		$wp_meta_boxes[ $page ][ $context ][ $priority ][ $id ] = false;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/template.php#L1487">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/template.php#L1487-L1519">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_current_screen/">get_current_screen()</a><code>wp-admin/includes/screen.php</code></td><td><p>Get the current screen object</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/convert_to_screen/">convert_to_screen()</a><code>wp-admin/includes/template.php</code></td><td><p>Converts a screen string to a screen object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/remove_meta_box/">remove_meta_box()</a><code>wp-admin/includes/template.php</code></td><td><p>Removes a meta box from one or more screens.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/remove_meta_box/">remove_meta_box()</a><code>wp-admin/includes/template.php</code></td><td><p>Removes a meta box from one or more screens.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.4.0/">4.4.0</a></td><td><span class="since-description">The <code>$screen</code> parameter now accepts an array of screen IDs.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.6.0/">2.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="568" id="comment-568">
+<article class="comment-body" id="div-comment-568">
+<a class="screen-reader-text" href="#comment-content-568">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-568">
+<p>To remove all the widgets from the dashboard screen, use:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action('wp_dashboard_setup', 'wpdocs_remove_dashboard_widgets');
+
+/**
+ * Remove all dashboard widgets
+ */
+function wpdocs_remove_dashboard_widgets(){
+	remove_meta_box('dashboard_right_now', 'dashboard', 'normal');   // Right Now
+	remove_meta_box('dashboard_recent_comments', 'dashboard', 'normal'); // Recent Comments
+	remove_meta_box('dashboard_incoming_links', 'dashboard', 'normal');  // Incoming Links
+	remove_meta_box('dashboard_plugins', 'dashboard', 'normal');   // Plugins
+	remove_meta_box('dashboard_quick_press', 'dashboard', 'side');  // Quick Press
+	remove_meta_box('dashboard_recent_drafts', 'dashboard', 'side');  // Recent Drafts
+	remove_meta_box('dashboard_primary', 'dashboard', 'side');   // WordPress blog
+	remove_meta_box('dashboard_secondary', 'dashboard', 'side');   // Other WordPress News
+	// use 'dashboard-network' as the second parameter to remove widgets from a network dashboard.
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-568">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-phpdevca odd alt thread-even depth-1" data-comment-id="2607" id="comment-2607">
+<article class="comment-body" id="div-comment-2607">
+<a class="screen-reader-text" href="#comment-content-2607">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2607">
+<p>I was having problems removing the “author” div on a custom post type. The solution was to use a different hook. Instead of using the “admin_menu” hook, the “admin_head” hook worked.</p>
+<p>e.g.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+add_action( 'admin_head' , 'wpdocs_remove_post_custom_fields' );
+ 
+/**
+ * Remove Custom Fields meta box
+ */
+function wpdocs_remove_post_custom_fields() {
+    remove_meta_box( 'authordiv' , 'my-cpt' , 'normal' ); 
+}
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2607">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="563" id="comment-563">
+<article class="comment-body" id="div-comment-563">
+<a class="screen-reader-text" href="#comment-content-563">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-563">
+<p>Here is an example that removes the <em>Custom Fields</em> box from the <em>Post</em> edit screen.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+add_action( 'admin_menu' , 'wpdocs_remove_post_custom_fields' );
+
+/**
+ * Remove Custom Fields meta box
+ */
+function wpdocs_remove_post_custom_fields() {
+	remove_meta_box( 'postcustom' , 'post' , 'normal' ); 
+}
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-563">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-even depth-1" data-comment-id="569" id="comment-569">
+<article class="comment-body" id="div-comment-569">
+<a class="screen-reader-text" href="#comment-content-569">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-569">
+<p>To remove meta boxes created by plugins, <code>admin_menu</code> is fired too early, use <code>do_meta_boxes</code> instead. This is helpful for instances when you want to limit meta boxes by user capability:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'do_meta_boxes', 'wpdocs_remove_plugin_metaboxes' );
+
+/**
+ * Remove Editorial Flow meta box for users that cannot delete pages 
+ */
+function wpdocs_remove_plugin_metaboxes(){
+    if ( ! current_user_can( 'delete_others_pages' ) ) { // Only run if the user is an Author or lower.
+        remove_meta_box( 'ef_editorial_meta', 'post', 'side' ); // Remove Edit Flow Editorial Metadata
+    }
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-569">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-jdorner even thread-odd thread-alt depth-1" data-comment-id="3880" id="comment-3880">
+<article class="comment-body" id="div-comment-3880">
+<a class="screen-reader-text" href="#comment-content-3880">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3880">
+<p>This will only remove the excerpt if you are not using Gutenberg editor.<br>
+If you are using the Gutenberg editor, use:</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function wpdocs_remove_page_excerpt_field() {
+	remove_post_type_support( 'page', 'excerpt' );
+}
+add_action( 'admin_init', 'wpdocs_remove_page_excerpt_field' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3880">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-beinoriusju odd alt thread-even depth-1" data-comment-id="5005" id="comment-5005">
+<article class="comment-body" id="div-comment-5005">
+<a class="screen-reader-text" href="#comment-content-5005">Skip to note 21 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5005">
+<p>Gutenberg editor does not recognize the old way of removing panels. If you like me have custom taxonomies you should remove them with JavaScript.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'admin_enqueue_scripts', 'wpdocs_my_admin_scripts' );
+ 
+function wpdocs_my_admin_scripts( $hook ) {
+    wp_enqueue_script( 'wpdocs-my-editor-script', 'my-editor-script.js' );
+
+    $data = array(
+        'hook' =&gt; $hook
+    );
+
+    wp_localize_script( 'wpdocs-my-editor-script', 'my_editor_script', $data );
+}</code></pre>
+<p>Then your script…</p>
+<pre class="wp-block-code"><code class="language-js line-numbers" lang="js">window.addEventListener( 'load', () =&gt; {
+    if ( [ 'post.php', 'post-new.php' ].indexOf( my_editor_script.hook ) &gt; -1 ) {
+        wp.data.dispatch( 'core/edit-post' ).removeEditorPanel( 'taxonomy-panel-MY-TAXONOMY-NAME' ) ;
+    }    
+} )</code></pre>
+<p>Other panels can be removed also.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5005">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-fouriemc even thread-odd thread-alt depth-1" data-comment-id="5365" id="comment-5365">
+<article class="comment-body" id="div-comment-5365">
+<a class="screen-reader-text" href="#comment-content-5365">Skip to note 22 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5365">
+<p>It’s easier not to show meta boxes for custom taxonomies in the editor by adding:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">'meta_box_cb' =&gt; false,</code></pre>
+<p>This is added within <a href="https://developer.notmatt.press/reference/functions/register_taxonomy/">register_taxonomy()</a>.</p>
+<p>For example:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function custom_tags(){
+	$singular_name = 'Example';
+	$plural_name = 'Examples';
+	$taxonomy_slug = sanitize_title_with_dashes($singular_name); // Taxonomy key, must not exceed 32 characters.
+	$category_taxonomy = false; // False for Tags, True for Categories
+	$post_type = 'custom_post_type'; // Object type or array of object types with which the taxonomy should be associated.
+	$labels = array(
+		'name' =&gt; _x( $plural_name, 'Taxonomy Plural Name' ),
+		'singular_name' =&gt; _x( $singular_name, 'Taxonomy Singular Name' ),
+		'search_items' =&gt;  __( 'Search ' . $plural_name ),
+		'popular_items' =&gt; __( 'Popular ' . $plural_name ),
+		'all_items' =&gt; __( 'All ' . $plural_name ),
+		'parent_item' =&gt; null,
+		'parent_item_colon' =&gt; null,
+		'edit_item' =&gt; __( 'Edit ' . $singular_name ), 
+		'update_item' =&gt; __( 'Update ' . $singular_name ),
+		'add_new_item' =&gt; __( 'Add New ' . $singular_name ),
+		'new_item_name' =&gt; __( 'New ' . $singular_name . ' Name' ),
+		'separate_items_with_commas' =&gt; __( 'Separate ' . $plural_name . ' With Commas' ),
+		'add_or_remove_items' =&gt; __( 'Add or Remove ' . $plural_name ),
+		'choose_from_most_used' =&gt; __( 'Choose From the Most Used ' . $plural_name ),
+		'menu_name' =&gt; __( $plural_name ),
+  	);
+	register_taxonomy(
+		$taxonomy_slug,
+		$post_type,
+		array(
+			'hierarchical' =&gt; $category_taxonomy,
+			'labels' =&gt; $labels,
+			'show_ui' =&gt; true,
+			'show_in_rest' =&gt; true,
+			'show_admin_column' =&gt; true,
+			'meta_box_cb' =&gt; false,
+			'update_count_callback' =&gt; '_update_post_term_count',
+			'query_var' =&gt; true,
+			'rewrite' =&gt; array( 'slug' =&gt; $taxonomy_slug ),
+		)
+	);
+}
+add_action( 'init', 'custom_tags' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5365">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-jemand1 odd alt thread-even depth-1" data-comment-id="6193" id="comment-6193">
+<article class="comment-body" id="div-comment-6193">
+<a class="screen-reader-text" href="#comment-content-6193">Skip to note 23 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6193">
+<p>Doesn’t work with the new block editor</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6193">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="564" id="comment-564">
+<article class="comment-body" id="div-comment-564">
+<a class="screen-reader-text" href="#comment-content-564">Skip to note 24 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-564">
+<p>Here is another example that removes the <em>Excerpt</em> meta box from the <em>Page</em> edit screen,</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+add_action( 'admin_menu' , 'wpdocs_remove_page_excerpt_field' );
+
+/**
+ * Remove the Excerpt meta box
+ */
+function wpdocs_remove_page_excerpt_field() {
+	remove_meta_box( 'postexcerpt' , 'page' , 'normal' ); 
+}
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-564">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-even depth-1" data-comment-id="566" id="comment-566">
+<article class="comment-body" id="div-comment-566">
+<a class="screen-reader-text" href="#comment-content-566">Skip to note 25 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-566">
+<p>If you want to remove a custom taxonomy box from a custom post type edit screen, you can use this:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'admin_menu', 'wpdocs_remove_custom_taxonomy' );
+
+/**
+ * Remove the genre taxonomy box from the movie edit screen
+ */
+function wpdocs_remove_custom_taxonomy()
+{
+	$custom_taxonomy_slug = 'genre';
+	$custom_post_type = 'movies';
+	
+	remove_meta_box('tagsdiv-'.$custom_taxonomy_slug, $custom_post_type, 'side' );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-566">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="562" id="comment-562">
+<article class="comment-body" id="div-comment-562">
+<a class="screen-reader-text" href="#comment-content-562">Skip to note 26 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-562">
+<p>This example removes certain meta boxes from the post edit screens of both the <em>Post</em> and <em>Link</em> post types for non-administrators.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">if ( is_admin() ) {
+	add_action( 'admin_menu', 'wpdocs_remove_meta_boxes' );
+}
+
+/**
+ * Remove meta boxes from the post edit screens
+ */
+function wpdocs_remove_meta_boxes() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		remove_meta_box( 'linktargetdiv', 'link', 'normal' );
+		remove_meta_box( 'linkxfndiv', 'link', 'normal' );
+		remove_meta_box( 'linkadvanceddiv', 'link', 'normal' );
+		remove_meta_box( 'postexcerpt', 'post', 'normal' );
+		remove_meta_box( 'trackbacksdiv', 'post', 'normal' );
+		remove_meta_box( 'postcustom', 'post', 'normal' );
+		remove_meta_box( 'commentstatusdiv', 'post', 'normal' );
+		remove_meta_box( 'commentsdiv', 'post', 'normal' );
+		remove_meta_box( 'revisionsdiv', 'post', 'normal' );
+		remove_meta_box( 'authordiv', 'post', 'normal' );
+		remove_meta_box( 'sqpt-meta-tags', 'post', 'normal' );
+	}
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-562">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-even depth-1" data-comment-id="565" id="comment-565">
+<article class="comment-body" id="div-comment-565">
+<a class="screen-reader-text" href="#comment-content-565">Skip to note 27 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-565">
+<p>This example removes the <em>Comments</em>, <em>Author</em> and <em>Comments Status</em> meta boxes from the <em>Page</em> edit screen,</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+add_action( 'admin_menu' , 'wpdocs_remove_page_fields' );
+
+/**
+ * Remove meta boxes from page screen
+ */
+function wpdocs_remove_page_fields() {
+	remove_meta_box( 'commentstatusdiv' , 'page' , 'normal' ); //removes comments status
+	remove_meta_box( 'commentsdiv' , 'page' , 'normal' ); //removes comments
+	remove_meta_box( 'authordiv' , 'page' , 'normal' ); //removes author 
+}
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-565">
+<ul class="children">
+<li class="comment byuser comment-author-dtwx even depth-2" data-comment-id="6309" id="comment-6309">
+<article class="comment-body" id="div-comment-6309">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6309">
+<div>Pretty sure if you remove <code>commentstatusdiv</code> it actually <strong>disables</strong> comments on any <strong>new</strong> posts created in $screen. If you want to not see it <a href="https://developer.notmatt.press/reference/hooks/hidden_meta_boxes/">use the <code>hidden_meta_boxes</code> hook</a></div>
+<div><a class="url" href="https://profiles.wordpress.org/dtwx/" rel="external nofollow">dtwx</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/remove_meta_box/#comment-6309"><time datetime="2023-01-27T17:00:30+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="567" id="comment-567">
+<article class="comment-body" id="div-comment-567">
+<a class="screen-reader-text" href="#comment-content-567">Skip to note 28 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-567">
+<p>Even the Publish box can be removed if desired:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'admin_menu', 'wpdocs_remove_publish_box' );
+
+/**
+ * Remove the Publish box
+ */
+function wpdocs_remove_publish_box()
+{
+	remove_meta_box( 'submitdiv', 'custom_post_id', 'side' );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-567">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-danhgilmore even thread-even depth-1" data-comment-id="2401" id="comment-2401">
+<article class="comment-body" id="div-comment-2401">
+<a class="screen-reader-text" href="#comment-content-2401">Skip to note 29 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2401">
+<p>In order to remove a widget from the Network Dashboard, you must use wp_network_dashboard_setup hook.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Remove the WordPress News &amp; Events widget from Network Dashboard
+ */
+function wpdocs_remove_network_dashboard_widgets() {
+	remove_meta_box( 'dashboard_primary', 'dashboard-network', 'side' );
+}
+add_action( 'wp_network_dashboard_setup', 'wpdocs_remove_network_dashboard_widgets' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2401">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-pierrelapalu odd alt thread-odd thread-alt depth-1" data-comment-id="2984" id="comment-2984">
+<article class="comment-body" id="div-comment-2984">
+<a class="screen-reader-text" href="#comment-content-2984">Skip to note 30 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2984">
+<p>If you want to remove all default metaboxes created for your custom taxonomies, but don’t want to set the ‘show_ui’                    =&gt; false in the registration of the taxonomy (because it would remove it from the menu), here’s a function for that:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function mytheme_remove_all_metaboxes() {
+	$args = array(
+	   'public'   =&gt; true,
+	   '_builtin' =&gt; false
+	);
+	$post_types = get_post_types($args);
+	foreach ($post_types as $i =&gt; $post_type) {
+  		$taxonomy_objects = get_object_taxonomies( $post_type, 'object' );
+  		foreach ($taxonomy_objects as $j =&gt; $tax_obj) {
+  			if($tax_obj-&gt;hierarchical){
+  				$div_id = $tax_obj-&gt;name . 'div';
+  			} else {
+  				$div_id = 'tagsdiv-' . $tax_obj-&gt;name;
+  			}
+			remove_meta_box($div_id, $post_type, 'side');
+  		}
+	}
+}
+add_action('admin_menu', 'mytheme_remove_all_metaboxes', 999);</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2984">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

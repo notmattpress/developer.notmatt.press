@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/nux</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/nux</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The NUX module exposes components, and <code>wp.data</code> methods useful for onboarding a new user to the WordPress admin interface. Specifically, it exposes <em>tips</em> and <em>guides</em>.</p>
+<p>A <em>tip</em> is a component that points to an element in the UI and contains text that explains the element’s functionality. The user can dismiss a tip, in which case it never shows again. The user can also disable tips entirely. Information about tips is persisted between sessions using <code>localStorage</code>.</p>
+<p>A <em>guide</em> allows a series of tips to be presented to the user one by one. When a user dismisses a tip that is in a guide, the next tip in the guide is shown.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/nux --save
+</code></pre>
+<p><em>This package assumes that your code will run in an <strong>ES2015+</strong> environment. If you’re using an environment that has limited or no support for such language features and APIs, you should include <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default#polyfill">the polyfill shipped in <code>@wordpress/babel-preset-default</code></a> in your code.</em></p>
+<h2 class="is-toc-heading" id="dottip" tabindex="-1"><a href="#dottip">DotTip</a></h2>
+<p><code>DotTip</code> is a React component that renders a single <em>tip</em> on the screen. The tip will point to the React element that <code>DotTip</code> is nested within. Each tip is uniquely identified by a string passed to <code>tipId</code>.</p>
+<p>See <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/nux/src/components/dot-tip/README.md">the component’s README</a> for more information.</p>
+<pre><code class="language-jsx">&lt;button onClick={ ... }&gt;
+    Add to Cart
+    &lt;DotTip tipId="acme/add-to-cart"&gt;
+        Click here to add the product to your shopping cart.
+    &lt;/DotTip&gt;
+&lt;/button&gt;
+}
+</code></pre>
+<h2 class="is-toc-heading" id="determining-if-a-tip-is-visible" tabindex="-1"><a href="#determining-if-a-tip-is-visible">Determining if a tip is visible</a></h2>
+<p>You can programmatically determine if a tip is visible using the <code>isTipVisible</code> select method.</p>
+<pre><code class="language-jsx">const isVisible = select( 'core/nux' ).isTipVisible( 'acme/add-to-cart' );
+console.log( isVisible ); // true or false
+</code></pre>
+<h2 class="is-toc-heading" id="manually-dismissing-a-tip" tabindex="-1"><a href="#manually-dismissing-a-tip">Manually dismissing a tip</a></h2>
+<p><code>dismissTip</code> is a dispatch method that allows you to programmatically dismiss a tip.</p>
+<pre><code class="language-jsx">&lt;button
+    onClick={ () =&gt; {
+        dispatch( 'core/nux' ).dismissTip( 'acme/add-to-cart' );
+    } }
+&gt;
+    Dismiss tip
+&lt;/button&gt;
+</code></pre>
+<h2 class="is-toc-heading" id="disabling-and-enabling-tips" tabindex="-1"><a href="#disabling-and-enabling-tips">Disabling and enabling tips</a></h2>
+<p>Tips can be programmatically disabled or enabled using the <code>disableTips</code> and <code>enableTips</code> dispatch methods. You can query the current setting by using the <code>areTipsEnabled</code> select method.</p>
+<p>Calling <code>enableTips</code> will also un-dismiss all previously dismissed tips.</p>
+<pre><code class="language-jsx">const areTipsEnabled = select( 'core/nux' ).areTipsEnabled();
+return (
+    &lt;button
+        onClick={ () =&gt; {
+            if ( areTipsEnabled ) {
+                dispatch( 'core/nux' ).disableTips();
+            } else {
+                dispatch( 'core/nux' ).enableTips();
+            }
+        } }
+    &gt;
+        { areTipsEnabled ? 'Disable tips' : 'Enable tips' }
+    &lt;/button&gt;
+);
+</code></pre>
+<h2 class="is-toc-heading" id="triggering-a-guide" tabindex="-1"><a href="#triggering-a-guide">Triggering a guide</a></h2>
+<p>You can group a series of tips into a guide by calling the <code>triggerGuide</code> dispatch method. The given tips will then appear one by one.</p>
+<p>A tip cannot be added to more than one guide.</p>
+<pre><code class="language-jsx">dispatch( 'core/nux' ).triggerGuide( [
+    'acme/product-info',
+    'acme/add-to-cart',
+    'acme/checkout',
+] );
+</code></pre>
+<h2 class="is-toc-heading" id="getting-information-about-a-guide" tabindex="-1"><a href="#getting-information-about-a-guide">Getting information about a guide</a></h2>
+<p><code>getAssociatedGuide</code> is a select method that returns useful information about the state of the guide that a tip is associated with.</p>
+<pre><code class="language-jsx">const guide = select( 'core/nux' ).getAssociatedGuide( 'acme/add-to-cart' );
+console.log( 'Tips in this guide:', guide.tipIds );
+console.log( 'Currently showing:', guide.currentTipId );
+console.log( 'Next to show:', guide.nextTipId );
+</code></pre>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

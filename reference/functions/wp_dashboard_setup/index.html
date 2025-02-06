@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_dashboard_setup()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_dashboard_setup()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_dashboard_setup()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Registers dashboard widgets.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Handles POST data, sets up filters.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="20"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_dashboard_setup() {
+	global $wp_registered_widgets, $wp_registered_widget_controls, $wp_dashboard_control_callbacks;
+
+	$screen = get_current_screen();
+
+	/* Register Widgets and Controls */
+	$wp_dashboard_control_callbacks = array();
+
+	// Browser version
+	$check_browser = wp_check_browser_version();
+
+	if ( $check_browser &amp;&amp; $check_browser['upgrade'] ) {
+		add_filter( 'postbox_classes_dashboard_dashboard_browser_nag', 'dashboard_browser_nag_class' );
+
+		if ( $check_browser['insecure'] ) {
+			wp_add_dashboard_widget( 'dashboard_browser_nag', __( 'You are using an insecure browser!' ), 'wp_dashboard_browser_nag' );
+		} else {
+			wp_add_dashboard_widget( 'dashboard_browser_nag', __( 'Your browser is out of date!' ), 'wp_dashboard_browser_nag' );
+		}
+	}
+
+	// PHP Version.
+	$check_php = wp_check_php_version();
+
+	if ( $check_php &amp;&amp; current_user_can( 'update_php' ) ) {
+		// If "not acceptable" the widget will be shown.
+		if ( isset( $check_php['is_acceptable'] ) &amp;&amp; ! $check_php['is_acceptable'] ) {
+			add_filter( 'postbox_classes_dashboard_dashboard_php_nag', 'dashboard_php_nag_class' );
+
+			if ( $check_php['is_lower_than_future_minimum'] ) {
+				wp_add_dashboard_widget( 'dashboard_php_nag', __( 'PHP Update Required' ), 'wp_dashboard_php_nag' );
+			} else {
+				wp_add_dashboard_widget( 'dashboard_php_nag', __( 'PHP Update Recommended' ), 'wp_dashboard_php_nag' );
+			}
+		}
+	}
+
+	// Site Health.
+	if ( current_user_can( 'view_site_health_checks' ) &amp;&amp; ! is_network_admin() ) {
+		if ( ! class_exists( 'WP_Site_Health' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/class-wp-site-health.php';
+		}
+
+		WP_Site_Health::get_instance();
+
+		wp_enqueue_style( 'site-health' );
+		wp_enqueue_script( 'site-health' );
+
+		wp_add_dashboard_widget( 'dashboard_site_health', __( 'Site Health Status' ), 'wp_dashboard_site_health' );
+	}
+
+	// Right Now.
+	if ( is_blog_admin() &amp;&amp; current_user_can( 'edit_posts' ) ) {
+		wp_add_dashboard_widget( 'dashboard_right_now', __( 'At a Glance' ), 'wp_dashboard_right_now' );
+	}
+
+	if ( is_network_admin() ) {
+		wp_add_dashboard_widget( 'network_dashboard_right_now', __( 'Right Now' ), 'wp_network_dashboard_right_now' );
+	}
+
+	// Activity Widget.
+	if ( is_blog_admin() ) {
+		wp_add_dashboard_widget( 'dashboard_activity', __( 'Activity' ), 'wp_dashboard_site_activity' );
+	}
+
+	// QuickPress Widget.
+	if ( is_blog_admin() &amp;&amp; current_user_can( get_post_type_object( 'post' )-&gt;cap-&gt;create_posts ) ) {
+		$quick_draft_title = sprintf( '&lt;span class="hide-if-no-js"&gt;%1$s&lt;/span&gt; &lt;span class="hide-if-js"&gt;%2$s&lt;/span&gt;', __( 'Quick Draft' ), __( 'Your Recent Drafts' ) );
+		wp_add_dashboard_widget( 'dashboard_quick_press', $quick_draft_title, 'wp_dashboard_quick_press' );
+	}
+
+	// WordPress Events and News.
+	wp_add_dashboard_widget( 'dashboard_primary', __( 'WordPress Events and News' ), 'wp_dashboard_events_news' );
+
+	if ( is_network_admin() ) {
+
+		/**
+		 * Fires after core widgets for the Network Admin dashboard have been registered.
+		 *
+		 * @since 3.1.0
+		 */
+		do_action( 'wp_network_dashboard_setup' );
+
+		/**
+		 * Filters the list of widgets to load for the Network Admin dashboard.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @param string[] $dashboard_widgets An array of dashboard widget IDs.
+		 */
+		$dashboard_widgets = apply_filters( 'wp_network_dashboard_widgets', array() );
+	} elseif ( is_user_admin() ) {
+
+		/**
+		 * Fires after core widgets for the User Admin dashboard have been registered.
+		 *
+		 * @since 3.1.0
+		 */
+		do_action( 'wp_user_dashboard_setup' );
+
+		/**
+		 * Filters the list of widgets to load for the User Admin dashboard.
+		 *
+		 * @since 3.1.0
+		 *
+		 * @param string[] $dashboard_widgets An array of dashboard widget IDs.
+		 */
+		$dashboard_widgets = apply_filters( 'wp_user_dashboard_widgets', array() );
+	} else {
+
+		/**
+		 * Fires after core widgets for the admin dashboard have been registered.
+		 *
+		 * @since 2.5.0
+		 */
+		do_action( 'wp_dashboard_setup' );
+
+		/**
+		 * Filters the list of widgets to load for the admin dashboard.
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param string[] $dashboard_widgets An array of dashboard widget IDs.
+		 */
+		$dashboard_widgets = apply_filters( 'wp_dashboard_widgets', array() );
+	}
+
+	foreach ( $dashboard_widgets as $widget_id ) {
+		$name = empty( $wp_registered_widgets[ $widget_id ]['all_link'] ) ? $wp_registered_widgets[ $widget_id ]['name'] : $wp_registered_widgets[ $widget_id ]['name'] . " &lt;a href='{$wp_registered_widgets[$widget_id]['all_link']}' class='edit-box open-box'&gt;" . __( 'View all' ) . '&lt;/a&gt;';
+		wp_add_dashboard_widget( $widget_id, $name, $wp_registered_widgets[ $widget_id ]['callback'], $wp_registered_widget_controls[ $widget_id ]['callback'] );
+	}
+
+	if ( 'POST' === $_SERVER['REQUEST_METHOD'] &amp;&amp; isset( $_POST['widget_id'] ) ) {
+		check_admin_referer( 'edit-dashboard-widget_' . $_POST['widget_id'], 'dashboard-widget-nonce' );
+		ob_start(); // Hack - but the same hack wp-admin/widgets.php uses.
+		wp_dashboard_trigger_widget_control( $_POST['widget_id'] );
+		ob_end_clean();
+		wp_redirect( remove_query_arg( 'edit' ) );
+		exit;
+	}
+
+	/** This action is documented in wp-admin/includes/meta-boxes.php */
+	do_action( 'do_meta_boxes', $screen-&gt;id, 'normal', '' );
+
+	/** This action is documented in wp-admin/includes/meta-boxes.php */
+	do_action( 'do_meta_boxes', $screen-&gt;id, 'side', '' );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/dashboard.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/dashboard.php#L20">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/dashboard.php#L20-L166">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/do_meta_boxes/"><span class="hook-func">do_action</span>( ‘do_meta_boxes’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_type</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr>,  <nobr><span class="arg-type">WP_Post|object|string</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Fires after meta boxes have been added.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_dashboard_setup/"><span class="hook-func">do_action</span>( ‘wp_dashboard_setup’ )</a></dt><dd><p>Fires after core widgets for the admin dashboard have been registered.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_dashboard_widgets/"><span class="hook-func">apply_filters</span>( ‘wp_dashboard_widgets’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$dashboard_widgets</span></nobr> )</a></dt><dd><p>Filters the list of widgets to load for the admin dashboard.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_network_dashboard_setup/"><span class="hook-func">do_action</span>( ‘wp_network_dashboard_setup’ )</a></dt><dd><p>Fires after core widgets for the Network Admin dashboard have been registered.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_network_dashboard_widgets/"><span class="hook-func">apply_filters</span>( ‘wp_network_dashboard_widgets’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$dashboard_widgets</span></nobr> )</a></dt><dd><p>Filters the list of widgets to load for the Network Admin dashboard.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_user_dashboard_setup/"><span class="hook-func">do_action</span>( ‘wp_user_dashboard_setup’ )</a></dt><dd><p>Fires after core widgets for the User Admin dashboard have been registered.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_user_dashboard_widgets/"><span class="hook-func">apply_filters</span>( ‘wp_user_dashboard_widgets’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$dashboard_widgets</span></nobr> )</a></dt><dd><p>Filters the list of widgets to load for the User Admin dashboard.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_instance/">WP_Site_Health::get_instance()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Returns an instance of the <a href="https://developer.notmatt.press/reference/classes/wp_site_health/" rel="class">WP_Site_Health</a> class, or create one if none exist yet.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_check_php_version/">wp_check_php_version()</a><code>wp-admin/includes/misc.php</code></td><td><p>Checks if the user needs to update PHP.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_current_screen/">get_current_screen()</a><code>wp-admin/includes/screen.php</code></td><td><p>Get the current screen object</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_check_browser_version/">wp_check_browser_version()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Checks if the user needs a browser update.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_trigger_widget_control/">wp_dashboard_trigger_widget_control()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Calls widget control callback.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_add_dashboard_widget/">wp_add_dashboard_widget()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Adds a new dashboard widget.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_redirect/">wp_redirect()</a><code>wp-includes/pluggable.php</code></td><td><p>Redirects to another page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_admin_referer/">check_admin_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Ensures intent by verifying that a user was referred from another admin page with the correct security nonce.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_network_admin/">is_network_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for the network administrative interface.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_blog_admin/">is_blog_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for a site’s administrative interface.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_admin/">is_user_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for a user admin screen.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/">wp_enqueue_script()</a><code>wp-includes/functions.wp-scripts.php</code></td><td><p>Enqueues a script.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_query_arg/">remove_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Removes an item or items from a query string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_enqueue_style/">wp_enqueue_style()</a><code>wp-includes/functions.wp-styles.php</code></td><td><p>Enqueues a CSS stylesheet.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_object/">get_post_type_object()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post type object by name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 14 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

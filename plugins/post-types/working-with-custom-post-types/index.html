@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/post-types/">Custom Post Types</a></span><span class="is-current-page">Working with Custom Post Types</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Working with Custom Post Types</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="custom-post-type-templates" tabindex="-1"><a href="#custom-post-type-templates">Custom Post Type Templates</a></h2>
+<p>You can create custom <a href="https://make.wordpress.org/docs/theme-developer-handbook/theme-basics/theme-files/">templates</a> for your custom post types. In the same way posts and their archives can be displayed using <code>single.php</code> and <code>archive.php</code>, you can create the templates:</p>
+<ul class="wp-block-list"><li><code>single-{post_type}.php</code> – for single posts of a custom post type</li><li><code>archive-{post_type}.php</code> – for the archive</li></ul>
+<p>Where <code>{post_type}</code> is the post type identifier, used as the <code>$post_type</code> argument of the <code>register_post_type()</code> function.</p>
+<p>Building upon what we’ve learned previously, you could create <code>single-wporg_product.php</code> and <code>archive-wporg_product.php</code> template files for single product posts and the archive.</p>
+<p>Alternatively, you can use the <a href="https://developer.notmatt.press/reference/functions/is_post_type_archive/" rel="function">is_post_type_archive()</a>  function in any template file to check if the query shows an archive page of a given post type, and the <a href="https://developer.notmatt.press/reference/functions/post_type_archive_title/" rel="function">post_type_archive_title()</a>  function to display the post type title.</p>
+<h2 class="is-toc-heading wp-block-heading" id="querying-by-post-type" tabindex="-1"><a href="#querying-by-post-type">Querying by Post Type</a></h2>
+<p>You can query posts of a specific type by passing the <code>post_type</code> key in the arguments array of the <code>WP_Query</code> class constructor.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$args = array(
+	'post_type'      =&gt; 'product',
+	'posts_per_page' =&gt; 10,
+);
+$loop = new WP_Query($args);
+while ( $loop-&gt;have_posts() ) {
+	$loop-&gt;the_post();
+	?&gt;
+	&lt;div class="entry-content"&gt;
+		&lt;?php the_title(); ?&gt;
+		&lt;?php the_content(); ?&gt;
+	&lt;/div&gt;
+	&lt;?php
+}</code></pre>
+<p>This loops through the latest ten product posts and displays the title and content of them one by one.</p>
+<h2 class="is-toc-heading wp-block-heading" id="altering-the-main-query" tabindex="-1"><a href="#altering-the-main-query">Altering the Main Query</a></h2>
+<p>Registering a custom post type does not mean it gets added to the main query automatically.</p>
+<p>If you want your custom post type posts to show up on standard archives or include them on your home page mixed up with other post types, use the <code><a href="https://developer.notmatt.press/reference/hooks/pre_get_posts/">pre_get_posts</a></code> action hook.</p>
+<p>The next example will show posts from <code>post</code>, <code>page</code> and <code>movie</code> post types on the home page:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function wporg_add_custom_post_types($query) {
+	if ( is_home() &amp;&amp; $query-&gt;is_main_query() ) {
+		$query-&gt;set( 'post_type', array( 'post', 'page', 'movie' ) );
+	}
+	return $query;
+}
+add_action('pre_get_posts', 'wporg_add_custom_post_types');</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

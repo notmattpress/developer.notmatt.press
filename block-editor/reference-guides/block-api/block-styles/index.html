@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Styles</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Styles</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Block Styles allow alternative styles to be applied to existing blocks. They work by adding a className to the block’s wrapper. This className can be used to provide an alternative styling for the block if the block style is selected. See the <a href="https://developer.notmatt.press/block-editor/how-to-guides/block-tutorial/applying-styles-with-stylesheets/">Use styles and stylesheets</a> for a full example on how to apply styles to a block.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-js">wp.blocks.registerBlockStyle( 'core/quote', {
+    name: 'fancy-quote',
+    label: 'Fancy Quote',
+} );
+</code></pre>
+<p>The example above registers a block style named <code>fancy-quote</code> to the <code>core/quote</code> block. When the user selects this block style from the styles selector, an <code>is-style-fancy-quote</code> className will be added to the block’s wrapper.</p>
+<p>By adding <code>isDefault: true</code> you can mark the registered block style as the one that is recognized as active when no custom class name is provided. It also means that there will be no custom class name added to the HTML output for the style that is marked as default.</p>
+<p>To remove a block style use <code>wp.blocks.unregisterBlockStyle()</code>.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-js">wp.blocks.unregisterBlockStyle( 'core/quote', 'large' );
+</code></pre>
+<p>The above removes the block style named <code>large</code> from the <code>core/quote</code> block.</p>
+<p><strong>Important:</strong> When unregistering a block style, there can be a <a href="https://en.wikipedia.org/wiki/Race_condition">race condition</a> on which code runs first: registering the style, or unregistering the style. You want your unregister code to run last. The way to do that is specify the component that is registering the style as a dependency, in this case <code>wp-edit-post</code>. Additionally, using <code>wp.domReady()</code> ensures the unregister code runs once the dom is loaded.</p>
+<p>Enqueue your JavaScript with the following PHP code:</p>
+<pre><code class="language-php">function myguten_enqueue() {
+    wp_enqueue_script(
+        'myguten-script',
+        plugins_url( 'myguten.js', __FILE__ ),
+        array( 'wp-blocks', 'wp-dom-ready', 'wp-edit-post' ),
+        filemtime( plugin_dir_path( __FILE__ ) . '/myguten.js' )
+    );
+}
+add_action( 'enqueue_block_editor_assets', 'myguten_enqueue' );
+</code></pre>
+<p>The JavaScript code in <code>myguten.js</code>:</p>
+<pre><code class="language-js">wp.domReady( function () {
+    wp.blocks.unregisterBlockStyle( 'core/quote', 'large' );
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="server-side-registration-helper" tabindex="-1"><a href="#server-side-registration-helper">Server-side registration helper</a></h2>
+<p>While the samples provided do allow full control of block styles, they do require a considerable amount of code.</p>
+<p>To simplify the process of registering and unregistering block styles, two server-side functions are also available: <code>register_block_style</code>, and <code>unregister_block_style</code>.</p>
+<h3 class="is-toc-heading" id="register_block_style" tabindex="-1"><a href="#register_block_style">register_block_style</a></h3>
+<p>The <code>register_block_style</code> function receives the name of the block as the first argument and an array describing properties of the style as the second argument.</p>
+<p>The properties of the style array must include <code>name</code> and <code>label</code>:</p>
+<ul>
+<li><code>name</code>: The identifier of the style used to compute a CSS class.</li>
+<li><code>label</code>: A human-readable label for the style.</li>
+</ul>
+<p>Besides the two mandatory properties, the styles properties array should also include an <code>inline_style</code> or a <code>style_handle</code> property:</p>
+<ul>
+<li><code>inline_style</code>: Contains inline CSS code that registers the CSS class required for the style.</li>
+<li><code>style_handle</code>: Contains the handle to an already registered style that should be enqueued in places where block styles are needed.</li>
+</ul>
+<p>It is also possible to set the <code>is_default</code> property to <code>true</code> to mark one of the block styles as the default one.</p>
+<p>The following code sample registers a style for the quote block named “Blue Quote”, and provides an inline style that makes quote blocks with the “Blue Quote” style have blue color:</p>
+<pre><code class="language-php">register_block_style(
+    'core/quote',
+    array(
+        'name'         =&gt; 'blue-quote',
+        'label'        =&gt; __( 'Blue Quote', 'textdomain' ),
+        'inline_style' =&gt; '.wp-block-quote.is-style-blue-quote { color: blue; }',
+    )
+);
+</code></pre>
+<p>Alternatively, if a stylesheet was already registered which contains the CSS for the block style, it is possible to just pass the stylesheet’s handle so <code>register_block_style</code> function will make sure it is enqueued.</p>
+<p>The following code sample provides an example of this use case:</p>
+<pre><code class="language-php">wp_register_style( 'myguten-style', get_template_directory_uri() . '/custom-style.css' );
+
+// ...
+
+register_block_style(
+    'core/quote',
+    array(
+        'name'         =&gt; 'fancy-quote',
+        'label'        =&gt; __( 'Fancy Quote', 'textdomain' ),
+        'style_handle' =&gt; 'myguten-style',
+    )
+);
+</code></pre>
+<h3 class="is-toc-heading" id="unregister_block_style" tabindex="-1"><a href="#unregister_block_style">unregister_block_style</a></h3>
+<p><code>unregister_block_style</code> allows unregistering a block style previously registered on the server using <code>register_block_style</code>.</p>
+<p>The function’s first argument is the registered name of the block, and the name of the style as the second argument.</p>
+<p>The following code sample unregisters the style named ‘fancy-quote’ from the quote block:</p>
+<pre><code class="language-php">unregister_block_style( 'core/quote', 'fancy-quote' );
+</code></pre>
+<p><strong>Important:</strong> The function <code>unregister_block_style</code> only unregisters styles that were registered on the server using <code>register_block_style</code>. The function does not unregister a style registered using client-side code.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_theme_json_resolver/">WP_Theme_JSON_Resolver</a></span><span class="is-current-page">WP_Theme_JSON_Resolver::get_resolved_theme_uris()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Theme_JSON_Resolver::get_resolved_theme_uris()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Theme_JSON_Resolver::get_resolved_theme_uris( <span class="arg-type">WP_Theme_JSON</span> <span class="arg-name">$theme_json</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Resolves relative paths in theme.json styles to theme absolute paths and returns them in an array that can be embedded as the value of <code>_link</code> object in REST API responses.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$theme_json</code><span class="type"><span class="WP_Theme_JSON"><a href="https://developer.notmatt.press/reference/classes/wp_theme_json/" rel="class">WP_Theme_JSON</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">A theme json instance.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> An array of resolved paths.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="856"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function get_resolved_theme_uris( $theme_json ) {
+	$resolved_theme_uris = array();
+
+	if ( ! $theme_json instanceof WP_Theme_JSON ) {
+		return $resolved_theme_uris;
+	}
+
+	$theme_json_data = $theme_json-&gt;get_raw_data();
+	/*
+	 * The same file convention when registering web fonts.
+	 * See: WP_Font_Face_Resolver::to_theme_file_uri.
+	 */
+	$placeholder = 'file:./';
+
+	// Top level styles.
+	$background_image_url = $theme_json_data['styles']['background']['backgroundImage']['url'] ?? null;
+	if (
+		isset( $background_image_url ) &amp;&amp;
+		is_string( $background_image_url ) &amp;&amp;
+		// Skip if the src doesn't start with the placeholder, as there's nothing to replace.
+		str_starts_with( $background_image_url, $placeholder )
+	) {
+		$file_type          = wp_check_filetype( $background_image_url );
+		$src_url            = str_replace( $placeholder, '', $background_image_url );
+		$resolved_theme_uri = array(
+			'name'   =&gt; $background_image_url,
+			'href'   =&gt; sanitize_url( get_theme_file_uri( $src_url ) ),
+			'target' =&gt; 'styles.background.backgroundImage.url',
+		);
+		if ( isset( $file_type['type'] ) ) {
+			$resolved_theme_uri['type'] = $file_type['type'];
+		}
+		$resolved_theme_uris[] = $resolved_theme_uri;
+	}
+
+	// Block styles.
+	if ( ! empty( $theme_json_data['styles']['blocks'] ) ) {
+		foreach ( $theme_json_data['styles']['blocks'] as $block_name =&gt; $block_styles ) {
+			if ( ! isset( $block_styles['background']['backgroundImage']['url'] ) ) {
+				continue;
+			}
+			$background_image_url = $block_styles['background']['backgroundImage']['url'];
+			if (
+				is_string( $background_image_url ) &amp;&amp;
+				// Skip if the src doesn't start with the placeholder, as there's nothing to replace.
+				str_starts_with( $background_image_url, $placeholder )
+			) {
+				$file_type          = wp_check_filetype( $background_image_url );
+				$src_url            = str_replace( $placeholder, '', $background_image_url );
+				$resolved_theme_uri = array(
+					'name'   =&gt; $background_image_url,
+					'href'   =&gt; sanitize_url( get_theme_file_uri( $src_url ) ),
+					'target' =&gt; "styles.blocks.{$block_name}.background.backgroundImage.url",
+				);
+				if ( isset( $file_type['type'] ) ) {
+					$resolved_theme_uri['type'] = $file_type['type'];
+				}
+				$resolved_theme_uris[] = $resolved_theme_uri;
+			}
+		}
+	}
+
+	return $resolved_theme_uris;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-theme-json-resolver.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-theme-json-resolver.php#L856">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-theme-json-resolver.php#L856-L919">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_theme_file_uri/">get_theme_file_uri()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL of a file in the theme.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_url/">sanitize_url()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a URL for database or redirect usage.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_check_filetype/">wp_check_filetype()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the file type from the file name.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_global_styles_revisions_controller/prepare_item_for_response/">WP_REST_Global_Styles_Revisions_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-global-styles-revisions-controller.php</code></td><td><p>Prepares the revision for the REST response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_global_styles_controller/get_theme_items/">WP_REST_Global_Styles_Controller::get_theme_items()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-global-styles-controller.php</code></td><td><p>Returns the given theme global styles variations.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_global_styles_controller/get_theme_item/">WP_REST_Global_Styles_Controller::get_theme_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-global-styles-controller.php</code></td><td><p>Returns the given theme global styles config.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_global_styles_controller/prepare_item_for_response/">WP_REST_Global_Styles_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-global-styles-controller.php</code></td><td><p>Prepare a global styles config output for response.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td><span class="since-description">Resolve relative paths in block styles.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.6.0/">6.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_default_script_modules()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_default_script_modules()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_default_script_modules()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Registers all the default WordPress Script Modules.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="132"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_default_script_modules() {
+	$suffix = defined( 'WP_RUN_CORE_TESTS' ) ? '.min' : wp_scripts_get_suffix();
+
+	/*
+	 * Expects multidimensional array like:
+	 *
+	 *     'interactivity/index.min.js' =&gt; array('dependencies' =&gt; array(…), 'version' =&gt; '…'),
+	 *     'interactivity/debug.min.js' =&gt; array('dependencies' =&gt; array(…), 'version' =&gt; '…'),
+	 *     'interactivity-router/index.min.js' =&gt; …
+	 */
+	$assets = include ABSPATH . WPINC . "/assets/script-modules-packages{$suffix}.php";
+
+	foreach ( $assets as $file_name =&gt; $script_module_data ) {
+		/*
+		 * Build the WordPress Script Module ID from the file name.
+		 * Prepend `@wordpress/` and remove extensions and `/index` if present:
+		 *   - interactivity/index.min.js  =&gt; @wordpress/interactivity
+		 *   - interactivity/debug.min.js  =&gt; @wordpress/interactivity/debug
+		 *   - block-library/query/view.js =&gt; @wordpress/block-library/query/view
+		 */
+		$script_module_id = '@wordpress/' . preg_replace( '~(?:/index)?(?:\.min)?\.js$~D', '', $file_name, 1 );
+
+		switch ( $script_module_id ) {
+			/*
+			 * Interactivity exposes two entrypoints, "/index" and "/debug".
+			 * "/debug" should replace "/index" in development.
+			 */
+			case '@wordpress/interactivity/debug':
+				if ( ! SCRIPT_DEBUG ) {
+					continue 2;
+				}
+				$script_module_id = '@wordpress/interactivity';
+				break;
+			case '@wordpress/interactivity':
+				if ( SCRIPT_DEBUG ) {
+					continue 2;
+				}
+				break;
+		}
+
+		$path = includes_url( "js/dist/script-modules/{$file_name}" );
+		wp_register_script_module( $script_module_id, $path, $script_module_data['dependencies'], $script_module_data['version'] );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/script-modules.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/script-modules.php#L132">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/script-modules.php#L132-L175">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_register_script_module/">wp_register_script_module()</a><code>wp-includes/script-modules.php</code></td><td><p>Registers the script module if no script module with that script module identifier has already been registered.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_scripts_get_suffix/">wp_scripts_get_suffix()</a><code>wp-includes/script-loader.php</code></td><td><p>Returns the suffix that can be used for the scripts.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/includes_url/">includes_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the includes directory.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

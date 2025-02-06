@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_get_admin_notice()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_get_admin_notice()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_get_admin_notice( <span class="arg-type">string</span> <span class="arg-name">$message</span>,  <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Creates and returns the markup for an admin notice.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$message</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The message.</span></div></dd><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">An array of arguments for the admin notice. <br/>
+<ul class="param-hash"><li><code>type</code> <span class="type">string</span><div class="desc">Optional. The type of admin notice.<br/>
+For example, <code>'error'</code>, <code>'success'</code>, <code>'warning'</code>, <code>'info'</code>.<br/>
+Default empty string.</div></li>
+<li><code>dismissible</code> <span class="type">bool</span><div class="desc">Optional. Whether the admin notice is dismissible. Default false.</div></li>
+<li><code>id</code> <span class="type">string</span><div class="desc">Optional. The value of the admin notice’s ID attribute. Default empty string.</div></li>
+<li><code>additional_classes</code> <span class="type">string[]</span><div class="desc">Optional. A string array of class names. </div></li>
+<li><code>attributes</code> <span class="type">string[]</span><div class="desc">Optional. Additional attributes for the notice div. </div></li>
+<li><code>paragraph_wrap</code> <span class="type">bool</span><div class="desc">Optional. Whether to wrap the message in paragraph tags. Default true.</div></li>
+</ul>
+</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The markup for an admin notice.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="8943"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_get_admin_notice( $message, $args = array() ) {
+	$defaults = array(
+		'type'               =&gt; '',
+		'dismissible'        =&gt; false,
+		'id'                 =&gt; '',
+		'additional_classes' =&gt; array(),
+		'attributes'         =&gt; array(),
+		'paragraph_wrap'     =&gt; true,
+	);
+
+	$args = wp_parse_args( $args, $defaults );
+
+	/**
+	 * Filters the arguments for an admin notice.
+	 *
+	 * @since 6.4.0
+	 *
+	 * @param array  $args    The arguments for the admin notice.
+	 * @param string $message The message for the admin notice.
+	 */
+	$args       = apply_filters( 'wp_admin_notice_args', $args, $message );
+	$id         = '';
+	$classes    = 'notice';
+	$attributes = '';
+
+	if ( is_string( $args['id'] ) ) {
+		$trimmed_id = trim( $args['id'] );
+
+		if ( '' !== $trimmed_id ) {
+			$id = 'id="' . $trimmed_id . '" ';
+		}
+	}
+
+	if ( is_string( $args['type'] ) ) {
+		$type = trim( $args['type'] );
+
+		if ( str_contains( $type, ' ' ) ) {
+			_doing_it_wrong(
+				__FUNCTION__,
+				sprintf(
+					/* translators: %s: The "type" key. */
+					__( 'The %s key must be a string without spaces.' ),
+					'&lt;code&gt;type&lt;/code&gt;'
+				),
+				'6.4.0'
+			);
+		}
+
+		if ( '' !== $type ) {
+			$classes .= ' notice-' . $type;
+		}
+	}
+
+	if ( true === $args['dismissible'] ) {
+		$classes .= ' is-dismissible';
+	}
+
+	if ( is_array( $args['additional_classes'] ) &amp;&amp; ! empty( $args['additional_classes'] ) ) {
+		$classes .= ' ' . implode( ' ', $args['additional_classes'] );
+	}
+
+	if ( is_array( $args['attributes'] ) &amp;&amp; ! empty( $args['attributes'] ) ) {
+		$attributes = '';
+		foreach ( $args['attributes'] as $attr =&gt; $val ) {
+			if ( is_bool( $val ) ) {
+				$attributes .= $val ? ' ' . $attr : '';
+			} elseif ( is_int( $attr ) ) {
+				$attributes .= ' ' . esc_attr( trim( $val ) );
+			} elseif ( $val ) {
+				$attributes .= ' ' . $attr . '="' . esc_attr( trim( $val ) ) . '"';
+			}
+		}
+	}
+
+	if ( false !== $args['paragraph_wrap'] ) {
+		$message = "&lt;p&gt;$message&lt;/p&gt;";
+	}
+
+	$markup = sprintf( '&lt;div %1$sclass="%2$s"%3$s&gt;%4$s&lt;/div&gt;', $id, $classes, $attributes, $message );
+
+	/**
+	 * Filters the markup for an admin notice.
+	 *
+	 * @since 6.4.0
+	 *
+	 * @param string $markup  The HTML markup for the admin notice.
+	 * @param string $message The message for the admin notice.
+	 * @param array  $args    The arguments for the admin notice.
+	 */
+	return apply_filters( 'wp_admin_notice_markup', $markup, $message, $args );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L8943">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L8943-L9033">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_admin_notice_args/"><span class="hook-func">apply_filters</span>( ‘wp_admin_notice_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$message</span></nobr> )</a></dt><dd><p>Filters the arguments for an admin notice.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_admin_notice_markup/"><span class="hook-func">apply_filters</span>( ‘wp_admin_notice_markup’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$markup</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$message</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the markup for an admin notice.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugins_list_table/add_dependencies_to_dependent_plugin_row/">WP_Plugins_List_Table::add_dependencies_to_dependent_plugin_row()</a><code>wp-admin/includes/class-wp-plugins-list-table.php</code></td><td><p>Prints a list of other plugins that the plugin depends on.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_notice/">wp_admin_notice()</a><code>wp-includes/functions.php</code></td><td><p>Outputs an admin notice.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_theme_auto_update_setting_template/">wp_theme_auto_update_setting_template()</a><code>wp-admin/themes.php</code></td><td><p>Returns the JavaScript template used to display the auto-update setting for a theme.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_policy_content/privacy_policy_guide/">WP_Privacy_Policy_Content::privacy_policy_guide()</a><code>wp-admin/includes/class-wp-privacy-policy-content.php</code></td><td><p>Outputs the privacy policy guide together with content from the theme and plugins.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_cached_rss_widget/">wp_dashboard_cached_rss_widget()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Checks to see if all of the feed url in $check_urls are cached.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nav_menu_update_menu_items/">wp_nav_menu_update_menu_items()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Saves nav menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_nav_menu_to_edit/">wp_get_nav_menu_to_edit()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Returns the menu formatted to edit.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.4.0/">6.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-baikaresandeep007-1 odd alt thread-odd thread-alt depth-1" data-comment-id="6830" id="comment-6830">
+<article class="comment-body" id="div-comment-6830">
+<a class="screen-reader-text" href="#comment-content-6830">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6830">
+<p>This methods returns the markup for an admin notice.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$message = wp_get_admin_notice(
+	__( 'The menu has been successfully deleted.', 'your-text-domain' ),
+	array(
+		'id'                 =&gt; 'message',
+		'additional_classes' =&gt; array( 'updated' ),
+		'dismissible'        =&gt; true,
+	)
+);
+
+// Print this notice in your admin page. 
+echo wp_kses_post( $message );</code></pre>
+<p><strong>Note:</strong> The markup is not fully escaped and care should be taken to select the appropriate escaping function before output. So I am using here <code>wp_kses_post()</code> for escaping.</p>
+<p><strong>Result:</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;div id="message" class="notice is-dismissible updated"&gt;&lt;p&gt;The menu has been successfully deleted.&lt;/p&gt;&lt;/div&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6830">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

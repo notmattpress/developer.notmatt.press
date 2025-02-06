@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_interactivity_api/">WP_Interactivity_API</a></span><span class="is-current-page">WP_Interactivity_API::extract_directive_value()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Interactivity_API::extract_directive_value()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Interactivity_API::extract_directive_value( <span class="arg-type">string|true</span> <span class="arg-name">$directive_value</span>,  <span class="arg-type">string|null</span> <span class="arg-name">$default_namespace</span> = <span class="arg-default">null</span> ): <span class="return-type">array</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Parses and extracts the namespace and reference path from the given directive attribute value.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If the value doesn’t contain an explicit namespace, it returns the default one. If the value contains a JSON object instead of a reference path, the function tries to parse it and return the resulting array. If the value contains strings that represent booleans ("true" and "false"), numbers ("1" and "1.2") or "null", the function also transform them to regular booleans, numbers and <code>null</code>.</p> <p>Example:</p> <pre class="wp-block-code"><code class="language-php" lang="php">extract_directive_value( 'actions.foo', 'myPlugin' )                      =&gt; array( 'myPlugin', 'actions.foo' )
+extract_directive_value( 'otherPlugin::actions.foo', 'myPlugin' )         =&gt; array( 'otherPlugin', 'actions.foo' )
+extract_directive_value( '{ "isOpen": false }', 'myPlugin' )              =&gt; array( 'myPlugin', array( 'isOpen' =&gt; false ) )
+extract_directive_value( 'otherPlugin::{ "isOpen": false }', 'myPlugin' ) =&gt; array( 'otherPlugin', array( 'isOpen' =&gt; false ) )</code></pre></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$directive_value</code><span class="type"><span class="string">string</span>|<span class="true">true</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The directive attribute value. It can be <code>true</code> when it’s a boolean                                       attribute.</span></div></dd><dt><code>$default_namespace</code><span class="type"><span class="string">string</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The default namespace if none is explicitly defined.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> An array containing the namespace in the first item and the JSON, the reference path, or null on the               second item.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="451"><code class="language-php line-numbers" id="wporg-source-code" lang="php">
+		// Checks if there is a server directive processor registered for each directive.
+		foreach ( $p-&gt;get_attribute_names_with_prefix( 'data-wp-' ) as $attribute_name ) {
+			list( $directive_prefix ) = $this-&gt;extract_prefix_and_suffix( $attribute_name );
+			if ( array_key_exists( $directive_prefix, self::$directive_processors ) ) {
+				$directives_prefixes[] = $directive_prefix;
+			}
+		}
+
+		/*
+		 * If this tag will visit its closer tag, it adds it to the tag stack
+		 * so it can process its closing tag and check for unbalanced tags.
+		 */
+		if ( $p-&gt;has_and_visits_its_closer_tag() ) {
+			$tag_stack[] = array( $tag_name, $directives_prefixes );
+		}
+	}
+}
+/*
+ * If the matching opener tag didn't have any directives, it can skip the
+ * processing.
+ */
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/interactivity-api/class-wp-interactivity-api.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/interactivity-api/class-wp-interactivity-api.php#L451">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/interactivity-api/class-wp-interactivity-api.php#L451-L472">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

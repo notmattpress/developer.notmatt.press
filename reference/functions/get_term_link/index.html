@@ -1,0 +1,297 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_term_link()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_term_link()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_term_link( <span class="arg-type">WP_Term|int|string</span> <span class="arg-name">$term</span>,  <span class="arg-type">string</span> <span class="arg-name">$taxonomy</span> = <span class="arg-default">''</span> ): <span class="return-type">string|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Generates a permalink for a taxonomy term archive.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$term</code><span class="type"><span class="WP_Term"><a href="https://developer.notmatt.press/reference/classes/wp_term/" rel="class">WP_Term</a></span>|<span class="int">int</span>|<span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The term object, ID, or slug whose link will be retrieved.</span></div></dd><dt><code>$taxonomy</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Taxonomy. </span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> URL of the taxonomy term archive on success, <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> if term does not exist.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<ul class="wp-block-list">
+<li>Since the term can be an object, integer, or string, make sure that any numbers you pass in are explicitly converted to an integer (example: <tt>(int) $term_id</tt>). Otherwise the function will assume that <tt>$term</tt> is a slug instead of a term ID.</li>
+<li>PHP may halt if you attempt to print an error result (<tt>"Catchable fatal error: Object of class <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> could not be converted to string"</tt>). You should always use <tt><a href="https://developer.notmatt.press/reference/functions/is_wp_error/" title="Function Reference/is wp error"> is_wp_error()</a></tt> to check the result of this function, in case the term does not exist.</li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="4633"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_term_link( $term, $taxonomy = '' ) {
+	global $wp_rewrite;
+
+	if ( ! is_object( $term ) ) {
+		if ( is_int( $term ) ) {
+			$term = get_term( $term, $taxonomy );
+		} else {
+			$term = get_term_by( 'slug', $term, $taxonomy );
+		}
+	}
+
+	if ( ! is_object( $term ) ) {
+		$term = new WP_Error( 'invalid_term', __( 'Empty Term.' ) );
+	}
+
+	if ( is_wp_error( $term ) ) {
+		return $term;
+	}
+
+	$taxonomy = $term-&gt;taxonomy;
+
+	$termlink = $wp_rewrite-&gt;get_extra_permastruct( $taxonomy );
+
+	/**
+	 * Filters the permalink structure for a term before token replacement occurs.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param string  $termlink The permalink structure for the term's taxonomy.
+	 * @param WP_Term $term     The term object.
+	 */
+	$termlink = apply_filters( 'pre_term_link', $termlink, $term );
+
+	$slug = $term-&gt;slug;
+	$t    = get_taxonomy( $taxonomy );
+
+	if ( empty( $termlink ) ) {
+		if ( 'category' === $taxonomy ) {
+			$termlink = '?cat=' . $term-&gt;term_id;
+		} elseif ( $t-&gt;query_var ) {
+			$termlink = "?$t-&gt;query_var=$slug";
+		} else {
+			$termlink = "?taxonomy=$taxonomy&amp;term=$slug";
+		}
+		$termlink = home_url( $termlink );
+	} else {
+		if ( ! empty( $t-&gt;rewrite['hierarchical'] ) ) {
+			$hierarchical_slugs = array();
+			$ancestors          = get_ancestors( $term-&gt;term_id, $taxonomy, 'taxonomy' );
+			foreach ( (array) $ancestors as $ancestor ) {
+				$ancestor_term        = get_term( $ancestor, $taxonomy );
+				$hierarchical_slugs[] = $ancestor_term-&gt;slug;
+			}
+			$hierarchical_slugs   = array_reverse( $hierarchical_slugs );
+			$hierarchical_slugs[] = $slug;
+			$termlink             = str_replace( "%$taxonomy%", implode( '/', $hierarchical_slugs ), $termlink );
+		} else {
+			$termlink = str_replace( "%$taxonomy%", $slug, $termlink );
+		}
+		$termlink = home_url( user_trailingslashit( $termlink, 'category' ) );
+	}
+
+	// Back compat filters.
+	if ( 'post_tag' === $taxonomy ) {
+
+		/**
+		 * Filters the tag link.
+		 *
+		 * @since 2.3.0
+		 * @since 2.5.0 Deprecated in favor of <a href="https://developer.notmatt.press/reference/functions/term_link">'term_link'</a> filter.
+		 * @since 5.4.1 Restored (un-deprecated).
+		 *
+		 * @param string $termlink Tag link URL.
+		 * @param int    $term_id  Term ID.
+		 */
+		$termlink = apply_filters( 'tag_link', $termlink, $term-&gt;term_id );
+	} elseif ( 'category' === $taxonomy ) {
+
+		/**
+		 * Filters the category link.
+		 *
+		 * @since 1.5.0
+		 * @since 2.5.0 Deprecated in favor of <a href="https://developer.notmatt.press/reference/functions/term_link">'term_link'</a> filter.
+		 * @since 5.4.1 Restored (un-deprecated).
+		 *
+		 * @param string $termlink Category link URL.
+		 * @param int    $term_id  Term ID.
+		 */
+		$termlink = apply_filters( 'category_link', $termlink, $term-&gt;term_id );
+	}
+
+	/**
+	 * Filters the term link.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param string  $termlink Term link URL.
+	 * @param WP_Term $term     Term object.
+	 * @param string  $taxonomy Taxonomy slug.
+	 */
+	return apply_filters( 'term_link', $termlink, $term, $taxonomy );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/taxonomy.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/taxonomy.php#L4633">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/taxonomy.php#L4633-L4734">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/category_link/"><span class="hook-func">apply_filters</span>( ‘category_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$termlink</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$term_id</span></nobr> )</a></dt><dd><p>Filters the category link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_term_link/"><span class="hook-func">apply_filters</span>( ‘pre_term_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$termlink</span></nobr>,  <nobr><span class="arg-type">WP_Term</span> <span class="arg-name">$term</span></nobr> )</a></dt><dd><p>Filters the permalink structure for a term before token replacement occurs.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/tag_link/"><span class="hook-func">apply_filters</span>( ‘tag_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$termlink</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$term_id</span></nobr> )</a></dt><dd><p>Filters the tag link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/term_link/"><span class="hook-func">apply_filters</span>( ‘term_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$termlink</span></nobr>,  <nobr><span class="arg-type">WP_Term</span> <span class="arg-name">$term</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr> )</a></dt><dd><p>Filters the term link.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_ancestors/">get_ancestors()</a><code>wp-includes/taxonomy.php</code></td><td><p>Gets an array of ancestor IDs for a given object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_term_by/">get_term_by()</a><code>wp-includes/taxonomy.php</code></td><td><p>Gets all term data from database by term field and data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/user_trailingslashit/">user_trailingslashit()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves a trailing-slashed string if the site is set for adding trailing slashes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/get_extra_permastruct/">WP_Rewrite::get_extra_permastruct()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Retrieves an extra permalink structure by name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_term/">get_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Gets all term data from database by term ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomy/">get_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the taxonomy object of $taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_term_search_handler/prepare_item/">WP_REST_Term_Search_Handler::prepare_item()</a><code>wp-includes/rest-api/search/class-wp-rest-term-search-handler.php</code></td><td><p>Prepares the search result for a given term ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_taxonomies/get_url_list/">WP_Sitemaps_Taxonomies::get_url_list()</a><code>wp-includes/sitemaps/providers/class-wp-sitemaps-taxonomies.php</code></td><td><p>Gets a URL list for a taxonomy sitemap.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_term_parents_list/">get_term_parents_list()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves term parents with separator.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_terms_controller/prepare_item_for_response/">WP_REST_Terms_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-terms-controller.php</code></td><td><p>Prepares a single term output for response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menu_item_setting/value_as_wp_post_nav_menu_item/">WP_Customize_Nav_Menu_Item_Setting::value_as_wp_post_nav_menu_item()</a><code>wp-includes/customize/class-wp-customize-nav-menu-item-setting.php</code></td><td><p>Get the value emulated into a <a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a> and set up as a nav_menu_item.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/search_available_items_query/">WP_Customize_Nav_Menus::search_available_items_query()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Performs post queries for available-item searching.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/load_available_items_query/">WP_Customize_Nav_Menus::load_available_items_query()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Performs the post_type and taxonomy queries for loading available menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_terms_list_table/handle_row_actions/">WP_Terms_List_Table::handle_row_actions()</a><code>wp-admin/includes/class-wp-terms-list-table.php</code></td><td><p>Generates and displays row action links.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/walker_category/start_el/">Walker_Category::start_el()</a><code>wp-includes/class-walker-category.php</code></td><td><p>Starts the element output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_term_list/">get_the_term_list()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves a post’s terms as a list with specified format.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_tag_cloud/">wp_tag_cloud()</a><code>wp-includes/category-template.php</code></td><td><p>Displays a tag cloud.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_category_link/">get_category_link()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves category link URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_taxonomies/">get_the_taxonomies()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves all taxonomies associated with a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_term_feed_link/">get_term_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the feed link for a term.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_bar_edit_menu/">wp_admin_bar_edit_menu()</a><code>wp-includes/admin-bar.php</code></td><td><p>Provides an edit link for posts and terms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/redirect_canonical/">redirect_canonical()</a><code>wp-includes/canonical.php</code></td><td><p>Redirects incoming links to the proper URL based on the site url.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_format_link/">get_post_format_link()</a><code>wp-includes/post-formats.php</code></td><td><p>Returns a link to a post format index.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_setup_nav_menu_item/">wp_setup_nav_menu_item()</a><code>wp-includes/nav-menu.php</code></td><td><p>Decorates a menu item object with the shared navigation menu item properties.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 13 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-even depth-1" data-comment-id="500" id="comment-500">
+<article class="comment-body" id="div-comment-500">
+<a class="screen-reader-text" href="#comment-content-500">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-500">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$terms = get_terms( 'species' );
+
+echo '&lt;ul&gt;';
+
+foreach ( $terms as $term ) {
+
+    // The $term is an object, so we don't need to specify the $taxonomy.
+    $term_link = get_term_link( $term );
+   
+    // If there was an error, continue to the next term.
+    if ( is_wp_error( $term_link ) ) {
+        continue;
+    }
+
+    // We successfully got a link. Print it out.
+    echo '&lt;li&gt;&lt;a href="' . esc_url( $term_link ) . '"&gt;' . $term-&gt;name . '&lt;/a&gt;&lt;/li&gt;';
+}
+
+echo '&lt;/ul&gt;';</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-500">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-ravikhadka even thread-odd thread-alt depth-1" data-comment-id="4103" id="comment-4103">
+<article class="comment-body" id="div-comment-4103">
+<a class="screen-reader-text" href="#comment-content-4103">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4103">
+<p>/* check term and error */</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$dr_terms = get_terms( 'your_term_name' );
+if ( ! is_wp_error( $dr_terms ) &amp;&amp; ! empty( $dr_terms ) ) {
+    echo '&lt;ul class="your-class-name"&gt;';
+    foreach ( $dr_terms as $dr_term ) {
+        echo '&lt;li&gt;&lt;a href="' . get_term_link( $dr_term-&gt;slug, 'your_term_name' ) . '"&gt;' . __( $term-&gt;name ) . '&lt;/a&gt;&lt;/li&gt;';
+    }
+    echo '&lt;/ul&gt;';
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-4103">
+<ul class="children">
+<li class="comment byuser comment-author-jnz31 odd alt depth-2" data-comment-id="5764" id="comment-5764">
+<article class="comment-body" id="div-comment-5764">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5764">
+<div>since $dr_term is an object, it is better to pass the whole thing via get_term_link( $dr_term ) instead passing the slug and the taxonomy like you did in your example.</div>
+<div><a class="url" href="https://profiles.wordpress.org/jnz31/" rel="external nofollow">jnz31</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/get_term_link/#comment-5764"><time datetime="2022-04-04T14:01:31+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-karzin even thread-even depth-1" data-comment-id="6503" id="comment-6503">
+<article class="comment-body" id="div-comment-6503">
+<a class="screen-reader-text" href="#comment-content-6503">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6503">
+<p>In order to avoid errors like <code>invalid_term</code> or <code>empty term</code>, if you pass the first parameter as the <strong>term id</strong>, you should better make sure the first parameter is an integer, or you can simply convert it or type cast it. Example: </p>
+<pre class="wp-block-code"><code class="language-php" lang="php">get_term_link( (int) $term['term_id'], 'category' )</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6503">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-mdjwel odd alt thread-odd thread-alt depth-1 bad-note" data-comment-id="2796" id="comment-2796">
+<article class="comment-body" id="div-comment-2796">
+<a class="screen-reader-text" href="#comment-content-2796">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2796">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$terms = get_terms('species');
+if ( ! is_wp_error( $terms ) &amp;&amp; ! empty( $terms ) ) {
+	echo '&lt;ul&gt;';
+	foreach ($terms as $term) {
+		echo '&lt;li&gt;&lt;a href="'.get_term_link($term-&gt;slug, 'species').'"&gt;'.$term-&gt;name.'&lt;/a&gt;&lt;/li&gt;';
+	}
+	echo '&lt;/ul&gt;';
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2796">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

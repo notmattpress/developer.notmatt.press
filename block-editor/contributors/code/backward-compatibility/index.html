@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span class="is-current-page">Backward Compatibility</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Backward Compatibility</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Historically, WordPress has been known for preserving backward compatibility across versions. Gutenberg follows this example wherever possible in its production public APIs. There are rare occasions where breaking backward compatibility is unavoidable and in those cases the breakage:</p>
+<ul>
+<li>Should be constrained as much as possible to a small surface area of the API.</li>
+<li>Should be documented as clearly as possible to third-party developers using Dev Notes.</li>
+</ul>
+<h2 class="is-toc-heading" id="what-qualifies-as-a-production-public-api" tabindex="-1"><a href="#what-qualifies-as-a-production-public-api">What qualifies as a production public API</a></h2>
+<p>The Gutenberg code base is composed of two different types of packages:</p>
+<ul>
+<li><strong>production packages</strong>: these are packages that are shipped as WordPress scripts (example: wp-components, wp-editor…).</li>
+<li><strong>development packages</strong>: these are made up of developer tools that can be used by third-party developers to lint, test, format and build their themes and plugins (example: @wordpress/scrips, @wordpress/env…). Typically, these are consumed as npm dependencies in third-party projects.</li>
+</ul>
+<p>Backward compatibility guarantees only apply to the production packages, as updates happen through WordPress upgrades.</p>
+<p>Production packages use the <code>wp</code> global variable to provide APIs to third-party developers. These APIs can be JavaScript functions, variables and React components.</p>
+<h3 class="is-toc-heading" id="how-to-preserve-backward-compatibility-for-a-javascript-function" tabindex="-1"><a href="#how-to-preserve-backward-compatibility-for-a-javascript-function">How to preserve backward compatibility for a JavaScript function</a></h3>
+<ul>
+<li>The name of the function should not change.</li>
+<li>The order of the arguments of the function should not change.</li>
+<li>The function’s returned value type should not change.</li>
+<li>Changes to arguments (new arguments, modification of semantics) is possible if we guarantee that all previous calls are still possible.</li>
+</ul>
+<h3 class="is-toc-heading" id="how-to-preserve-backward-compatibility-for-a-react-component" tabindex="-1"><a href="#how-to-preserve-backward-compatibility-for-a-react-component">How to preserve backward compatibility for a React Component</a></h3>
+<ul>
+<li>The name of the component should not change.</li>
+<li>The props of the component should not be removed.</li>
+<li>Existing prop values should continue to be supported. If a component accepts a function as a prop, we can update the component to accept a new type for the same prop, but it shouldn’t break existing usage.</li>
+<li>Adding new props is allowed.</li>
+<li>React Context dependencies can only be added or removed if we ensure the previous context contract is not breaking.</li>
+</ul>
+<h3 class="is-toc-heading" id="how-to-preserve-backward-compatibility-for-a-block" tabindex="-1"><a href="#how-to-preserve-backward-compatibility-for-a-block">How to preserve backward compatibility for a Block</a></h3>
+<ul>
+<li>Existing usage of the block should not break or be marked as invalid when the editor is loaded.</li>
+<li>The styling of the existing blocks should be guaranteed.</li>
+<li>Markup changes should be limited to the minimum possible, but if a block needs to change its saved markup, making previous versions invalid, a <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-deprecation/"><strong>deprecated version</strong></a> of the block should be added.</li>
+</ul>
+<h2 class="is-toc-heading" id="class-names-and-dom-updates" tabindex="-1"><a href="#class-names-and-dom-updates">Class names and DOM updates</a></h2>
+<p>Class names and DOM nodes used inside the tree of React components are not considered part of the public API and can be modified.</p>
+<p>Changes to these should be done with caution as it can affect the styling and behavior of third-party code (Even if they should not rely on these in the first place). Keep the old ones if possible. If not, document the changes and write a dev note.</p>
+<h2 class="is-toc-heading" id="deprecations" tabindex="-1"><a href="#deprecations">Deprecations</a></h2>
+<p>As the project evolves, flaws of existing APIs are discovered, or updates are required to support new features. When this happens, we try to guarantee that existing APIs don’t break and build new alternative APIs.</p>
+<p>To encourage third-party developers to adopt the new APIs instead, we can use the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-deprecated/"><strong>deprecated</strong></a> helper to show a message explaining the deprecation and propose the alternative whenever the old API is used.</p>
+<p>Make it more clear when the feature was deprecated. Use the <code>since</code> and <code>plugin</code> options of the helper method.</p>
+<p>Example:</p>
+<pre><code class="language-js">deprecated( 'wp.components.ClipboardButton', {
+    since: '10.3',
+    plugin: 'Gutenberg',
+    alternative: 'wp.compose.useCopyToClipboard',
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="dev-notes" tabindex="-1"><a href="#dev-notes">Dev notes</a></h2>
+<p>Dev notes are <a href="https://make.wordpress.org/core/tag/dev-notes/">posts published on the make/core site</a> prior to WordPress releases to inform third-party developers about important changes to the developer APIs, these changes can include:</p>
+<ul>
+<li>New APIs.</li>
+<li>Changes to existing APIs that might affect existing plugins and themes. (Example: classname changes…)</li>
+<li>Unavoidable backward compatibility breakage, with reasoning and migration flows.</li>
+<li>Important deprecations (even without breakage), with reasoning and migration flows.</li>
+</ul>
+<h3 class="is-toc-heading" id="dev-note-workflow" tabindex="-1"><a href="#dev-note-workflow">Dev note workflow</a></h3>
+<ul>
+<li>When working on a pull request and the need for a dev note is discovered, add the <strong>Needs Dev Note</strong> label to the PR.</li>
+<li>If possible, add a comment to the PR explaining why the dev note is needed.</li>
+<li>When the first beta of the upcoming WordPress release is shipped, go through the list of merged PRs included in the release that are tagged with the <strong>Needs Dev Note</strong> label.</li>
+<li>For each one of these PRs, write a dev note and coordinate with the WordPress release leads to publish the dev note.</li>
+<li>Once the dev note for a PR is published, remove the <strong>Needs Dev Note</strong> label from the PR.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

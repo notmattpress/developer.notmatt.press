@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_theme_json/">WP_Theme_JSON</a></span><span class="is-current-page">WP_Theme_JSON::set_spacing_sizes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Theme_JSON::set_spacing_sizes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Theme_JSON::set_spacing_sizes(): <span class="return-type">null|void</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sets the spacingSizes array based on the spacingScale values from theme.json.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">null|void</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3352"><code class="language-php line-numbers" id="wporg-source-code" lang="php">	 */
+	if ( is_array( $override ) ) {
+		$value = _wp_array_get( $theme_json, array_merge( $path, $override ) );
+		if ( isset( $value ) ) {
+			return ! $value;
+		}
+
+		// Search the top-level key if none was found for this node.
+		$value = _wp_array_get( $theme_json, array_merge( array( 'settings' ), $override ) );
+		if ( isset( $value ) ) {
+			return ! $value;
+		}
+
+		return true;
+	}
+}
+
+/**
+ * Returns the default slugs for all the presets in an associative array
+ * whose keys are the preset paths and the leaves is the list of slugs.
+ *
+ * For example:
+ *
+ *     array(
+ *       'color' =&gt; array(
+ *         'palette'   =&gt; array( 'slug-1', 'slug-2' ),
+ *         'gradients' =&gt; array( 'slug-3', 'slug-4' ),
+ *       ),
+ *     )
+ *
+ * @since 5.9.0
+ *
+ * @param array $data      A theme.json like structure.
+ * @param array $node_path The path to inspect. It's 'settings' by default.
+ * @return array
+ */
+protected static function get_default_slugs( $data, $node_path ) {
+	$slugs = array();
+
+	foreach ( static::PRESETS_METADATA as $metadata ) {
+		$path = $node_path;
+		foreach ( $metadata['path'] as $leaf ) {
+			$path[] = $leaf;
+		}
+		$path[] = 'default';
+
+		$preset = _wp_array_get( $data, $path, null );
+		if ( ! isset( $preset ) ) {
+			continue;
+		}
+
+		$slugs_for_preset = array();
+		foreach ( $preset as $item ) {
+			if ( isset( $item['slug'] ) ) {
+				$slugs_for_preset[] = $item['slug'];
+			}
+		}
+
+		_wp_array_set( $slugs, $metadata['path'], $slugs_for_preset );
+	}
+
+	return $slugs;
+}
+
+/**
+ * Gets a `default`'s preset name by a provided slug.
+ *
+ * @since 5.9.0
+ *
+ * @param string $slug The slug we want to find a match from default presets.
+ * @param array  $base_path The path to inspect. It's 'settings' by default.
+ * @return string|null
+ */
+protected function get_name_from_defaults( $slug, $base_path ) {
+	$path            = $base_path;
+	$path[]          = 'default';
+	$default_content = _wp_array_get( $this-&gt;theme_json, $path, null );
+	if ( ! $default_content ) {
+		return null;
+	}
+	foreach ( $default_content as $item ) {
+		if ( $slug === $item['slug'] ) {
+			return $item['name'];
+		}
+	}
+	return null;
+}
+
+/**
+ * Removes the preset values whose slug is equal to any of given slugs.
+ *
+ * @since 5.9.0
+ *
+ * @param array $node  The node with the presets to validate.
+ * @param array $slugs The slugs that should not be overridden.
+ * @return array The new node.
+ */
+protected static function filter_slugs( $node, $slugs ) {
+	if ( empty( $slugs ) ) {
+		return $node;
+	}
+
+	$new_node = array();
+	foreach ( $node as $value ) {
+		if ( isset( $value['slug'] ) &amp;&amp; ! in_array( $value['slug'], $slugs, true ) ) {
+			$new_node[] = $value;
+		}
+	}
+
+	return $new_node;
+}
+
+/**
+ * Removes insecure data from theme.json.
+ *
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-theme-json.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-theme-json.php#L3352">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-theme-json.php#L3352-L3466">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

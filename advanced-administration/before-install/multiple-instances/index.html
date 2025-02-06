@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/advanced-administration/">Advanced Administration Handbook</a></span><span><a href="https://developer.wordpress.org/advanced-administration/before-install/">Before You Install</a></span><span class="is-current-page">Installing Multiple WordPress Instances</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Installing Multiple WordPress Instances</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>If you need multiple WordPress instances, there are three types of installations based on system architecture, or a combination of WordPress instances and databases:</p>
+<ol>
+<li>WordPress Multisite Network: a single WordPress instance (with multiple sites created within the same WP instance) sharing a single database instance.</li>
+<li>Single Database: multiple WordPress instances sharing a single database instance.</li>
+<li>Multiple Databases: multiple WordPress instances with each instance using its own databases instance.</li>
+</ol>
+<p><img alt="" data-recalc-dims="1" decoding="async" height="469" src="https://i0.wp.com/wordpress.org/documentation/files/2022/06/multisite_db_layout-1024x469.jpg?resize=1024%2C469&amp;ssl=1" width="1024"/></p>
+<p>Let’s first look at the third type, multiple WordPress instances with multiple databases, because it has the same installation process as a single WordPress instance.</p>
+<h2 class="is-toc-heading" id="multiple-wordpress-instances-with-multiple-databases" tabindex="-1"><a href="#multiple-wordpress-instances-with-multiple-databases">Multiple WordPress Instances with Multiple Databases</a></h2>
+<p>You’ll need a separate <a href="https://wordpress.org/documentation/article/wordpress-glossary/#mysql">MySQL database</a> for each instance you plan to install. If you have not yet created these, <a href="https://developer.notmatt.press/advanced-administration/before-install/howto-install/#step-2-create-the-database-and-a-user">basic instructions are found here</a>.</p>
+<p>To make sure each WordPress instance connects to the right database you need to add those information to the <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">wp-config.php</a> file. The lines to change are the following:</p>
+<pre><code>define('DB_NAME', 'wordpress');    // The name of the database
+define('DB_USER', 'username');     // Your MySQL username
+define('DB_PASSWORD', 'password'); // The users password
+define('DB_HOST', 'localhost' );  // The host of the database
+</code></pre>
+<p><code>DB_NAME</code> is the name of the individual database created for that blog hosted on the <code>DB_HOST</code> MySQL server. If you are using different user logins for each database, edit <code>DB_USER</code> and <code>DB_PASSWORD</code> to reflect this as well.</p>
+<p>Upload each <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">wp-config.php</a> file to its specific root/installation directory, and run the installation. See <a href="https://developer.notmatt.press/advanced-administration/before-install/howto-install/">Installing WordPress</a> for more information.</p>
+<h2 class="is-toc-heading" id="the-multisite-feature" tabindex="-1"><a href="#the-multisite-feature">The Multisite Feature</a></h2>
+<p>If you want multiple sites to use WordPress, you can use the multisite feature to create what is referred to as a <em>network</em> of sites. The multisite feature involves installing a single WordPress instance and a single database.</p>
+<p>The multisite feature appears to be simpler than other types of multiple WordPress installations, but there are some considerations and restrictions. Refer to the following documents for more detailed information:</p>
+<ul>
+<li><a href="https://developer.notmatt.press/advanced-administration/multisite/prepare-network/">Before You Create A Network</a></li>
+<li><a href="https://developer.notmatt.press/advanced-administration/multisite/create-network/">Create A Network</a></li>
+<li><a href="https://developer.notmatt.press/advanced-administration/multisite/administration/">Multisite Network Administration</a></li>
+</ul>
+<h2 class="is-toc-heading" id="multiple-wordpress-instances-with-a-single-database" tabindex="-1"><a href="#multiple-wordpress-instances-with-a-single-database">Multiple WordPress Instances with a Single Database</a></h2>
+<p>As with the multiple-database solution described above, the <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">wp-config.php</a> file will vary for each installation. In this case, however, only a single line is unique to each blog:</p>
+<pre><code>$table_prefix = 'wp_'; // example: 'wp_' or 'b2' or 'mylogin_' 
+</code></pre>
+<p>By default, WordPress assigns the table prefix <code>wp_</code> to its <a href="https://wordpress.org/documentation/article/wordpress-glossary/#mysql">MySQL database</a> tables, but this prefix can be anything you choose. This allows you to create unique identifiers for each blog in your database. For example, let’s say you have three blogs to set up, with the names <em>Main</em>, <em>Projects</em>, and <em>Test</em>. You should substitute the prefix <code>wp_</code> in each blog’s<br/>
+<a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">wp-config.php</a>:</p>
+<p><strong>Main blog:</strong></p>
+<pre><code>$table_prefix = 'main_'; 
+</code></pre>
+<p><strong>Projects blog:</strong></p>
+<pre><code>$table_prefix = 'projects_'; 
+</code></pre>
+<p><strong>Test blog:</strong></p>
+<pre><code>$table_prefix = 'test_'; 
+</code></pre>
+<p>As noted, you may use a prefix of your own making. Those provided here are for example only.</p>
+<p>Upload each <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">wp-config.php</a> file to its specific root/installation directory, and run the installation. See <a href="https://developer.notmatt.press/advanced-administration/before-install/howto-install/">Installing WordPress</a> for more information.</p>
+<p>For enhanced security you can also add multiple users to the same database and give each WordPress Instance their own MySQL user.</p>
+<h2 class="is-toc-heading" id="multiple-databases-same-users" tabindex="-1"><a href="#multiple-databases-same-users">Multiple Databases, Same Users</a></h2>
+<p>You can use the same userbase for all your blogs on the same domain by defining the <code>CUSTOM_USER_TABLE</code> and optionally the <code>CUSTOM_USER_META_TABLE</code> constants to point to the same <code>wp_your_blog_users</code> and <code>wp_your_blog_usermeta</code> tables.<br/>
+See <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/#custom-user-and-usermeta-tables">Editing wp-config.php/Custom User and Usermeta Tables</a>.</p>
+<h2 class="is-toc-heading" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2>
+<ul>
+<li>2023-02-17: WCAsia Contributor Day – Review and rework</li>
+<li>2022-10-21: Original content from <a href="https://wordpress.org/support/article/installing-multiple-blogs/">Installing Multiple WordPress Instances</a>.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

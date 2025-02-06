@@ -1,0 +1,249 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_post_type/">WP_Post_Type</a></span><span class="is-current-page">WP_Post_Type::set_props()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Post_Type::set_props()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Post_Type::set_props( <span class="arg-type">array|string</span> <span class="arg-name">$args</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sets post type properties.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>See the <a href="https://developer.notmatt.press/reference/functions/register_post_type/" rel="function">register_post_type()</a>  function for accepted arguments for <code>$args</code>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$args</code><span class="type"><span class="array">array</span>|<span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Array or string of arguments for registering a post type.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="479"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function set_props( $args ) {
+	$args = wp_parse_args( $args );
+
+	/**
+	 * Filters the arguments for registering a post type.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param array  $args      Array of arguments for registering a post type.
+	 *                          See the register_post_type() function for accepted arguments.
+	 * @param string $post_type Post type key.
+	 */
+	$args = apply_filters( 'register_post_type_args', $args, $this-&gt;name );
+
+	$post_type = $this-&gt;name;
+
+	/**
+	 * Filters the arguments for registering a specific post type.
+	 *
+	 * The dynamic portion of the filter name, `$post_type`, refers to the post type key.
+	 *
+	 * Possible hook names include:
+	 *
+	 *  - `register_post_post_type_args`
+	 *  - `register_page_post_type_args`
+	 *
+	 * @since 6.0.0
+	 * @since 6.4.0 Added `late_route_registration`, `autosave_rest_controller_class` and `revisions_rest_controller_class` arguments.
+	 *
+	 * @param array  $args      Array of arguments for registering a post type.
+	 *                          See the register_post_type() function for accepted arguments.
+	 * @param string $post_type Post type key.
+	 */
+	$args = apply_filters( "register_{$post_type}_post_type_args", $args, $this-&gt;name );
+
+	$has_edit_link = ! empty( $args['_edit_link'] );
+
+	// Args prefixed with an underscore are reserved for internal use.
+	$defaults = array(
+		'labels'                          =&gt; array(),
+		'description'                     =&gt; '',
+		'public'                          =&gt; false,
+		'hierarchical'                    =&gt; false,
+		'exclude_from_search'             =&gt; null,
+		'publicly_queryable'              =&gt; null,
+		'show_ui'                         =&gt; null,
+		'show_in_menu'                    =&gt; null,
+		'show_in_nav_menus'               =&gt; null,
+		'show_in_admin_bar'               =&gt; null,
+		'menu_position'                   =&gt; null,
+		'menu_icon'                       =&gt; null,
+		'capability_type'                 =&gt; 'post',
+		'capabilities'                    =&gt; array(),
+		'map_meta_cap'                    =&gt; null,
+		'supports'                        =&gt; array(),
+		'register_meta_box_cb'            =&gt; null,
+		'taxonomies'                      =&gt; array(),
+		'has_archive'                     =&gt; false,
+		'rewrite'                         =&gt; true,
+		'query_var'                       =&gt; true,
+		'can_export'                      =&gt; true,
+		'delete_with_user'                =&gt; null,
+		'show_in_rest'                    =&gt; false,
+		'rest_base'                       =&gt; false,
+		'rest_namespace'                  =&gt; false,
+		'rest_controller_class'           =&gt; false,
+		'autosave_rest_controller_class'  =&gt; false,
+		'revisions_rest_controller_class' =&gt; false,
+		'late_route_registration'         =&gt; false,
+		'template'                        =&gt; array(),
+		'template_lock'                   =&gt; false,
+		'_builtin'                        =&gt; false,
+		'_edit_link'                      =&gt; 'post.php?post=%d',
+	);
+
+	$args = array_merge( $defaults, $args );
+
+	$args['name'] = $this-&gt;name;
+
+	// If not set, default to the setting for 'public'.
+	if ( null === $args['publicly_queryable'] ) {
+		$args['publicly_queryable'] = $args['public'];
+	}
+
+	// If not set, default to the setting for 'public'.
+	if ( null === $args['show_ui'] ) {
+		$args['show_ui'] = $args['public'];
+	}
+
+	// If not set, default rest_namespace to wp/v2 if show_in_rest is true.
+	if ( false === $args['rest_namespace'] &amp;&amp; ! empty( $args['show_in_rest'] ) ) {
+		$args['rest_namespace'] = 'wp/v2';
+	}
+
+	// If not set, default to the setting for 'show_ui'.
+	if ( null === $args['show_in_menu'] || ! $args['show_ui'] ) {
+		$args['show_in_menu'] = $args['show_ui'];
+	}
+
+	// If not set, default to the setting for 'show_in_menu'.
+	if ( null === $args['show_in_admin_bar'] ) {
+		$args['show_in_admin_bar'] = (bool) $args['show_in_menu'];
+	}
+
+	// If not set, default to the setting for 'public'.
+	if ( null === $args['show_in_nav_menus'] ) {
+		$args['show_in_nav_menus'] = $args['public'];
+	}
+
+	// If not set, default to true if not public, false if public.
+	if ( null === $args['exclude_from_search'] ) {
+		$args['exclude_from_search'] = ! $args['public'];
+	}
+
+	// Back compat with quirky handling in version 3.0. #14122.
+	if ( empty( $args['capabilities'] )
+		&amp;&amp; null === $args['map_meta_cap'] &amp;&amp; in_array( $args['capability_type'], array( 'post', 'page' ), true )
+	) {
+		$args['map_meta_cap'] = true;
+	}
+
+	// If not set, default to false.
+	if ( null === $args['map_meta_cap'] ) {
+		$args['map_meta_cap'] = false;
+	}
+
+	// If there's no specified edit link and no UI, remove the edit link.
+	if ( ! $args['show_ui'] &amp;&amp; ! $has_edit_link ) {
+		$args['_edit_link'] = '';
+	}
+
+	$this-&gt;cap = get_post_type_capabilities( (object) $args );
+	unset( $args['capabilities'] );
+
+	if ( is_array( $args['capability_type'] ) ) {
+		$args['capability_type'] = $args['capability_type'][0];
+	}
+
+	if ( false !== $args['query_var'] ) {
+		if ( true === $args['query_var'] ) {
+			$args['query_var'] = $this-&gt;name;
+		} else {
+			$args['query_var'] = sanitize_title_with_dashes( $args['query_var'] );
+		}
+	}
+
+	if ( false !== $args['rewrite'] &amp;&amp; ( is_admin() || get_option( 'permalink_structure' ) ) ) {
+		if ( ! is_array( $args['rewrite'] ) ) {
+			$args['rewrite'] = array();
+		}
+		if ( empty( $args['rewrite']['slug'] ) ) {
+			$args['rewrite']['slug'] = $this-&gt;name;
+		}
+		if ( ! isset( $args['rewrite']['with_front'] ) ) {
+			$args['rewrite']['with_front'] = true;
+		}
+		if ( ! isset( $args['rewrite']['pages'] ) ) {
+			$args['rewrite']['pages'] = true;
+		}
+		if ( ! isset( $args['rewrite']['feeds'] ) || ! $args['has_archive'] ) {
+			$args['rewrite']['feeds'] = (bool) $args['has_archive'];
+		}
+		if ( ! isset( $args['rewrite']['ep_mask'] ) ) {
+			if ( isset( $args['permalink_epmask'] ) ) {
+				$args['rewrite']['ep_mask'] = $args['permalink_epmask'];
+			} else {
+				$args['rewrite']['ep_mask'] = EP_PERMALINK;
+			}
+		}
+	}
+
+	foreach ( $args as $property_name =&gt; $property_value ) {
+		$this-&gt;$property_name = $property_value;
+	}
+
+	$this-&gt;labels = get_post_type_labels( $this );
+	$this-&gt;label  = $this-&gt;labels-&gt;name;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-post-type.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-post-type.php#L479">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-post-type.php#L479-L656">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/register_post_type_args/"><span class="hook-func">apply_filters</span>( ‘register_post_type_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_type</span></nobr> )</a></dt><dd><p>Filters the arguments for registering a post type.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/register_post_type_post_type_args/"><span class="hook-func">apply_filters</span>( “register_{$post_type}_post_type_args”,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_type</span></nobr> )</a></dt><dd><p>Filters the arguments for registering a specific post type.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_title_with_dashes/">sanitize_title_with_dashes()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a title, replacing whitespace and a few other characters with dashes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_capabilities/">get_post_type_capabilities()</a><code>wp-includes/post.php</code></td><td><p>Builds an object with all post type capabilities out of a post type object</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_labels/">get_post_type_labels()</a><code>wp-includes/post.php</code></td><td><p>Builds an object with all post type labels out of a post type object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_admin/">is_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for an administrative interface page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_post_type/__construct/">WP_Post_Type::__construct()</a><code>wp-includes/class-wp-post-type.php</code></td><td><p>Constructor.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.6.0/">4.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

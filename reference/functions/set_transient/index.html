@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">set_transient()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>set_transient()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">set_transient( <span class="arg-type">string</span> <span class="arg-name">$transient</span>,  <span class="arg-type">mixed</span> <span class="arg-name">$value</span>,  <span class="arg-type">int</span> <span class="arg-name">$expiration</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sets/updates the value of a transient.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>You do not need to serialize values. If the value needs to be serialized, then it will be serialized before it is set.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$transient</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Transient name. Expected to not be SQL-escaped.<br/>
+Must be 172 characters or fewer in length.</span></div></dd><dt><code>$value</code><span class="type"><span class="mixed">mixed</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Transient value. Must be serializable if non-scalar.<br/>
+Expected to not be SQL-escaped.</span></div></dd><dt><code>$expiration</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Time until expiration in seconds. Default 0 (no expiration).</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True if the value was set, false otherwise.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>For parameter <code>$transient</code>, if memcached is not enabled the name should be 172 characters or less in length as WordPress will prefix your name with “_transient_” or “_transient_timeout_” in the options table (depending on whether it expires or not). Longer key names will silently fail. See <a class="external text" href="https://core.trac.wordpress.org/ticket/15058" rel="nofollow">Trac #15058</a>.</p>
+<p>If a transient exists, this function will update the transient’s expiration time.</p>
+<p>NB: transients that never expire are autoloaded, whereas transients with an expiration time are not autoloaded. Consider this when adding transients that may not be needed on every page, and thus do not need to be autoloaded, impacting page performance.</p>
+<p>WordPress provides some constants for specifying time in seconds. Instead of multiplying out integers, see <a href="https://codex.wordpress.org/Transients_API#Using_Time_Constants" title="Transients API">Transients_API#Using_Time_Constants</a>.</p>
+<p>Transient key names are limited to 191 characters due to the database schema in the wp_options table ( option_name: varchar(191) ).</p>
+<p>In WordPress versions previous to 4.4, the length limitation was 45 in set_transient (now 172) and 64 in the database (now 191).</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1500"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function set_transient( $transient, $value, $expiration = 0 ) {
+
+	$expiration = (int) $expiration;
+
+	/**
+	 * Filters a specific transient before its value is set.
+	 *
+	 * The dynamic portion of the hook name, `$transient`, refers to the transient name.
+	 *
+	 * @since 3.0.0
+	 * @since 4.2.0 The `$expiration` parameter was added.
+	 * @since 4.4.0 The `$transient` parameter was added.
+	 *
+	 * @param mixed  $value      New value of transient.
+	 * @param int    $expiration Time until expiration in seconds.
+	 * @param string $transient  Transient name.
+	 */
+	$value = apply_filters( "pre_set_transient_{$transient}", $value, $expiration, $transient );
+
+	/**
+	 * Filters the expiration for a transient before its value is set.
+	 *
+	 * The dynamic portion of the hook name, `$transient`, refers to the transient name.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param int    $expiration Time until expiration in seconds. Use 0 for no expiration.
+	 * @param mixed  $value      New value of transient.
+	 * @param string $transient  Transient name.
+	 */
+	$expiration = apply_filters( "expiration_of_transient_{$transient}", $expiration, $value, $transient );
+
+	if ( wp_using_ext_object_cache() || wp_installing() ) {
+		$result = wp_cache_set( $transient, $value, 'transient', $expiration );
+	} else {
+		$transient_timeout = '_transient_timeout_' . $transient;
+		$transient_option  = '_transient_' . $transient;
+		wp_prime_option_caches( array( $transient_option, $transient_timeout ) );
+
+		if ( false === get_option( $transient_option ) ) {
+			$autoload = true;
+			if ( $expiration ) {
+				$autoload = false;
+				add_option( $transient_timeout, time() + $expiration, '', false );
+			}
+			$result = add_option( $transient_option, $value, '', $autoload );
+		} else {
+			/*
+			 * If expiration is requested, but the transient has no timeout option,
+			 * delete, then re-create transient rather than update.
+			 */
+			$update = true;
+
+			if ( $expiration ) {
+				if ( false === get_option( $transient_timeout ) ) {
+					delete_option( $transient_option );
+					add_option( $transient_timeout, time() + $expiration, '', false );
+					$result = add_option( $transient_option, $value, '', false );
+					$update = false;
+				} else {
+					update_option( $transient_timeout, time() + $expiration );
+				}
+			}
+
+			if ( $update ) {
+				$result = update_option( $transient_option, $value );
+			}
+		}
+	}
+
+	if ( $result ) {
+
+		/**
+		 * Fires after the value for a specific transient has been set.
+		 *
+		 * The dynamic portion of the hook name, `$transient`, refers to the transient name.
+		 *
+		 * @since 3.0.0
+		 * @since 3.6.0 The `$value` and `$expiration` parameters were added.
+		 * @since 4.4.0 The `$transient` parameter was added.
+		 *
+		 * @param mixed  $value      Transient value.
+		 * @param int    $expiration Time until expiration in seconds.
+		 * @param string $transient  The name of the transient.
+		 */
+		do_action( "set_transient_{$transient}", $value, $expiration, $transient );
+
+		/**
+		 * Fires after the value for a transient has been set.
+		 *
+		 * @since 3.0.0
+		 * @since 3.6.0 The `$value` and `$expiration` parameters were added.
+		 *
+		 * @param string $transient  The name of the transient.
+		 * @param mixed  $value      Transient value.
+		 * @param int    $expiration Time until expiration in seconds.
+		 */
+		do_action( 'setted_transient', $transient, $value, $expiration );
+	}
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/option.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/option.php#L1500">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/option.php#L1500-L1601">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/expiration_of_transient_transient/"><span class="hook-func">apply_filters</span>( “expiration_of_transient_{$transient}”,  <nobr><span class="arg-type">int</span> <span class="arg-name">$expiration</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$transient</span></nobr> )</a></dt><dd><p>Filters the expiration for a transient before its value is set.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_set_transient_transient/"><span class="hook-func">apply_filters</span>( “pre_set_transient_{$transient}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$expiration</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$transient</span></nobr> )</a></dt><dd><p>Filters a specific transient before its value is set.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/setted_transient/"><span class="hook-func">do_action</span>( ‘setted_transient’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$transient</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$expiration</span></nobr> )</a></dt><dd><p>Fires after the value for a transient has been set.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/set_transient_transient/"><span class="hook-func">do_action</span>( “set_transient_{$transient}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$expiration</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$transient</span></nobr> )</a></dt><dd><p>Fires after the value for a specific transient has been set.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_prime_option_caches/">wp_prime_option_caches()</a><code>wp-includes/option.php</code></td><td><p>Primes specific options into the cache with a single database query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_installing/">wp_installing()</a><code>wp-includes/load.php</code></td><td><p>Checks or sets whether WordPress is in “installation” mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set/">wp_cache_set()</a><code>wp-includes/cache.php</code></td><td><p>Saves the data to the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_using_ext_object_cache/">wp_using_ext_object_cache()</a><code>wp-includes/load.php</code></td><td><p>Toggles <code>$_wp_using_ext_object_cache</code> on and off without directly touching global.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/add_option/">add_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_option/">delete_option()</a><code>wp-includes/option.php</code></td><td><p>Removes an option by name. Prevents removal of protected WordPress options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/has_fatal_error/">WP_Automatic_Updater::has_fatal_error()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Performs a loopback request to check for potential fatal errors.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_add_global_styles_for_blocks/">wp_add_global_styles_for_blocks()</a><code>wp-includes/global-styles-and-settings.php</code></td><td><p>Adds global style rules to the inline style for each block.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/clean_dirsize_cache/">clean_dirsize_cache()</a><code>wp-includes/functions.php</code></td><td><p>Cleans directory size cache used by <a href="https://developer.notmatt.press/reference/functions/recurse_dirsize/" rel="function">recurse_dirsize()</a> .</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/wp_cron_scheduled_check/">WP_Site_Health::wp_cron_scheduled_check()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Runs the scheduled event to check and update the latest site health status for the website.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_health_check_site_status_result/">wp_ajax_health_check_site_status_result()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles site health check to update the result status via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_edit_theme_plugin_file/">wp_edit_theme_plugin_file()</a><code>wp-admin/includes/file.php</code></td><td><p>Attempts to edit a file for a theme or plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_oembed_controller/get_proxy_item/">WP_oEmbed_Controller::get_proxy_item()</a><code>wp-includes/class-wp-oembed-controller.php</code></td><td><p>Callback for the proxy API endpoint.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/install_themes_feature_list/">install_themes_feature_list()</a><code>wp-admin/includes/theme-install.php</code></td><td><p>Retrieves the list of WordPress theme features (aka theme tags).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_plugins_output/">wp_dashboard_plugins_output()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Display plugins text for the WordPress news widget.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_cached_rss_widget/">wp_dashboard_cached_rss_widget()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Checks to see if all of the feed url in $check_urls are cached.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/spawn_cron/">spawn_cron()</a><code>wp-includes/cron.php</code></td><td><p>Sends a request to run cron through HTTP request that doesn’t halt page loading.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_rand/">wp_rand()</a><code>wp-includes/pluggable.php</code></td><td><p>Generates a random non-negative number.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_feed_cache_transient/save/">WP_Feed_Cache_Transient::save()</a><code>wp-includes/class-wp-feed-cache-transient.php</code></td><td><p>Saves data to the transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_feed_cache_transient/touch/">WP_Feed_Cache_Transient::touch()</a><code>wp-includes/class-wp-feed-cache-transient.php</code></td><td><p>Sets mod transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/recurse_dirsize/">recurse_dirsize()</a><code>wp-includes/functions.php</code></td><td><p>Gets the size of a directory recursively.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multi_author/">is_multi_author()</a><code>wp-includes/author-template.php</code></td><td><p>Determines whether this site has more than one author.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/rsscache/set/">RSSCache::set()</a><code>wp-includes/rss.php</code></td><td></td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 12 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-crstauf odd alt thread-odd thread-alt depth-1" data-comment-id="3651" id="comment-3651">
+<article class="comment-body" id="div-comment-3651">
+<a class="screen-reader-text" href="#comment-content-3651">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3651">
+<p>Unless you’re using an external object cache, when using <code>set_transient()</code> to update an existing transient that has an existing expiration, not providing an expiration value will maintain the existing expiration.</p>
+<p>For example:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$initial = time();
+set_transient( 'foo', 'bar', 300 );
+sleep( 10 );
+$update = time();
+set_transient( 'foo', 'barbar' );</code></pre>
+<p>In this case, the expiration would remain as <code>$initial + 300</code> (and not change to <code>$update + 300</code>, or never expires), because the second <code>set_transient()</code> call does not include an <code>$expiration</code> value (only the transient’s value is updated).</p>
+<p>Be careful though, because you may unintentionally set a transient to never expire, if the transient expired before the second call (without the <code>$expiration</code> parameter) is made.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3651">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-nicolamustone even thread-even depth-1" data-comment-id="292" id="comment-292">
+<article class="comment-body" id="div-comment-292">
+<a class="screen-reader-text" href="#comment-content-292">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-292">
+<p>This example shows how to set a transient with the latest five blog posts. It expires after one day.<br>
+It uses <a href="https://codex.wordpress.org/Easier_Expression_of_Time_Constants" rel="nofollow" title="Time constants">time constants</a> to set the expiration time.</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Set the arguments for the custom query
+$args = array(
+    'post_type'      =&gt; 'post',
+    'posts_per_page' =&gt; 5,
+    'orderby'        =&gt; 'date',
+    'order'          =&gt; 'DESC'
+);
+$latest_post = new WP_Query( $args );
+
+// Save the results in a transient named latest_5_posts
+set_transient( 'latest_5_posts', $latest_post, DAY_IN_SECONDS );</code></pre>
+<p>To know more about how to get posts and custom post type items read the documentation of <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="nofollow" title="WP_Query">WP_Query</a>.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-292">
+<ul class="children">
+<li class="comment byuser comment-author-tjnowell odd alt depth-2" data-comment-id="5287" id="comment-5287">
+<article class="comment-body" id="div-comment-5287">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5287">
+<div>This might seem like a good idea but caching a <code>WP_Query</code> in a transient like this will cause a performance hit.  This is because <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> bulk fetches the post objects, their terms, and their taxonomies in advance into WP_Cache to avoid database queries. But when the transient is used and <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> is recreated, none of that has happened. As a result WordPress has to pause constantly to make small database queries to fetch the post meta and terms that were previously cached.  Instead store the result as an array of post IDs. Post IDs are super fast to fetch and may even be in WP_Cache already. After all the most expensive part of the query is figuring out which post IDs match the desired results.</div>
+<div><a class="url" href="https://profiles.wordpress.org/tjnowell/" rel="external nofollow">Tom J Nowell</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/set_transient/#comment-5287"><time datetime="2021-09-02T00:19:08+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="670" id="comment-670">
+<article class="comment-body" id="div-comment-670">
+<a class="screen-reader-text" href="#comment-content-670">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-670">
+<p>Saving the $special_query_results object for 12 hours</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">set_transient( 'special_query_results', $special_query_results, 12 * HOUR_IN_SECONDS );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-670">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-thelovekesh odd alt thread-even depth-1" data-comment-id="5457" id="comment-5457">
+<article class="comment-body" id="div-comment-5457">
+<a class="screen-reader-text" href="#comment-content-5457">Skip to note 9 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5457">
+<p>WordPress saves the transients expiration time in the form of a UNIX timestamp. When you look for the </p>
+<pre class="wp-block-code"><code class="language-php" lang="php">_transient_timeout_{$transient}</code></pre>
+<p> option name in the options table of WordPress, it will look like <strong>1636453079</strong> which is in UNIX timestamp not in seconds.<br>
+<a href="https://github.com/WordPress/wordpress-develop/blob/5.8.1/src/wp-includes/option.php#L929-L932" rel="nofollow ugc">See the code on GitHub</a></br></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5457">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-vishnugopal even thread-odd thread-alt depth-1 bad-note" data-comment-id="4886" id="comment-4886">
+<article class="comment-body" id="div-comment-4886">
+<a class="screen-reader-text" href="#comment-content-4886">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4886">
+<p>Note that <code>WP_CACHE</code> has to be true in <code>wp-config.php</code> for transients to work:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">define('WP_CACHE', true);</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-4886">
+<ul class="children">
+<li class="comment byuser comment-author-vijayhardaha odd alt depth-2" data-comment-id="5747" id="comment-5747">
+<article class="comment-body" id="div-comment-5747">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5747">
+<div>Correction: <strong>WP_CACHE</strong> is not required to be true for transients to work.</div>
+<div><a class="url" href="https://profiles.wordpress.org/vijayhardaha/" rel="external nofollow">Vijay Hardaha</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/set_transient/#comment-5747"><time datetime="2022-03-20T09:32:58+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

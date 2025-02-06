@@ -1,0 +1,90 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wporg-requests-transport-fsockopen/">Fsockopen</a></span><span class="is-current-page">Fsockopen::request_multiple()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Fsockopen::request_multiple()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">Fsockopen::request_multiple( <span class="arg-type">array</span> <span class="arg-name">$requests</span>,  <span class="arg-type">array</span> <span class="arg-name">$options</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Send multiple requests simultaneously</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$requests</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Request data (array of <code>'url'</code>, <code>'headers'</code>, <code>'data'</code>, <code>'options'</code>) as per <a href="https://developer.notmatt.press/reference/classes/WpOrgRequestsTransport/request">WpOrgRequestsTransport::request()</a></span></div></dd><dt><code>$options</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Global options, see <a href="https://developer.notmatt.press/reference/classes/WpOrgRequestsRequests/response">WpOrgRequestsRequests::response()</a> for documentation</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Array of WpOrgRequestsResponse objects (may contain WpOrgRequestsException or string responses as well)</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="356"><code class="language-php line-numbers" id="wporg-source-code" lang="php"> *
+ * @param array $requests Request data (array of 'url', 'headers', 'data', 'options') as per <a href="https://developer.notmatt.press/reference/classes/WpOrgRequestsTransport/request">\WpOrg\Requests\Transport::request()</a>
+ * @param array $options Global options, see <a href="https://developer.notmatt.press/reference/classes/WpOrgRequestsRequests/response">\WpOrg\Requests\Requests::response()</a> for documentation
+ * @return array Array of \WpOrg\Requests\Response objects (may contain \WpOrg\Requests\Exception or string responses as well)
+ *
+ * @throws \WpOrg\Requests\Exception\InvalidArgument When the passed $requests argument is not an array or iterable object with array access.
+ * @throws \WpOrg\Requests\Exception\InvalidArgument When the passed $options argument is not an array.
+ */
+public function request_multiple($requests, $options) {
+	// If you're not requesting, we can't get any responses ¯\_(ツ)_/¯
+	if (empty($requests)) {
+		return [];
+	}
+
+	if (InputValidator::has_array_access($requests) === false || InputValidator::is_iterable($requests) === false) {
+		throw InvalidArgument::create(1, '$requests', 'array|ArrayAccess&amp;Traversable', gettype($requests));
+	}
+
+	if (is_array($options) === false) {
+		throw InvalidArgument::create(2, '$options', 'array', gettype($options));
+	}
+
+	$responses = [];
+	$class     = get_class($this);
+	foreach ($requests as $id =&gt; $request) {
+		try {
+			$handler        = new $class();
+			$responses[$id] = $handler-&gt;request($request['url'], $request['headers'], $request['data'], $request['options']);
+
+			$request['options']['hooks']-&gt;dispatch('transport.internal.parse_response', [&amp;$responses[$id], $request]);
+		} catch (Exception $e) {
+			$responses[$id] = $e;
+		}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/requests/src/transport/fsockopen.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/Requests/src/Transport/Fsockopen.php#L356">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/Requests/src/Transport/Fsockopen.php#L356-L388">View on GitHub</a></p></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

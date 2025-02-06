@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">strip_shortcodes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>strip_shortcodes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">strip_shortcodes( <span class="arg-type">string</span> <span class="arg-name">$content</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Removes all shortcode tags from the given content.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$content</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Content to remove shortcode tags.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Content without shortcode tags.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="706"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function strip_shortcodes( $content ) {
+	global $shortcode_tags;
+
+	if ( ! str_contains( $content, '[' ) ) {
+		return $content;
+	}
+
+	if ( empty( $shortcode_tags ) || ! is_array( $shortcode_tags ) ) {
+		return $content;
+	}
+
+	// Find all registered tag names in $content.
+	preg_match_all( '@\[([^&lt;&gt;&amp;/\[\]\x00-\x20=]++)@', $content, $matches );
+
+	$tags_to_remove = array_keys( $shortcode_tags );
+
+	/**
+	 * Filters the list of shortcode tags to remove from the content.
+	 *
+	 * @since 4.7.0
+	 *
+	 * @param array  $tags_to_remove Array of shortcode tags to remove.
+	 * @param string $content        Content shortcodes are being removed from.
+	 */
+	$tags_to_remove = apply_filters( 'strip_shortcodes_tagnames', $tags_to_remove, $content );
+
+	$tagnames = array_intersect( $tags_to_remove, $matches[1] );
+
+	if ( empty( $tagnames ) ) {
+		return $content;
+	}
+
+	$content = do_shortcodes_in_html_tags( $content, true, $tagnames );
+
+	$pattern = get_shortcode_regex( $tagnames );
+	$content = preg_replace_callback( "/$pattern/", 'strip_shortcode_tag', $content );
+
+	// Always restore square braces so we don't break things like &lt;!--[if IE ]&gt;.
+	$content = unescape_invalid_shortcodes( $content );
+
+	return $content;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/shortcodes.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/shortcodes.php#L706">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/shortcodes.php#L706-L747">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/strip_shortcodes_tagnames/"><span class="hook-func">apply_filters</span>( ‘strip_shortcodes_tagnames’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$tags_to_remove</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$content</span></nobr> )</a></dt><dd><p>Filters the list of shortcode tags to remove from the content.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/do_shortcodes_in_html_tags/">do_shortcodes_in_html_tags()</a><code>wp-includes/shortcodes.php</code></td><td><p>Searches only inside HTML elements for shortcodes and process them.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/unescape_invalid_shortcodes/">unescape_invalid_shortcodes()</a><code>wp-includes/shortcodes.php</code></td><td><p>Removes placeholders added by <a href="https://developer.notmatt.press/reference/functions/do_shortcodes_in_html_tags/" rel="function">do_shortcodes_in_html_tags()</a> .</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_shortcode_regex/">get_shortcode_regex()</a><code>wp-includes/shortcodes.php</code></td><td><p>Retrieves the shortcode regular expression for searching.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_trim_excerpt/">wp_trim_excerpt()</a><code>wp-includes/formatting.php</code></td><td><p>Generates an excerpt from the content, if needed.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-mrpsiho even thread-even depth-1" data-comment-id="3071" id="comment-3071">
+<article class="comment-body" id="div-comment-3071">
+<a class="screen-reader-text" href="#comment-content-3071">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3071">
+<p>It is worth to note that this function removes only those shortcodes which are registered at the moment of the processing of this function. If there are any “leftovers” shortcodes, like those which were added by some plugin but that plugin is not active anymore, this function WILL NOT strip them. It is possible to check which shortcodes may and will be stripped with the help of this filter <code>strip_shortcodes_tagnames</code></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3071">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="671" id="comment-671">
+<article class="comment-body" id="div-comment-671">
+<a class="screen-reader-text" href="#comment-content-671">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-671">
+<p><strong>Strip shortcodes on home page but not on single or archive pages</strong><br/>
+When viewing posts ‘home’ page, strip all shortcodes, but on other pages, such as <em>single.php</em>, do not strip the shortcodes.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Remove shortcodes if we are on the home page
+ *
+ * @param string $content Post content.
+ * @return string (Maybe) modified post content.
+ */
+function wpdocs_remove_shortcode_from_index( $content ) {
+	if ( is_home() ) {
+		$content = strip_shortcodes( $content );
+	}
+	return $content;
+}
+add_filter( 'the_content', 'wpdocs_remove_shortcode_from_index' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-671">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

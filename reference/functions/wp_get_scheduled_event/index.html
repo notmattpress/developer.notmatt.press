@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_get_scheduled_event()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_get_scheduled_event()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_get_scheduled_event( <span class="arg-type">string</span> <span class="arg-name">$hook</span>,  <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span>,  <span class="arg-type">int|null</span> <span class="arg-name">$timestamp</span> = <span class="arg-default">null</span> ): <span class="return-type">object|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves a scheduled event.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Retrieves the full event object for a given event, if no timestamp is specified the next scheduled event is returned.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$hook</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Action hook of the event.</span></div></dd><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Array containing each separate argument to pass to the hook’s callback function.<br/>
+Although not passed to a callback, these arguments are used to uniquely identify the                            event, so they should be the same as those used when originally scheduling the event.<br/>
+</span></div><p class="default">Default:<code>array()</code></p></dd><dt><code>$timestamp</code><span class="type"><span class="int">int</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Unix timestamp (UTC) of the event. If not specified, the next scheduled event                            is returned. </span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">object|false</span> The event object. False if the event does not exist.<br/>
+<ul class="param-hash"><li><code>hook</code> <span class="type">string</span><div class="desc">Action hook to execute when the event is run.</div></li>
+<li><code>timestamp</code> <span class="type">int</span><div class="desc">Unix timestamp (UTC) for when to next run the event.</div></li>
+<li><code>schedule</code> <span class="type">string|false</span><div class="desc">How often the event should subsequently recur.</div></li>
+<li><code>args</code> <span class="type">array</span><div class="desc">Array containing each separate argument to pass to the hook’s callback function.</div></li>
+<li><code>interval</code> <span class="type">int</span><div class="desc">Optional. The interval time in seconds for the schedule. Only present for recurring events.</div></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="751"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_get_scheduled_event( $hook, $args = array(), $timestamp = null ) {
+	/**
+	 * Filter to override retrieving a scheduled event.
+	 *
+	 * Returning a non-null value will short-circuit the normal process,
+	 * returning the filtered value instead.
+	 *
+	 * Return false if the event does not exist, otherwise an event object
+	 * should be returned.
+	 *
+	 * @since 5.1.0
+	 *
+	 * @param null|false|object $pre  Value to return instead. Default null to continue retrieving the event.
+	 * @param string            $hook Action hook of the event.
+	 * @param array             $args Array containing each separate argument to pass to the hook's callback function.
+	 *                                Although not passed to a callback, these arguments are used to uniquely identify
+	 *                                the event.
+	 * @param int|null  $timestamp Unix timestamp (UTC) of the event. Null to retrieve next scheduled event.
+	 */
+	$pre = apply_filters( 'pre_get_scheduled_event', null, $hook, $args, $timestamp );
+
+	if ( null !== $pre ) {
+		return $pre;
+	}
+
+	if ( null !== $timestamp &amp;&amp; ! is_numeric( $timestamp ) ) {
+		return false;
+	}
+
+	$crons = _get_cron_array();
+	if ( empty( $crons ) ) {
+		return false;
+	}
+
+	$key = md5( serialize( $args ) );
+
+	if ( ! $timestamp ) {
+		// Get next event.
+		$next = false;
+		foreach ( $crons as $timestamp =&gt; $cron ) {
+			if ( isset( $cron[ $hook ][ $key ] ) ) {
+				$next = $timestamp;
+				break;
+			}
+		}
+
+		if ( ! $next ) {
+			return false;
+		}
+
+		$timestamp = $next;
+	} elseif ( ! isset( $crons[ $timestamp ][ $hook ][ $key ] ) ) {
+		return false;
+	}
+
+	$event = (object) array(
+		'hook'      =&gt; $hook,
+		'timestamp' =&gt; $timestamp,
+		'schedule'  =&gt; $crons[ $timestamp ][ $hook ][ $key ]['schedule'],
+		'args'      =&gt; $args,
+	);
+
+	if ( isset( $crons[ $timestamp ][ $hook ][ $key ]['interval'] ) ) {
+		$event-&gt;interval = $crons[ $timestamp ][ $hook ][ $key ]['interval'];
+	}
+
+	return $event;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/cron.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/cron.php#L751">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/cron.php#L751-L818">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_get_scheduled_event/"><span class="hook-func">apply_filters</span>( ‘pre_get_scheduled_event’,  <nobr><span class="arg-type">null|false|object</span> <span class="arg-name">$pre</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$hook</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr>,  <nobr><span class="arg-type">int|null</span> <span class="arg-name">$timestamp</span></nobr> )</a></dt><dd><p>Filter to override retrieving a scheduled event.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_get_cron_array/">_get_cron_array()</a><code>wp-includes/cron.php</code></td><td><p>Retrieves cron info array option.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_reschedule_event/">wp_reschedule_event()</a><code>wp-includes/cron.php</code></td><td><p>Reschedules a recurring event.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_next_scheduled/">wp_next_scheduled()</a><code>wp-includes/cron.php</code></td><td><p>Retrieves the next timestamp for an event.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_schedule/">wp_get_schedule()</a><code>wp-includes/cron.php</code></td><td><p>Retrieves the name of the recurrence schedule for an event.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.1.0/">5.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-naui95 even thread-even depth-1" data-comment-id="3253" id="comment-3253">
+<article class="comment-body" id="div-comment-3253">
+<a class="screen-reader-text" href="#comment-content-3253">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3253">
+<p><strong>$args</strong> is not an optional parameter if looking for events that have <em>args</em>. The function will return null if no args are given and the scheduled event has args.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3253">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-nawawijamili odd alt thread-odd thread-alt depth-1" data-comment-id="4522" id="comment-4522">
+<article class="comment-body" id="div-comment-4522">
+<a class="screen-reader-text" href="#comment-content-4522">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4522">
+<p>Remove old event without deactivate/activate plugin.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( false !== wp_get_scheduled_event( 'old_hook' ) ) {
+	wp_clear_scheduled_hook( 'old_hook' );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4522">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

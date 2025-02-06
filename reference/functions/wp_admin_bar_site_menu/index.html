@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_admin_bar_site_menu()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_admin_bar_site_menu()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_admin_bar_site_menu( <span class="arg-type">WP_Admin_Bar</span> <span class="arg-name">$wp_admin_bar</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Adds the “Site Name” menu.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$wp_admin_bar</code><span class="type"><span class="WP_Admin_Bar"><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/" rel="class">WP_Admin_Bar</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The <a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/" rel="class">WP_Admin_Bar</a> instance.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="366"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_admin_bar_site_menu( $wp_admin_bar ) {
+	// Don't show for logged out users.
+	if ( ! is_user_logged_in() ) {
+		return;
+	}
+
+	// Show only when the user is a member of this site, or they're a super admin.
+	if ( ! is_user_member_of_blog() &amp;&amp; ! current_user_can( 'manage_network' ) ) {
+		return;
+	}
+
+	$blogname = get_bloginfo( 'name' );
+
+	if ( ! $blogname ) {
+		$blogname = preg_replace( '#^(https?://)?(www.)?#', '', get_home_url() );
+	}
+
+	if ( is_network_admin() ) {
+		/* translators: %s: Site title. */
+		$blogname = sprintf( __( 'Network Admin: %s' ), esc_html( get_network()-&gt;site_name ) );
+	} elseif ( is_user_admin() ) {
+		/* translators: %s: Site title. */
+		$blogname = sprintf( __( 'User Dashboard: %s' ), esc_html( get_network()-&gt;site_name ) );
+	}
+
+	$title = wp_html_excerpt( $blogname, 40, '&amp;hellip;' );
+
+	$wp_admin_bar-&gt;add_node(
+		array(
+			'id'    =&gt; 'site-name',
+			'title' =&gt; $title,
+			'href'  =&gt; ( is_admin() || ! current_user_can( 'read' ) ) ? home_url( '/' ) : admin_url(),
+			'meta'  =&gt; array(
+				'menu_title' =&gt; $title,
+			),
+		)
+	);
+
+	// Create submenu items.
+
+	if ( is_admin() ) {
+		// Add an option to visit the site.
+		$wp_admin_bar-&gt;add_node(
+			array(
+				'parent' =&gt; 'site-name',
+				'id'     =&gt; 'view-site',
+				'title'  =&gt; __( 'Visit Site' ),
+				'href'   =&gt; home_url( '/' ),
+			)
+		);
+
+		if ( is_blog_admin() &amp;&amp; is_multisite() &amp;&amp; current_user_can( 'manage_sites' ) ) {
+			$wp_admin_bar-&gt;add_node(
+				array(
+					'parent' =&gt; 'site-name',
+					'id'     =&gt; 'edit-site',
+					'title'  =&gt; __( 'Manage Site' ),
+					'href'   =&gt; network_admin_url( 'site-info.php?id=' . get_current_blog_id() ),
+				)
+			);
+		}
+	} elseif ( current_user_can( 'read' ) ) {
+		// We're on the front end, link to the Dashboard.
+		$wp_admin_bar-&gt;add_node(
+			array(
+				'parent' =&gt; 'site-name',
+				'id'     =&gt; 'dashboard',
+				'title'  =&gt; __( 'Dashboard' ),
+				'href'   =&gt; admin_url(),
+			)
+		);
+
+		// Add the appearance submenu items.
+		wp_admin_bar_appearance_menu( $wp_admin_bar );
+
+		// Add a Plugins link.
+		if ( current_user_can( 'activate_plugins' ) ) {
+			$wp_admin_bar-&gt;add_node(
+				array(
+					'parent' =&gt; 'site-name',
+					'id'     =&gt; 'plugins',
+					'title'  =&gt; __( 'Plugins' ),
+					'href'   =&gt; admin_url( 'plugins.php' ),
+				)
+			);
+		}
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/admin-bar.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/admin-bar.php#L366">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/admin-bar.php#L366-L453">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_network/">get_network()</a><code>wp-includes/ms-network.php</code></td><td><p>Retrieves network data given a network ID or network object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_html_excerpt/">wp_html_excerpt()</a><code>wp-includes/formatting.php</code></td><td><p>Safely extracts not more than the first $count characters from HTML string.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_network_admin/">is_network_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for the network administrative interface.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_user_admin/">is_user_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for a user admin screen.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_blog_admin/">is_blog_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for a site’s administrative interface.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/network_admin_url/">network_admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_home_url/">get_home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for a given site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/add_node/">WP_Admin_Bar::add_node()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td><p>Adds a node to the menu.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_bar_appearance_menu/">wp_admin_bar_appearance_menu()</a><code>wp-includes/admin-bar.php</code></td><td><p>Adds appearance submenu items to the “Site Name” menu.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_member_of_blog/">is_user_member_of_blog()</a><code>wp-includes/user.php</code></td><td><p>Finds out whether a user is a member of a given blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bloginfo/">get_bloginfo()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves information about the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_admin/">is_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for an administrative interface page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_blog_id/">get_current_blog_id()</a><code>wp-includes/load.php</code></td><td><p>Retrieves the current site ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_url/">admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 14 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.3.0/">3.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-huskyr odd alt thread-odd thread-alt depth-1" data-comment-id="7124" id="comment-7124">
+<article class="comment-body" id="div-comment-7124">
+<a class="screen-reader-text" href="#comment-content-7124">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7124">
+<p>You can add more links to the ‘View site’ menu. This example will remove the default link, re-add it with a different name and also add another link to example.com:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'admin_bar_menu', function ( $wp_admin_bar ) {
+    // Remove default link
+    $wp_admin_bar-&gt;remove_node( 'view-site' );
+
+    // example.com
+    $wp_admin_bar-&gt;add_node( array(
+        'parent' =&gt; 'site-name',
+        'id'     =&gt; 'view-example',
+        'title'  =&gt; 'Go to example.com',
+        'href'   =&gt; 'https://www.example.com'
+    ) );
+
+    // default home
+    $wp_admin_bar-&gt;add_node( array(
+        'parent' =&gt; 'site-name',
+        'id'     =&gt; 'view-home',
+        'title'  =&gt; 'Go to homepage',
+        'href'   =&gt; home_url( '/' )
+    ) );
+}, 999 ); // Note the 999, this is needed to make sure we can actually remove the default link</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-7124">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_get_themes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_get_themes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_get_themes( <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_theme/" rel="class">WP_Theme</a>[]</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns an array of <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a> objects based on the arguments.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Despite advances over <a href="https://developer.notmatt.press/reference/functions/get_themes/" rel="function">get_themes()</a> , this function is quite expensive, and grows linearly with additional themes. Stick to <a href="https://developer.notmatt.press/reference/functions/wp_get_theme/" rel="function">wp_get_theme()</a>  if possible.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The search arguments.<br/>
+<ul class="param-hash"><li><code>errors</code> <span class="type">mixed</span><div class="desc">True to return themes with errors, false to return themes without errors, null to return all themes.<br/>
+Default false.</div></li>
+<li><code>allowed</code> <span class="type">mixed</span><div class="desc">(Multisite) True to return only allowed themes for a site.<br/>
+False to return only disallowed themes for a site.<br/>
+<code>'site'</code> to return only site-allowed themes.<br/>
+<code>'network'</code> to return only network-allowed themes.<br/>
+Null to return all themes. Default null.</div></li>
+<li><code>blog_id</code> <span class="type">int</span><div class="desc">(Multisite) The blog ID used to calculate which themes are allowed. Default 0, synonymous for the current blog.</div></li>
+</ul>
+</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a>[]</span> Array of <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a> objects.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="35"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_get_themes( $args = array() ) {
+	global $wp_theme_directories;
+
+	$defaults = array(
+		'errors'  =&gt; false,
+		'allowed' =&gt; null,
+		'blog_id' =&gt; 0,
+	);
+	$args     = wp_parse_args( $args, $defaults );
+
+	$theme_directories = search_theme_directories();
+
+	if ( is_array( $wp_theme_directories ) &amp;&amp; count( $wp_theme_directories ) &gt; 1 ) {
+		/*
+		 * Make sure the active theme wins out, in case search_theme_directories() picks the wrong
+		 * one in the case of a conflict. (Normally, last registered theme root wins.)
+		 */
+		$current_theme = get_stylesheet();
+		if ( isset( $theme_directories[ $current_theme ] ) ) {
+			$root_of_current_theme = get_raw_theme_root( $current_theme );
+			if ( ! in_array( $root_of_current_theme, $wp_theme_directories, true ) ) {
+				$root_of_current_theme = WP_CONTENT_DIR . $root_of_current_theme;
+			}
+			$theme_directories[ $current_theme ]['theme_root'] = $root_of_current_theme;
+		}
+	}
+
+	if ( empty( $theme_directories ) ) {
+		return array();
+	}
+
+	if ( is_multisite() &amp;&amp; null !== $args['allowed'] ) {
+		$allowed = $args['allowed'];
+		if ( 'network' === $allowed ) {
+			$theme_directories = array_intersect_key( $theme_directories, WP_Theme::get_allowed_on_network() );
+		} elseif ( 'site' === $allowed ) {
+			$theme_directories = array_intersect_key( $theme_directories, WP_Theme::get_allowed_on_site( $args['blog_id'] ) );
+		} elseif ( $allowed ) {
+			$theme_directories = array_intersect_key( $theme_directories, WP_Theme::get_allowed( $args['blog_id'] ) );
+		} else {
+			$theme_directories = array_diff_key( $theme_directories, WP_Theme::get_allowed( $args['blog_id'] ) );
+		}
+	}
+
+	$themes         = array();
+	static $_themes = array();
+
+	foreach ( $theme_directories as $theme =&gt; $theme_root ) {
+		if ( isset( $_themes[ $theme_root['theme_root'] . '/' . $theme ] ) ) {
+			$themes[ $theme ] = $_themes[ $theme_root['theme_root'] . '/' . $theme ];
+		} else {
+			$themes[ $theme ] = new WP_Theme( $theme, $theme_root['theme_root'] );
+
+			$_themes[ $theme_root['theme_root'] . '/' . $theme ] = $themes[ $theme ];
+		}
+	}
+
+	if ( null !== $args['errors'] ) {
+		foreach ( $themes as $theme =&gt; $wp_theme ) {
+			if ( (bool) $wp_theme-&gt;errors() !== $args['errors'] ) {
+				unset( $themes[ $theme ] );
+			}
+		}
+	}
+
+	return $themes;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/theme.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/theme.php#L35">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/theme.php#L35-L101">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_raw_theme_root/">get_raw_theme_root()</a><code>wp-includes/theme.php</code></td><td><p>Gets the raw theme root relative to the content directory with no filters applied.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/search_theme_directories/">search_theme_directories()</a><code>wp-includes/theme.php</code></td><td><p>Searches all registered theme directories for complete and valid themes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_stylesheet/">get_stylesheet()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves name of the current stylesheet.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_allowed_on_network/">WP_Theme::get_allowed_on_network()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns array of stylesheet names of themes allowed on the network.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_allowed_on_site/">WP_Theme::get_allowed_on_site()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns array of stylesheet names of themes allowed on the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_allowed/">WP_Theme::get_allowed()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns array of stylesheet names of themes allowed on the site or network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/errors/">WP_Theme::errors()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns errors property.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/__construct/">WP_Theme::__construct()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Constructor for <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a>.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/theme_installer_skin/do_overwrite/">Theme_Installer_Skin::do_overwrite()</a><code>wp-admin/includes/class-theme-installer-skin.php</code></td><td><p>Checks if the theme can be overwritten and outputs the HTML for overwriting a theme on upload.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_toggle_auto_updates/">wp_ajax_toggle_auto_updates()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles enabling or disable plugin and theme auto-updates via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_test_theme_version/">WP_Site_Health::get_test_theme_version()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Tests if themes are outdated, or unnecessary.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_themes_controller/get_items/">WP_REST_Themes_Controller::get_items()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-themes-controller.php</code></td><td><p>Retrieves a collection of themes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/handle_load_themes_request/">WP_Customize_Manager::handle_load_themes_request()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Loads themes into the theme browsing/installation UI.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_prepare_themes_for_js/">wp_prepare_themes_for_js()</a><code>wp-admin/includes/theme.php</code></td><td><p>Prepares themes for JavaScript.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_allowed_themes/">get_allowed_themes()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Get the allowed themes for the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_broken_themes/">get_broken_themes()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Retrieves a list of broken themes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_themes_list_table/prepare_items/">WP_MS_Themes_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-ms-themes-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/upgrade_network/">upgrade_network()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Executes network-level upgrade routines.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_themes_list_table/prepare_items/">WP_Themes_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-themes-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_clean_themes_cache/">wp_clean_themes_cache()</a><code>wp-includes/theme.php</code></td><td><p>Clears the cache held by <a href="https://developer.notmatt.press/reference/functions/get_theme_roots/" rel="function">get_theme_roots()</a>  and <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a>.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_themes/">get_themes()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieve list of themes with theme data in theme directory.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_allowed_on_site/">WP_Theme::get_allowed_on_site()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns array of stylesheet names of themes allowed on the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_themes/">wp_update_themes()</a><code>wp-includes/update.php</code></td><td><p>Checks for available updates to themes based on the latest versions hosted on WordPress.org.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 10 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.4.0/">3.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-okvee odd alt thread-odd thread-alt depth-1" data-comment-id="1962" id="comment-1962">
+<article class="comment-body" id="div-comment-1962">
+<a class="screen-reader-text" href="#comment-content-1962">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1962">
+<p>Example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$all_themes = wp_get_themes();
+
+print_r($all_themes);</code></pre>
+<p>The result will be:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">["twentyseventeen"]=&gt;
+  object(WP_Theme)#1365 (12) {
+    ["update"]=&gt;
+    bool(false)
+    ["theme_root":"WP_Theme":private]=&gt;
+    string(59) "/path/to/site/wp-content/themes"
+    ["headers":"WP_Theme":private]=&gt;
+    array(11) {
+      ["Name"]=&gt;
+      string(16) "Twenty Seventeen"
+      ["ThemeURI"]=&gt;
+      string(45) "<a href="https://wordpress.org/themes/twentyseventeen/&amp;quot" rel="nofollow ugc">https://wordpress.org/themes/twentyseventeen/&amp;quot</a>;
+      ["Description"]=&gt;
+      string(450) "Twenty Seventeen brings your site to life with header video and immersive featured images. With a focus on business sites, it features multiple sections on the front page as well as widgets, navigation and social menus, a logo, and more. Personalize its asymmetrical grid with a custom color scheme and showcase your multimedia content with post formats. Our default theme for 2017 works great in many languages, for any abilities, and on any device."
+      ["Author"]=&gt;
+      string(18) "the WordPress team"
+      ["AuthorURI"]=&gt;
+      string(22) "<a href="https://wordpress.org/&amp;quot" rel="nofollow ugc">https://wordpress.org/&amp;quot</a>;
+      ["Version"]=&gt;
+      string(3) "1.3"
+      ["Template"]=&gt;
+      string(0) ""
+      ["Status"]=&gt;
+      string(0) ""
+      ["Tags"]=&gt;
+      string(281) "one-column, two-columns, right-sidebar, flexible-header, accessibility-ready, custom-colors, custom-header, custom-menu, custom-logo, editor-style, featured-images, footer-widgets, post-formats, rtl-language-support, sticky-post, theme-options, threaded-comments, translation-ready"
+      ["TextDomain"]=&gt;
+      string(15) "twentyseventeen"
+      ["DomainPath"]=&gt;
+      string(0) ""
+    }
+    ["headers_sanitized":"WP_Theme":private]=&gt;
+    NULL
+    ["name_translated":"WP_Theme":private]=&gt;
+    NULL
+    ["errors":"WP_Theme":private]=&gt;
+    NULL
+    ["stylesheet":"WP_Theme":private]=&gt;
+    string(15) "twentyseventeen"
+    ["template":"WP_Theme":private]=&gt;
+    string(15) "twentyseventeen"
+    ["parent":"WP_Theme":private]=&gt;
+    NULL
+    ["theme_root_uri":"WP_Theme":private]=&gt;
+    NULL
+    ["textdomain_loaded":"WP_Theme":private]=&gt;
+    NULL
+    ["cache_hash":"WP_Theme":private]=&gt;
+    string(32) ""
+  }</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1962">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

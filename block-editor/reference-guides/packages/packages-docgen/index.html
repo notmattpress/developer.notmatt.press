@@ -1,0 +1,309 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/docgen</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/docgen</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p><code>docgen</code> helps you to generate the <em>public API</em> of your code. Given an entry point file, it outputs the ES6 export statements and their corresponding JSDoc comments in human-readable format. It also supports TypeScript via the TypeScript babel plugin.</p>
+<p>Some characteristics:</p>
+<ul>
+<li>If the export statement doesn’t contain any JSDoc, it’ll look up for JSDoc up to the declaration.</li>
+<li>It can resolve relative dependencies, either files or directories. For example, <code>import default from './dependency'</code> will find <code>dependency.js</code> or <code>dependency/index.js</code></li>
+<li>For TypeScript support, all types must be explicitly annotated as the TypeScript Babel plugin is unable to consume inferred types (it does not run the TS compiler, after all—it merely parses TypeScript). For example, all function return types must be explicitly annotated if they are to be documented by <code>docgen</code>.</li>
+</ul>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/docgen --save-dev
+</code></pre>
+<p><strong>Note</strong>: This package requires Node.js version with long-term support status (check <a href="https://nodejs.org/en/about/previous-releases">Active LTS or Maintenance LTS releases</a>). It is not compatible with older versions.</p>
+<h2 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h2>
+<pre><code class="language-bash">npx docgen &lt;entry-point.js&gt;
+</code></pre>
+<p>This command will generate a file named <code>entry-point-api.md</code> containing all the exports and their JSDoc comments.</p>
+<h3 class="is-toc-heading" id="cli-options" tabindex="-1"><a href="#cli-options">CLI options</a></h3>
+<ul>
+<li><strong>–formatter</strong> <code>(String)</code>: A path to a custom formatter to control the contents of the output file. It should be a CommonJS module that exports a function that takes as input:
+<ul>
+<li><em>rootDir</em> <code>(String)</code>: current working directory as seen by docgen.</li>
+<li><em>docPath</em> <code>(String)</code>: path of the output document to generate.</li>
+<li><em>symbols</em> <code>(Array)</code>: the symbols found.</li>
+</ul>
+</li>
+<li><strong>–ignore</strong> <code>(RegExp)</code>: A regular expression used to ignore symbols whose name match it.</li>
+<li><strong>–output</strong> <code>(String)</code>: Output file that will contain the API documentation.</li>
+<li><strong>–to-section</strong> <code>(String)</code>: Append generated documentation to this section in the Markdown output. To be used by the default Markdown formatter. Depends on <code>--output</code> and bypasses the custom <code>--formatter</code> passed, if any.</li>
+<li><strong>–to-token</strong>: Embed generated documentation within the start and end tokens in the Markdown output. To be used by the default Markdown formatter.Depends on <code>--output</code> and bypasses the custom <code>--formatter</code> passed, if any.
+<ul>
+<li>Start token: <code>&lt;!-- START TOKEN(Autogenerated API docs) --&gt;</code></li>
+<li>End token: <code>&lt;!-- END TOKEN(Autogenerated API docs) --&gt;</code></li>
+</ul>
+</li>
+<li><strong>–use-token</strong> <code>(String)</code>: This options allows you to customize the string between the tokens. For example, <code>--use-token my-api</code> will look up for the start token <code>&lt;!-- START TOKEN(my-api) --&gt;</code> and the end token <code>&lt;!-- END TOKEN(my-api) --&gt;</code>. Depends on <code>--to-token</code>.</li>
+<li><strong>–debug</strong>: Run in debug mode, which outputs some intermediate files useful for debugging.</li>
+</ul>
+<h3 class="is-toc-heading" id="babel-configuration" tabindex="-1"><a href="#babel-configuration">Babel Configuration</a></h3>
+<p><code>@wordpress/docgen</code> follows the default <a href="https://babeljs.io/docs/en/next/config-files#project-wide-configuration">project-wide configuration of Babel</a>. Like Babel, it will automatically search for a <code>babel.config.json</code> file, or an equivalent one using the <a href="https://babeljs.io/docs/en/next/config-files#supported-file-extensions">supported extensions</a>, in the project root directory.</p>
+<p>Without it, <code>@wordpress/docgen</code> runs with the default option. In other words, it cannot parse JSX or other advanced syntaxes.</p>
+<h2 class="is-toc-heading" id="examples" tabindex="-1"><a href="#examples">Examples</a></h2>
+<h3 class="is-toc-heading" id="default-export" tabindex="-1"><a href="#default-export">Default export</a></h3>
+<p>Entry point <code>index.js</code>:</p>
+<pre><code class="language-js">/**
+ * Adds two numbers.
+ *
+ * @param {number} term1 First number.
+ * @param {number} term2 Second number.
+ * @return {number} The result of adding the two numbers.
+ */
+export default function addition( term1, term2 ) {
+    // Implementation would go here.
+}
+</code></pre>
+<p>Output of <code>npx docgen index.js</code> would be <code>index-api.js</code>:</p>
+<pre><code class="language-markdown"># API
+
+## default
+
+[example.js#L8-L10](example.js#L8-L10)
+
+Adds two numbers.
+
+**Parameters**
+
+-   **term1** `number`: First number.
+-   **term2** `number`: Second number.
+
+**Returns**
+
+`number` The result of adding the two numbers.
+</code></pre>
+<h3 class="is-toc-heading" id="named-export" tabindex="-1"><a href="#named-export">Named export</a></h3>
+<p>Entry point <code>index.js</code>:</p>
+<pre><code class="language-js">/**
+ * Adds two numbers.
+ *
+ * @param {number} term1 First number.
+ * @param {number} term2 Second number.
+ * @return {number} The result of adding the two numbers.
+ */
+function addition( term1, term2 ) {
+    return term1 + term2;
+}
+
+/**
+ * Adds two numbers.
+ *
+ * @deprecated Use `addition` instead.
+ *
+ * @param {number} term1 First number.
+ * @param {number} term2 Second number.
+ * @return {number} The result of adding the two numbers.
+ */
+function count( term1, term2 ) {
+    return term1 + term2;
+}
+
+export { count, addition };
+</code></pre>
+<p>Output of <code>npx docgen index.js</code> would be <code>index-api.js</code>:</p>
+<pre><code class="language-markdown"># API
+
+## addition
+
+[example.js#L25-L25](example.js#L25-L25)
+
+Adds two numbers.
+
+**Parameters**
+
+-   **term1** `number`: First number.
+-   **term2** `number`: Second number.
+
+**Returns**
+
+`number` The result of adding the two numbers.
+
+## count
+
+[example.js#L25-L25](example.js#L25-L25)
+
+&gt; **Deprecated** Use `addition` instead.
+
+Adds two numbers.
+
+**Parameters**
+
+-   **term1** `number`: First number.
+-   **term2** `number`: Second number.
+
+**Returns**
+
+`number` The result of adding the two numbers.
+</code></pre>
+<h3 class="is-toc-heading" id="namespace-export" tabindex="-1"><a href="#namespace-export">Namespace export</a></h3>
+<p>Let the entry point be <code>index.js</code>:</p>
+<pre><code class="language-js">export * from './count';
+</code></pre>
+<p>with <code>./count/index.js</code> contents being:</p>
+<pre><code class="language-js">/**
+ * Subtracts two numbers.
+ *
+ * @example
+ *
+ * ```js
+ * const result = subtraction( 5, 2 );
+ * console.log( result ); // Will log 3
+ * ```
+ *
+ * @param {number} term1 First number.
+ * @param {number} term2 Second number.
+ * @return {number} The result of subtracting the two numbers.
+ */
+export function subtraction( term1, term2 ) {
+    return term1 - term2;
+}
+
+/**
+ * Adds two numbers.
+ *
+ * @example
+ *
+ * ```js
+ * const result = addition( 5, 2 );
+ * console.log( result ); // Will log 7
+ * ```
+ *
+ * @param {number} term1 First number.
+ * @param {number} term2 Second number.
+ * @return {number} The result of adding the two numbers.
+ */
+export function addition( term1, term2 ) {
+    // Implementation would go here.
+    return term1 - term2;
+}
+</code></pre>
+<p>Output of <code>npx docgen index.js</code> would be <code>index-api.js</code>:</p>
+<pre><code class="language-markdown"># API
+
+## addition
+
+[example-module.js#L1-L1](example-module.js#L1-L1)
+
+Adds two numbers.
+
+**Usage**
+
+```js
+const result = addition( 5, 2 );
+console.log( result ); // Will log 7
+```
+
+**Parameters**
+
+-   **term1** `number`: First number.
+-   **term2** `number`: Second number.
+
+**Returns**
+
+`number` The result of adding the two numbers.
+
+## subtraction
+
+[example-module.js#L1-L1](example-module.js#L1-L1)
+
+Subtracts two numbers.
+
+**Usage**
+
+```js
+const result = subtraction( 5, 2 );
+console.log( result ); // Will log 3
+```
+
+**Parameters**
+
+-   **term1** `number`: First number.
+-   **term2** `number`: Second number.
+
+**Returns**
+
+`number` The result of subtracting the two numbers.
+</code></pre>
+<h3 class="is-toc-heading" id="typescript-support" tabindex="-1"><a href="#typescript-support">TypeScript support</a></h3>
+<p>Entry point <code>index.ts</code>:</p>
+<pre><code class="language-js">/**
+ * Adds two numbers.
+ *
+ * @param term1 First number.
+ * @param term2 Second number.
+ * @return The result of adding the two numbers.
+ */
+export default function addition( term1: number, term2: number ): number {
+    // Implementation would go here.
+}
+</code></pre>
+<p>Output of <code>npx docgen index.ts</code> would be <code>index-api.js</code>:</p>
+<pre><code class="language-markdown"># API
+
+## default
+
+[example.js#L8-L10](example.js#L8-L10)
+
+Adds two numbers.
+
+**Parameters**
+
+-   **term1** `number`: First number.
+-   **term2** `number`: Second number.
+
+**Returns**
+
+`number` The result of adding the two numbers.
+</code></pre>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

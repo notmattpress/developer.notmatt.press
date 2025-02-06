@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_block_metadata_registry/">WP_Block_Metadata_Registry</a></span><span class="is-current-page">WP_Block_Metadata_Registry::register_collection()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Block_Metadata_Registry::register_collection()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Block_Metadata_Registry::register_collection( <span class="arg-type">string</span> <span class="arg-name">$path</span>,  <span class="arg-type">string</span> <span class="arg-name">$manifest</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Registers a block metadata collection.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This method allows registering a collection of block metadata from a single manifest file, improving performance for large sets of blocks.</p> <p>The manifest file should be a PHP file that returns an associative array, where the keys are the block identifiers (without their namespace) and the values are the corresponding block metadata arrays. The block identifiers must match the parent directory name for the respective <code>block.json</code> file.</p> <p>Example manifest file structure:</p> <pre class="wp-block-code"><code class="language-php line-numbers" lang="php">return array(
+    'example-block' =&gt; array(
+        'title' =&gt; 'Example Block',
+        'category' =&gt; 'widgets',
+        'icon' =&gt; 'smiley',
+        // ... other block metadata
+    ),
+    'another-block' =&gt; array(
+        'title' =&gt; 'Another Block',
+        'category' =&gt; 'formatting',
+        'icon' =&gt; 'star-filled',
+        // ... other block metadata
+    ),
+    // ... more block metadata entries
+);</code></pre></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$path</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The absolute base path for the collection ( e.g., WP_PLUGIN_DIR . <code>'/my-plugin/blocks/'</code> ).</span></div></dd><dt><code>$manifest</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The absolute path to the manifest file containing the metadata collection.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True if the collection was registered successfully, false otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="92"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function register_collection( $path, $manifest ) {
+	$path = wp_normalize_path( rtrim( $path, '/' ) );
+
+	$wpinc_dir  = self::get_wpinc_dir();
+	$plugin_dir = self::get_plugin_dir();
+
+	// Check if the path is valid:
+	if ( str_starts_with( $path, $plugin_dir ) ) {
+		// For plugins, ensure the path is within a specific plugin directory and not the base plugin directory.
+		$relative_path = substr( $path, strlen( $plugin_dir ) + 1 );
+		$plugin_name   = strtok( $relative_path, '/' );
+
+		if ( empty( $plugin_name ) || $plugin_name === $relative_path ) {
+			_doing_it_wrong(
+				__METHOD__,
+				__( 'Block metadata collections can only be registered for a specific plugin. The provided path is neither a core path nor a valid plugin path.' ),
+				'6.7.0'
+			);
+			return false;
+		}
+	} elseif ( ! str_starts_with( $path, $wpinc_dir ) ) {
+		// If it's neither a plugin directory path nor within 'wp-includes', the path is invalid.
+		_doing_it_wrong(
+			__METHOD__,
+			__( 'Block metadata collections can only be registered for a specific plugin. The provided path is neither a core path nor a valid plugin path.' ),
+			'6.7.0'
+		);
+		return false;
+	}
+
+	if ( ! file_exists( $manifest ) ) {
+		_doing_it_wrong(
+			__METHOD__,
+			__( 'The specified manifest file does not exist.' ),
+			'6.7.0'
+		);
+		return false;
+	}
+
+	self::$collections[ $path ] = array(
+		'manifest' =&gt; $manifest,
+		'metadata' =&gt; null,
+	);
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-block-metadata-registry.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-block-metadata-registry.php#L92">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-block-metadata-registry.php#L92-L137">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/get_plugin_dir/">WP_Block_Metadata_Registry::get_plugin_dir()</a><code>wp-includes/class-wp-block-metadata-registry.php</code></td><td><p>Gets the normalized WordPress plugin directory path.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_metadata_registry/get_wpinc_dir/">WP_Block_Metadata_Registry::get_wpinc_dir()</a><code>wp-includes/class-wp-block-metadata-registry.php</code></td><td><p>Gets the WordPress ‘wp-includes’ directory path.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_normalize_path/">wp_normalize_path()</a><code>wp-includes/functions.php</code></td><td><p>Normalizes a filesystem path.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_register_block_metadata_collection/">wp_register_block_metadata_collection()</a><code>wp-includes/blocks.php</code></td><td><p>Registers a block metadata collection.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

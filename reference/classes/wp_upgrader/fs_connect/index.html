@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_upgrader/">WP_Upgrader</a></span><span class="is-current-page">WP_Upgrader::fs_connect()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Upgrader::fs_connect()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Upgrader::fs_connect( <span class="arg-type">string[]</span> <span class="arg-name">$directories</span> = <span class="arg-default">array()</span>,  <span class="arg-type">bool</span> <span class="arg-name">$allow_relaxed_file_ownership</span> = <span class="arg-default">false</span> ): <span class="return-type">bool|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Connects to the filesystem.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$directories</code><span class="type"><span class="string[]">string[]</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Array of directories. If any of these do                                               not exist, a <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> object will be returned.<br/>
+</span></div><p class="default">Default:<code>array()</code></p></dd><dt><code>$allow_relaxed_file_ownership</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to allow relaxed file ownership.<br/>
+</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> True if able to connect, false or a <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="236"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function fs_connect( $directories = array(), $allow_relaxed_file_ownership = false ) {
+	global $wp_filesystem;
+
+	$credentials = $this-&gt;skin-&gt;request_filesystem_credentials( false, $directories[0], $allow_relaxed_file_ownership );
+	if ( false === $credentials ) {
+		return false;
+	}
+
+	if ( ! WP_Filesystem( $credentials, $directories[0], $allow_relaxed_file_ownership ) ) {
+		$error = true;
+		if ( is_object( $wp_filesystem ) &amp;&amp; $wp_filesystem-&gt;errors-&gt;has_errors() ) {
+			$error = $wp_filesystem-&gt;errors;
+		}
+		// Failed to connect. Error and request again.
+		$this-&gt;skin-&gt;request_filesystem_credentials( $error, $directories[0], $allow_relaxed_file_ownership );
+		return false;
+	}
+
+	if ( ! is_object( $wp_filesystem ) ) {
+		return new WP_Error( 'fs_unavailable', $this-&gt;strings['fs_unavailable'] );
+	}
+
+	if ( is_wp_error( $wp_filesystem-&gt;errors ) &amp;&amp; $wp_filesystem-&gt;errors-&gt;has_errors() ) {
+		return new WP_Error( 'fs_error', $this-&gt;strings['fs_error'], $wp_filesystem-&gt;errors );
+	}
+
+	foreach ( (array) $directories as $dir ) {
+		switch ( $dir ) {
+			case ABSPATH:
+				if ( ! $wp_filesystem-&gt;abspath() ) {
+					return new WP_Error( 'fs_no_root_dir', $this-&gt;strings['fs_no_root_dir'] );
+				}
+				break;
+			case WP_CONTENT_DIR:
+				if ( ! $wp_filesystem-&gt;wp_content_dir() ) {
+					return new WP_Error( 'fs_no_content_dir', $this-&gt;strings['fs_no_content_dir'] );
+				}
+				break;
+			case WP_PLUGIN_DIR:
+				if ( ! $wp_filesystem-&gt;wp_plugins_dir() ) {
+					return new WP_Error( 'fs_no_plugins_dir', $this-&gt;strings['fs_no_plugins_dir'] );
+				}
+				break;
+			case get_theme_root():
+				if ( ! $wp_filesystem-&gt;wp_themes_dir() ) {
+					return new WP_Error( 'fs_no_themes_dir', $this-&gt;strings['fs_no_themes_dir'] );
+				}
+				break;
+			default:
+				if ( ! $wp_filesystem-&gt;find_folder( $dir ) ) {
+					return new WP_Error( 'fs_no_folder', sprintf( $this-&gt;strings['fs_no_folder'], esc_html( basename( $dir ) ) ) );
+				}
+				break;
+		}
+	}
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-upgrader.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-upgrader.php#L236">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-upgrader.php#L236-L292">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_filesystem/">WP_Filesystem()</a><code>wp-admin/includes/file.php</code></td><td><p>Initializes and connects the WordPress Filesystem Abstraction classes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_theme_root/">get_theme_root()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves path to themes directory.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/run/">WP_Upgrader::run()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Runs an upgrade/installation.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

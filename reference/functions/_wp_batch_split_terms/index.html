@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_wp_batch_split_terms()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_wp_batch_split_terms()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_wp_batch_split_terms()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Splits a batch of shared taxonomy terms.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="4368"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _wp_batch_split_terms() {
+	global $wpdb;
+
+	$lock_name = 'term_split.lock';
+
+	// Try to lock.
+	$lock_result = $wpdb-&gt;query( $wpdb-&gt;prepare( "INSERT IGNORE INTO `$wpdb-&gt;options` ( `option_name`, `option_value`, `autoload` ) VALUES (%s, %s, 'off') /* LOCK */", $lock_name, time() ) );
+
+	if ( ! $lock_result ) {
+		$lock_result = get_option( $lock_name );
+
+		// Bail if we were unable to create a lock, or if the existing lock is still valid.
+		if ( ! $lock_result || ( $lock_result &gt; ( time() - HOUR_IN_SECONDS ) ) ) {
+			wp_schedule_single_event( time() + ( 5 * MINUTE_IN_SECONDS ), 'wp_split_shared_term_batch' );
+			return;
+		}
+	}
+
+	// Update the lock, as by this point we've definitely got a lock, just need to fire the actions.
+	update_option( $lock_name, time() );
+
+	// Get a list of shared terms (those with more than one associated row in term_taxonomy).
+	$shared_terms = $wpdb-&gt;get_results(
+		"SELECT tt.term_id, t.*, count(*) as term_tt_count FROM {$wpdb-&gt;term_taxonomy} tt
+		 LEFT JOIN {$wpdb-&gt;terms} t ON t.term_id = tt.term_id
+		 GROUP BY t.term_id
+		 HAVING term_tt_count &gt; 1
+		 LIMIT 10"
+	);
+
+	// No more terms, we're done here.
+	if ( ! $shared_terms ) {
+		update_option( 'finished_splitting_shared_terms', true );
+		delete_option( $lock_name );
+		return;
+	}
+
+	// Shared terms found? We'll need to run this script again.
+	wp_schedule_single_event( time() + ( 2 * MINUTE_IN_SECONDS ), 'wp_split_shared_term_batch' );
+
+	// Rekey shared term array for faster lookups.
+	$_shared_terms = array();
+	foreach ( $shared_terms as $shared_term ) {
+		$term_id                   = (int) $shared_term-&gt;term_id;
+		$_shared_terms[ $term_id ] = $shared_term;
+	}
+	$shared_terms = $_shared_terms;
+
+	// Get term taxonomy data for all shared terms.
+	$shared_term_ids = implode( ',', array_keys( $shared_terms ) );
+	$shared_tts      = $wpdb-&gt;get_results( "SELECT * FROM {$wpdb-&gt;term_taxonomy} WHERE `term_id` IN ({$shared_term_ids})" );
+
+	// Split term data recording is slow, so we do it just once, outside the loop.
+	$split_term_data    = get_option( '_split_terms', array() );
+	$skipped_first_term = array();
+	$taxonomies         = array();
+	foreach ( $shared_tts as $shared_tt ) {
+		$term_id = (int) $shared_tt-&gt;term_id;
+
+		// Don't split the first tt belonging to a given term_id.
+		if ( ! isset( $skipped_first_term[ $term_id ] ) ) {
+			$skipped_first_term[ $term_id ] = 1;
+			continue;
+		}
+
+		if ( ! isset( $split_term_data[ $term_id ] ) ) {
+			$split_term_data[ $term_id ] = array();
+		}
+
+		// Keep track of taxonomies whose hierarchies need flushing.
+		if ( ! isset( $taxonomies[ $shared_tt-&gt;taxonomy ] ) ) {
+			$taxonomies[ $shared_tt-&gt;taxonomy ] = 1;
+		}
+
+		// Split the term.
+		$split_term_data[ $term_id ][ $shared_tt-&gt;taxonomy ] = _split_shared_term( $shared_terms[ $term_id ], $shared_tt, false );
+	}
+
+	// Rebuild the cached hierarchy for each affected taxonomy.
+	foreach ( array_keys( $taxonomies ) as $tax ) {
+		delete_option( "{$tax}_children" );
+		_get_term_hierarchy( $tax );
+	}
+
+	update_option( '_split_terms', $split_term_data );
+
+	delete_option( $lock_name );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/taxonomy.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/taxonomy.php#L4368">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/taxonomy.php#L4368-L4455">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_schedule_single_event/">wp_schedule_single_event()</a><code>wp-includes/cron.php</code></td><td><p>Schedules an event to run only once.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_get_term_hierarchy/">_get_term_hierarchy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves children of taxonomy as term IDs.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/delete_option/">delete_option()</a><code>wp-includes/option.php</code></td><td><p>Removes an option by name. Prevents removal of protected WordPress options.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/query/">wpdb::query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Performs a database query, using current database connection.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_results/">wpdb::get_results()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves an entire SQL result set from the database (i.e., many rows).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.3.0/">4.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

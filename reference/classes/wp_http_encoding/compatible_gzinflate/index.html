@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_http_encoding/">WP_Http_Encoding</a></span><span class="is-current-page">WP_Http_Encoding::compatible_gzinflate()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Http_Encoding::compatible_gzinflate()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Http_Encoding::compatible_gzinflate( <span class="arg-type">string</span> <span class="arg-name">$gz_data</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Decompression of deflated string while staying compatible with the majority of servers.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Certain Servers will return deflated data with headers which PHP’s gzinflate() function cannot handle out of the box. The following function has been created from various snippets on the gzinflate() PHP documentation.</p>
+<p>Warning: Magic numbers within. Due to the potential different formats that the compressed data may be returned in, some "magic offsets" are needed to ensure proper decompression takes place. For a simple pragmatic way to determine the magic offset in use, see: <a href="https://core.trac.wordpress.org/ticket/18273">https://core.trac.wordpress.org/ticket/18273</a></p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$gz_data</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">String to decompress.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> Decompressed string on success, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="104"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function compatible_gzinflate( $gz_data ) {
+
+	// Compressed data might contain a full header, if so strip it for gzinflate().
+	if ( str_starts_with( $gz_data, "\x1f\x8b\x08" ) ) {
+		$i   = 10;
+		$flg = ord( substr( $gz_data, 3, 1 ) );
+		if ( $flg &gt; 0 ) {
+			if ( $flg &amp; 4 ) {
+				list($xlen) = unpack( 'v', substr( $gz_data, $i, 2 ) );
+				$i          = $i + 2 + $xlen;
+			}
+			if ( $flg &amp; 8 ) {
+				$i = strpos( $gz_data, "\0", $i ) + 1;
+			}
+			if ( $flg &amp; 16 ) {
+				$i = strpos( $gz_data, "\0", $i ) + 1;
+			}
+			if ( $flg &amp; 2 ) {
+				$i = $i + 2;
+			}
+		}
+		$decompressed = @gzinflate( substr( $gz_data, $i, -8 ) );
+		if ( false !== $decompressed ) {
+			return $decompressed;
+		}
+	}
+
+	// Compressed data from java.util.zip.Deflater amongst others.
+	$decompressed = @gzinflate( substr( $gz_data, 2 ) );
+	if ( false !== $decompressed ) {
+		return $decompressed;
+	}
+
+	return false;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-http-encoding.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-http-encoding.php#L104">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-http-encoding.php#L104-L138">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_encoding/decompress/">WP_Http_Encoding::decompress()</a><code>wp-includes/class-wp-http-encoding.php</code></td><td><p>Decompression of deflated string.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.1/">2.8.1</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

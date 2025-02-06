@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">move_dir()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>move_dir()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">move_dir( <span class="arg-type">string</span> <span class="arg-name">$from</span>,  <span class="arg-type">string</span> <span class="arg-name">$to</span>,  <span class="arg-type">bool</span> <span class="arg-name">$overwrite</span> = <span class="arg-default">false</span> ): <span class="return-type">true|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Moves a directory from one location to another.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Recursively invalidates OPcache on success.</p>
+<p>If the renaming failed, falls back to <a href="https://developer.notmatt.press/reference/functions/copy_dir/" rel="function">copy_dir()</a> .</p>
+<p>Assumes that <a href="https://developer.notmatt.press/reference/functions/wp_filesystem/" rel="function">WP_Filesystem()</a>  has already been called and setup.</p>
+<p>This function is not designed to merge directories, <a href="https://developer.notmatt.press/reference/functions/copy_dir/" rel="function">copy_dir()</a>  should be used instead.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$from</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Source directory.</span></div></dd><dt><code>$to</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Destination directory.</span></div></dd><dt><code>$overwrite</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to overwrite the destination directory if it exists.<br/>
+</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">true|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> True on success, <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2078"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function move_dir( $from, $to, $overwrite = false ) {
+	global $wp_filesystem;
+
+	if ( trailingslashit( strtolower( $from ) ) === trailingslashit( strtolower( $to ) ) ) {
+		return new WP_Error( 'source_destination_same_move_dir', __( 'The source and destination are the same.' ) );
+	}
+
+	if ( $wp_filesystem-&gt;exists( $to ) ) {
+		if ( ! $overwrite ) {
+			return new WP_Error( 'destination_already_exists_move_dir', __( 'The destination folder already exists.' ), $to );
+		} elseif ( ! $wp_filesystem-&gt;delete( $to, true ) ) {
+			// Can't overwrite if the destination couldn't be deleted.
+			return new WP_Error( 'destination_not_deleted_move_dir', __( 'The destination directory already exists and could not be removed.' ) );
+		}
+	}
+
+	if ( $wp_filesystem-&gt;move( $from, $to ) ) {
+		/*
+		 * When using an environment with shared folders,
+		 * there is a delay in updating the filesystem's cache.
+		 *
+		 * This is a known issue in environments with a VirtualBox provider.
+		 *
+		 * A 200ms delay gives time for the filesystem to update its cache,
+		 * prevents "Operation not permitted", and "No such file or directory" warnings.
+		 *
+		 * This delay is used in other projects, including Composer.
+		 * @link https://github.com/composer/composer/blob/2.5.1/src/Composer/Util/Platform.php#L228-L233
+		 */
+		usleep( 200000 );
+		wp_opcache_invalidate_directory( $to );
+
+		return true;
+	}
+
+	// Fall back to a recursive copy.
+	if ( ! $wp_filesystem-&gt;is_dir( $to ) ) {
+		if ( ! $wp_filesystem-&gt;mkdir( $to, FS_CHMOD_DIR ) ) {
+			return new WP_Error( 'mkdir_failed_move_dir', __( 'Could not create directory.' ), $to );
+		}
+	}
+
+	$result = copy_dir( $from, $to, array( basename( $to ) ) );
+
+	// Clear the source directory.
+	if ( true === $result ) {
+		$wp_filesystem-&gt;delete( $from, true );
+	}
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/file.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/file.php#L2078">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/file.php#L2078-L2128">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_opcache_invalidate_directory/">wp_opcache_invalidate_directory()</a><code>wp-admin/includes/file.php</code></td><td><p>Attempts to clear the opcode cache for a directory of files.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/copy_dir/">copy_dir()</a><code>wp-admin/includes/file.php</code></td><td><p>Copies a directory from one location to another via the WordPress Filesystem Abstraction.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/move_to_temp_backup_dir/">WP_Upgrader::move_to_temp_backup_dir()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Moves the plugin or theme being updated into a temporary backup directory.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/restore_temp_backup/">WP_Upgrader::restore_temp_backup()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Restores the plugin or theme from temporary backup.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/install_package/">WP_Upgrader::install_package()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Install a package.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.2.0/">6.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-shailu25 odd alt thread-odd thread-alt depth-1" data-comment-id="6506" id="comment-6506">
+<article class="comment-body" id="div-comment-6506">
+<a class="screen-reader-text" href="#comment-content-6506">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6506">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Connecting to the filesystem.
+
+if ( ! WP_Filesystem() ) {
+    // Unable to connect to the filesystem, FTP credentials may be required or something.
+    exit;
+}
+
+global $wp_filesystem;
+
+// From Directory Path 
+$from = '/path/to/from_folder_name';
+
+// To Directory Path 
+$to = '/path/to/to_folder_name';
+
+$result = move_dir($from, $to);</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6506">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

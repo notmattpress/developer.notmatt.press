@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_plugin_dependencies/">WP_Plugin_Dependencies</a></span><span class="is-current-page">WP_Plugin_Dependencies::get_dependency_api_data()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Plugin_Dependencies::get_dependency_api_data()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Plugin_Dependencies::get_dependency_api_data(): <span class="return-type">array|void</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves and stores dependency plugin data from the WordPress.org Plugin API.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|void</span> An array of dependency API data, or void on early exit.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="657"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected static function get_dependency_api_data() {
+	global $pagenow;
+
+	if ( ! is_admin() || ( 'plugins.php' !== $pagenow &amp;&amp; 'plugin-install.php' !== $pagenow ) ) {
+		return;
+	}
+
+	if ( is_array( self::$dependency_api_data ) ) {
+		return self::$dependency_api_data;
+	}
+
+	$plugins                   = self::get_plugins();
+	self::$dependency_api_data = (array) get_site_transient( 'wp_plugin_dependencies_plugin_data' );
+	foreach ( self::$dependency_slugs as $slug ) {
+		// Set transient for individual data, remove from self::$dependency_api_data if transient expired.
+		if ( ! get_site_transient( "wp_plugin_dependencies_plugin_timeout_{$slug}" ) ) {
+			unset( self::$dependency_api_data[ $slug ] );
+			set_site_transient( "wp_plugin_dependencies_plugin_timeout_{$slug}", true, 12 * HOUR_IN_SECONDS );
+		}
+
+		if ( isset( self::$dependency_api_data[ $slug ] ) ) {
+			if ( false === self::$dependency_api_data[ $slug ] ) {
+				$dependency_file = self::get_dependency_filepath( $slug );
+
+				if ( false === $dependency_file ) {
+					self::$dependency_api_data[ $slug ] = array( 'Name' =&gt; $slug );
+				} else {
+					self::$dependency_api_data[ $slug ] = array( 'Name' =&gt; $plugins[ $dependency_file ]['Name'] );
+				}
+				continue;
+			}
+
+			// Don't hit the Plugin API if data exists.
+			if ( ! empty( self::$dependency_api_data[ $slug ]['last_updated'] ) ) {
+				continue;
+			}
+		}
+
+		if ( ! function_exists( 'plugins_api' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+		}
+
+		$information = plugins_api(
+			'plugin_information',
+			array(
+				'slug'   =&gt; $slug,
+				'fields' =&gt; array(
+					'short_description' =&gt; true,
+					'icons'             =&gt; true,
+				),
+			)
+		);
+
+		if ( is_wp_error( $information ) ) {
+			continue;
+		}
+
+		self::$dependency_api_data[ $slug ] = (array) $information;
+		// plugins_api() returns 'name' not 'Name'.
+		self::$dependency_api_data[ $slug ]['Name'] = self::$dependency_api_data[ $slug ]['name'];
+		set_site_transient( 'wp_plugin_dependencies_plugin_data', self::$dependency_api_data, 0 );
+	}
+
+	// Remove from self::$dependency_api_data if slug no longer a dependency.
+	$differences = array_diff( array_keys( self::$dependency_api_data ), self::$dependency_slugs );
+	foreach ( $differences as $difference ) {
+		unset( self::$dependency_api_data[ $difference ] );
+	}
+
+	ksort( self::$dependency_api_data );
+	// Remove empty elements.
+	self::$dependency_api_data = array_filter( self::$dependency_api_data );
+	set_site_transient( 'wp_plugin_dependencies_plugin_data', self::$dependency_api_data, 0 );
+
+	return self::$dependency_api_data;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-plugin-dependencies.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-plugin-dependencies.php#L657">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-plugin-dependencies.php#L657-L732">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/get_plugins/">WP_Plugin_Dependencies::get_plugins()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Gets data for installed plugins.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/get_dependency_filepath/">WP_Plugin_Dependencies::get_dependency_filepath()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Gets the filepath for a dependency, relative to the plugin’s directory.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/plugins_api/">plugins_api()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Retrieves plugin installer pages from the WordPress.org Plugins API.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_site_transient/">set_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a site transient.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_site_transient/">get_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_admin/">is_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for an administrative interface page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/get_dependency_names/">WP_Plugin_Dependencies::get_dependency_names()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Gets the names of plugins required by the plugin.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/get_dependency_data/">WP_Plugin_Dependencies::get_dependency_data()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Returns API data for the dependency.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/initialize/">WP_Plugin_Dependencies::initialize()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Initializes by fetching plugin header and plugin API data.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

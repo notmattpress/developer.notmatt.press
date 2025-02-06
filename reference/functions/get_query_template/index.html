@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_query_template()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_query_template()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_query_template( <span class="arg-type">string</span> <span class="arg-name">$type</span>,  <span class="arg-type">string[]</span> <span class="arg-name">$templates</span> = <span class="arg-default">array()</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves path to a template.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Used to quickly retrieve the path of a template without including the file extension. It will also check the parent theme, if the file exists, with the use of <a href="https://developer.notmatt.press/reference/functions/locate_template/" rel="function">locate_template()</a> . Allows for more generic template location without the use of the other get_*_template() functions.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$type</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Filename without extension.</span></div></dd><dt><code>$templates</code><span class="type"><span class="string[]">string[]</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">An optional list of template candidates.</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Full path to template file.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="23"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_query_template( $type, $templates = array() ) {
+	$type = preg_replace( '|[^a-z0-9-]+|', '', $type );
+
+	if ( empty( $templates ) ) {
+		$templates = array( "{$type}.php" );
+	}
+
+	/**
+	 * Filters the list of template filenames that are searched for when retrieving a template to use.
+	 *
+	 * The dynamic portion of the hook name, `$type`, refers to the filename -- minus the file
+	 * extension and any non-alphanumeric characters delimiting words -- of the file to load.
+	 * The last element in the array should always be the fallback template for this query type.
+	 *
+	 * Possible hook names include:
+	 *
+	 *  - `404_template_hierarchy`
+	 *  - `archive_template_hierarchy`
+	 *  - `attachment_template_hierarchy`
+	 *  - `author_template_hierarchy`
+	 *  - `category_template_hierarchy`
+	 *  - `date_template_hierarchy`
+	 *  - `embed_template_hierarchy`
+	 *  - `frontpage_template_hierarchy`
+	 *  - `home_template_hierarchy`
+	 *  - `index_template_hierarchy`
+	 *  - `page_template_hierarchy`
+	 *  - `paged_template_hierarchy`
+	 *  - `privacypolicy_template_hierarchy`
+	 *  - `search_template_hierarchy`
+	 *  - `single_template_hierarchy`
+	 *  - `singular_template_hierarchy`
+	 *  - `tag_template_hierarchy`
+	 *  - `taxonomy_template_hierarchy`
+	 *
+	 * @since 4.7.0
+	 *
+	 * @param string[] $templates A list of template candidates, in descending order of priority.
+	 */
+	$templates = apply_filters( "{$type}_template_hierarchy", $templates );
+
+	$template = locate_template( $templates );
+
+	$template = locate_block_template( $template, $type, $templates );
+
+	/**
+	 * Filters the path of the queried template by type.
+	 *
+	 * The dynamic portion of the hook name, `$type`, refers to the filename -- minus the file
+	 * extension and any non-alphanumeric characters delimiting words -- of the file to load.
+	 * This hook also applies to various types of files loaded as part of the Template Hierarchy.
+	 *
+	 * Possible hook names include:
+	 *
+	 *  - `404_template`
+	 *  - `archive_template`
+	 *  - `attachment_template`
+	 *  - `author_template`
+	 *  - `category_template`
+	 *  - `date_template`
+	 *  - `embed_template`
+	 *  - `frontpage_template`
+	 *  - `home_template`
+	 *  - `index_template`
+	 *  - `page_template`
+	 *  - `paged_template`
+	 *  - `privacypolicy_template`
+	 *  - `search_template`
+	 *  - `single_template`
+	 *  - `singular_template`
+	 *  - `tag_template`
+	 *  - `taxonomy_template`
+	 *
+	 * @since 1.5.0
+	 * @since 4.8.0 The `$type` and `$templates` parameters were added.
+	 *
+	 * @param string   $template  Path to the template. See locate_template().
+	 * @param string   $type      Sanitized filename without extension.
+	 * @param string[] $templates A list of template candidates, in descending order of priority.
+	 */
+	return apply_filters( "{$type}_template", $template, $type, $templates );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/template.php#L23">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/template.php#L23-L104">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/type_template/"><span class="hook-func">apply_filters</span>( “{$type}_template”,  <nobr><span class="arg-type">string</span> <span class="arg-name">$template</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$type</span></nobr>,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$templates</span></nobr> )</a></dt><dd><p>Filters the path of the queried template by type.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/type_template_hierarchy/"><span class="hook-func">apply_filters</span>( “{$type}_template_hierarchy”,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$templates</span></nobr> )</a></dt><dd><p>Filters the list of template filenames that are searched for when retrieving a template to use.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/locate_block_template/">locate_block_template()</a><code>wp-includes/block-template.php</code></td><td><p>Finds a block template with equal or higher specificity than a given PHP template file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/locate_template/">locate_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves the name of the highest priority template file that exists.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_privacy_policy_template/">get_privacy_policy_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of Privacy Policy page template in current or parent template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_embed_template/">get_embed_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves an embed template path in the current or parent template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_singular_template/">get_singular_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves the path of the singular template in current or parent template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_search_template/">get_search_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of search template in current or parent template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_single_template/">get_single_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of single template in current or parent template. Applies to single Posts, single Attachments, and single custom post types.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_attachment_template/">get_attachment_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of attachment template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_index_template/">get_index_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of index template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_404_template/">get_404_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of 404 template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_archive_template/">get_archive_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of archive template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_author_template/">get_author_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of author template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_category_template/">get_category_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of category template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_tag_template/">get_tag_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of tag template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomy_template/">get_taxonomy_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of custom taxonomy term template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_date_template/">get_date_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of date template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_home_template/">get_home_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of home template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_front_page_template/">get_front_page_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of front page template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_page_template/">get_page_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path of page template in current or parent template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_paged_template/">get_paged_template()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieve path of paged template in current or parent template.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 13 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1363" id="comment-1363">
+<article class="comment-body" id="div-comment-1363">
+<a class="screen-reader-text" href="#comment-content-1363">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1363">
+<p><strong>Example</strong></p>
+<p>Can be used with include() or require() to retrieve path.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( '' !== get_query_template( '404' ) ) {
+	include( get_query_template( '404' ) );
+}</code></pre>
+<p>or the same can be accomplished with</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( '' != get_404_template() ) {
+	include( get_404_template() );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1363">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

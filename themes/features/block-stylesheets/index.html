@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/features/">Features</a></span><span class="is-current-page">Block Stylesheets</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Block Stylesheets</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>When styling blocks, you should always do so via the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles/"><code>theme.json</code> styles property</a> if possible. This ensures that your styles have the best compatibility across the system, working alongside the default WordPress styles, those added by plugins, and user customizations.</p>
+<p>But there are times when you simply need to step outside of what’s easily achievable via <code>theme.json</code>. For those cases, you should use WordPress’ built-in block stylesheets system.</p>
+<p>In this article, you will learn how to register per-block stylesheets, but remember that <code>theme.json</code> should be your first choice for styling in most cases.</p>
+<h2 class="is-toc-heading wp-block-heading" id="why-use-block-stylesheets" tabindex="-1"><a href="#why-use-block-stylesheets">Why use block stylesheets?</a></h2>
+<p>The primary use case for block stylesheets is when you have too much CSS to add to <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles/styles-reference/#css"><code>styles.blocks.{blockname}.css</code></a> in <code>theme.json</code>. This property allows you to add custom CSS, but it’s only ideal when it’s just a small bit of code. This is because you lose out on syntax highlighting and must place everything in a single line (JSON doesn’t support line breaks).</p>
+<p>You may also be tempted to put all your custom CSS into your theme’s primary <code>style.css</code> file. That may be OK for some use cases, but the block stylesheets system often offers better performance by only loading the block’s CSS if the block is in use on a page. On the front end, it will also inline this code within the <code>&lt;head&gt;</code> area.</p>
+<p>Creating separate stylesheets for individual blocks is also beneficial for larger and more complex projects that have a lot of custom CSS for many different blocks. The separation of the files makes it easier to organize and manage your code.</p>
+<h2 class="is-toc-heading wp-block-heading" id="creating-block-stylesheets" tabindex="-1"><a href="#creating-block-stylesheets">Creating block stylesheets</a></h2>
+<p>To create custom block stylesheets, there are three steps you must take:</p>
+<ol class="wp-block-list">
+<li>Decide on an organizational and naming scheme.</li>
+<li>Write your custom CSS.</li>
+<li>Register your custom block stylesheet(s).</li>
+</ol>
+<h3 class="is-toc-heading wp-block-heading" id="organizing-and-naming-block-stylesheets" tabindex="-1"><a href="#organizing-and-naming-block-stylesheets">Organizing and naming block stylesheets</a></h3>
+<p>Before registering a block stylesheet, you first need to know what folder you will store your custom block stylesheets in. This can be anywhere you choose (there is no standard location), and the code below will assume you are putting block stylesheets in an <code>/assets/blocks</code> folder in your theme.</p>
+<p>You should also decide on how you will name your CSS files. Again, there is no standard naming convention, but a good option is to use the block namespace and slug like so: <code>{namespace}-{slug}.css</code>. With this naming convention, a stylesheet for the <code>core/group</code> block would become <code>core-group.css</code>.</p>
+<p>Here is an example structure of what this could look like with CSS files for a few core blocks:</p>
+<ul class="wp-block-list">
+<li><code>assets/</code>
+<ul class="wp-block-list">
+<li><code>blocks/</code>
+<ul class="wp-block-list">
+<li><code>core-group.css</code></li>
+<li><code>core-image.css</code></li>
+<li><code>core-media-text.css</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="adding-css-to-a-block-stylesheet" tabindex="-1"><a href="#adding-css-to-a-block-stylesheet">Adding CSS to a block stylesheet</a></h3>
+<p>To style a core block, the most important thing you need to know is its CSS class. This is automatically generated according to the block’s namespace and slug in the form of <code>.wp-block-{namespace}-{slug}</code>.</p>
+<p>Here is an example of styling a block with the namespace and slug of <code>super/duper</code> would look like:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">.wp-block-super-duper {
+	/* custom CSS goes here. */
+}</code></pre>
+<p>Core WordPress blocks are an exception to this naming rule. Their namespace is <code>core</code>, but this is not included in any of the core blocks’ CSS classes. Instead, they use the <code>.wp-block-{slug}</code> format.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>It’s possible for third-party block developers to change the CSS class that gets output, so this general guide may not always be true for third-party blocks. In those cases, you will want to locate the block’s CSS class in the source code.</p></div></div>
+<p>Suppose that you wanted to add some custom styling for the core Image block, which has the namespace and slug of <code>core/image</code>. You would need to target the <code>.wp-block-image</code> class.</p>
+<p>Let’s try creating a gradient background, which essentially acts as a <em>faux</em> border for the <code>&lt;img&gt;</code> element within the Image block. The goal is to create a style that looks like this:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-stylesheets-image-bg.jpg?ssl=1"><img alt="WordPress post editor showing an image of palm trees with an orange-to-red gradient border." class="wp-image-149277" data-recalc-dims="1" decoding="async" fetchpriority="high" height="923" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-stylesheets-image-bg.jpg?resize=2048%2C923&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-stylesheets-image-bg.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-stylesheets-image-bg.jpg?resize=300%2C135&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-stylesheets-image-bg.jpg?resize=1024%2C462&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-stylesheets-image-bg.jpg?resize=768%2C346&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-stylesheets-image-bg.jpg?resize=1536%2C692&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>First, create an <code>/assets/blocks/core-image.css</code> file in your theme. Then, add this CSS code to it:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">.wp-block-image img {
+	padding: 1rem;
+	background: linear-gradient(-60deg,#ff5858,#f09819);
+}</code></pre>
+<p>Because this stylesheet isn’t registered, your custom styles won’t show in the editor or on the front end yet.</p>
+<h3 class="is-toc-heading wp-block-heading" id="registering-a-block-stylesheet" tabindex="-1"><a href="#registering-a-block-stylesheet">Registering a block stylesheet</a></h3>
+<p>To register your block stylesheet, you will use the <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_block_style/"><code>wp_enqueue_block_style()</code></a> function. When registering block stylesheets, you should also execute the code on the <code>init</code> hook.</p>
+<p>The <code>wp_enqueue_block_style()</code> function accepts two parameters:</p>
+<ul class="wp-block-list">
+<li><strong><code>$block_name</code>:</strong> The block name, including both the namespace and slug (e.g., <code>core/image</code>).</li>
+<li><strong><code>$args</code>:</strong> An array of arguments that is passed to <a href="https://developer.notmatt.press/reference/functions/wp_register_style/"><code>wp_register_style()</code></a>:
+<ul class="wp-block-list">
+<li><strong><code>handle</code>:</strong> A unique handle for your stylesheet.</li>
+<li><strong><code>src</code>:</strong> The source URL for the stylesheet.</li>
+<li><strong><code>path</code>:</strong> The directory path for the stylesheet (needed to inline the CSS in <code>&lt;head&gt;</code>).</li>
+<li><strong><code>deps</code>:</strong> An array of registered stylesheet handles this stylesheet depends on.</li>
+<li><strong><code>ver</code>:</strong> A custom stylesheet version number.</li>
+<li><strong><code>media</code></strong>: The media for which the stylesheet has been defined.</li>
+</ul>
+</li>
+</ul>
+<p>To register your custom stylesheet for the Image block, add this code to your <code>functions.php</code> file:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'init', 'themeslug_enqueue_block_styles' );
+
+function themeslug_enqueue_block_styles() {
+	wp_enqueue_block_style( 'core/image', array(
+		'handle' =&gt; 'themeslug-block-image',
+		'src'    =&gt; get_theme_file_uri( "assets/blocks/core-image.css" ),
+		'path'   =&gt; get_theme_file_path( "assets/blocks/core-image.css" )
+	) );
+}</code></pre>
+<p>You can also configure additional arguments for your call to <code>wp_enqueue_block_style()</code>, but the above is the minimum needed for WordPress to inline your CSS code in the <code>&lt;head&gt;</code> area of the site.</p>
+<p>For a deeper dive into block stylesheets, check out <a href="https://developer.notmatt.press/news/2022/12/leveraging-theme-json-and-per-block-styles-for-more-performant-themes/">Leveraging theme.json and per-block styles for more performant themes</a> on the WordPress Developer Blog.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

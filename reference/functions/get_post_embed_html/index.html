@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_post_embed_html()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_post_embed_html()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_post_embed_html( <span class="arg-type">int</span> <span class="arg-name">$width</span>,  <span class="arg-type">int</span> <span class="arg-name">$height</span>,  <span class="arg-type">int|WP_Post</span> <span class="arg-name">$post</span> = <span class="arg-default">null</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the embed code for a specific post.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$width</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The width for the response.</span></div></dd><dt><code>$height</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The height for the response.</span></div></dd><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID or object. Default is global <code>$post</code>.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> Embed code on success, false if post doesn’t exist.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="478"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_post_embed_html( $width, $height, $post = null ) {
+	$post = get_post( $post );
+
+	if ( ! $post ) {
+		return false;
+	}
+
+	$embed_url = get_post_embed_url( $post );
+
+	$secret     = wp_generate_password( 10, false );
+	$embed_url .= "#?secret={$secret}";
+
+	$output = sprintf(
+		'&lt;blockquote class="wp-embedded-content" data-secret="%1$s"&gt;&lt;a href="%2$s"&gt;%3$s&lt;/a&gt;&lt;/blockquote&gt;',
+		esc_attr( $secret ),
+		esc_url( get_permalink( $post ) ),
+		get_the_title( $post )
+	);
+
+	$output .= sprintf(
+		'&lt;iframe sandbox="allow-scripts" security="restricted" src="%1$s" width="%2$d" height="%3$d" title="%4$s" data-secret="%5$s" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" class="wp-embedded-content"&gt;&lt;/iframe&gt;',
+		esc_url( $embed_url ),
+		absint( $width ),
+		absint( $height ),
+		esc_attr(
+			sprintf(
+				/* translators: 1: Post title, 2: Site title. */
+				__( '&amp;#8220;%1$s&amp;#8221; &amp;#8212; %2$s' ),
+				get_the_title( $post ),
+				get_bloginfo( 'name' )
+			)
+		),
+		esc_attr( $secret )
+	);
+
+	/*
+	 * Note that the script must be placed after the &lt;blockquote&gt; and &lt;iframe&gt; due to a regexp parsing issue in
+	 * `wp_filter_oembed_result()`. Because of the regex pattern starts with `|(&lt;blockquote&gt;.*?&lt;/blockquote&gt;)?.*|`
+	 * wherein the &lt;blockquote&gt; is marked as being optional, if it is not at the beginning of the string then the group
+	 * will fail to match and everything will be matched by `.*` and not included in the group. This regex issue goes
+	 * back to WordPress 4.4, so in order to not break older installs this script must come at the end.
+	 */
+	$output .= wp_get_inline_script_tag(
+		file_get_contents( ABSPATH . WPINC . '/js/wp-embed' . wp_scripts_get_suffix() . '.js' )
+	);
+
+	/**
+	 * Filters the embed HTML output for a given post.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param string  $output The default iframe tag to display embedded content.
+	 * @param WP_Post $post   Current post object.
+	 * @param int     $width  Width of the response.
+	 * @param int     $height Height of the response.
+	 */
+	return apply_filters( 'embed_html', $output, $post, $width, $height );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/embed.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/embed.php#L478">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/embed.php#L478-L535">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/embed_html/"><span class="hook-func">apply_filters</span>( ’embed_html’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$output</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$width</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$height</span></nobr> )</a></dt><dd><p>Filters the embed HTML output for a given post.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_inline_script_tag/">wp_get_inline_script_tag()</a><code>wp-includes/script-loader.php</code></td><td><p>Constructs an inline script tag.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_scripts_get_suffix/">wp_scripts_get_suffix()</a><code>wp-includes/script-loader.php</code></td><td><p>Returns the suffix that can be used for the scripts.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_embed_url/">get_post_embed_url()</a><code>wp-includes/embed.php</code></td><td><p>Retrieves the URL to embed a specific post in an iframe.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_generate_password/">wp_generate_password()</a><code>wp-includes/pluggable.php</code></td><td><p>Generates a random password drawn from the defined set of characters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_the_title/">get_the_title()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves the post title.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bloginfo/">get_bloginfo()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves information about the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/absint/">absint()</a><code>wp-includes/load.php</code></td><td><p>Converts a value to non-negative integer.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_permalink/">get_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the full permalink for the current post or post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/print_embed_sharing_dialog/">print_embed_sharing_dialog()</a><code>wp-includes/embed.php</code></td><td><p>Prints the necessary markup for the embed sharing dialog.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_oembed_response_data_rich/">get_oembed_response_data_rich()</a><code>wp-includes/embed.php</code></td><td><p>Filters the oEmbed response data to return an iframe embed code.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.4.0/">4.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

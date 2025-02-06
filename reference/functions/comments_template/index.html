@@ -1,0 +1,348 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">comments_template()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>comments_template()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">comments_template( <span class="arg-type">string</span> <span class="arg-name">$file</span> = <span class="arg-default">'/comments.php'</span>,  <span class="arg-type">bool</span> <span class="arg-name">$separate_comments</span> = <span class="arg-default">false</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Loads the comment template specified in $file.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Will not display the comments template if not on single post or page, or if the post does not have comments.</p>
+<p>Uses the WordPress database object to query for the comments. The comments are passed through the <a href="https://developer.notmatt.press/reference/hooks/comments_array/">‘comments_array’</a> filter hook with the list of comments and the post ID respectively.</p>
+<p>The <code>$file</code> path is passed through a filter hook called <a href="https://developer.notmatt.press/reference/hooks/comments_template/">‘comments_template’</a>, which includes the template directory and $file combined. Tries the $filtered path first and if it fails it will require the default comment template from the default theme. If either does not exist, then the WordPress process will be halted. It is advised for that reason, that the default theme is not deleted.</p>
+<p>Will not try to get the comments if the post has none.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$file</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The file to load. Default <code>'/comments.php'</code>.</span></div><p class="default">Default:<code>'/comments.php'</code></p></dd><dt><code>$separate_comments</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to separate the comments by comment type.<br/>
+</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1421"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function comments_template( $file = '/comments.php', $separate_comments = false ) {
+	global $wp_query, $withcomments, $post, $wpdb, $id, $comment, $user_login, $user_identity, $overridden_cpage, $wp_stylesheet_path, $wp_template_path;
+
+	if ( ! ( is_single() || is_page() || $withcomments ) || empty( $post ) ) {
+		return;
+	}
+
+	if ( empty( $file ) ) {
+		$file = '/comments.php';
+	}
+
+	$req = get_option( 'require_name_email' );
+
+	/*
+	 * Comment author information fetched from the comment cookies.
+	 */
+	$commenter = wp_get_current_commenter();
+
+	/*
+	 * The name of the current comment author escaped for use in attributes.
+	 * Escaped by sanitize_comment_cookies().
+	 */
+	$comment_author = $commenter['comment_author'];
+
+	/*
+	 * The email address of the current comment author escaped for use in attributes.
+	 * Escaped by sanitize_comment_cookies().
+	 */
+	$comment_author_email = $commenter['comment_author_email'];
+
+	/*
+	 * The URL of the current comment author escaped for use in attributes.
+	 */
+	$comment_author_url = esc_url( $commenter['comment_author_url'] );
+
+	$comment_args = array(
+		'orderby'       =&gt; 'comment_date_gmt',
+		'order'         =&gt; 'ASC',
+		'status'        =&gt; 'approve',
+		'post_id'       =&gt; $post-&gt;ID,
+		'no_found_rows' =&gt; false,
+	);
+
+	if ( get_option( 'thread_comments' ) ) {
+		$comment_args['hierarchical'] = 'threaded';
+	} else {
+		$comment_args['hierarchical'] = false;
+	}
+
+	if ( is_user_logged_in() ) {
+		$comment_args['include_unapproved'] = array( get_current_user_id() );
+	} else {
+		$unapproved_email = wp_get_unapproved_comment_author_email();
+
+		if ( $unapproved_email ) {
+			$comment_args['include_unapproved'] = array( $unapproved_email );
+		}
+	}
+
+	$per_page = 0;
+	if ( get_option( 'page_comments' ) ) {
+		$per_page = (int) get_query_var( 'comments_per_page' );
+		if ( 0 === $per_page ) {
+			$per_page = (int) get_option( 'comments_per_page' );
+		}
+
+		$comment_args['number'] = $per_page;
+		$page                   = (int) get_query_var( 'cpage' );
+
+		if ( $page ) {
+			$comment_args['offset'] = ( $page - 1 ) * $per_page;
+		} elseif ( 'oldest' === get_option( 'default_comments_page' ) ) {
+			$comment_args['offset'] = 0;
+		} else {
+			// If fetching the first page of 'newest', we need a top-level comment count.
+			$top_level_query = new WP_Comment_Query();
+			$top_level_args  = array(
+				'count'   =&gt; true,
+				'orderby' =&gt; false,
+				'post_id' =&gt; $post-&gt;ID,
+				'status'  =&gt; 'approve',
+			);
+
+			if ( $comment_args['hierarchical'] ) {
+				$top_level_args['parent'] = 0;
+			}
+
+			if ( isset( $comment_args['include_unapproved'] ) ) {
+				$top_level_args['include_unapproved'] = $comment_args['include_unapproved'];
+			}
+
+			/**
+			 * Filters the arguments used in the top level comments query.
+			 *
+			 * @since 5.6.0
+			 *
+			 * @see WP_Comment_Query::__construct()
+			 *
+			 * @param array $top_level_args {
+			 *     The top level query arguments for the comments template.
+			 *
+			 *     @type bool         $count   Whether to return a comment count.
+			 *     @type string|array $orderby The field(s) to order by.
+			 *     @type int          $post_id The post ID.
+			 *     @type string|array $status  The comment status to limit results by.
+			 * }
+			 */
+			$top_level_args = apply_filters( 'comments_template_top_level_query_args', $top_level_args );
+
+			$top_level_count = $top_level_query-&gt;query( $top_level_args );
+
+			$comment_args['offset'] = ( (int) ceil( $top_level_count / $per_page ) - 1 ) * $per_page;
+		}
+	}
+
+	/**
+	 * Filters the arguments used to query comments in comments_template().
+	 *
+	 * @since 4.5.0
+	 *
+	 * @see WP_Comment_Query::__construct()
+	 *
+	 * @param array $comment_args {
+	 *     Array of WP_Comment_Query arguments.
+	 *
+	 *     @type string|array $orderby                   Field(s) to order by.
+	 *     @type string       $order                     Order of results. Accepts 'ASC' or 'DESC'.
+	 *     @type string       $status                    Comment status.
+	 *     @type array        $include_unapproved        Array of IDs or email addresses whose unapproved comments
+	 *                                                   will be included in results.
+	 *     @type int          $post_id                   ID of the post.
+	 *     @type bool         $no_found_rows             Whether to refrain from querying for found rows.
+	 *     @type bool         $update_comment_meta_cache Whether to prime cache for comment meta.
+	 *     @type bool|string  $hierarchical              Whether to query for comments hierarchically.
+	 *     @type int          $offset                    Comment offset.
+	 *     @type int          $number                    Number of comments to fetch.
+	 * }
+	 */
+	$comment_args = apply_filters( 'comments_template_query_args', $comment_args );
+
+	$comment_query = new WP_Comment_Query( $comment_args );
+	$_comments     = $comment_query-&gt;comments;
+
+	// Trees must be flattened before they're passed to the walker.
+	if ( $comment_args['hierarchical'] ) {
+		$comments_flat = array();
+		foreach ( $_comments as $_comment ) {
+			$comments_flat[]  = $_comment;
+			$comment_children = $_comment-&gt;get_children(
+				array(
+					'format'  =&gt; 'flat',
+					'status'  =&gt; $comment_args['status'],
+					'orderby' =&gt; $comment_args['orderby'],
+				)
+			);
+
+			foreach ( $comment_children as $comment_child ) {
+				$comments_flat[] = $comment_child;
+			}
+		}
+	} else {
+		$comments_flat = $_comments;
+	}
+
+	/**
+	 * Filters the comments array.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param array $comments Array of comments supplied to the comments template.
+	 * @param int   $post_id  Post ID.
+	 */
+	$wp_query-&gt;comments = apply_filters( 'comments_array', $comments_flat, $post-&gt;ID );
+
+	$comments                        = &amp;$wp_query-&gt;comments;
+	$wp_query-&gt;comment_count         = count( $wp_query-&gt;comments );
+	$wp_query-&gt;max_num_comment_pages = $comment_query-&gt;max_num_pages;
+
+	if ( $separate_comments ) {
+		$wp_query-&gt;comments_by_type = separate_comments( $comments );
+		$comments_by_type           = &amp;$wp_query-&gt;comments_by_type;
+	} else {
+		$wp_query-&gt;comments_by_type = array();
+	}
+
+	$overridden_cpage = false;
+
+	if ( '' === get_query_var( 'cpage' ) &amp;&amp; $wp_query-&gt;max_num_comment_pages &gt; 1 ) {
+		set_query_var( 'cpage', 'newest' === get_option( 'default_comments_page' ) ? get_comment_pages_count() : 1 );
+		$overridden_cpage = true;
+	}
+
+	if ( ! defined( 'COMMENTS_TEMPLATE' ) ) {
+		define( 'COMMENTS_TEMPLATE', true );
+	}
+
+	$theme_template = trailingslashit( $wp_stylesheet_path ) . $file;
+
+	/**
+	 * Filters the path to the theme template file used for the comments template.
+	 *
+	 * @since 1.5.1
+	 *
+	 * @param string $theme_template The path to the theme template file.
+	 */
+	$include = apply_filters( 'comments_template', $theme_template );
+
+	if ( file_exists( $include ) ) {
+		require $include;
+	} elseif ( file_exists( trailingslashit( $wp_template_path ) . $file ) ) {
+		require trailingslashit( $wp_template_path ) . $file;
+	} else { // Backward compat code will be removed in a future release.
+		require ABSPATH . WPINC . '/theme-compat/comments.php';
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/comment-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/comment-template.php#L1421">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/comment-template.php#L1421-L1635">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comments_array/"><span class="hook-func">apply_filters</span>( ‘comments_array’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$comments</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr> )</a></dt><dd><p>Filters the comments array.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comments_template/"><span class="hook-func">apply_filters</span>( ‘comments_template’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$theme_template</span></nobr> )</a></dt><dd><p>Filters the path to the theme template file used for the comments template.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comments_template_query_args/"><span class="hook-func">apply_filters</span>( ‘comments_template_query_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$comment_args</span></nobr> )</a></dt><dd><p>Filters the arguments used to query comments in <a href="https://developer.notmatt.press/reference/functions/comments_template/" rel="function">comments_template()</a> .</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comments_template_top_level_query_args/"><span class="hook-func">apply_filters</span>( ‘comments_template_top_level_query_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$top_level_args</span></nobr> )</a></dt><dd><p>Filters the arguments used in the top level comments query.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_unapproved_comment_author_email/">wp_get_unapproved_comment_author_email()</a><code>wp-includes/comment.php</code></td><td><p>Gets unapproved comment author’s email.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_comment_query/__construct/">WP_Comment_Query::__construct()</a><code>wp-includes/class-wp-comment-query.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_single/">is_single()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing single post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_page/">is_page()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing single page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_query_var/">get_query_var()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the value of a query variable in the <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_query_var/">set_query_var()</a><code>wp-includes/query.php</code></td><td><p>Sets the value of a query variable in the <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_current_commenter/">wp_get_current_commenter()</a><code>wp-includes/comment.php</code></td><td><p>Gets current commenter’s name, email, and URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/separate_comments/">separate_comments()</a><code>wp-includes/comment.php</code></td><td><p>Separates an array of comments into an array keyed by comment_type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comment_pages_count/">get_comment_pages_count()</a><code>wp-includes/comment.php</code></td><td><p>Calculates the total number of comment pages.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_user_id/">get_current_user_id()</a><code>wp-includes/user.php</code></td><td><p>Gets the current user’s ID.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 10 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="490" id="comment-490">
+<article class="comment-body" id="div-comment-490">
+<a class="screen-reader-text" href="#comment-content-490">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-490">
+<p><strong>Alternative Comment Template</strong><br>
+On some occasions you may want display your comments differently within your theme. For this you would build an alternate file (ex. <code>short-comments.php</code>) and call it as follows:</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php comments_template( '/short-comments.php' ); ?&gt; </code></pre>
+<p>The path to the file used for an alternative comments template should be relative to the current theme root directory, and include any subfolders. So if the custom comments template is in a folder inside the theme, it may look like this when called:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php comments_template( '/custom-templates/alternative-comments.php' ); ?&gt; </code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-490">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-adam1920 even thread-even depth-1" data-comment-id="2252" id="comment-2252">
+<article class="comment-body" id="div-comment-2252">
+<a class="screen-reader-text" href="#comment-content-2252">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2252">
+<p>Use in page.php and single.php</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">// If comments are open or we have at least one comment, load up the comment template.
+if ( comments_open() || get_comments_number() ) :
+	comments_template();
+endif;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2252">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="489" id="comment-489">
+<article class="comment-body" id="div-comment-489">
+<a class="screen-reader-text" href="#comment-content-489">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-489">
+<p><strong>Default Usage</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php comments_template(); ?&gt; </code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-489">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

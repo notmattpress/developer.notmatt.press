@@ -1,0 +1,863 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/rest-api/">REST API Handbook</a></span><span><a href="https://developer.wordpress.org/rest-api/extending-the-rest-api/">Extending the REST API</a></span><span class="is-current-page">Schema</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Schema</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="overview" tabindex="-1"><a href="#overview">Overview</a></h2>
+<p>A schema is metadata that tells us how our data is structured. Most databases implement some form of schema which enables us to reason about our data in a more structured manner. The WordPress REST API utilizes <a href="http://json-schema.org/">JSON Schema</a> to handle the structuring of its data. You can implement endpoints without using a schema, but you will be missing out on a lot of things. It is up to you to decide what suits you best.</p>
+<h3 class="is-toc-heading" id="json" tabindex="-1"><a href="#json">JSON</a></h3>
+<p>First, let’s talk about JSON a bit. JSON is a human readable data format that resembles JavaScript objects. JSON stands for JavaScript Object Notation. JSON is growing wildly in popularity and seems to be taking the world of data structure by storm. The WordPress REST API uses a special specification for JSON known as JSON schema. To learn more about JSON Schema please check out the <a href="http://json-schema.org/">JSON Schema website</a> and this <a href="https://json-schema.org/understanding-json-schema">easier to understand introduction to JSON Schema</a>. Schema affords us many benefits: improved testing, discoverability, and overall better structure. Let’s look at a JSON blob of data.</p>
+<pre><code class="language-js">{
+    "shouldBeArray": 'LOL definitely not an array',
+    "shouldBeInteger": ['lolz', 'you', 'need', 'schema'],
+    "shouldBeString": 123456789
+}
+</code></pre>
+<p>A JSON parser will go through that data no problem and won’t complain about anything, because it is valid JSON. The clients and servers know nothing about the data and what to expect they just see the JSON. By implementing schema we can actually simplify our codebase. Schema will help structure our data better so our applications can more easily reason about our interactions with the WordPress REST API. The WordPress REST API does not force you to use schema, but it is encouraged. There are two ways in which schema data is incorporated into the API; schema for resources and schema for our registered arguments.</p>
+<h3 class="is-toc-heading" id="resource-schema" tabindex="-1"><a href="#resource-schema">Resource Schema</a></h3>
+<p>The schema for a resource indicates what fields are present for a particular object. When we register our routes we can also specify the resource schema for the route. Let’s look at what a simple comment schema might look like in a PHP representation of JSON schema.</p>
+<pre><code class="language-php">// Register our routes.
+function prefix_register_my_comment_route() {
+    register_rest_route( 'my-namespace/v1', '/comments', array(
+        // Notice how we are registering multiple endpoints the 'schema' equates to an OPTIONS request.
+        array(
+            'methods'  =&gt; 'GET',
+            'callback' =&gt; 'prefix_get_comment_sample',
+        ),
+        // Register our schema callback.
+        'schema' =&gt; 'prefix_get_comment_schema',
+    ) );
+}
+
+add_action( 'rest_api_init', 'prefix_register_my_comment_route' );
+
+/**
+ * Grabs the five most recent comments and outputs them as a rest response.
+ *
+ * @param WP_REST_Request $request Current request.
+ */
+function prefix_get_comment_sample( $request ) {
+    $args = array(
+        'number' =&gt; 5,
+    );
+    $comments = get_comments( $args );
+
+    $data = array();
+
+    if ( empty( $comments ) ) {
+        return rest_ensure_response( $data );
+    }
+
+    foreach ( $comments as $comment ) {
+        $response = prefix_rest_prepare_comment( $comment, $request );
+        $data[] = prefix_prepare_for_collection( $response );
+    }
+
+    // Return all of our comment response data.
+    return rest_ensure_response( $data );
+}
+
+/**
+ * Matches the comment data to the schema we want.
+ *
+ * @param WP_Comment $comment The comment object whose response is being prepared.
+ */
+function prefix_rest_prepare_comment( $comment, $request ) {
+    $comment_data = array();
+
+    $schema = prefix_get_comment_schema();
+
+    // We are also renaming the fields to more understandable names.
+    if ( isset( $schema['properties']['id'] ) ) {
+        $comment_data['id'] = (int) $comment-&gt;comment_ID;
+    }
+
+    if ( isset( $schema['properties']['author'] ) ) {
+        $comment_data['author'] = (int) $comment-&gt;user_id;
+    }
+
+    if ( isset( $schema['properties']['content'] ) ) {
+        $comment_data['content'] = apply_filters( 'comment_text', $comment-&gt;comment_content, $comment );
+    }
+
+    return rest_ensure_response( $comment_data );
+}
+
+/**
+ * Prepare a response for inserting into a collection of responses.
+ *
+ * This is copied from WP_REST_Controller class in the WP REST API v2 plugin.
+ *
+ * @param WP_REST_Response $response Response object.
+ * @return array Response data, ready for insertion into collection data.
+ */
+function prefix_prepare_for_collection( $response ) {
+    if ( ! ( $response instanceof WP_REST_Response ) ) {
+        return $response;
+    }
+
+    $data  = (array) $response-&gt;get_data();
+    $links = rest_get_server()::get_compact_response_links( $response );
+
+    if ( ! empty( $links ) ) {
+        $data['_links'] = $links;
+    }
+
+    return $data;
+}
+
+/**
+ * Get our sample schema for comments.
+ */
+function prefix_get_comment_schema() {
+    $schema = array(
+        // This tells the spec of JSON Schema we are using which is draft 4.
+        '$schema'              =&gt; 'http://json-schema.org/draft-04/schema#',
+        // The title property marks the identity of the resource.
+        'title'                =&gt; 'comment',
+        'type'                 =&gt; 'object',
+        // In JSON Schema you can specify object properties in the properties attribute.
+        'properties'           =&gt; array(
+            'id' =&gt; array(
+                'description'  =&gt; esc_html__( 'Unique identifier for the object.', 'my-textdomain' ),
+                'type'         =&gt; 'integer',
+                'context'      =&gt; array( 'view', 'edit', 'embed' ),
+                'readonly'     =&gt; true,
+            ),
+            'author' =&gt; array(
+                'description'  =&gt; esc_html__( 'The id of the user object, if author was a user.', 'my-textdomain' ),
+                'type'         =&gt; 'integer',
+            ),
+            'content' =&gt; array(
+                'description'  =&gt; esc_html__( 'The content for the object.', 'my-textdomain' ),
+                'type'         =&gt; 'string',
+            ),
+        ),
+    );
+
+    return $schema;
+}
+</code></pre>
+<p>If you notice, each comment resource now matches up to our schema that we specified. We made this switch in <code>prefix_rest_prepare_comment()</code>. By creating schema for our resources, we can now view this schema by making <code>OPTIONS</code> requests. Why is this useful? If we wanted other languages, JavaScript for example, to interpret our data and validate the data from our endpoint, JavaScript would need to know how our data is structured. When we provide schema, we open the doors for other authors, and ourselves, to build on top of our endpoints in a consistent manner.</p>
+<p>Schema provides machine readable data, so potentially anything that can read JSON can understand what kind of data it is looking at. When we look at the API index by making a <code>GET</code> request to <code>https://ourawesomesite.com/wp-json/`, we are returned the schema of our API, enabling others to write client libraries to interpret our data. This process of reading schema data is known as discovery. When we have provided schema for a resource we make that resource discoverable via</code>OPTIONS` requests to that route. Exposing resource schema is only one part of our schema puzzle. We also want to use schema for our registered arguments.</p>
+<h3 class="is-toc-heading" id="argument-schema" tabindex="-1"><a href="#argument-schema">Argument Schema</a></h3>
+<p>When we register request arguments for an endpoint, we can also use JSON Schema to provide us data about what the arguments should be. This enables us to write validation libraries that can be reused as our endpoints expand. Schema is more work upfront, but if you are going to write a production application that will grow, you should definitely consider using schema. Let’s look at an example of using argument schema and validation.</p>
+<pre><code class="language-php">// Register our routes.
+function prefix_register_my_arg_route() {
+    register_rest_route( 'my-namespace/v1', '/schema-arg', array(
+        // Here we register our endpoint.
+        array(
+            'methods'  =&gt; 'GET',
+            'callback' =&gt; 'prefix_get_item',
+            'args' =&gt; prefix_get_endpoint_args(),
+        ),
+    ) );
+}
+
+// Hook registration into 'rest_api_init' hook.
+add_action( 'rest_api_init', 'prefix_register_my_arg_route' );
+
+/**
+ * Returns the request argument `my-arg` as a rest response.
+ *
+ * @param WP_REST_Request $request Current request.
+ */
+function prefix_get_item( $request ) {
+    // If we didn't use required in the schema this would throw an error when my arg is not set.
+    return rest_ensure_response( $request['my-arg'] );
+}
+
+/**
+ * Get the argument schema for this example endpoint.
+ */
+function prefix_get_endpoint_args() {
+    $args = array();
+
+    // Here we add our PHP representation of JSON Schema.
+    $args['my-arg'] = array(
+        'description'       =&gt; esc_html__( 'This is the argument our endpoint returns.', 'my-textdomain' ),
+        'type'              =&gt; 'string',
+        'validate_callback' =&gt; 'prefix_validate_my_arg',
+        'sanitize_callback' =&gt; 'prefix_sanitize_my_arg',
+        'required'          =&gt; true,
+    );
+
+    return $args;
+}
+
+/**
+ * Our validation callback for `my-arg` parameter.
+ *
+ * @param mixed           $value   Value of the my-arg parameter.
+ * @param WP_REST_Request $request Current request object.
+ * @param string          $param   The name of the parameter in this case, 'my-arg'.
+ * @return true|WP_Error True if the data is valid, WP_Error otherwise.
+ */
+function prefix_validate_my_arg( $value, $request, $param ) {
+    $attributes = $request-&gt;get_attributes();
+
+    if ( isset( $attributes['args'][ $param ] ) ) {
+        $argument = $attributes['args'][ $param ];
+        // Check to make sure our argument is a string.
+        if ( 'string' === $argument['type'] &amp;&amp; ! is_string( $value ) ) {
+            return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( '%1$s is not of type %2$s', 'my-textdomain' ), $param, 'string' ), array( 'status' =&gt; 400 ) );
+        }
+    } else {
+        // This code won't execute because we have specified this argument as required.
+        // If we reused this validation callback and did not have required args then this would fire.
+        return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( '%s was not registered as a request argument.', 'my-textdomain' ), $param ), array( 'status' =&gt; 400 ) );
+    }
+
+    // If we got this far then the data is valid.
+    return true;
+}
+
+/**
+ * Our sanitization callback for `my-arg` parameter.
+ *
+ * @param mixed           $value   Value of the my-arg parameter.
+ * @param WP_REST_Request $request Current request object.
+ * @param string          $param   The name of the parameter in this case, 'my-arg'.
+ * @return mixed|WP_Error The sanitize value, or a WP_Error if the data could not be sanitized.
+ */
+function prefix_sanitize_my_arg( $value, $request, $param ) {
+    $attributes = $request-&gt;get_attributes();
+
+    if ( isset( $attributes['args'][ $param ] ) ) {
+        $argument = $attributes['args'][ $param ];
+        // Check to make sure our argument is a string.
+        if ( 'string' === $argument['type'] ) {
+            return sanitize_text_field( $value );
+        }
+    } else {
+        // This code won't execute because we have specified this argument as required.
+        // If we reused this validation callback and did not have required args then this would fire.
+        return new WP_Error( 'rest_invalid_param', sprintf( esc_html__( '%s was not registered as a request argument.', 'my-textdomain' ), $param ), array( 'status' =&gt; 400 ) );
+    }
+
+    // If we got this far then something went wrong don't use user input.
+    return new WP_Error( 'rest_api_sad', esc_html__( 'Something went terribly wrong.', 'my-textdomain' ), array( 'status' =&gt; 500 ) );
+}
+</code></pre>
+<p>In the example above we have abstracted away from using the <code>'my-arg'</code> name. We can use these validation and sanitizing functions for any other argument that should be a string we have specified schema for. As your codebase and endpoints grow, schema will help keep your code lightweight and maintainable. Without schema you can validate and sanitize, however it will be more difficult to keep track of which functions should be validating what. By adding schema to request arguments we can also expose our argument schema to clients, so validation libraries can be built client side which can help performance by preventing invalid requests from ever being sent to the API.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><p>If you are uncomfortable with using schema, it is still possible to have validate/sanitize callbacks for each of your arguments, and in some cases it will make the most sense to do a custom validation.</p>
+</div></div>
+<h3 class="is-toc-heading" id="summary" tabindex="-1"><a href="#summary">Summary</a></h3>
+<p>Schema can seem silly at points and possibly like unnecessary work, but if you want maintainable, discoverable, and easily extensible endpoints, it is essential to use schema. Schema also helps to self document your endpoints both for humans and computers!</p>
+<h2 class="is-toc-heading" id="json-schema-basics" tabindex="-1"><a href="#json-schema-basics">JSON Schema Basics</a></h2>
+<p>WordPress implements a validator that uses a subset of the <a href="https://json-schema.org/specification-links.html#draft-4">JSON Schema Version 4 specification</a>. The RFC is recommended reading to gain a deeper understanding of how JSON Schema works, but this article will describe the basics of JSON Schema and what features WordPress supports.</p>
+<h3 class="is-toc-heading" id="api" tabindex="-1"><a href="#api">API</a></h3>
+<p>The REST API defines two main functions for using JSON Schema: <code>rest_validate_value_from_schema</code> and <code>rest_sanitize_value_from_schema</code>. Both functions accept the request data as the first parameter, the parameter’s schema definition as the second parameter, and optionally the parameter’s name as the third parameter. The validate function returns either <code>true</code> or a <code>WP_Error</code> instance depending on if the data successfully validates against the schema. The sanitize function returns a sanitized form of the data passed to the function, or a <code>WP_Error</code> instance if the data cannot be safely sanitized.</p>
+<p>When calling these functions, you should take care to <em>always</em> first validate the data using <code>rest_validate_value_from_schema</code>, and then if that function returns <code>true</code>, sanitize the data using <code>rest_sanitize_value_from_schema</code>. Not using both can open up your endpoint to security vulnerabilities.</p>
+<p>If your endpoint is implemented using a <a href="https://developer.notmatt.press/rest-api/extending-the-rest-api/controller-classes/">subclass of <code>WP_REST_Controller</code></a>, the <code>WP_REST_Controller::get_endpoint_args_for_item_schema</code> method will automatically mark your arguments as using the built-in validate and sanitize callbacks. As such, there is no need to manually specify the callbacks.</p>
+<p>If your endpoint does not follow the controller class pattern, args returned from <code>WP_REST_Controller::get_collection_params()</code>, or any other instance where callbacks are not specified, the <code>WP_REST_Request</code> object will apply sanitization and validation using the <code>rest_parse_request_arg</code> function. Importantly, this is only applied when the <code>sanitize_callback</code> is not defined. As such, if you specify a custom <code>sanitize_callback</code> for your argument definition, the built-in JSON Schema validation will not apply. If you need this validation, you should manually specify <code>rest_validate_request_arg</code> as the <code>validate_callback</code> in your argument definition.</p>
+<h3 class="is-toc-heading" id="caching-schema" tabindex="-1"><a href="#caching-schema">Caching Schema</a></h3>
+<p>Schema may be complex, and can take time to generate. You should consider caching generated schema in your plugin’s custom endpoints to avoid repeatedly generating the same schema object.</p>
+<p>If you are defining your endpoint using a a <a href="https://developer.notmatt.press/rest-api/extending-the-rest-api/controller-classes/">subclass of <code>WP_REST_Controller</code></a>, that might look like this:</p>
+<pre><code class="language-php"><br/>    /**
+     * Retrieves the attachment's schema, conforming to JSON Schema.
+     *
+     * @return array Item schema as an array.
+     */
+    public function get_item_schema() {
+        // Returned cached copy whenever available.
+        if ( $this-&gt;schema ) {
+            return $this-&gt;add_additional_fields_schema( $this-&gt;schema );
+        }
+
+        $schema = parent::get_item_schema();
+        // Add endpoint-specific properties to Schema.
+        $schema['properties']['field_name'] = array( /* ... */ );
+        $schema['properties']['etcetera'] = array( /* ... */ );
+
+        // Cache generated schema on endpoint instance.
+        $this-&gt;schema = $schema;
+
+        return $this-&gt;add_additional_fields_schema( $this-&gt;schema );
+    }
+</code></pre>
+<p>This pattern was introduced into WordPress core in version 5.3 in <a href="https://core.trac.wordpress.org/ticket/47871">#47871</a>, and yielded up to 40% speed improvement when generating some API responses.</p>
+<h3 class="is-toc-heading" id="schema-documents" tabindex="-1"><a href="#schema-documents">Schema Documents</a></h3>
+<p>A basic schema document consists of a few properties.</p>
+<ul>
+<li><code>$schema</code> A reference to a meta schema that describes the version of the spec the document is using.</li>
+<li><code>title</code> The title of the schema. Normally this is a human readable label, but in WordPress this is machine readable string . The posts endpoint, for example, has a title of ‘post’. Comments has a title of ‘comment’.</li>
+<li><code>type</code> This refers to the type of the value being described. This can be any one of the seven primitive types. In WordPress the top-level type will almost always be an <code>object</code>, even for collection endpoints that return an array of objects.</li>
+<li><code>properties</code> A list of the known properties contained in the object and their definitions. Each property definition itself is also a schema, but without the $schema top-level property, more accurately described as a sub-schema.</li>
+</ul>
+<h3 class="is-toc-heading" id="primitive-types" tabindex="-1"><a href="#primitive-types">Primitive Types</a></h3>
+<p>JSON Schema defines a list of seven allowed <a href="https://tools.ietf.org/html/draft-zyp-json-schema-04#section-3.5">primitive types</a>.</p>
+<ul>
+<li><code>string</code> A string value.</li>
+<li><code>null</code> A <code>null</code> value.</li>
+<li><code>number</code> Any number. Decimals are allowed. Equivalent to a <a href="https://www.php.net/float"><code>float</code> in PHP</a>.</li>
+<li><code>integer</code> A number, but decimals or exponents are not allowed.</li>
+<li><code>boolean</code> A <code>true</code> or <code>false</code> value. </li>
+<li><code>array</code> A list of values. This is equivalent to a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array">JavaScript array</a>. In PHP this is referred to as a numerical array, or an array without defined keys.</li>
+<li><code>object</code> A map of keys to values. This is equivalent to a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer">JavaScript object</a>. In PHP this is referred to as an <a href="https://en.wikipedia.org/wiki/Associative_array">associative array</a>, or an array with defined keys.  </li>
+</ul>
+<p>A value’s primitive type is specified using the <code>type</code> keyword. For example, this is how you would define a <code>string</code> value with JSON Schema.</p>
+<pre><code class="language-php">array(
+    'type' =&gt; 'string',
+);
+</code></pre>
+<p>JSON Schema allows for defining values that can be multiple types. For example, this is how you would define a value that can be either a <code>string</code> or a <code>boolean</code>.</p>
+<pre><code class="language-php">array(
+    'type' =&gt; array( 'boolean', 'string' ),  
+);
+</code></pre>
+<h4>Type Juggling</h4>
+<p>Because the WordPress REST API accepts <a href="https://en.wikipedia.org/wiki/Percent-encoding#The_application/x-www-form-urlencoded_type">URL form encoded</a> data both in the <code>POST</code> body or as the query portion of the URL, many primtive types perform type juggling to convert these string values into their proper native types.</p>
+<ul>
+<li><code>string</code> Only strings according to <a href="https://www.php.net/is_string"><code>is_string</code></a> are allowed.</li>
+<li><code>null</code> Only a properly typed <code>null</code> is accepted. This means that submitting a null value in the URL or as a URL form encoded post body is not possible, a JSON request body must be used.</li>
+<li><code>number</code> Floats, integers, and strings that pass <a href="https://www.php.net/manual/en/function.is-numeric.php"><code>is_numeric</code></a> are allowed. Values will be casted to a <code>float</code>.</li>
+<li><code>integer</code> Integers or strings that can be <a href="https://www.php.net/manual/en/language.types.float.php#language.types.float.casting">casted to a <code>float</code></a> with a fractional part that is equivalent to 0.</li>
+<li><code>boolean</code> Booleans, the integers <code>0</code> and <code>1</code>, or the strings <code>"0"</code>, <code>"1"</code>, <code>"false"</code>, and <code>"true"</code>. <code>0</code> is treated as <code>false</code> and <code>1</code> is treated as <code>true</code>.</li>
+<li><code>array</code> Numeric arrays according to <a href="https://developer.notmatt.press/reference/functions/wp_is_numeric_array/"><code>wp_is_numeric_array</code></a> or a string. If the string is comma separated it will be split into an array, otherwise it will be an array containing the string value. For example: <code>"red,yellow"</code> becomes <code>array( "red", "yellow" )</code> and  <code>"blue"</code> becomes <code>array( "blue" )</code>.</li>
+<li><code>object</code> An array, an <code>stdClass</code> object, an object implementing <code>JsonSerializable</code> or an empty string. Values will be converted to a native PHP array.</li>
+</ul>
+<p>When using multiple types, types will be evaluated in the order they are specified. This can have an impact on the sanitized data received by your REST API endpoint. For instance, in the previous example, if the value submitted was <code>"1"</code>, it would be sanitized to the boolean <code>true</code> value. However, if the order was flipped, the value would remain as the string <code>"1"</code>.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">The JSON Schema specification allows for defining schemas without a <code>type</code> field. The WordPress implementation however requires a <code>type</code> to be defined, and will issue a <code>_doing_it_wrong</code> notice if a type is ommitted.</div></div>
+<h3 class="is-toc-heading" id="format" tabindex="-1"><a href="#format">Format</a></h3>
+<p>The seven primitive types are just that, <a href="https://en.wikipedia.org/wiki/Primitive_data_type">primitive</a>, so how do you define more complex value types? One of the ways to do that is using the <code>format</code> keyword. The <code>format</code> keyword allows for defining additional semantic-level validation of values that have a well-defined structure.</p>
+<p>For example, to require a date value, you would use the <code>date-time</code> format.</p>
+<pre><code class="language-php">array(
+    'type'   =&gt; 'string',
+    'format' =&gt; 'date-time',
+);
+</code></pre>
+<p>WordPress supports the following formats:</p>
+<ul>
+<li><code>date-time</code> A date formatted according to <a href="https://tools.ietf.org/html/rfc3339#section-5.8">RFC3339</a>.</li>
+<li><code>uri</code> A uri according to <a href="https://developer.notmatt.press/reference/functions/esc_url_raw/"><code>esc_url_raw</code></a>.</li>
+<li><code>email</code> An email address according to <a href="https://developer.notmatt.press/reference/functions/is_email/"><code>is_email</code></a>.</li>
+<li><code>ip</code> A v4 or v6 ip address.</li>
+<li><code>uuid</code> A uuid of any version.</li>
+<li><code>hex-color</code> A 3 or 6 character hex color with a leading <code>#</code>.</li>
+</ul>
+<p>A value must match its format even if the value is an empty string. If allowing an “empty” value is desired, add <code>null</code> as a possible type.</p>
+<p>For example, the following schema would allow <code>127.0.0.1</code> or <code>null</code> as possible values.</p>
+<pre><code class="language-php">array(
+    'type'   =&gt; array( 'string', 'null' ),
+    'format' =&gt; 'ip',
+);
+</code></pre>
+<h3 class="is-toc-heading" id="strings" tabindex="-1"><a href="#strings">Strings</a></h3>
+<p>The <code>string</code> types supports three additional keywords.</p>
+<h4>minLength and maxLength</h4>
+<p>The <code>minLength</code> and <code>maxLength</code> keywords can be used to constrain the acceptable length of a string. Importantly multi-byte characters are counted as a single character and bounds are inclusive.</p>
+<p>For instance, given the following schema, <code>ab</code>, <code>abc</code>, and <code>abcd</code> are valid, while <code>a</code>, and <code>abcde</code> are invalid.</p>
+<pre><code class="language-php">array(
+    'type'      =&gt; 'string',
+    'minLength' =&gt; 2,
+    'maxLength' =&gt; 4,
+);
+</code></pre>
+<p>The <code>exclusiveMinimum</code> and <code>exclusiveMaximum</code> keywords do not apply, they are only valid for numbers.</p>
+<h4>pattern</h4>
+<p>The JSON Schema keyword <code>pattern</code> can be used to validate that a string field matches a regular expression.</p>
+<p>For instance, given the following schema, <code>#123</code> would be valid, but <code>#abc</code> would not.</p>
+<pre><code class="language-php">array(
+    'type'    =&gt; 'string',
+    'pattern' =&gt; '#[0-9]+',
+);
+</code></pre>
+<p>The regex is not automatically anchored. Regex flags, for instance <code>/i</code> to make the match case insensitive are not supported.</p>
+<p>The JSON Schema RFC recommends limiting yourself to the following regex features so the schema can be interoperable between as many different programming languages as possible.</p>
+<ul>
+<li>individual Unicode characters, as defined by the JSON specification [RFC4627].</li>
+<li>simple character classes <code>[abc]</code>, range character classes <code>[a-z]</code>.</li>
+<li>complemented character classes <code>[^abc]</code>, <code>[^a-z]</code>.</li>
+<li>simple quantifiers: <code>+</code> (one or more), <code>*</code> (zero or more), <code>?</code> (zero or one), and their lazy versions <code>+?</code>, <code>*?</code>, <code>??</code>.</li>
+<li>range quantifiers: <code>{x}</code> (exactly x occurrences), <code>{x,y}</code> (at least x, at most y, occurrences), <code>{x,}</code> (x occurrences or more), and their lazy versions.</li>
+<li>the beginning-of-input <code>^</code> and end-of-input <code>$</code> anchors.</li>
+<li>simple grouping <code>(...)</code> and alternation <code>|</code>.</li>
+</ul>
+<p>The pattern should be valid according to the ECMA 262 regex dialect.</p>
+<h3 class="is-toc-heading" id="numbers" tabindex="-1"><a href="#numbers">Numbers</a></h3>
+<p>The <code>number</code> and <code>integer</code> types support four additional keywords.</p>
+<h4>minimum and maximum</h4>
+<p>The <code>minimum</code> and <code>maximum</code> keyword allow constraining the range of acceptable numbers. For example, <code>2</code> would be valid according to this schema, but <code>0</code> and <code>4</code> would not be.</p>
+<pre><code class="language-php">array(
+    'type' =&gt; 'integer',
+    'minimum' =&gt; 1,
+    'maximum' =&gt; 3,
+);
+</code></pre>
+<p>JSON Schema also allows using the <code>exclusiveMinimum</code> and <code>exclusiveMaximum</code> keywords to denote that the value cannot equal the defined <code>minimum</code> or <code>maximum</code> respectively. For example, in this case only <code>2</code> would be an acceptable value.</p>
+<pre><code class="language-php">array(
+    'type'             =&gt; 'integer',
+    'minimum'          =&gt; 1,
+    'exclusiveMinimum' =&gt; true,
+    'maximum'          =&gt; 3,
+    'exclusiveMaximum' =&gt; true,
+);
+</code></pre>
+<h4>multipleOf</h4>
+<p>The <code>multipleOf</code> keyword allows for asserting an integer or number type is a multiple of the given number. For example, this schema will only accept even integers.</p>
+<pre><code class="language-php">array(
+    'type'       =&gt; 'integer',
+    'multipleOf' =&gt; 2,
+);
+</code></pre>
+<p><code>multipleOf</code> also supports decimals. For example, this schema could be used to accept a percentage with a maximum of 1 decimal point.</p>
+<pre><code class="language-php">array(
+    'type'       =&gt; 'number',
+    'minimum'    =&gt; 0,
+    'maximum'    =&gt; 100,
+    'multipleOf' =&gt; 0.1,
+);
+</code></pre>
+<h3 class="is-toc-heading" id="arrays" tabindex="-1"><a href="#arrays">Arrays</a></h3>
+<p>Specifying a <code>type</code> of <code>array</code> requires data to be an array, but that is only half the validation story. You’ll also want to enforce the format of each item in the array. This is done by specifying a JSON Schema that each array item must conform to using the <code>items</code> keyword.</p>
+<p>For example, the following schema requires an array of IP addresses.</p>
+<pre><code class="language-php">array(
+    'type'  =&gt; 'array',
+    'items' =&gt; array(
+        'type'   =&gt; 'string',
+        'format' =&gt; 'ip',
+    ),
+);
+</code></pre>
+<p>This would pass validation.</p>
+<pre><code class="language-json">[ "127.0.0.1", "255.255.255.255" ]
+</code></pre>
+<p>While this would fail validation.</p>
+<pre><code class="language-json">[ "127.0.0.1", 5 ]
+</code></pre>
+<p>The <code>items</code> schema can be any schema, it could even be an array itself!</p>
+<pre><code class="language-php">array(
+    'type'  =&gt; 'array',
+    'items' =&gt; array(
+        'type'  =&gt; 'array',
+        'items' =&gt; array(
+            'type'   =&gt; 'string',
+            'format' =&gt; 'hex-color',
+        ),
+    ),
+);
+</code></pre>
+<p>This would pass validation.</p>
+<pre><code class="language-json">[
+  [ "#ff6d69", "#fecc50" ],
+  [ "#0be7fb" ]
+]
+</code></pre>
+<p>While this would fail validation.</p>
+<pre><code class="language-json">[
+  [ "#ff6d69", "#fecc50" ],
+  "george"
+]
+</code></pre>
+<h4>minItems and maxItems</h4>
+<p>The <code>minItems</code> and <code>maxItems</code> keywords can be used to constrain the acceptable number of items included in the array.</p>
+<p>For instance, given the following schema, <code>[ "a" ]</code> and <code>[ "a", "b" ]</code> are valid, while <code>[]</code> and <code>[ "a", "b", "c" ]</code> are invalid.</p>
+<pre><code class="language-php">array(
+    'type'     =&gt; 'array',
+    'minItems' =&gt; 1,
+    'maxItems' =&gt; 2,
+    'items'    =&gt; array(
+        'type' =&gt; 'string',
+    ),
+);
+</code></pre>
+<p>The <code>exclusiveMinimum</code> and <code>exclusiveMaximum</code> keywords do not apply, they are only valid for the <code>number</code> and <code>integer</code> types.</p>
+<h4>uniqueItems</h4>
+<p>The <code>uniqueItems</code> keyword can be used to require that all items in the array are unique.</p>
+<p>For instance, given the following schema, <code>[ "a", "b" ]</code> is valid, while <code>[ "a", "a" ]</code> is not.</p>
+<pre><code class="language-php">array(
+    'type'        =&gt; 'array',
+    'uniqueItems' =&gt; true,
+    'items'       =&gt; array(
+        'type' =&gt; 'string',
+    ),
+);
+</code></pre>
+<h5>Uniqueness</h5>
+<p>Items of different types are considered unique, for instance, <code>"1"</code>, <code>1</code> and <code>1.0</code> are different values.</p>
+<p>When arrays are compared, the order of items matters. So the given array is considered to have all unique items.</p>
+<pre><code class="language-json">[
+  [ "a", "b" ],
+  [ "b", "a" ]
+]
+</code></pre>
+<p>When objects are compared, the order the members appear in does not matter. So the given array is considered to have duplicate items since the values are the same, they just appear in a different order.</p>
+<pre><code class="language-json">[
+  { 
+    "a": 1,
+    "b": 2
+  },
+  {
+    "b": 2,
+    "a": 1
+  }
+]
+</code></pre>
+<p>Uniqueness is checked in both <code>rest_validate_value_from_schema</code> and <code>rest_sanitize_value_from_schema</code>. This is to prevent instances where items would be considered unique before sanitization is applied, but after sanitization the items would converge to identical values.</p>
+<p>Take for instance the following schema:</p>
+<pre><code class="language-php">array(
+    'type' =&gt; 'array',
+    'uniqueItems' =&gt; true,
+    'items' =&gt; array(
+        'type' =&gt; 'string',
+        'format' =&gt; 'uri',
+    ),
+);
+</code></pre>
+<p>A request with <code>[ "https://example.org/hello world", "https://example.org/hello%20world" ]</code> would pass validation because each string value is different. However, after <code>esc_url_raw</code> converted the space in the first url to <code>%20</code> the values would be identical.</p>
+<p>In this case <code>rest_sanitize_value_from_schema</code> would return an error. As such, you should always validate and sanitize parameters.</p>
+<h3 class="is-toc-heading" id="objects" tabindex="-1"><a href="#objects">Objects</a></h3>
+<p>Specifying a <code>type</code> of <code>object</code> requires data to be an object, but that is only half the validation story. You’ll also want to enforce the format of each object’s property. This is done by specifying a map of property names to JSON Schemas that object members must conform to using the <code>properties</code> keyword.</p>
+<p>For example, the following schema requires an object where the property <code>name</code> is a string and <code>color</code> is a hex color.</p>
+<pre><code class="language-php">array(
+    'type'       =&gt; 'object',
+    'properties' =&gt; array(
+        'name'  =&gt; array(
+            'type' =&gt; 'string',
+        ),
+        'color' =&gt; array(
+            'type'   =&gt; 'string',
+            'format' =&gt; 'hex-color',        
+        ),
+    ),
+);
+</code></pre>
+<p>This would pass validation.</p>
+<pre><code class="language-json">{
+  "name": "Primary",
+  "color": "#ff6d69"
+}
+</code></pre>
+<p>While this would fail validation.</p>
+<pre><code class="language-json">{
+  "name": "Primary",
+  "color": "orange"
+}
+</code></pre>
+<h4>Required Properties</h4>
+<p>By default, any properties listed for an object are optional, so while it might be unexpected, the following would also pass validation for the previous schema.</p>
+<pre><code class="language-json">{
+  "name": "Primary"
+}
+</code></pre>
+<p>There are two mechanisms for requiring a property to be provided.</p>
+<h5>Version 3 Syntax</h5>
+<p>While WordPress mostly follows JSON Schema Version 4, one way that it doesn’t is with the syntax for defining required properties. The predominant way is using JSON Schema Version 3 syntax by adding the <code>required</code> keyword to each property’s definition.</p>
+<pre><code class="language-php">array(
+    'type'       =&gt; 'object',
+    'properties' =&gt; array(
+        'name'  =&gt; array(
+            'type'     =&gt; 'string',
+            'required' =&gt; true,
+        ),
+        'color' =&gt; array(
+            'type'     =&gt; 'string',
+            'format'   =&gt; 'hex-color',
+            'required' =&gt; true,        
+        ),
+    ),
+);
+</code></pre>
+<h5>Version 4 syntax</h5>
+<p>WordPress also supports JSON Schema Version 4 required property syntax where the list of required properties for an object is defined as an array of property names. This can be particularly helpful when specifying that a meta value has a list of required properties.</p>
+<p>Given the following meta field.</p>
+<pre><code class="language-php">register_post_meta( 'post', 'fixed_in', array(
+    'type'         =&gt; 'object',
+    'show_in_rest' =&gt; array(
+        'single' =&gt; true,
+        'schema' =&gt; array(
+            'required'   =&gt; array( 'revision', 'version' ),
+            'type'       =&gt; 'object',
+            'properties' =&gt; array(
+                'revision' =&gt; array(
+                    'type' =&gt; 'integer',
+                ),
+                'version'  =&gt; array(
+                    'type' =&gt; 'string',
+                ),
+            ),
+        ),
+    ),
+) );
+</code></pre>
+<p>The following request would fail validation.</p>
+<pre><code class="language-json">{
+    "title": "Check required properties",
+    "content": "We should check that required properties are provided",
+    "meta": {
+        "fixed_in": {
+            "revision": 47089
+        }
+    }
+}
+</code></pre>
+<p>If the <code>fixed_in</code> meta field was omitted entirely, no error would be generated. An object that defines a list of required properties does not indicate that the object itself is required to be submitted. Just that if the object is included, that the listed properties must also be included as well.</p>
+<p>Version 4 syntax is not supported for an endpoint’s top level schema in <code>WP_REST_Controller::get_item_schema()</code>. Given the following schema, a user could successfully submit a request without the title or content properties. This is because the schema document is not itself used for validation, but instead transformed to a list of parameter definitions.</p>
+<pre><code class="language-php">array(
+    '$schema'    =&gt; 'http://json-schema.org/draft-04/schema#',
+    'title'      =&gt; 'my-endpoint',
+    'type'       =&gt; 'object',
+    'required'   =&gt; array( 'title', 'content' ),
+    'properties' =&gt; array(
+        'title'   =&gt; array(
+            'type' =&gt; 'string',
+        ),
+        'content' =&gt; array(
+            'type' =&gt; 'string',
+        ),
+    ),
+);
+</code></pre>
+<h4>additionalProperties</h4>
+<p>Perhaps unintuitively, by default JSON Schema also allows providing additional properties that are not specified in the schema. As such, the following would pass validation.</p>
+<pre><code class="language-json">{
+  "name": "Primary",
+  "color": "#ff6d69",
+  "description": "The primary color to use in the theme."
+}
+</code></pre>
+<p>This can be customized using the <code>additionalProperties</code> keyword. Setting <code>additionalProperties</code> to false will reject data that has unknown properties.</p>
+<pre><code class="language-php">array(
+    'type'                 =&gt; 'object',
+    'additionalProperties' =&gt; false,
+    'properties'           =&gt; array(
+        'name'  =&gt; array(
+            'type' =&gt; 'string',
+        ),
+        'color' =&gt; array(
+            'type'   =&gt; 'string',
+            'format' =&gt; 'hex-color',        
+        ),
+    ),
+);
+</code></pre>
+<p>The <code>additionalProperties</code> keyword can also be set to a schema of its own. This would require that the values for any unknown properties match the given schema.</p>
+<p>One way this can be helpful is when you want to accept a list of values that each have their own unique key. For example:</p>
+<pre><code class="language-php">array(
+    'type'                 =&gt; 'object',
+    'properties'           =&gt; array(),
+    'additionalProperties' =&gt; array(
+        'type'       =&gt; 'object',
+        'properties' =&gt; array(
+            'name'  =&gt; array(
+                'type'     =&gt; 'string',
+                'required' =&gt; true,
+            ),
+            'color' =&gt; array(
+                'type'     =&gt; 'string',
+                'format'   =&gt; 'hex-color',
+                'required' =&gt; true,        
+            ),
+        ),    
+    ),
+);
+</code></pre>
+<p>This would pass validation.</p>
+<pre><code class="language-json">{
+  "primary": {
+    "name": "Primary",
+    "color": "#ff6d69"
+  },
+  "secondary": {
+    "name": "Secondary",
+    "color": "#fecc50"
+  }
+}
+</code></pre>
+<p>While this would fail validation.</p>
+<pre><code class="language-json">{
+  "primary": {
+    "name": "Primary",
+    "color": "#ff6d69"
+  },
+  "secondary": "#fecc50"
+}
+</code></pre>
+<h4>patternProperties</h4>
+<p>The <code>patternProperties</code> keyword is similar to the <code>additionalProperties</code> keyword, but allows for asserting the property matches a regex pattern. The keyword is an object where each property is a regex pattern and its value is the JSON Schema used to validate properties that match that pattern.</p>
+<p>For example, this schema requires that each value is a hex color and the property must only contain “word” characters.</p>
+<pre><code class="language-php">array(
+  'type'                 =&gt; 'object',
+  'patternProperties'    =&gt; array(
+    '^\\w+$' =&gt; array(
+      'type'   =&gt; 'string',
+      'format' =&gt; 'hex-color',
+    ),
+  ),
+  'additionalProperties' =&gt; false,
+);
+</code></pre>
+<p>This would pass validation.</p>
+<pre><code class="language-json">{
+  "primary": "#ff6d69",
+  "secondary": "#fecc50"
+}
+</code></pre>
+<p>While this would fail validation.</p>
+<pre><code class="language-json">{
+  "primary": "blue",
+  "$secondary": "#fecc50"
+}
+</code></pre>
+<p>When the REST API validates the <code>patternProperties</code> schema, if a property doesn’t match any of the patterns, the property will be allowed and not have any validation applied to its contents. While this may be confusing, it behaves the same as the <code>properties</code> keyword. If this logic isn’t desired, add <code>additionalProperties</code> to the schema to disallow non-matching properties.</p>
+<h4>minProperties and maxProperties</h4>
+<p>The <code>minItems</code> and <code>maxItems</code> keywords can be used for the <code>array</code> type. The <code>minProperties</code> and <code>maxProperties</code> introduces this same functionality for the <code>object</code> type. This can be helpful when using <code>additionalProperties</code> to have a list of objects with unique keys.</p>
+<pre><code class="language-php">array(
+  'type'                 =&gt; 'object',
+  'additionalProperties' =&gt; array(
+    'type'   =&gt; 'string',
+    'format' =&gt; 'hex-color',
+  ),
+  'minProperties'        =&gt; 1,
+  'maxProperties'        =&gt; 3,
+);
+</code></pre>
+<p>This would pass validation.</p>
+<pre><code class="language-json">{
+  "primary": "#52accc",
+  "secondary": "#096484"
+}
+</code></pre>
+<p>While this would fail validation.</p>
+<pre><code class="language-json">{
+  "primary": "#52accc",
+  "secondary": "#096484",
+  "tertiary": "#07526c"
+}
+</code></pre>
+<p>The <code>exclusiveMinimum</code> and <code>exclusiveMaximum</code> keywords do not apply, they are only valid for the <code>number</code> and <code>integer</code> types.</p>
+<h3 class="is-toc-heading" id="type-agnostic-keywords" tabindex="-1"><a href="#type-agnostic-keywords">Type agnostic keywords</a></h3>
+<h4>oneOf and anyOf</h4>
+<p>These are advanced keywords that allow for the JSON Schema validator to choose one of many schemas to use when validating a value. The <code>anyOf</code> keyword allows for a value to match at least one of the given schemas. Whereas, the <code>oneOf</code> keyword requires the value match <em>exactly</em> one schema.</p>
+<p>For example, this schema allows for submitting an array of “operations” to an endpoint. Each operation can either be a “crop” or a “rotation”.</p>
+<pre><code class="language-php">array(
+    'type'  =&gt; 'array',
+    'items' =&gt; array(
+        'oneOf' =&gt; array(
+            array(
+                'title'      =&gt; 'Crop',
+                'type'       =&gt; 'object',
+                'properties' =&gt; array(
+                    'operation' =&gt; array(
+                        'type' =&gt; 'string',
+                        'enum' =&gt; array(
+                            'crop',
+                        ),
+                    ),
+                    'x'         =&gt; array(
+                        'type' =&gt; 'integer',
+                    ),
+                    'y'         =&gt; array(
+                        'type' =&gt; 'integer',
+                    ),
+                ),
+            ),
+            array(
+                'title'      =&gt; 'Rotation',
+                'type'       =&gt; 'object',
+                'properties' =&gt; array(
+                    'operation' =&gt; array(
+                        'type' =&gt; 'string',
+                        'enum' =&gt; array(
+                            'rotate',
+                        ),
+                    ),
+                    'degrees'   =&gt; array(
+                        'type'    =&gt; 'integer',
+                        'minimum' =&gt; 0,
+                        'maximum' =&gt; 360,
+                    ),
+                ),
+            ),
+        ),
+    ),
+);
+</code></pre>
+<p>The REST API will loop over each schema specified in the <code>oneOf</code> array and look for a match. If exactly one schema matches, then validation will succeed. If more than one schema matches, validation will fail. If no schemas match, then the validator will try to find the closest matching schema and return an appropriate error message.</p>
+<blockquote><p>
+  operations[0] is not a valid Rotation. Reason: operations[0][degrees] must be between 0 (inclusive) and 360 (inclusive)
+</p></blockquote>
+<p>To generate more helpful error messages, it is highly recommended to give each <code>oneOf</code> or <code>anyOf</code> schema a <code>title</code> property.</p>
+<h2 class="is-toc-heading" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2>
+<h3 class="is-toc-heading" id="wordpress-5-6" tabindex="-1"><a href="#wordpress-5-6">WordPress 5.6</a></h3>
+<ul>
+<li>Support the <code>multipleOf</code> JSON Schema keyword. <a href="https://core.trac.wordpress.org/changeset/49063">r49063</a></li>
+<li>Support the <code>minProperties</code> and <code>maxProperties</code> JSON Schema keywords. <a href="https://core.trac.wordpress.org/changeset/49053">r49053</a></li>
+<li>Support the <code>patternProperties</code> JSON Schema keyword. <a href="https://core.trac.wordpress.org/changeset/49082">r49082</a></li>
+<li>Support the <code>anyOf</code> and <code>oneOf</code> JSON Schema keywords. <a href="https://core.trac.wordpress.org/changeset/49246">r49246</a></li>
+</ul>
+<h3 class="is-toc-heading" id="wordpress-5-5" tabindex="-1"><a href="#wordpress-5-5">WordPress 5.5</a></h3>
+<ul>
+<li>Improve multi-type JSON Schema support. <a href="https://core.trac.wordpress.org/changeset/48306">r48306</a></li>
+<li>Check required properties are provided when validating an object. <a href="https://core.trac.wordpress.org/changeset/47809">r47809</a></li>
+<li>Only validate the <code>format</code> keyword if the <code>type</code> is a <code>string</code>. <a href="https://core.trac.wordpress.org/changeset/48300">r48300</a></li>
+<li>Support the <code>uuid</code> JSON Schema format. <a href="https://core.trac.wordpress.org/changeset/47753">47753</a></li>
+<li>Support the <code>hex-color</code> JSON Schema format. <a href="https://core.trac.wordpress.org/changeset/47450">r47450</a></li>
+<li>Support the <code>pattern</code> JSON Schema keyword. <a href="https://core.trac.wordpress.org/changeset/47810">r47810</a></li>
+<li>Support the <code>minItems</code>, <code>maxItems</code>, and <code>uniqueItems</code> JSON Schema keywords. <a href="https://core.trac.wordpress.org/changeset/47923">r47923</a> <a href="https://core.trac.wordpress.org/changeset/48357">r48357</a></li>
+<li>Support the <code>minLength</code> and <code>maxLength</code> JSON Schema keywords. <a href="https://core.trac.wordpress.org/changeset/47627">r47627</a></li>
+</ul>
+<h3 class="is-toc-heading" id="wordpress-5-4" tabindex="-1"><a href="#wordpress-5-4">WordPress 5.4</a></h3>
+<ul>
+<li>Support type juggling an empty string to an empty object. <a href="https://core.trac.wordpress.org/changeset/47362">r47362</a></li>
+</ul>
+<h3 class="is-toc-heading" id="wordpress-5-3" tabindex="-1"><a href="#wordpress-5-3">WordPress 5.3</a></h3>
+<ul>
+<li>Support the <code>null</code> primitive type and implement basic multi-type handling. <a href="https://core.trac.wordpress.org/changeset/46249">r46249</a></li>
+<li>Support validating <code>additionalProperties</code> against a schema. <a href="https://core.trac.wordpress.org/changeset/45807">r45807</a></li>
+</ul>
+<h3 class="is-toc-heading" id="wordpress-4-9" tabindex="-1"><a href="#wordpress-4-9">WordPress 4.9</a></h3>
+<ul>
+<li>Support the <code>object</code> primitive type. <a href="https://core.trac.wordpress.org/changeset/41727">r41727</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

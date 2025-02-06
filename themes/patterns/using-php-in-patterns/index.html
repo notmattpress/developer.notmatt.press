@@ -1,0 +1,270 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/patterns/">Patterns</a></span><span class="is-current-page">Using PHP in Patterns</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Using PHP in Patterns</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>One of the biggest advantages of patterns over features like templates and template parts is that you can use PHP in them, which opens a world of possibilities for what you can accomplish. However, there are limits on what functionality is available to your patterns.</p>
+<p>In this article, you will learn the limitations of the patterns system, when and how you can use PHP, and some of the most common use cases for dynamic functionality.</p>
+<h2 class="is-toc-heading wp-block-heading" id="patterns-are-registered-on-init" tabindex="-1"><a href="#patterns-are-registered-on-init">Patterns are registered on init</a></h2>
+<p>When using PHP in patterns, it’s important to understand when the pattern’s block markup is actually compiled versus when it is rendered.</p>
+<p>Pattern registration happens on the <a href="https://developer.notmatt.press/reference/hooks/init/"><code>init</code></a> hook. At this point, WordPress compiles the content of the pattern and saves a copy of it as HTML-based block markup. This allows it to be used in both the editor and the front end. It’s during this registration process where the pattern can execute PHP code.</p>
+<p>A pattern’s block markup is not actually rendered until it is used either in the editor or on the front end. However, the block markup is plain HTML at the time it is rendered.</p>
+<p>At a practical level, this means that a lot of data is unavailable during the registration process on <code>init</code>. Your patterns cannot access things like the global query or post. They also cannot use functions associated with that data. So this means that WordPress functions like <code>is_home()</code>, <code>is_single()</code>, <code>get_post()</code>, and others are simply not ready yet.</p>
+<p>For example, this PHP wouldn’t execute correctly in a pattern:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php if ( is_page() ) : ?&gt;
+	&lt;!-- wp:paragraph --&gt;
+	&lt;p&gt;&lt;?php the_title(); ?&gt;&lt;/p&gt;
+	&lt;!-- /wp:paragraph --&gt;
+&lt;?php endif; ?&gt;</code></pre>
+<p>Neither the <code>is_page()</code> nor the <code>the_title()</code> functions have the global data they need when a pattern is registered, so they won’t work.</p>
+<p>If you’re accustomed to building classic themes, this can feel very unintuitive, especially if you’ve been equating PHP-based patterns to classic, PHP-based template parts.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>There are other methods for executing PHP at the time of render, such as using the <a href="https://developer.notmatt.press/news/tag/block-bindings/">Block Bindings API</a>. But those methods are outside the scope of pattern documentation.</p></div></div>
+<p>You still have a wide and wonderful range of PHP functions and many WordPress functions available to you. And you’ll learn more about what you <em>can</em> use in the upcoming sections of this article.</p>
+<h2 class="is-toc-heading wp-block-heading" id="an-example-pattern" tabindex="-1"><a href="#an-example-pattern">An example pattern</a></h2>
+<p>For the rest of this article, let’s use a single pattern that begins as mostly HTML. Then, you’ll walk through adding PHP to dynamically handle some portions of it. </p>
+<p>Create a new file named <code>patterns/hero.php</code> in your theme and put this code into it:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Hero
+ * Slug: themeslug/hero
+ * Categories: featured
+ */
+?&gt;
+&lt;!-- wp:cover {"overlayColor":"contrast","isUserOverlayColor":true,"align":"full"} --&gt;
+&lt;div class="wp-block-cover alignfull"&gt;
+	&lt;span aria-hidden="true" class="wp-block-cover__background has-contrast-background-color has-background-dim-100 has-background-dim"&gt;&lt;/span&gt;
+	&lt;div class="wp-block-cover__inner-container"&gt;
+		
+		&lt;!-- wp:heading {"textAlign":"center"} --&gt;
+		&lt;h2 class="wp-block-heading has-text-align-center"&gt;Welcome to My Site&lt;/h2&gt;
+		&lt;!-- /wp:heading --&gt;
+
+		&lt;!-- wp:paragraph {"align":"center"} --&gt;
+		&lt;p class="has-text-align-center"&gt;This is my little home away from home.&lt;/p&gt;
+		&lt;!-- /wp:paragraph --&gt;
+
+		&lt;!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} --&gt;
+		&lt;div class="wp-block-buttons"&gt;
+			&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+			&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;Button A&lt;/a&gt;&lt;/div&gt;
+			&lt;!-- /wp:button --&gt;
+			&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+			&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;Button B&lt;/a&gt;&lt;/div&gt;
+			&lt;!-- /wp:button --&gt;
+		&lt;/div&gt;
+		&lt;!-- /wp:buttons --&gt;
+
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;!-- /wp:cover --&gt;</code></pre>
+<p>If you insert it the pattern into the editor, it should look like this:</p>
+<figure class="wp-block-image size-full has-custom-border"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-default.jpg?ssl=1"><img alt='WordPress post editor with a "Welcome to My Site" message in white text with a black background. It is wrapped in a Cover block.' class="has-border-color has-light-grey-2-border-color wp-image-153648" data-recalc-dims="1" decoding="async" fetchpriority="high" height="1060" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-default.jpg?resize=2048%2C1060&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-default.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-default.jpg?resize=300%2C155&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-default.jpg?resize=1024%2C530&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-default.jpg?resize=768%2C398&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-default.jpg?resize=1536%2C795&amp;ssl=1 1536w" style="border-width:1px" width="2048"/></a></figure>
+<h2 class="is-toc-heading wp-block-heading" id="internationalizing-text-in-patterns" tabindex="-1"><a href="#internationalizing-text-in-patterns">Internationalizing text in patterns</a></h2>
+<p>One of the primary use cases for block patterns is <a href="https://developer.notmatt.press/themes/functionality/internationalization/">internationalizing text</a> (making it ready for translation). For example, if you have text in a template or template part, the only way to internationalize that text is to move it into a pattern, where you have full access to PHP.</p>
+<p>Because pattern files are just PHP, you can use any of the internationalization functions within WordPress. In the below example, you’ll use <a href="https://developer.notmatt.press/reference/functions/esc_html_e/"><code>esc_html_e()</code></a> to both escape the text for security and make it ready for translators.</p>
+<p>Let’s look at the Heading block from your Hero pattern:</p>
+<pre class="wp-block-code"><code class="language-markup" lang="markup">&lt;!-- wp:heading {"textAlign":"center"} --&gt;
+&lt;h2 class="wp-block-heading has-text-align-center"&gt;Welcome to My Site&lt;/h2&gt;
+&lt;!-- /wp:heading --&gt;</code></pre>
+<p>As you can see, the “Welcome to My Site” text in the Heading block is not internationalized. When shipping your theme to users all around the world who speak many different languages, it’s important to ensure this text can be translated.</p>
+<p>To internationalize the Heading block’s text, you must wrap it in an internationalization function (<code>esc_html_e()</code> in this case). So you’d change the block markup to look like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;!-- wp:heading {"textAlign":"center"} --&gt;
+&lt;h2 class="wp-block-heading has-text-align-center"&gt;&lt;?php esc_html_e( 'Welcome to My Site', 'themeslug' ); ?&gt;&lt;/h2&gt;
+&lt;!-- /wp:heading --&gt;</code></pre>
+<p>There are three other places where you should also make these changes. The first is to the Paragraph block text, and then the two Button blocks. Your new <code>patterns/hero.php</code> file should look like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Hero
+ * Slug: themeslug/hero
+ * Categories: featured
+ */
+?&gt;
+&lt;!-- wp:cover {"overlayColor":"contrast","isUserOverlayColor":true,"align":"full"} --&gt;
+&lt;div class="wp-block-cover alignfull"&gt;
+	&lt;span aria-hidden="true" class="wp-block-cover__background has-contrast-background-color has-background-dim-100 has-background-dim"&gt;&lt;/span&gt;
+	&lt;div class="wp-block-cover__inner-container"&gt;
+		
+		&lt;!-- wp:heading {"textAlign":"center"} --&gt;
+		&lt;h2 class="wp-block-heading has-text-align-center"&gt;&lt;?php esc_html_e( 'Welcome to My Site', 'themeslug' ); ?&gt;&lt;/h2&gt;
+		&lt;!-- /wp:heading --&gt;
+
+		&lt;!-- wp:paragraph {"align":"center"} --&gt;
+		&lt;p class="has-text-align-center"&gt;&lt;?php esc_html_e( 'This is my little home away from home.', 'themeslug' ); ?&gt;&lt;/p&gt;
+		&lt;!-- /wp:paragraph --&gt;
+
+		&lt;!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} --&gt;
+		&lt;div class="wp-block-buttons"&gt;
+			&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+			&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php esc_html_e( 'Button A', 'themeslug' ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+			&lt;!-- /wp:button --&gt;
+			&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+			&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php esc_html_e( 'Button B', 'themeslug' ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+			&lt;!-- /wp:button --&gt;
+		&lt;/div&gt;
+		&lt;!-- /wp:buttons --&gt;
+
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;!-- /wp:cover --&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="using-images-and-other-assets" tabindex="-1"><a href="#using-images-and-other-assets">Using images and other assets</a></h2>
+<p>Adding dynamic URLs for images and other assets is another important feature of patterns. Because you have PHP access, you can use functions like <a href="https://developer.notmatt.press/reference/functions/get_theme_file_uri/"><code>get_theme_file_uri()</code></a> to output an image URL that’s bundled with your theme, for example.</p>
+<p>Try adding an image background to your “hero” pattern’s Cover block. If you need an image, try grabbing one from the WordPress <a href="https://wordpress.org/photos/">Photo Directory</a> (the example below uses this <a href="https://wordpress.org/photos/photo/41664fab9b/">Nepal night scene photo</a>). </p>
+<p>Download an image and save it to your theme’s <code>/assets/images</code> folder (or a folder of your choice) and name it <code>hero-background.jpg</code>.</p>
+<p>Then open your pattern in the editor and upload the image as the background for the Cover block in your Hero pattern, which should look like this:</p>
+<figure class="wp-block-image size-full has-custom-border"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-dynamic-background.webp?ssl=1"><img alt="WordPress post editor with a Cover block that has a background image of a nighttime city. There is a welcome message and buttons overlaying the background." class="has-border-color has-light-grey-2-border-color wp-image-153649" data-recalc-dims="1" decoding="async" height="1060" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-dynamic-background.webp?resize=2048%2C1060&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-dynamic-background.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-dynamic-background.webp?resize=300%2C155&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-dynamic-background.webp?resize=1024%2C530&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-dynamic-background.webp?resize=768%2C398&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/php-pattern-dynamic-background.webp?resize=1536%2C795&amp;ssl=1 1536w" style="border-width:1px" width="2048"/></a></figure>
+<p>If you copy the blocks that make up the pattern, you’ll notice that you have two instances of the image URL in your pattern code. It will be a hardcoded URL similar to this:</p>
+<pre class="wp-block-code"><code class="language-markup" lang="markup">http://localhost/wp-content/uploads/2023/10/hero-background.jpg</code></pre>
+<p>You need to change both of those instances so that they point to the image that is located in your theme’s <code>/assets/images</code> folder. For this, you need do two things:</p>
+<ul class="wp-block-list">
+<li>Get the correct URL using a function like <a href="https://developer.notmatt.press/reference/functions/get_theme_file_uri/"><code>get_theme_file_uri()</code></a>.</li>
+<li>Escape the URL so that it’s safe for output with <a href="https://developer.notmatt.press/reference/functions/esc_url/"><code>esc_url()</code></a>.</li>
+</ul>
+<p>Change the hard coded image URLs to this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo esc_url( get_theme_file_uri( 'assets/images/hero-background.jpg' ) ); ?&gt;</code></pre>
+<p>Your final pattern code should look like this (note that this example includes internationalized text as explained in the previous section):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Hero
+ * Slug: themeslug/hero
+ * Categories: featured
+ */
+?&gt;
+&lt;!-- wp:cover {"url":"&lt;?php echo esc_url( get_theme_file_uri( 'assets/images/hero-background.jpg' ) ); ?&gt;","id":3838,"dimRatio":50,"overlayColor":"contrast","align":"full"} --&gt;
+&lt;div class="wp-block-cover alignfull"&gt;
+	&lt;span aria-hidden="true" class="wp-block-cover__background has-contrast-background-color has-background-dim"&gt;&lt;/span&gt;
+	&lt;img class="wp-block-cover__image-background wp-image-3838" alt="" src="&lt;?php echo esc_url( get_theme_file_uri( 'assets/images/hero-background.jpg' ) ); ?&gt;" data-object-fit="cover"/&gt;
+	&lt;div class="wp-block-cover__inner-container"&gt;
+		
+		&lt;!-- wp:heading {"textAlign":"center"} --&gt;
+		&lt;h2 class="wp-block-heading has-text-align-center"&gt;&lt;?php esc_html_e( 'Welcome to My Site', 'themeslug' ); ?&gt;&lt;/h2&gt;
+		&lt;!-- /wp:heading --&gt;
+
+		&lt;!-- wp:paragraph {"align":"center"} --&gt;
+		&lt;p class="has-text-align-center"&gt;&lt;?php esc_html_e( 'This is my little home away from home.', 'themeslug' ); ?&gt;&lt;/p&gt;
+		&lt;!-- /wp:paragraph --&gt;
+
+		&lt;!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} --&gt;
+		&lt;div class="wp-block-buttons"&gt;
+			&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+			&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php esc_html_e( 'Button A', 'themeslug' ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+			&lt;!-- /wp:button --&gt;
+			&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+			&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php esc_html_e( 'Button B', 'themeslug' ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+			&lt;!-- /wp:button --&gt;
+		&lt;/div&gt;
+		&lt;!-- /wp:buttons --&gt;
+
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;!-- /wp:cover --&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="foreach-loops" tabindex="-1"><a href="#foreach-loops">foreach() loops</a></h2>
+<p>You have access to nearly every PHP function and feature at your disposal, and many things will undoubtedly be useful to you as you build themes. But <code>foreach()</code> loops are likely one of the features that you will often reach for.</p>
+<p><code>foreach()</code> loops are particularly useful in patterns that have repeated blocks. For example, in your <code>patterns/hero.php</code> file, you have a set of two Button blocks:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php esc_html_e( 'Button A', 'themeslug' ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+&lt;!-- /wp:button --&gt;
+
+&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php esc_html_e( 'Button B', 'themeslug' ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+&lt;!-- /wp:button --&gt;</code></pre>
+<p>One of the foundational principles of development is DRY (Don’t Repeat Yourself). And this code breaks that principle. With a single <code>foreach()</code> loop, you can create the block markup once and loop through it.</p>
+<p>First, you need an array of items to loop through, which is the Button content itself. At the top of your <code>patterns/hero.php</code> file before the closing <code>?&gt;</code> tag, add an array of labels:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$buttons = array(
+	__( 'Button A', 'themeslug' ),
+	__( 'Button B', 'themeslug' )
+);</code></pre>
+<p>Then replace the markup for your two Button blocks with this code:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php foreach ( $buttons as $button ) : ?&gt;
+	&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+	&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php echo esc_html( $button ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+	&lt;!-- /wp:button --&gt;
+&lt;?php endforeach; ?&gt;</code></pre>
+<p>Your full <code>patterns/hero.php</code> file should now look like the following (note this includes both the internationalized text and dynamic image example code from earlier):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Hero
+ * Slug: themeslug/hero
+ * Categories: featured
+ */
+
+$buttons = array(
+	__( 'Button A', 'themeslug' ),
+	__( 'Button B', 'themeslug' )
+);
+
+?&gt;
+&lt;!-- wp:cover {"url":"&lt;?php echo esc_url( get_theme_file_uri( 'assets/images/hero-background.jpg' ) ); ?&gt;","id":3838,"dimRatio":50,"overlayColor":"contrast","align":"full"} --&gt;
+&lt;div class="wp-block-cover alignfull"&gt;
+	&lt;span aria-hidden="true" class="wp-block-cover__background has-contrast-background-color has-background-dim"&gt;&lt;/span&gt;
+	&lt;img class="wp-block-cover__image-background wp-image-3838" alt="" src="&lt;?php echo esc_url( get_theme_file_uri( 'assets/images/hero-background.jpg' ) ); ?&gt;" data-object-fit="cover"/&gt;
+	&lt;div class="wp-block-cover__inner-container"&gt;
+		
+		&lt;!-- wp:heading {"textAlign":"center"} --&gt;
+		&lt;h2 class="wp-block-heading has-text-align-center"&gt;&lt;?php esc_html_e( 'Welcome to My Site', 'themeslug' ); ?&gt;&lt;/h2&gt;
+		&lt;!-- /wp:heading --&gt;
+
+		&lt;!-- wp:paragraph {"align":"center"} --&gt;
+		&lt;p class="has-text-align-center"&gt;&lt;?php esc_html_e( 'This is my little home away from home.', 'themslug' ); ?&gt;&lt;/p&gt;
+		&lt;!-- /wp:paragraph --&gt;
+
+		&lt;!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} --&gt;
+		&lt;div class="wp-block-buttons"&gt;
+			&lt;?php foreach ( $buttons as $button ) : ?&gt;
+				&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+				&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php echo esc_html( $button ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+				&lt;!-- /wp:button --&gt;
+			&lt;?php endforeach; ?&gt;
+		&lt;/div&gt;
+		&lt;!-- /wp:buttons --&gt;
+
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;!-- /wp:cover --&gt;</code></pre>
+<p>At this point, your pattern is fully dynamic. As you dive deeper into pattern development, you’ll come up with even more use cases for using PHP. Think of this article as just the foundation that you’ll build from.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,335 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_adjacent_post()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_adjacent_post()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_adjacent_post( <span class="arg-type">bool</span> <span class="arg-name">$in_same_term</span> = <span class="arg-default">false</span>,  <span class="arg-type">int[]|string</span> <span class="arg-name">$excluded_terms</span> = <span class="arg-default">''</span>,  <span class="arg-type">bool</span> <span class="arg-name">$previous</span> = <span class="arg-default">true</span>,  <span class="arg-type">string</span> <span class="arg-name">$taxonomy</span> = <span class="arg-default">'category'</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_post/" rel="class">WP_Post</a>|null|string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the adjacent post.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Can either be next or previous post.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$in_same_term</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether post should be in the same taxonomy term.<br/>
+</span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$excluded_terms</code><span class="type"><span class="int[]">int[]</span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Array or comma-separated list of excluded term IDs.<br/>
+</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$previous</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to retrieve previous post.<br/>
+</span></div><p class="default">Default:<code>true</code></p></dd><dt><code>$taxonomy</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Taxonomy, if <code>$in_same_term</code> is true. Default <code>'category'</code>.</span></div><p class="default">Default:<code>'category'</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a>|null|string</span> Post object if successful. Null if global <code>$post</code> is not set.<br/>
+Empty string if no corresponding post exists.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1830"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_adjacent_post( $in_same_term = false, $excluded_terms = '', $previous = true, $taxonomy = 'category' ) {
+	global $wpdb;
+
+	$post = get_post();
+
+	if ( ! $post || ! taxonomy_exists( $taxonomy ) ) {
+		return null;
+	}
+
+	$current_post_date = $post-&gt;post_date;
+
+	$join     = '';
+	$where    = '';
+	$adjacent = $previous ? 'previous' : 'next';
+
+	if ( ! empty( $excluded_terms ) &amp;&amp; ! is_array( $excluded_terms ) ) {
+		// Back-compat, $excluded_terms used to be $excluded_categories with IDs separated by " and ".
+		if ( str_contains( $excluded_terms, ' and ' ) ) {
+			_deprecated_argument(
+				__FUNCTION__,
+				'3.3.0',
+				sprintf(
+					/* translators: %s: The word 'and'. */
+					__( 'Use commas instead of %s to separate excluded terms.' ),
+					"'and'"
+				)
+			);
+			$excluded_terms = explode( ' and ', $excluded_terms );
+		} else {
+			$excluded_terms = explode( ',', $excluded_terms );
+		}
+
+		$excluded_terms = array_map( 'intval', $excluded_terms );
+	}
+
+	/**
+	 * Filters the IDs of terms excluded from adjacent post queries.
+	 *
+	 * The dynamic portion of the hook name, `$adjacent`, refers to the type
+	 * of adjacency, 'next' or 'previous'.
+	 *
+	 * Possible hook names include:
+	 *
+	 *  - `get_next_post_excluded_terms`
+	 *  - `get_previous_post_excluded_terms`
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param int[]|string $excluded_terms Array of excluded term IDs. Empty string if none were provided.
+	 */
+	$excluded_terms = apply_filters( "get_{$adjacent}_post_excluded_terms", $excluded_terms );
+
+	if ( $in_same_term || ! empty( $excluded_terms ) ) {
+		if ( $in_same_term ) {
+			$join  .= " INNER JOIN $wpdb-&gt;term_relationships AS tr ON p.ID = tr.object_id INNER JOIN $wpdb-&gt;term_taxonomy AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id";
+			$where .= $wpdb-&gt;prepare( 'AND tt.taxonomy = %s', $taxonomy );
+
+			if ( ! is_object_in_taxonomy( $post-&gt;post_type, $taxonomy ) ) {
+				return '';
+			}
+			$term_array = wp_get_object_terms( $post-&gt;ID, $taxonomy, array( 'fields' =&gt; 'ids' ) );
+
+			// Remove any exclusions from the term array to include.
+			$term_array = array_diff( $term_array, (array) $excluded_terms );
+			$term_array = array_map( 'intval', $term_array );
+
+			if ( ! $term_array || is_wp_error( $term_array ) ) {
+				return '';
+			}
+
+			$where .= ' AND tt.term_id IN (' . implode( ',', $term_array ) . ')';
+		}
+
+		if ( ! empty( $excluded_terms ) ) {
+			$where .= " AND p.ID NOT IN ( SELECT tr.object_id FROM $wpdb-&gt;term_relationships tr LEFT JOIN $wpdb-&gt;term_taxonomy tt ON (tr.term_taxonomy_id = tt.term_taxonomy_id) WHERE tt.term_id IN (" . implode( ',', array_map( 'intval', $excluded_terms ) ) . ') )';
+		}
+	}
+
+	// 'post_status' clause depends on the current user.
+	if ( is_user_logged_in() ) {
+		$user_id = get_current_user_id();
+
+		$post_type_object = get_post_type_object( $post-&gt;post_type );
+		if ( empty( $post_type_object ) ) {
+			$post_type_cap    = $post-&gt;post_type;
+			$read_private_cap = 'read_private_' . $post_type_cap . 's';
+		} else {
+			$read_private_cap = $post_type_object-&gt;cap-&gt;read_private_posts;
+		}
+
+		/*
+		 * Results should include private posts belonging to the current user, or private posts where the
+		 * current user has the 'read_private_posts' cap.
+		 */
+		$private_states = get_post_stati( array( 'private' =&gt; true ) );
+		$where         .= " AND ( p.post_status = 'publish'";
+		foreach ( $private_states as $state ) {
+			if ( current_user_can( $read_private_cap ) ) {
+				$where .= $wpdb-&gt;prepare( ' OR p.post_status = %s', $state );
+			} else {
+				$where .= $wpdb-&gt;prepare( ' OR (p.post_author = %d AND p.post_status = %s)', $user_id, $state );
+			}
+		}
+		$where .= ' )';
+	} else {
+		$where .= " AND p.post_status = 'publish'";
+	}
+
+	$op    = $previous ? '&lt;' : '&gt;';
+	$order = $previous ? 'DESC' : 'ASC';
+
+	/**
+	 * Filters the JOIN clause in the SQL for an adjacent post query.
+	 *
+	 * The dynamic portion of the hook name, `$adjacent`, refers to the type
+	 * of adjacency, 'next' or 'previous'.
+	 *
+	 * Possible hook names include:
+	 *
+	 *  - `get_next_post_join`
+	 *  - `get_previous_post_join`
+	 *
+	 * @since 2.5.0
+	 * @since 4.4.0 Added the `$taxonomy` and `$post` parameters.
+	 *
+	 * @param string       $join           The JOIN clause in the SQL.
+	 * @param bool         $in_same_term   Whether post should be in the same taxonomy term.
+	 * @param int[]|string $excluded_terms Array of excluded term IDs. Empty string if none were provided.
+	 * @param string       $taxonomy       Taxonomy. Used to identify the term used when `$in_same_term` is true.
+	 * @param WP_Post      $post           WP_Post object.
+	 */
+	$join = apply_filters( "get_{$adjacent}_post_join", $join, $in_same_term, $excluded_terms, $taxonomy, $post );
+
+	/**
+	 * Filters the WHERE clause in the SQL for an adjacent post query.
+	 *
+	 * The dynamic portion of the hook name, `$adjacent`, refers to the type
+	 * of adjacency, 'next' or 'previous'.
+	 *
+	 * Possible hook names include:
+	 *
+	 *  - `get_next_post_where`
+	 *  - `get_previous_post_where`
+	 *
+	 * @since 2.5.0
+	 * @since 4.4.0 Added the `$taxonomy` and `$post` parameters.
+	 *
+	 * @param string       $where          The `WHERE` clause in the SQL.
+	 * @param bool         $in_same_term   Whether post should be in the same taxonomy term.
+	 * @param int[]|string $excluded_terms Array of excluded term IDs. Empty string if none were provided.
+	 * @param string       $taxonomy       Taxonomy. Used to identify the term used when `$in_same_term` is true.
+	 * @param WP_Post      $post           WP_Post object.
+	 */
+	$where = apply_filters( "get_{$adjacent}_post_where", $wpdb-&gt;prepare( "WHERE p.post_date $op %s AND p.post_type = %s $where", $current_post_date, $post-&gt;post_type ), $in_same_term, $excluded_terms, $taxonomy, $post );
+
+	/**
+	 * Filters the ORDER BY clause in the SQL for an adjacent post query.
+	 *
+	 * The dynamic portion of the hook name, `$adjacent`, refers to the type
+	 * of adjacency, 'next' or 'previous'.
+	 *
+	 * Possible hook names include:
+	 *
+	 *  - `get_next_post_sort`
+	 *  - `get_previous_post_sort`
+	 *
+	 * @since 2.5.0
+	 * @since 4.4.0 Added the `$post` parameter.
+	 * @since 4.9.0 Added the `$order` parameter.
+	 *
+	 * @param string $order_by The `ORDER BY` clause in the SQL.
+	 * @param WP_Post $post    WP_Post object.
+	 * @param string  $order   Sort order. 'DESC' for previous post, 'ASC' for next.
+	 */
+	$sort = apply_filters( "get_{$adjacent}_post_sort", "ORDER BY p.post_date $order LIMIT 1", $post, $order );
+
+	$query        = "SELECT p.ID FROM $wpdb-&gt;posts AS p $join $where $sort";
+	$key          = md5( $query );
+	$last_changed = wp_cache_get_last_changed( 'posts' );
+	if ( $in_same_term || ! empty( $excluded_terms ) ) {
+		$last_changed .= wp_cache_get_last_changed( 'terms' );
+	}
+	$cache_key = "adjacent_post:$key:$last_changed";
+
+	$result = wp_cache_get( $cache_key, 'post-queries' );
+	if ( false !== $result ) {
+		if ( $result ) {
+			$result = get_post( $result );
+		}
+		return $result;
+	}
+
+	$result = $wpdb-&gt;get_var( $query );
+	if ( null === $result ) {
+		$result = '';
+	}
+
+	wp_cache_set( $cache_key, $result, 'post-queries' );
+
+	if ( $result ) {
+		$result = get_post( $result );
+	}
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/link-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/link-template.php#L1830">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/link-template.php#L1830-L2034">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_adjacent_post_excluded_terms/"><span class="hook-func">apply_filters</span>( “get_{$adjacent}_post_excluded_terms”,  <nobr><span class="arg-type">int[]|string</span> <span class="arg-name">$excluded_terms</span></nobr> )</a></dt><dd><p>Filters the IDs of terms excluded from adjacent post queries.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_adjacent_post_join/"><span class="hook-func">apply_filters</span>( “get_{$adjacent}_post_join”,  <nobr><span class="arg-type">string</span> <span class="arg-name">$join</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$in_same_term</span></nobr>,  <nobr><span class="arg-type">int[]|string</span> <span class="arg-name">$excluded_terms</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the JOIN clause in the SQL for an adjacent post query.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_adjacent_post_sort/"><span class="hook-func">apply_filters</span>( “get_{$adjacent}_post_sort”,  <nobr><span class="arg-type">string</span> <span class="arg-name">$order_by</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$order</span></nobr> )</a></dt><dd><p>Filters the ORDER BY clause in the SQL for an adjacent post query.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_adjacent_post_where/"><span class="hook-func">apply_filters</span>( “get_{$adjacent}_post_where”,  <nobr><span class="arg-type">string</span> <span class="arg-name">$where</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$in_same_term</span></nobr>,  <nobr><span class="arg-type">int[]|string</span> <span class="arg-name">$excluded_terms</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the WHERE clause in the SQL for an adjacent post query.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get_last_changed/">wp_cache_get_last_changed()</a><code>wp-includes/functions.php</code></td><td><p>Gets last changed date for the specified cache group.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set/">wp_cache_set()</a><code>wp-includes/cache.php</code></td><td><p>Saves the data to the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_object_in_taxonomy/">is_object_in_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Determines if the given object type is associated with the given taxonomy.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_object_terms/">wp_get_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the terms associated with the given object(s), in the supplied taxonomies.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/taxonomy_exists/">taxonomy_exists()</a><code>wp-includes/taxonomy.php</code></td><td><p>Determines whether the taxonomy name exists.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_stati/">get_post_stati()</a><code>wp-includes/post.php</code></td><td><p>Gets a list of post statuses.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_argument/">_deprecated_argument()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_user_id/">get_current_user_id()</a><code>wp-includes/user.php</code></td><td><p>Gets the current user’s ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_object/">get_post_type_object()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post type object by name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_var/">wpdb::get_var()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one value from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 12 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_adjacent_post_link/">get_adjacent_post_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the adjacent post link.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_previous_post/">get_previous_post()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the previous post that is adjacent to the current post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_next_post/">get_next_post()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the next post that is adjacent to the current post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_adjacent_post_rel_link/">get_adjacent_post_rel_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the adjacent post relational link.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="636" id="comment-636">
+<article class="comment-body" id="div-comment-636">
+<a class="screen-reader-text" href="#comment-content-636">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-636">
+<p><strong>Examples</strong><br>
+Link to previous post in the same taxonomy with Post Title for text.</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php"> &lt;?php $prev_post = get_adjacent_post( true, '', true, 'taxonomy_slug' ); ?&gt;
+ &lt;?php if ( is_a( $prev_post, 'WP_Post' ) ) { ?&gt;
+	&lt;a href="&lt;?php echo get_permalink( $prev_post-&gt;ID ); ?&gt;"&gt;&lt;?php echo get_the_title( $prev_post-&gt;ID ); ?&gt;&lt;/a&gt;
+ &lt;?php } ?&gt;</code></pre>
+<p>Link to next post in the same taxonomy with Post Title for text.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php"> &lt;?php $next_post = get_adjacent_post( true, '', false, 'taxonomy_slug' ); ?&gt;
+ &lt;?php if ( is_a( $next_post, 'WP_Post' ) ) {  ?&gt;
+	&lt;a href="&lt;?php echo get_permalink( $next_post-&gt;ID ); ?&gt;"&gt;&lt;?php echo get_the_title( $next_post-&gt;ID ); ?&gt;&lt;/a&gt;
+ &lt;?php } ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-636">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-david-gaitan odd alt thread-odd thread-alt depth-1" data-comment-id="5682" id="comment-5682">
+<article class="comment-body" id="div-comment-5682">
+<a class="screen-reader-text" href="#comment-content-5682">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5682">
+<p>I am not sure if there’s a function to get the next post of a post that maybe was retrieved from a custom loop or that isn’t the current <code>global $post;</code>. But sometimes, for design purposes, I have found the need to get the next post but in two levels. I searched for a function that works like this function but passing a custom $post as parameter. </p>
+<p>For example: <code>get_adjacent_post( $my_post, true, '', false, 'taxonomy_slug' );</code>. Where <code>$my_post</code> is a custom post where I would like to get the next post of that specific post.</p>
+<p>I am not sure if currently exists that function, but could be great to have it accessible.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5682">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

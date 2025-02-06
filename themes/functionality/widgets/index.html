@@ -1,0 +1,306 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/functionality/">Theme Functionality</a></span><span class="is-current-page">Widgets</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Widgets</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>A widget adds content and features to a widget area (also called a <a href="https://developer.notmatt.press/themes/functionality/sidebars/" title="Sidebars">sidebar</a>). Widget areas provide a way for users to customize their site. A widget area can appear on multiple pages or on only one page. Your theme might have just one widget area or many of them.</p>
+<p>Some examples of ways you can use widget areas are:</p>
+<ul class="wp-block-list">
+<li>Lay out a homepage using widgets. This allows site owners to decide what should appear in each section of their homepage.</li>
+<li>Create a footer that users can customize with their own content.</li>
+<li>Add a customizable sidebar to a blog.</li>
+</ul>
+<p>A widget is a PHP object that outputs some HTML. The same kind of widget can be used multiple times on the same page (e.g. the Text Widget). Widgets can save data in the database (in the options table).</p>
+<p>When you create a new kind of widget, it will appear in the user’s Administration Screens at <strong>Appearance &gt; Widgets</strong>. The user can add the widget to a widget area and customize the widget settings from the WordPress admin.</p>
+<h2 class="is-toc-heading wp-block-heading" id="built-in-versus-stand-alone-widgets" tabindex="-1"><a href="#built-in-versus-stand-alone-widgets">Built-in versus stand-alone widgets</a></h2>
+<p>A set of widgets is included with the default WordPress installation. In addition to these standard widgets, extra widgets can be included by themes or plugins. An advantage of widgets built into themes or plugins is to provide extra features and increase the number of widgets.</p>
+<p>A disadvantage is that if a theme is changed or a plugin is deactivated, the plugin or theme widget’s functionality will be lost. However, the data and preferences from the widget will be saved to the options table and restored if the theme or plugin is reactivated.</p>
+<p>If you include a widget with your theme, it can only be used if that theme is active. If the user decides to change their theme they will lose access to that widget. However, if the widget is included with a plugin, the user can change their theme without losing access to the widget functionality.</p>
+<h2 class="is-toc-heading wp-block-heading" id="anatomy-of-a-widget" tabindex="-1"><a href="#anatomy-of-a-widget">Anatomy of a Widget</a></h2>
+<p>Visually, a widget comprises two areas:</p>
+<ol class="wp-block-list">
+<li>Title Area</li>
+<li>Widget Options</li>
+</ol>
+<p>For example, here is the layout of the built-in text widget in the admin and on the front-end:</p>
+<figure class="wp-block-image aligncenter wp-image-2135"><img alt="Sample Editable Widget" class="wp-image-2135" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/make.wordpress.org/docs/files/2013/06/widget_visual.png?ssl=1"/><figcaption class="wp-element-caption">A widget form in the admin area.</figcaption></figure>
+<figure class="wp-block-image aligncenter size-full wp-image-2139"><img alt="A widget as it appars to a site visitor." class="wp-image-2139" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/make.wordpress.org/docs/files/2013/06/Widget-front-end.png?ssl=1"/><figcaption class="wp-element-caption">A widget as it appears to a site visitor.</figcaption></figure>
+<p>HTML output for this widget looks like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;div id="text-7" class="widget widget_text"&gt;
+
+	&lt;div class="widget-wrap"&gt;
+
+		&lt;h4 class="widgettitle"&gt;
+			This is a text widget
+		&lt;/h4&gt;&lt;!-- .widgettitle --&gt;
+
+		&lt;div class="textwidget"&gt;
+			I can put HTML in here. &lt;a href="http://google.com/"&gt;Search me!&lt;/a&gt;
+		&lt;/div&gt;&lt;!-- .textwidget --&gt;
+
+	&lt;/div&gt;&lt;!-- .widget-wrap --&gt;
+
+&lt;/div&gt;&lt;!-- #text-7 --&gt;</code></pre>
+<p>Each widget has its own way of outputting HTML that is relevant to the data being displayed. The wrapper tags for the widget are defined by the widget area in which it is being displayed.</p>
+<p>The PHP code necessary to create a widget like the built-in text widget looks like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+class My_Widget extends WP_Widget {
+	public function __construct() {
+		parent::__construct(
+			'my-text',  // Base ID
+			'My Text'   // Name
+		);
+		add_action( 'widgets_init', function() {
+			register_widget( 'My_Widget' );
+		});
+	}
+
+	public $args = array(
+		'before_title'  =&gt; '&lt;h4 class="widgettitle"&gt;',
+		'after_title'   =&gt; '&lt;/h4&gt;',
+		'before_widget' =&gt; '&lt;div class="widget-wrap"&gt;',
+		'after_widget'  =&gt; '&lt;/div&gt;&lt;/div&gt;',
+	);
+
+	public function widget( $args, $instance ) {
+		echo $args['before_widget'];
+		if ( ! empty( $instance['title'] ) ) {
+			echo $args['before_title'] . apply_filters( 'widget_title', $instance['title'] ) . $args['after_title'];
+		}
+		echo '&lt;div class="textwidget"&gt;';
+		echo esc_html__( $instance['text'], 'text_domain' );
+		echo '&lt;/div&gt;';
+		echo $args['after_widget'];
+	}
+
+	public function form( $instance ) {
+		$title = ! empty( $instance['title'] ) ? $instance['title'] : esc_html__( '', 'text_domain' );
+		$text  = ! empty( $instance['text'] ) ? $instance['text'] : esc_html__( '', 'text_domain' );
+		?&gt;
+		&lt;p&gt;
+			&lt;label for="&lt;?php echo esc_attr( $this-&gt;get_field_id( 'title' ) ); ?&gt;"&gt;&lt;?php echo esc_html__( 'Title:', 'text_domain' ); ?&gt;&lt;/label&gt;
+			&lt;input class="widefat" id="&lt;?php echo esc_attr( $this-&gt;get_field_id( 'title' ) ); ?&gt;" name="&lt;?php echo esc_attr( $this-&gt;get_field_name( 'title' ) ); ?&gt;" type="text" value="&lt;?php echo esc_attr( $title ); ?&gt;"&gt;
+		&lt;/p&gt;
+		&lt;p&gt;
+			&lt;label for="&lt;?php echo esc_attr( $this-&gt;get_field_id( 'Text' ) ); ?&gt;"&gt;&lt;?php echo esc_html__( 'Text:', 'text_domain' ); ?&gt;&lt;/label&gt;
+			&lt;textarea class="widefat" id="&lt;?php echo esc_attr( $this-&gt;get_field_id( 'text' ) ); ?&gt;" name="&lt;?php echo esc_attr( $this-&gt;get_field_name( 'text' ) ); ?&gt;" type="text" cols="30" rows="10"&gt;&lt;?php echo esc_attr( $text ); ?&gt;&lt;/textarea&gt;
+		&lt;/p&gt;
+		&lt;?php
+	}
+
+	public function update( $new_instance, $old_instance ) {
+		$instance          = array();
+		$instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
+		$instance['text']  = ( ! empty( $new_instance['text'] ) ) ? $new_instance['text'] : '';
+		return $instance;
+	}
+}
+$my_widget = new My_Widget();</code></pre>
+<p>The code above will be explained in detail later in the article.</p>
+<h2 class="is-toc-heading wp-block-heading" id="developing-widgets" tabindex="-1"><a href="#developing-widgets">Developing Widgets</a></h2>
+<p>To create and display a widget, you need to do the following:</p>
+<ol class="wp-block-list">
+<li>Create your widget’s class by extending the standard <a href="https://developer.notmatt.press/reference/classes/wp_widget/" rel="class">WP_Widget</a> class and some of its functions.</li>
+<li>Register your widget so that it’s made available in the <strong>Widgets</strong> screen.</li>
+<li>Make sure that your theme has at least one <a href="https://make.wordpress.org/docs/theme-developer-handbook/theme-functionality/sidebars/" title="Sidebars">widget area</a> in which to add the widgets.</li>
+</ol>
+<h3 class="is-toc-heading wp-block-heading" id="your-widget-class" tabindex="-1"><a href="#your-widget-class">Your Widget Class</a></h3>
+<p>The <a href="https://developer.notmatt.press/reference/classes/wp_widget/" rel="class">WP_Widget</a> class is located in <a href="https://core.trac.wordpress.org/browser/tags/4.8/src/wp-includes/class-wp-widget.php">wp-includes/class-wp-widget.php</a></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+class My_Widget extends WP_Widget {
+	public function __construct() {
+		// actual widget processes
+	}
+
+	public function widget( $args, $instance ) {
+		// outputs the content of the widget
+	}
+
+	public function form( $instance ) {
+		// outputs the options form in the admin
+	}
+
+	public function update( $new_instance, $old_instance ) {
+		// processes widget options to be saved
+	}
+}</code></pre>
+<p>The documentation for each of these functions can be found in the widget class code:</p>
+<ol class="wp-block-list">
+<li><code><a href="https://core.trac.wordpress.org/browser/tags/4.8/src/wp-includes/class-wp-widget.php#L175">construct</a></code>: Set up your widget with a description, name, and display width in your admin.</li>
+<li><code><a href="https://core.trac.wordpress.org/browser/tags/4.8/src/wp-includes/class-wp-widget.php#L122">widget</a></code>: Process the widget options and display the HTML on your page. The <code>$args</code> parameter provides the HTML you can use to display the widget title class and widget content class.</li>
+<li><code><a href="https://core.trac.wordpress.org/browser/tags/4.8/src/wp-includes/class-wp-widget.php#L154">form</a></code>: Display the form that will be used to set the options for your widget. If your widget doesn’t have any options, you can skip this function (although it is still best practice to include it even if it’s empty).</li>
+<li><code><a href="https://core.trac.wordpress.org/browser/tags/4.8/src/wp-includes/class-wp-widget.php#L141">update</a></code>: Save the widget options to the database. If your widget doesn’t have any options, you can skip this function (although it is still best practice to include it even if it’s empty).</li>
+</ol>
+<h3 class="is-toc-heading wp-block-heading" id="registering-a-widget" tabindex="-1"><a href="#registering-a-widget">Registering a Widget</a></h3>
+<p>The <a href="https://developer.notmatt.press/reference/functions/register_widget/">register_widget()</a> function is used to register a widget.</p>
+<p>Call this function using the widgets_init hook:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_action( 'widgets_init', 'wpdocs_register_widgets' );
+function wpdocs_register_widgets() {
+	register_widget( 'My_Widget' );
+}</code></pre>
+<p>The HTML that wraps the widget, as well as the class for the title and widget content, is specified at the time you register the widget area using <a href="https://developer.notmatt.press/reference/functions/register_sidebar/">register_sidebar()</a>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="examples" tabindex="-1"><a href="#examples">Examples</a></h2>
+<h3 class="is-toc-heading wp-block-heading" id="example-text-widget" tabindex="-1"><a href="#example-text-widget">Example Text Widget</a></h3>
+<p>To build the text widget from the example at the beginning of this article. You will start by setting up a widget class that extends the <a href="https://developer.notmatt.press/reference/classes/wp_widget/" rel="class">WP_Widget</a> class.</p>
+<p>In the class constructor you will call the parent constructor and pass it your widget’s base ID and name. Also in the class constructor you will hook into the <code><a href="https://developer.notmatt.press/reference/hooks/widgets_init/">widgets_init</a></code> action to register your widget.</p>
+<p>Next you will declare the arguments you will use when creating your widget. There are four arguments you must define, <code>before_title</code>, <code>after_title</code>, <code>before_widget</code>, and <code>after_widget</code>. These arguments will define the code that wraps your widgets title and the widget itself.</p>
+<p>After defining your arguments, you will define the widgets function. This function takes two parameters, the <code>$args</code> array from before, and the <code>$instance</code> of the widget, and is the function that will process options from the form and display the HTML for the widget on the front-end of your site. In the example above the widget function simply outputs the widget title, while passing it through the <code><a href="https://developer.notmatt.press/reference/hooks/widget_title/">widget_title</a></code> filter. It then out puts a simple widget wrapper and the content of the widget’s text field. As outlined in the example, you can access the options from the widget that are stored in the <code>$instance</code>.</p>
+<p>Next you will define the form function. This function takes one parameter, <code>$instance</code>, and outputs the form that the user uses to create the widget in the Widgets admin screen. In the example above, the function starts by defining the <code>$title</code> and <code>$text</code> variables and setting them to the previously entered values, if those values exist. Then it outputs a simple form with a text field for the title and a textarea for the text content.</p>
+<p>Lastly you will define the update function. This function takes two parameters, <code>$new_instance</code> and <code>$old_instance</code>, and is responsible for updating your widgets with new options when they are submitted. Here you simply define <code>$instance</code> as an empty array. You then set the title and text keys to the <code>$new_instance</code> values if they exist. You then return <code>$instance</code>.</p>
+<p>Finally, when all of the above is defined, you instantiate your new widget class and test your work.</p>
+<h3 class="is-toc-heading wp-block-heading" id="sample-widget" tabindex="-1"><a href="#sample-widget">Sample Widget</a></h3>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Adds Foo_Widget widget.
+ */
+class Foo_Widget extends WP_Widget {
+	/**
+	 * Register widget with WordPress.
+	 */
+	public function __construct() {
+		parent::__construct(
+			'foo_widget', // Base ID
+			'Foo_Widget', // Name
+			array( 'description' =&gt; __( 'A Foo Widget', 'text_domain' ) ) // Args
+		);
+	}
+	/**
+	 * Front-end display of widget.
+	 *
+	 * @see WP_Widget::widget()
+	 *
+	 * @param array $args     Widget arguments.
+	 * @param array $instance Saved values from database.
+	 */
+	public function widget( $args, $instance ) {
+		extract( $args );
+		$title = apply_filters( 'widget_title', $instance['title'] );
+		echo $before_widget;
+		if ( ! empty( $title ) ) {
+			echo $before_title . $title . $after_title;
+		}
+		echo __( 'Hello, World!', 'text_domain' );
+		echo $after_widget;
+	}
+	/**
+	 * Back-end widget form.
+	 *
+	 * @see WP_Widget::form()
+	 *
+	 * @param array $instance Previously saved values from database.
+	 */
+	public function form( $instance ) {
+		if ( isset( $instance['title'] ) ) {
+			$title = $instance['title'];
+		} else {
+			$title = __( 'New title', 'text_domain' );
+		}
+		?&gt;
+		&lt;p&gt;
+			&lt;label for="&lt;?php echo $this-&gt;get_field_name( 'title' ); ?&gt;"&gt;&lt;?php _e( 'Title:' ); ?&gt;&lt;/label&gt;
+			&lt;input class="widefat" id="&lt;?php echo $this-&gt;get_field_id( 'title' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'title' ); ?&gt;" type="text" value="&lt;?php echo esc_attr( $title ); ?&gt;" /&gt;
+		 &lt;/p&gt;
+		&lt;?php
+	}
+	/**
+	 * Sanitize widget form values as they are saved.
+	 *
+	 * @see WP_Widget::update()
+	 *
+	 * @param array $new_instance Values just sent to be saved.
+	 * @param array $old_instance Previously saved values from database.
+	 *
+	 * @return array Updated safe values to be saved.
+	 */
+	public function update( $new_instance, $old_instance ) {
+		$instance          = array();
+		$instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
+		return $instance;
+	}
+} // class Foo_Widget</code></pre>
+<p>This sample widget can then be registered in the widgets_init hook:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+// Register Foo_Widget widget
+add_action( 'widgets_init', 'register_foo' );
+function register_foo() {
+	register_widget( 'Foo_Widget' );
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="example-with-a-namespace" tabindex="-1"><a href="#example-with-a-namespace">Example with a Namespace</a></h3>
+<p>If you use PHP 5.3 with namespaces you should call the constructor directly as in the following example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+namespace a\b\c;
+
+class My_Widget_Class extends \WP_Widget {
+	public function __construct() {
+		parent::__construct( 'baseID', 'name' );
+	}
+	// ... rest of the functions
+}</code></pre>
+<p>and call the register widget with:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+// Register Foo_Widget widget
+add_action( 'widgets_init', 'register_my_widget' );
+function register_my_widget() {
+	register_widget( 'a\b\c\My_Widget_Class' );
+}</code></pre>
+<p>See <a href="http://stackoverflow.com/questions/5247302/php-namespace-5-3-and-wordpress-widget/5247436#5247436">this answer at stack exchange</a> for more detail.</p>
+<h2 class="is-toc-heading wp-block-heading" id="special-considerations" tabindex="-1"><a href="#special-considerations">Special considerations</a></h2>
+<p>If you want to use a widget inside another template file, rather than in a sidebar, you can use <code><a href="https://developer.notmatt.press/reference/functions/the_widget/">the_widget()</a></code> to display it programmatically. The function accepts widget class names. You pass the widget class name to the function like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php the_title(); ?&gt;
+
+&lt;div class="content"&gt;
+	&lt;?php the_content(); ?&gt;
+&lt;/div&gt;&lt;!-- .content --&gt;
+
+&lt;div class="widget-section"&gt;
+	&lt;?php the_widget( 'My_Widget_Class' ); ?&gt;
+&lt;/div&gt;&lt;!-- .widget-section --&gt;</code></pre>
+<p>You may want to use this approach if you need to use a widget in a specific area on a page, such as displaying a list of events next to a form in a section on the front page of your site or displaying an email capture form on a mega-menu alongside your navigation.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

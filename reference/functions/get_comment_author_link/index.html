@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_comment_author_link()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_comment_author_link()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_comment_author_link( <span class="arg-type">int|WP_Comment</span> <span class="arg-name">$comment_id</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the HTML link to the URL of the author of the current comment.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Both <a href="https://developer.notmatt.press/reference/functions/get_comment_author_url/" rel="function">get_comment_author_url()</a>  and <a href="https://developer.notmatt.press/reference/functions/get_comment_author/" rel="function">get_comment_author()</a>  rely on <a href="https://developer.notmatt.press/reference/functions/get_comment/" rel="function">get_comment()</a> , which falls back to the global comment variable if the $comment_id argument is empty.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$comment_id</code><span class="type"><span class="int">int</span>|<span class="WP_Comment"><a href="https://developer.notmatt.press/reference/classes/wp_comment/" rel="class">WP_Comment</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description"><a href="https://developer.notmatt.press/reference/classes/wp_comment/" rel="class">WP_Comment</a> or the ID of the comment for which to get the author’s link.<br/>
+Default current comment.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The comment author name or HTML link for author’s URL.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>Displays the comment author name or HTML link of the comment author’s URL, given a comment ID.</p>
+<p><code>echo get_comment_author_link( $comment_ID );</code></p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="233"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_comment_author_link( $comment_id = 0 ) {
+	$comment = get_comment( $comment_id );
+
+	if ( ! empty( $comment-&gt;comment_ID ) ) {
+		$comment_id = $comment-&gt;comment_ID;
+	} elseif ( is_scalar( $comment_id ) ) {
+		$comment_id = (string) $comment_id;
+	} else {
+		$comment_id = '0';
+	}
+
+	$comment_author_url = get_comment_author_url( $comment );
+	$comment_author     = get_comment_author( $comment );
+
+	if ( empty( $comment_author_url ) || 'http://' === $comment_author_url ) {
+		$comment_author_link = $comment_author;
+	} else {
+		$rel_parts = array( 'ugc' );
+		if ( ! wp_is_internal_link( $comment_author_url ) ) {
+			$rel_parts = array_merge(
+				$rel_parts,
+				array( 'external', 'nofollow' )
+			);
+		}
+
+		/**
+		 * Filters the rel attributes of the comment author's link.
+		 *
+		 * @since 6.2.0
+		 *
+		 * @param string[]   $rel_parts An array of strings representing the rel tags
+		 *                              which will be joined into the anchor's rel attribute.
+		 * @param WP_Comment $comment   The comment object.
+		 */
+		$rel_parts = apply_filters( 'comment_author_link_rel', $rel_parts, $comment );
+
+		$rel = implode( ' ', $rel_parts );
+		$rel = esc_attr( $rel );
+		// Empty space before 'rel' is necessary for later sprintf().
+		$rel = ! empty( $rel ) ? sprintf( ' rel="%s"', $rel ) : '';
+
+		$comment_author_link = sprintf(
+			'&lt;a href="%1$s" class="url"%2$s&gt;%3$s&lt;/a&gt;',
+			$comment_author_url,
+			$rel,
+			$comment_author
+		);
+	}
+
+	/**
+	 * Filters the comment author's link for display.
+	 *
+	 * @since 1.5.0
+	 * @since 4.1.0 The `$comment_author` and `$comment_id` parameters were added.
+	 *
+	 * @param string $comment_author_link The HTML-formatted comment author link.
+	 *                                    Empty for an invalid URL.
+	 * @param string $comment_author      The comment author's username.
+	 * @param string $comment_id          The comment ID as a numeric string.
+	 */
+	return apply_filters( 'get_comment_author_link', $comment_author_link, $comment_author, $comment_id );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/comment-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/comment-template.php#L233">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/comment-template.php#L233-L294">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comment_author_link_rel/"><span class="hook-func">apply_filters</span>( ‘comment_author_link_rel’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$rel_parts</span></nobr>,  <nobr><span class="arg-type">WP_Comment</span> <span class="arg-name">$comment</span></nobr> )</a></dt><dd><p>Filters the rel attributes of the comment author’s link.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_comment_author_link/"><span class="hook-func">apply_filters</span>( ‘get_comment_author_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$comment_author_link</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$comment_author</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$comment_id</span></nobr> )</a></dt><dd><p>Filters the comment author’s link for display.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_internal_link/">wp_is_internal_link()</a><code>wp-includes/link-template.php</code></td><td><p>Determines whether or not the specified URL is of a host included in the internal hosts list.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_comment_author_url/">get_comment_author_url()</a><code>wp-includes/comment-template.php</code></td><td><p>Retrieves the URL of the author of the current comment, not linked.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_comment_author/">get_comment_author()</a><code>wp-includes/comment-template.php</code></td><td><p>Retrieves the author of the current comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comment/">get_comment()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves comment data given a comment ID or comment object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_dashboard_recent_comments_row/">_wp_dashboard_recent_comments_row()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Outputs a row for the Recent Comments widget.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_recent_comments/widget/">WP_Widget_Recent_Comments::widget()</a><code>wp-includes/widgets/class-wp-widget-recent-comments.php</code></td><td><p>Outputs the content for the current Recent Comments widget instance.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/walker_comment/comment/">Walker_Comment::comment()</a><code>wp-includes/class-walker-comment.php</code></td><td><p>Outputs a single comment.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/walker_comment/html5_comment/">Walker_Comment::html5_comment()</a><code>wp-includes/class-walker-comment.php</code></td><td><p>Outputs a comment in the HTML5 format.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/comment_author_link/">comment_author_link()</a><code>wp-includes/comment-template.php</code></td><td><p>Displays the HTML link to the URL of the author of the current comment.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.4.0/">4.4.0</a></td><td><span class="since-description">Added the ability for <code>$comment_id</code> to also accept a <a href="https://developer.notmatt.press/reference/classes/wp_comment/" rel="class">WP_Comment</a> object.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-mohammadayoub96 odd alt thread-odd thread-alt depth-1" data-comment-id="5130" id="comment-5130">
+<article class="comment-body" id="div-comment-5130">
+<a class="screen-reader-text" href="#comment-content-5130">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5130">
+<p><strong>Add an custom class</strong> to comment_author_link using <code>filters</code>. When using <code>get_comment_author_link</code> this function to fetch comment author link.</p>
+<p>Just add this code into functions.php</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// filter for get_comment_author_link
+function wpdocs_custom_get_comment_author_link( $content ) {
+	$extra_classes = 'text-decoration-none text-primary fw-bold mb-0';
+	return preg_replace( '/url/', 'url ' . $extra_classes, $content );
+}
+
+add_filter( 'get_comment_author_link', 'wpdocs_custom_get_comment_author_link', 99 );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5130">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

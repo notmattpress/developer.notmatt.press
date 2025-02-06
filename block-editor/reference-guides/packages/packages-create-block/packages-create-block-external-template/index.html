@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/packages-create-block/">@wordpress/create-block</a></span><span class="is-current-page">External Project Templates</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>External Project Templates</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Are you looking for a way to share your project configuration? Creating an external project template hosted on npm or located in a local directory is possible. These npm packages can provide custom <code>.mustache</code> files that replace default files included in the tool for the WordPress plugin or/and the block. It’s also possible to override default configuration values used during the scaffolding process.</p>
+<h2 class="is-toc-heading" id="project-template-configuration" tabindex="-1"><a href="#project-template-configuration">Project Template Configuration</a></h2>
+<p>Providing the main file (<code>index.js</code> by default) for the package that returns a configuration object is mandatory. Several options allow customizing the scaffolding process.</p>
+<h3 class="is-toc-heading" id="plugintemplatespath" tabindex="-1"><a href="#plugintemplatespath">pluginTemplatesPath</a></h3>
+<p>This optional field allows overriding file templates related to <strong>the WordPress plugin shell</strong>. The path points to a location with template files ending with the <code>.mustache</code> extension (nested folders are also supported). When not set, the tool uses its own set of templates.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-js">const { join } = require( 'path' );
+
+module.exports = {
+    pluginTemplatesPath: join( __dirname, 'plugin-templates' ),
+};
+</code></pre>
+<h3 class="is-toc-heading" id="blocktemplatespath" tabindex="-1"><a href="#blocktemplatespath">blockTemplatesPath</a></h3>
+<p>This optional field allows overriding file templates related to <strong>the individual block</strong>. The path points to a location with template files ending with the <code>.mustache</code> extension (nested folders are also supported). When not set, the tool uses its own set of templates.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-js">const { join } = require( 'path' );
+
+module.exports = {
+    blockTemplatesPath: join( __dirname, 'block-templates' ),
+};
+</code></pre>
+<h3 class="is-toc-heading" id="assetspath" tabindex="-1"><a href="#assetspath">assetsPath</a></h3>
+<p>This setting is useful when your template scaffolds a WordPress plugin that uses static assets like images or fonts, which should not be processed. It provides the path pointing to the location where assets are located. They will be copied to the <code>assets</code> subfolder in the generated plugin.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-js">const { join } = require( 'path' );
+
+module.exports = {
+    assetsPath: join( __dirname, 'plugin-assets' ),
+};
+</code></pre>
+<h3 class="is-toc-heading" id="defaultvalues" tabindex="-1"><a href="#defaultvalues">defaultValues</a></h3>
+<p>It is possible to override the default template configuration using the <code>defaultValues</code> field.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-js">module.exports = {
+    defaultValues: {
+        slug: 'my-fantastic-block',
+        title: 'My fantastic block',
+        dashicon: 'palmtree',
+        version: '1.2.3',
+    },
+};
+</code></pre>
+<p>The following configurable variables are used with the template files. Template authors can change default values to use when users don’t provide their data.</p>
+<p><strong>Project</strong>:</p>
+<ul>
+<li><code>wpScripts</code> (default: <code>true</code>) – enables integration with the <code>@wordpress/scripts</code> package and adds common scripts to the <code>package.json</code>.</li>
+<li><code>wpEnv</code> (default: <code>false</code>) – enables integration with the <code>@wordpress/env</code> package and adds the <code>env</code> script to the <code>package.json</code>.</li>
+<li><code>customScripts</code> (default: {}) – the list of custom scripts to add to <code>package.json</code> . It also allows overriding default scripts.</li>
+<li><code>npmDependencies</code> (default: <code>[]</code>) – the list of remote npm packages to be installed in the project with <a href="https://docs.npmjs.com/cli/v8/commands/npm-install"><code>npm install</code></a> when <code>wpScripts</code> is enabled.</li>
+<li><code>npmDevDependencies</code> (default: <code>[]</code>) – the list of remote npm packages to be installed in the project with <a href="https://docs.npmjs.com/cli/v8/commands/npm-install"><code>npm install --save-dev</code></a> when <code>wpScripts</code> is enabled.</li>
+<li><code>customPackageJSON</code> (no default) – allows definition of additional properties for the generated package.json file.</li>
+</ul>
+<p><strong>Plugin header and readme fields</strong> (learn more about <a href="https://developer.notmatt.press/plugins/plugin-basics/header-requirements/">header requirements</a> and <a href="https://developer.notmatt.press/plugins/wordpress-org/how-your-readme-txt-works/">readmes</a>):</p>
+<ul>
+<li><code>pluginURI</code> (no default) – the home page of the plugin.</li>
+<li><code>version</code> (default: <code>'0.1.0'</code>) – the current version number of the plugin.</li>
+<li><code>requiresAtLeast</code> (default: <code>'6.7'</code>) – the lowest WordPress version that the plugin will work on.</li>
+<li><code>requiresPHP</code> (default: <code>'7.4'</code>) – the minimum required PHP version for use with this plugin.</li>
+<li><code>testedUpTo</code> (default: <code>'6.7'</code>) – the highest WordPress version that the plugin has been tested against.</li>
+<li><code>author</code> (default: <code>'The WordPress Contributors'</code>) – the name of the plugin author(s).</li>
+<li><code>license</code> (default: <code>'GPL-2.0-or-later'</code>) – the short name of the plugin’s license.</li>
+<li><code>licenseURI</code> (default: <code>'https://www.gnu.org/licenses/gpl-2.0.html'</code>) – a link to the full text of the license.</li>
+<li><code>domainPath</code> (no default) – a custom domain path for the translations (<a href="https://developer.notmatt.press/plugins/internationalization/how-to-internationalize-your-plugin/#domain-path">more info</a>).</li>
+<li><code>updateURI:</code> (no default) – a custom update URI for the plugin (<a href="https://make.wordpress.org/core/2021/06/29/introducing-update-uri-plugin-header-in-wordpress-5-8/">related dev note</a>).</li>
+</ul>
+<p><strong>Block metadata</strong> (<a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-metadata/">learn more</a>):</p>
+<ul>
+<li><code>folderName</code> (default: <code>src</code>) – the location for the <code>block.json</code> file and other optional block files generated from block templates included in the folder set with the <code>blockTemplatesPath</code> setting.</li>
+<li><code>$schema</code> (default: `https://schemas.wp.org/trunk/block.json`) – the schema URL used for block validation.</li>
+<li><code>apiVersion</code> (default: <code>2</code>) – the block API version (<a href="https://make.wordpress.org/core/2020/11/18/block-api-version-2/">related dev note</a>).</li>
+<li><code>slug</code> (no default) – the block slug used for identification in the block name.</li>
+<li><code>namespace</code> (default: <code>'create-block'</code>) – the internal namespace for the block name.</li>
+<li><code>title</code> (no default) – a display title for your block.</li>
+<li><code>description</code> (no default) – a short description for your block.</li>
+<li><code>dashicon</code> (no default) – an icon property thats makes it easier to identify a block (<a href="https://developer.notmatt.press/resource/dashicons/">available values</a>).</li>
+<li><code>category</code> (default: <code>'widgets'</code>) – blocks are grouped into categories to help users browse and discover them. The categories provided by core are <code>text</code>, <code>media</code>, <code>design</code>, <code>widgets</code>, <code>theme</code>, and <code>embed</code>.</li>
+<li><code>textdomain</code> (defaults to the <code>slug</code> value) – the text domain used to make strings translatable (<a href="https://developer.notmatt.press/plugins/internationalization/how-to-internationalize-your-plugin/#text-domains">more info</a>).</li>
+<li><code>attributes</code> (no default) – block attributes (<a href="https://developer.notmatt.press/block-editor/developers/block-api/block-attributes/">more details</a>).</li>
+<li><code>supports</code> (no default) – optional block extended support features (<a href="https://developer.notmatt.press/block-editor/developers/block-api/block-supports/">more details</a>.</li>
+<li><code>editorScript</code> (default: <code>'file:./index.js'</code>) – an editor script definition.</li>
+<li><code>editorStyle</code> (default: <code>'file:./index.css'</code>) – an editor style definition.</li>
+<li><code>style</code> (default: <code>'file:./style-index.css'</code>) – a frontend and editor style definition.</li>
+<li><code>render</code> (no default) – a path to the PHP file used when rendering the block type on the server before presenting on the front end.</li>
+<li><code>customBlockJSON</code> (no default) – allows definition of additional properties for the generated block.json file.</li>
+<li><code>transformer</code> (default: <code>( view ) =&gt; view</code> ) – a function that receives all variables generated by the create-block tool and returns an object of values. This function provides the ability to modify existing values and add new variables.</li>
+</ul>
+<h4><code>transformer</code> examples</h4>
+<p>This examples adds a generated value to the slug variable.</p>
+<pre><code class="language-js">transformer: ( view ) =&gt; {
+    const hex = getRandomHexCode();
+      return {
+         ...view,
+         slug: `${ view.slug }-${ hex }`,
+      };
+},
+</code></pre>
+<p>This example creates a new custom variable that can be used in the associated mustache templates as <code></code></p>
+<pre><code class="language-js">transformer: ( view ) =&gt; {
+      return {
+         ...view,
+         customVariable: `Custom Value`,
+      };
+},
+</code></pre>
+<h3 class="is-toc-heading" id="variants" tabindex="-1"><a href="#variants">variants</a></h3>
+<p>Variants are used to create variations for a template. Variants can override any <code>defaultValues</code> by providing their own.</p>
+<pre><code class="language-js">module.exports = {
+    defaultValues: {
+        slug: 'my-fantastic-block',
+        title: 'My fantastic block',
+        dashicon: 'palmtree',
+        version: '1.2.3',
+    },
+    variants: {
+        primary: {},
+        secondary: {
+            title: 'My fantastic block - secondary variant',
+        },
+    },
+};
+</code></pre>
+<p>Variants are accessed using the <code>--variant</code> flag, i.e<code>--variant secondary</code>.</p>
+<p>If no variant is provided, the first variant is used if any are defined.</p>
+<p>Mustache variables are created for variants that can be used to conditionally output content in files. The format is <code></code>.</p>
+<pre><code class="language-mustache">
+This content is only rendered if `--variant primary` is passed.
+
+
+
+This content is only rendered if `--variant secondary` is passed.
+
+
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

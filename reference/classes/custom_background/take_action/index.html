@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/custom_background/">Custom_Background</a></span><span class="is-current-page">Custom_Background::take_action()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Custom_Background::take_action()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">Custom_Background::take_action()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Executes custom background modification.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="124"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function take_action() {
+	if ( empty( $_POST ) ) {
+		return;
+	}
+
+	if ( isset( $_POST['reset-background'] ) ) {
+		check_admin_referer( 'custom-background-reset', '_wpnonce-custom-background-reset' );
+
+		remove_theme_mod( 'background_image' );
+		remove_theme_mod( 'background_image_thumb' );
+
+		$this-&gt;updated = true;
+		return;
+	}
+
+	if ( isset( $_POST['remove-background'] ) ) {
+		// @todo Uploaded files are not removed here.
+		check_admin_referer( 'custom-background-remove', '_wpnonce-custom-background-remove' );
+
+		set_theme_mod( 'background_image', '' );
+		set_theme_mod( 'background_image_thumb', '' );
+
+		$this-&gt;updated = true;
+		wp_safe_redirect( $_POST['_wp_http_referer'] );
+		return;
+	}
+
+	if ( isset( $_POST['background-preset'] ) ) {
+		check_admin_referer( 'custom-background' );
+
+		if ( in_array( $_POST['background-preset'], array( 'default', 'fill', 'fit', 'repeat', 'custom' ), true ) ) {
+			$preset = $_POST['background-preset'];
+		} else {
+			$preset = 'default';
+		}
+
+		set_theme_mod( 'background_preset', $preset );
+	}
+
+	if ( isset( $_POST['background-position'] ) ) {
+		check_admin_referer( 'custom-background' );
+
+		$position = explode( ' ', $_POST['background-position'] );
+
+		if ( in_array( $position[0], array( 'left', 'center', 'right' ), true ) ) {
+			$position_x = $position[0];
+		} else {
+			$position_x = 'left';
+		}
+
+		if ( in_array( $position[1], array( 'top', 'center', 'bottom' ), true ) ) {
+			$position_y = $position[1];
+		} else {
+			$position_y = 'top';
+		}
+
+		set_theme_mod( 'background_position_x', $position_x );
+		set_theme_mod( 'background_position_y', $position_y );
+	}
+
+	if ( isset( $_POST['background-size'] ) ) {
+		check_admin_referer( 'custom-background' );
+
+		if ( in_array( $_POST['background-size'], array( 'auto', 'contain', 'cover' ), true ) ) {
+			$size = $_POST['background-size'];
+		} else {
+			$size = 'auto';
+		}
+
+		set_theme_mod( 'background_size', $size );
+	}
+
+	if ( isset( $_POST['background-repeat'] ) ) {
+		check_admin_referer( 'custom-background' );
+
+		$repeat = $_POST['background-repeat'];
+
+		if ( 'no-repeat' !== $repeat ) {
+			$repeat = 'repeat';
+		}
+
+		set_theme_mod( 'background_repeat', $repeat );
+	}
+
+	if ( isset( $_POST['background-attachment'] ) ) {
+		check_admin_referer( 'custom-background' );
+
+		$attachment = $_POST['background-attachment'];
+
+		if ( 'fixed' !== $attachment ) {
+			$attachment = 'scroll';
+		}
+
+		set_theme_mod( 'background_attachment', $attachment );
+	}
+
+	if ( isset( $_POST['background-color'] ) ) {
+		check_admin_referer( 'custom-background' );
+
+		$color = preg_replace( '/[^0-9a-fA-F]/', '', $_POST['background-color'] );
+
+		if ( strlen( $color ) === 6 || strlen( $color ) === 3 ) {
+			set_theme_mod( 'background_color', $color );
+		} else {
+			set_theme_mod( 'background_color', '' );
+		}
+	}
+
+	$this-&gt;updated = true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-custom-background.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-custom-background.php#L124">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-custom-background.php#L124-L233">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/remove_theme_mod/">remove_theme_mod()</a><code>wp-includes/theme.php</code></td><td><p>Removes theme modification name from active theme list.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_theme_mod/">set_theme_mod()</a><code>wp-includes/theme.php</code></td><td><p>Updates theme modification value for the active theme.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_safe_redirect/">wp_safe_redirect()</a><code>wp-includes/pluggable.php</code></td><td><p>Performs a safe (local) redirect, using <a href="https://developer.notmatt.press/reference/functions/wp_redirect/" rel="function">wp_redirect()</a> .</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/check_admin_referer/">check_admin_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Ensures intent by verifying that a user was referred from another admin page with the correct security nonce.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

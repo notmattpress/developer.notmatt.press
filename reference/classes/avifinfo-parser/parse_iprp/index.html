@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/avifinfo-parser/">Parser</a></span><span class="is-current-page">Parser::parse_iprp()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Parser::parse_iprp()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">Parser::parse_iprp( <span class="arg-type">int</span> <span class="arg-name">$num_remaining_bytes</span> ): <span class="return-type">AvifinfoStatus</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Parses an “iprp” box.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The "ipco" box contain the properties which are linked to items by the "ipma" box.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$handle</code><span class="type"><span class="Avifinfostream">Avifinfostream</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The resource the box will be parsed from.</span></div></dd><dt><code>$num_remaining_bytes</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The number of bytes that should be available from the resource.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">AvifinfoStatus</span> FOUND on success or an error on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="492"><code class="language-php line-numbers" id="wporg-source-code" lang="php">private function parse_iprp( $num_remaining_bytes ) {
+  do {
+    $box    = new Box();
+    $status = $box-&gt;parse( $this-&gt;handle, $this-&gt;num_parsed_boxes, $num_remaining_bytes );
+    if ( $status != FOUND ) {
+      return $status;
+    }
+
+    if ( $box-&gt;type == 'ipco' ) {
+      $status = $this-&gt;parse_ipco( $box-&gt;content_size );
+      if ( $status != NOT_FOUND ) {
+        return $status;
+      }
+    } else if ( $box-&gt;type == 'ipma' ) {
+      // See ISO/IEC 23008-12:2017(E) 9.3.2
+      $num_read_bytes = 4;
+      if ( $box-&gt;content_size &lt; $num_read_bytes ) {
+        return INVALID;
+      }
+      if ( !( $data = read( $this-&gt;handle, $num_read_bytes ) ) ) {
+        return TRUNCATED;
+      }
+      $entry_count        = read_big_endian( $data, 4 );
+      $id_num_bytes       = ( $box-&gt;version &lt; 1 ) ? 2 : 4;
+      $index_num_bytes    = ( $box-&gt;flags &amp; 1 ) ? 2 : 1;
+      $essential_bit_mask = ( $box-&gt;flags &amp; 1 ) ? 0x8000 : 0x80;
+
+      for ( $entry = 0; $entry &lt; $entry_count; ++$entry ) {
+        if ( $entry &gt;= MAX_PROPS ||
+             count( $this-&gt;features-&gt;props ) &gt;= MAX_PROPS ) {
+          $this-&gt;data_was_skipped = true;
+          break;
+        }
+        $num_read_bytes += $id_num_bytes + 1;
+        if ( $box-&gt;content_size &lt; $num_read_bytes ) {
+          return INVALID;
+        }
+        if ( !( $data = read( $this-&gt;handle, $id_num_bytes + 1 ) ) ) {
+          return TRUNCATED;
+        }
+        $item_id           = read_big_endian(
+            substr( $data, 0, $id_num_bytes ), $id_num_bytes );
+        $association_count = read_big_endian(
+            substr( $data, $id_num_bytes, 1 ), 1 );
+
+        for ( $property = 0; $property &lt; $association_count; ++$property ) {
+          if ( $property &gt;= MAX_PROPS ||
+               count( $this-&gt;features-&gt;props ) &gt;= MAX_PROPS ) {
+            $this-&gt;data_was_skipped = true;
+            break;
+          }
+          $num_read_bytes += $index_num_bytes;
+          if ( $box-&gt;content_size &lt; $num_read_bytes ) {
+            return INVALID;
+          }
+          if ( !( $data = read( $this-&gt;handle, $index_num_bytes ) ) ) {
+            return TRUNCATED;
+          }
+          $value          = read_big_endian( $data, $index_num_bytes );
+          // $essential = ($value &amp; $essential_bit_mask);  // Unused.
+          $property_index = ( $value &amp; ~$essential_bit_mask );
+          if ( $property_index &lt;= MAX_VALUE &amp;&amp; $item_id &lt;= MAX_VALUE ) {
+            $prop_count = count( $this-&gt;features-&gt;props );
+            $this-&gt;features-&gt;props[$prop_count]                 = new Prop();
+            $this-&gt;features-&gt;props[$prop_count]-&gt;property_index = $property_index;
+            $this-&gt;features-&gt;props[$prop_count]-&gt;item_id        = $item_id;
+          } else {
+            $this-&gt;data_was_skipped = true;
+          }
+        }
+        if ( $property &lt; $association_count ) {
+          break; // Do not read garbage.
+        }
+      }
+
+      // If all features are available now, do not look further.
+      $status = $this-&gt;features-&gt;get_primary_item_features();
+      if ( $status != NOT_FOUND ) {
+        return $status;
+      }
+
+      // Mostly if 'data_was_skipped'.
+      if ( !skip( $this-&gt;handle, $box-&gt;content_size - $num_read_bytes ) ) {
+        return TRUNCATED;
+      }
+    } else {
+      if ( !skip( $this-&gt;handle, $box-&gt;content_size ) ) {
+        return TRUNCATED;
+      }
+    }
+    $num_remaining_bytes -= $box-&gt;size;
+  } while ( $num_remaining_bytes &gt; 0 );
+  return NOT_FOUND;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-avif-info.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-avif-info.php#L492">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-avif-info.php#L492-L585">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/parse_ipco/">Parser::parse_ipco()</a><code>wp-includes/class-avif-info.php</code></td><td><p>Parses an “ipco” box.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-box/parse/">Box::parse()</a><code>wp-includes/class-avif-info.php</code></td><td><p>Reads the box header.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/avifinfo-read/">read()</a><code>wp-includes/class-avif-info.php</code></td><td><p>Reads bytes and advances the stream position by the same count.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/avifinfo-read_big_endian/">read_big_endian()</a><code>wp-includes/class-avif-info.php</code></td><td><p>Reads an unsigned integer with most significant bits first.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/avifinfo-skip/">skip()</a><code>wp-includes/class-avif-info.php</code></td><td></td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/parse_meta/">Parser::parse_meta()</a><code>wp-includes/class-avif-info.php</code></td><td><p>Parses a “meta” box.</p>
+</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

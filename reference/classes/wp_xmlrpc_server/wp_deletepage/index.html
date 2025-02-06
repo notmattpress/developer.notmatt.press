@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_xmlrpc_server/">wp_xmlrpc_server</a></span><span class="is-current-page">wp_xmlrpc_server::wp_deletePage()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_xmlrpc_server::wp_deletePage()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_xmlrpc_server::wp_deletePage( <span class="arg-type">array</span> <span class="arg-name">$args</span> ): <span class="return-type">true|<a href="https://developer.wordpress.org/reference/classes/ixr_error/" rel="class">IXR_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Deletes a page.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Method arguments. Note: arguments must be ordered as documented.<br/>
+<ul class="param-hash"><li><code>0</code> <span class="type">int</span><div class="desc">Blog ID (unused).</div></li>
+<li><code>1</code> <span class="type">string</span><div class="desc">Username.</div></li>
+<li><code>2</code> <span class="type">string</span><div class="desc">Password.</div></li>
+<li><code>3</code> <span class="type">int</span><div class="desc">Page ID.</div></li>
+</ul>
+</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">true|<a href="https://developer.notmatt.press/reference/classes/ixr_error/" rel="class">IXR_Error</a></span> True, if success.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3112"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function wp_deletePage( $args ) {
+	$this-&gt;escape( $args );
+
+	$username = $args[1];
+	$password = $args[2];
+	$page_id  = (int) $args[3];
+
+	$user = $this-&gt;login( $username, $password );
+	if ( ! $user ) {
+		return $this-&gt;error;
+	}
+
+	/** This action is documented in wp-includes/class-wp-xmlrpc-server.php */
+	do_action( 'xmlrpc_call', 'wp.deletePage', $args, $this );
+
+	/*
+	 * Get the current page based on the 'page_id' and
+	 * make sure it is a page and not a post.
+	 */
+	$actual_page = get_post( $page_id, ARRAY_A );
+	if ( ! $actual_page || ( 'page' !== $actual_page['post_type'] ) ) {
+		return new IXR_Error( 404, __( 'Sorry, no such page.' ) );
+	}
+
+	// Make sure the user can delete pages.
+	if ( ! current_user_can( 'delete_page', $page_id ) ) {
+		return new IXR_Error( 401, __( 'Sorry, you are not allowed to delete this page.' ) );
+	}
+
+	// Attempt to delete the page.
+	$result = wp_delete_post( $page_id );
+	if ( ! $result ) {
+		return new IXR_Error( 500, __( 'Failed to delete the page.' ) );
+	}
+
+	/**
+	 * Fires after a page has been successfully deleted via XML-RPC.
+	 *
+	 * @since 3.4.0
+	 *
+	 * @param int   $page_id ID of the deleted page.
+	 * @param array $args    An array of arguments to delete the page.
+	 */
+	do_action( 'xmlrpc_call_success_wp_deletePage', $page_id, $args ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.NotLowercase
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-xmlrpc-server.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-xmlrpc-server.php#L3112">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-xmlrpc-server.php#L3112-L3158">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/xmlrpc_call/"><span class="hook-func">do_action</span>( ‘xmlrpc_call’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$name</span></nobr>,  <nobr><span class="arg-type">array|string</span> <span class="arg-name">$args</span></nobr>,  <nobr><span class="arg-type">wp_xmlrpc_server</span> <span class="arg-name">$server</span></nobr> )</a></dt><dd><p>Fires after the XML-RPC user has been authenticated but before the rest of the method logic begins.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/xmlrpc_call_success_wp_deletepage/"><span class="hook-func">do_action</span>( ‘xmlrpc_call_success_wp_deletePage’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$page_id</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Fires after a page has been successfully deleted via XML-RPC.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post/">wp_delete_post()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes a post or page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/ixr_error/__construct/">IXR_Error::__construct()</a><code>wp-includes/IXR/class-IXR-error.php</code></td><td><p>PHP5 constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/escape/">wp_xmlrpc_server::escape()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Escapes string or array of strings for database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/login/">wp_xmlrpc_server::login()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Logs user in.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.2.0/">2.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

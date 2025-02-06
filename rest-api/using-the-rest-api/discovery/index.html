@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/rest-api/">REST API Handbook</a></span><span><a href="https://developer.wordpress.org/rest-api/using-the-rest-api/">Using the REST API</a></span><span class="is-current-page">Discovery</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Discovery</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>When your client talks to an unknown site, you’ll need to discover what the site is capable of and how the site is configured. There are a couple of steps for this, depending on what you need to discover.</p>
+<h2 class="is-toc-heading" id="discovering-the-api" tabindex="-1"><a href="#discovering-the-api">Discovering the API</a></h2>
+<p>The first step of connecting to a site is finding out whether the site has the API enabled. Typically, you’ll be working with URLs from user input, so the site you’re accessing could be anything. The discovery step lets you verify the API is available, as well as indicating how to access it.</p>
+<h3 class="is-toc-heading" id="link-header" tabindex="-1"><a href="#link-header">Link Header</a></h3>
+<p>The preferred way to handle discovery is to send a HEAD request to the supplied address. The REST API automatically adds a Link header to all front-end pages that looks like the following:</p>
+<pre><code>Link: &lt;http://example.com/wp-json/&gt;; rel="https://api.w.org/"
+</code></pre>
+<p>This URL points to the root route (<code>/</code>) of the API, which is then used for further discovery steps.</p>
+<p>For sites without “pretty permalinks” enabled, <code>/wp-json/</code> isn’t automatically handled by WordPress. This means that normal/default WordPress permalinks will be used instead. These headers look more like this:</p>
+<pre><code>Link: &lt;http://example.com/?rest_route=/&gt;; rel="https://api.w.org/"
+</code></pre>
+<p>Clients should keep this variation in mind and ensure that both routes can be handled seamlessly.</p>
+<p>This auto-discovery can be applied to any URL served by a WordPress installation, so no pre-processing on user input needs to be added. Since this is a HEAD request, the request should be safe to send blindly to servers without worrying about causing side-effects.</p>
+<h3 class="is-toc-heading" id="element" tabindex="-1"><a href="#element">Element</a></h3>
+<p>For clients with a HTML parser, or running in the browser, the equivalent of the Link header is included in the <code>&lt;head&gt;</code> of front-end pages through a <code>&lt;link&gt;</code> element:</p>
+<pre><code>&lt;link rel='https://api.w.org/' href='http://example.com/wp-json/' /&gt;
+</code></pre>
+<p>In-browser Javascript can access this via the DOM:</p>
+<pre><code class="language-js">// jQuery method
+var $link = jQuery( 'link[rel="https://api.w.org/"]' );
+var api_root = $link.attr( 'href' );
+
+// Native method
+var links = document.getElementsByTagName( 'link' );
+var link = Array.prototype.filter.call( links, function ( item ) {
+    return ( item.rel === 'https://api.w.org/' );
+} );
+var api_root = link[0].href;
+</code></pre>
+<p>For in-browser clients, or clients without access to HTTP headers, this may be a more usable way of discovering the API. This is similar to Atom/RSS feed discovery, so existing code for that purpose may also be automatically adapted instead.</p>
+<h3 class="is-toc-heading" id="rsd-really-simple-discovery" tabindex="-1"><a href="#rsd-really-simple-discovery">RSD (Really Simple Discovery)</a></h3>
+<p>For clients with support for XML-RPC discovery, the <a href="http://cyber.law.harvard.edu/blogs/gems/tech/rsd.html">RSD method</a> may be more applicable. This is an XML-based discovery format typically used for XML-RPC. RSD has two steps. The first step is to find the RSD endpoint, supplied as a <code>&lt;link&gt;</code> element:</p>
+<pre><code>&lt;link rel="EditURI" type="application/rsd+xml" title="RSD" href="http://example.com/xmlrpc.php?rsd" /&gt;
+</code></pre>
+<p>The second step is to fetch the RSD document and parse the available endpoints. This involves using an XML parser on a document like the following:</p>
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;rsd version="1.0" xmlns="http://archipelago.phrasewise.com/rsd"&gt;
+  &lt;service&gt;
+    &lt;engineName&gt;WordPress&lt;/engineName&gt;
+    &lt;engineLink&gt;https://wordpress.org/&lt;/engineLink&gt;
+    &lt;homePageLink&gt;http://example.com/&lt;/homePageLink&gt;
+    &lt;apis&gt;
+      &lt;api name="WordPress" blogID="1" preferred="true" apiLink="http://example.com/xmlrpc.php" /&gt;
+      &lt;!-- ... --&gt;
+      &lt;api name="WP-API" blogID="1" preferred="false" apiLink="http://example.com/wp-json/" /&gt;
+    &lt;/apis&gt;
+  &lt;/service&gt;
+&lt;/rsd&gt;
+</code></pre>
+<p>The REST API always has a <code>name</code> attribute with the value equal to <code>WP-API</code>.</p>
+<p>RSD is the least-preferred method of autodiscovery for a couple of reasons. The first step of RSD-based discovery involves parsing the HTML to first find the RSD document itself, which is equivalent to the <code>&lt;link&gt;</code> Element autodiscovery. It then involves another step to parse the RSD document, which requires a full XML parser.</p>
+<p>Where possible, we suggest avoiding RSD-based discovery due to the complexity, but existing XML-RPC clients may prefer to use this method if they already have an RSD parser enabled. For XML-RPC clients which wish to use the REST API as a progressive enhancement to the codebase, this avoids needing to support different forms of discovery.</p>
+<h2 class="is-toc-heading" id="authentication-discovery" tabindex="-1"><a href="#authentication-discovery">Authentication Discovery</a></h2>
+<p>Discovery is also available for authentication methods available via the API. The API root’s response is an object describing the API, which includes an <code>authentication</code> key:</p>
+<pre><code>{
+    "name": "Example WordPress Site",
+    "description": "YOLO",
+    "routes": { ... },
+    "authentication": {
+        "oauth1": {
+            "request": "http://example.com/oauth/request",
+            "authorize": "http://example.com/oauth/authorize",
+            "access": "http://example.com/oauth/access",
+            "version": "0.1"
+        }
+    }
+}
+</code></pre>
+<p>The <code>authentication</code> value is a map (associative array) of authentication method ID to authentication options. The options available here are specific to the authentication method itself. See the <a href="/rest-api/authentication/">authentication documentation</a> for the options for specific authentication methods.</p>
+<h2 class="is-toc-heading" id="extension-discovery" tabindex="-1"><a href="#extension-discovery">Extension Discovery</a></h2>
+<p>Once you’ve discovered the API, the next step is check what the API supports. The index of the API exposes the <code>namespaces</code> item, which contains the extensions to the API that are supported.</p>
+<p>For WordPress sites using versions 4.4 through 4.6, only the base API infrastructure is available, not the full API with endpoints. This also includes the oEmbed endpoints:</p>
+<pre><code>{
+    "name": "Example WordPress Site",
+    "namespaces": [
+        "oembed/1.0/"
+    ]
+}
+</code></pre>
+<p>Sites with the full API available (i.e. with WordPress 4.7+ or the REST API plugin installed) will have the <code>wp/v2</code> item in <code>namespaces</code> as well:</p>
+<pre><code>{
+    "name": "Example WordPress Site",
+    "namespaces": [
+        "wp/v2",
+        "oembed/1.0/"
+    ]
+}
+</code></pre>
+<p>Before attempting to use any of the core endpoints, you should be sure to check that the API is supported by checking for <code>wp/v2</code> support. WordPress 4.4 enabled the API infrastructure for all sites, but did <strong>not</strong> include the core endpoints under <code>wp/v2</code>. Core endpoints were added in WordPress 4.7.</p>
+<p>This same mechanism can be used for detecting support for any plugins that support the REST API. For example, take a plugin which registers the following route:</p>
+<pre><code class="language-php">&lt;?php
+register_rest_route( 'testplugin/v1', '/testroute', array( /* ... */ ) );
+</code></pre>
+<p>This would add the <code>testplugin/v1</code> namespace to the index:</p>
+<pre><code>{
+    "name": "Example WordPress Site",
+    "namespaces": [
+        "wp/v2",
+        "oembed/1.0/",
+        "testplugin/v1"
+    ]
+}
+</code></pre>
+<h2 class="is-toc-heading" id="resource-discovery" tabindex="-1"><a href="#resource-discovery">Resource Discovery</a></h2>
+<p>As of <a href="https://core.trac.wordpress.org/changeset/48273">WordPress 5.5</a> the REST API also provides a discovery mechanism for identifying the REST API route equivalent of the current document. A link is added with a <code>rel</code> of <code>alternate</code> and a <code>type</code> of <code>application/json</code> that points to a REST API url. The link is added both as a <a href="#link-header"><code>Link</code> header</a> and a <a href="#element"><code>&lt;link&gt;</code> element</a>.</p>
+<p>For instance, in the <code>&lt;head&gt;</code> section of this page, the following <code>&lt;link&gt;</code> appears.</p>
+<pre><code class="language-html">&lt;link rel="alternate" type="application/json" href="https://developer.notmatt.press/wp-json/wp/v2/rest-api-handbook/23085"&gt;
+</code></pre>
+<p>Links are added for post, pages, and other custom post types, as well as terms and author pages. Links are not currently output for post archives or search results.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

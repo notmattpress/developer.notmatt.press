@@ -1,0 +1,166 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/apis/">Common APIs Handbook</a></span><span class="is-current-page">Filesystem</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Filesystem</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="overview" tabindex="-1"><a href="#overview">Overview</a></h2>
+<p>The <strong>Filesystem API</strong>, added in <a href="/support/wordpress-version/version-2.6">WordPress 2.6</a>, was originally created for WordPress’ own automatic updates feature. </p>
+<p>The Filesystem API abstracts out the functionality needed for reading and writing local files to the filesystem to be done securely, on a variety of host types.</p>
+<p>It does this through the <a href="https://developer.notmatt.press/reference/classes/wp_filesystem_base/">WP_Filesystem_Base</a> class, and several subclasses which implement different ways of connecting to the local filesystem, depending on individual host support. </p>
+<p>Any theme or plugin that needs to write files locally should do so using the <code>WP_Filesystem</code> family of classes.</p>
+<h2 class="is-toc-heading wp-block-heading" id="purpose" tabindex="-1"><a href="#purpose">Purpose</a></h2>
+<p>Different hosting systems have different limitations in the way that their webservers are configured.</p>
+<p>In particular, many hosting systems have the webserver running as a different user than the owner of the WordPress files. When this is the case, a process writing files from the webserver user will have the resulting files owned by the webserver’s user account instead of the actual user’s account. This can lead to a security problem in shared hosting situations, where multiple users are sharing the same webserver for different sites.</p>
+<p><code>WP_Filesystem</code> is capable of detecting when the users for written files will not match, and switches to a method using FTP or similar instead. Depending on the available PHP libraries, <a data-id="https://developer.notmatt.press/reference/functions/wp_filesystem/" data-type="URL" href="https://developer.notmatt.press/reference/functions/wp_filesystem/">WP_Filesystem</a> supports three different methods of using FTP (via extension, sockets, or over-SSH) and will automatically choose the correct method.</p>
+<p>In such a case, the plugin or theme implementing this code needs to request FTP credentials from the user. Functions have been added to make this easy to do and to standardize the look and feel of the credentials entry form.</p>
+<h2 class="is-toc-heading wp-block-heading" id="filesystem-api-class-reference" tabindex="-1"><a href="#filesystem-api-class-reference">Filesystem API Class Reference</a></h2>
+<ul class="wp-block-list">
+<li>Class: <a href="https://developer.notmatt.press/reference/classes/wp_filesystem_base/">WP_Filesystem_Base</a></li>
+<li>Class: <a href="https://developer.notmatt.press/reference/classes/wp_filesystem_direct/">WP_Filesystem_Direct</a></li>
+<li>Class: <a href="https://developer.notmatt.press/reference/classes/wp_filesystem_ftpext/">WP_Filesystem_FTPext</a></li>
+<li>Class: <a href="https://developer.notmatt.press/reference/classes/wp_filesystem_ftpsockets/">WP_Filesystem_ftpsocket</a></li>
+<li>Class: <a href="https://developer.notmatt.press/reference/classes/wp_filesystem_ssh2/">WP_Filesystem_SSH2</a></li>
+<li>Function: <a href="https://developer.notmatt.press/reference/functions/request_filesystem_credentials/">request_filesystem_credentials()</a></li>
+</ul>
+<h2 class="is-toc-heading wp-block-heading" id="getting-credentials" tabindex="-1"><a href="#getting-credentials">Getting Credentials</a></h2>
+<p>The first step in using the WP_Filesystem is requesting credentials from the user. The normal way this is accomplished is at the time when you’re saving the results of a form input, or you have otherwise determined that you need to write to a file.</p>
+<p>The credentials form can be displayed onto an admin page by using the following code:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$url = wp_nonce_url( 'themes.php?page=example', 'example-theme-options' );
+if ( false === ( $creds = request_filesystem_credentials( $url, '', false, false, null ) ) ) {
+	return; // stop processing here
+}</code></pre>
+<p>The <a href="https://developer.notmatt.press/reference/functions/request_filesystem_credentials/" rel="function">request_filesystem_credentials()</a>  call takes five arguments.</p>
+<ul class="wp-block-list">
+<li>The URL to which the form should be submitted (a nonced URL to a theme page was used in the example above)</li>
+<li>A method override (normally you should leave this as the empty string: “”)</li>
+<li>An error flag (normally false unless an error is detected, see below)</li>
+<li>A context directory (false, or a specific directory path that you want to test for access)</li>
+<li>Form fields (an array of form field names from your previous form that you wish to “pass-through” the resulting credentials form, or null if there are none)</li>
+</ul>
+<p>The <code>request_filesystem_credentials</code> call will test to see if it is capable of writing to the local filesystem directly without credentials first. If this is the case, then it will return true and not do anything. Your code can then proceed to use the <code>WP_Filesystem</code> class.</p>
+<p>The <code>request_filesystem_credentials</code> call also takes into account hardcoded information, such as hostname or username or password, which has been inserted into the <code>wp-config.php</code> file using defines. If these are pre-defined in that file, then this call will return that information instead of displaying a form, bypassing the form for the user.</p>
+<p>If it does need credentials from the user, then it will output the FTP information form and return false. In this case, you should stop processing further, in order to allow the user to input credentials. Any form fields names you specified will be included in the resulting form as hidden inputs, and will be returned when the user resubmits the form, this time with FTP credentials.</p>
+<p>Note: Do not use the reserved names of <code>hostname</code>, <code>username</code>, <code>password</code>, <code>public_key</code>, or <code>private_key</code> for your own inputs. These are used by the credentials form itself. Alternatively, if you do use them, the <code>request_filesystem_credentials</code> function will assume that they are the incoming FTP credentials.</p>
+<p>When the credentials form is submitted, it will look in the incoming POST data for these fields, and if found, it will return them in an array suitable for passing to WP_Filesystem, which is the next step.</p>
+<h2 class="is-toc-heading wp-block-heading" id="initializing-wp_filesystem_base" tabindex="-1"><a href="#initializing-wp_filesystem_base">Initializing WP_Filesystem_Base</a></h2>
+<p>Before the WP_Filesystem can be used, it must be initialized with the proper credentials. This can be done like so:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( ! WP_Filesystem( $creds ) ) {
+	request_filesystem_credentials( $url, '', true, false, null );
+	return;
+}</code></pre>
+<p>First you call the <code>WP_Filesystem</code> function, passing it the credentials from before. It will then attempt to verify the credentials. If they are good, then it will return true. If not, then it will return false.</p>
+<p>In the case of bad credentials, the above code then makes another call to <code>request_filesystem_credentials()</code>, but this time with the error flag set to true. This forces the function to display the form again, this time with an error message for the user saying that their information was incorrect. The user can then re-enter their information and try again.</p>
+<h2 class="is-toc-heading wp-block-heading" id="using-the-wp_filesystem_base-class" tabindex="-1"><a href="#using-the-wp_filesystem_base-class">Using the WP_Filesystem_Base Class</a></h2>
+<p>Once the class has been initialized, then the global <code>$wp_filesystem</code> variable becomes defined and available for you to use. The <code>WP_Filesystem_Base</code> class defines several methods you can use to read and write local files. For example, to write a file, you could do this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">global $wp_filesystem;
+$wp_filesystem-&gt;put_contents(
+  '/tmp/example.txt',
+  'Example contents of a file',
+  FS_CHMOD_FILE // predefined mode settings for WP files
+);</code></pre>
+<p>Other available methods include <code>get_contents()</code> and <code>get_contents_array()</code> to read files; <code>wp_content_dir()</code>, <code>wp_plugins_dir()</code>, and <code>wp_themes_dir()</code> which will return the filesystem paths to those directories; <code>mkdir()</code> and <code>rmdir()</code> to make and remove directories; along with several other handy filesystem related functions.</p>
+<h2 class="is-toc-heading wp-block-heading" id="tips-and-tricks" tabindex="-1"><a href="#tips-and-tricks">Tips and Tricks</a></h2>
+<p><strong>When can you call <code>request_filesystem_credentials()</code>?</strong><br/>One of the initial challenges for developers using the WP Filesystem API is you cannot initialize it just anywhere. The <code>request_filesystem_credentials()</code> function isn’t available until AFTER the <code>wp_loaded</code> action hook, and is only included in the admin area. One of the earliest hooks you can utilize is admin_init.</p>
+<p><strong>The WP Filesystem API Methodology</strong><br/>Another problem with calling <code>request_filesystem_credentials()</code> directly is you cannot determine if you will have direct access to the file system or if the user will be prompted for credentials. From a UX standpoint this becomes problematic if you want to make changes to files when a plugin is activated. Just imagine, a user goes to install your plugin via their admin area, enters their FTP details, completes the installation and activates your plugin. But as soon as they do, they are prompted to enter their FTP details again and are left scratching their head as to why.</p>
+<p>A better solution is to add a notice (using admin_notice for instance) that explains to the user that your plugin needs to write to the file system to complete the installation. Along with that notice, you would add a button or link which triggers your function call to <code>request_filesystem_credentials()</code>.</p>
+<p>But let’s expand on this scenario further and say this plugin needs to access the file system every time the plugin updated. If you’re regularly releasing updates and bug fixes, it soon becomes tenuous for users to click your actionable button every time they upgrade. What would be nice is to determine if we have direct write access before calling <code>request_filesystem_credentials()</code> and silently do the installation. That’s where the <code>get_filesystem_method()</code> function comes into play.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$access_type = get_filesystem_method();
+if ( $access_type === 'direct' )
+{
+	/* you can safely run request_filesystem_credentials() without any issues and don't need to worry about passing in a URL */
+	$creds = request_filesystem_credentials( site_url() . '/wp-admin/', '', false, false, array() );
+	/* initialize the API */
+	if ( ! WP_Filesystem( $creds ) ) {
+		/* any problems and we exit */
+		return false;
+	}	
+	global $wp_filesystem;
+	/* do our file manipulations below */
+}	
+else
+{
+	/* don't have direct write access. Prompt user with our notice */
+	add_action( 'admin_notices', 'you_admin_notice_function' ); 	
+}</code></pre>
+<p>This approach works well for all involved. Users who don’t have direct write permissions get prompted to make changes to the file system, while the plugin goes unnoticed (in a good way) on sites who can directly write to the file system.</p>
+<p><strong>Working with Paths</strong><br/>WordPress developers worth their salt should be familiar with setting up constants or variables to access their plugin’s path. It usually looks like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">define( 'MY_PLUGIN_DIR', plugin_dir_path( __FILE__ ) ); </code></pre>
+<p>What you need to take into consideration when working with the Filesystem API is the path to the files won’t always be the same. When using the direct method you can safely use the <code>MY_PLUGIN_DIR</code> constant, but if you tried to do the same when the FTP or SSH method is used then you can run into problems. This is because FTP and SSH are usually rooted to a directory somewhere along the absolute path. Now, the Filesystem API gives us ways of overcoming this problem with methods like <code>$wp_filesystem-&gt;wp_content_dir()</code> and <code>$wp_filesystem-&gt;wp_plugins_dir()</code>, but it isn’t practical to define the path to your plugin twice.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">/* replace the 'direct' absolute path with the Filesystem API path */
+ $plugin_path = str_replace( ABSPATH, $wp_filesystem-&gt;abspath(), MY_PLUGIN_DIR );
+/* Now we can use $plugin_path in all our Filesystem API method calls */
+if ( ! $wp_filesystem-&gt;is_dir( $plugin_path . '/config/' ) ) {
+	/* directory didn't exist, so let's create it */
+	$wp_filesystem-&gt;mkdir( $plugin_path . '/config/' );
+}</code></pre>
+<p><strong><code>unzip_file($file, $to);</code></strong></p>
+<p>While this function requires the Filesystem API to be initialized, it isn’t a method of the <code>$wp_filesystem</code> object, which might be why its arguments are at odds with each other. The first parameter, <code>$file</code>, needs to be the absolute ‘direct’ path to the file, while the <code>$toparameter</code> needs to point to the absolute path of the Filesystem.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">define( 'MY_PLUGIN_DIR', plugin_dir_path( __FILE__ ) ); 
+global $wp_filesystem; // already initialised the Filesystem API previously
+$plugin_path = str_replace( ABSPATH, $wp_filesystem-&gt;abspath(), MY_PLUGIN_DIR ); // get remote system absolute path
+/* Acceptable way to use the function */
+$file = MY_PLUGIN_DIR . '/plugin-file.zip'; 
+$to = $plugin_path;
+$result = unzip_file( $file, $to ); 
+if ( $result !== true ) {
+	// unzip failed. Handle Error
+}
+/* Not acceptable */
+$file = MY_PLUGIN_DIR . '/plugin-file.zip';
+$to = MY_PLUGIN_DIR; // $to cannot be the 'direct' absolute path to the folder otherwise FTP and SSH methods are left in the cold
+unzip_file( $file, $to ); 
+$file = $plugin_path . '/plugin-file.zip'; // If $file isn't the 'direct' absolute path then users not using FTP and SSH methods are left in the cold
+$to = $plugin_path;
+unzip_file( $file, $to );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="external-references" tabindex="-1"><a href="#external-references">External references</a></h2>
+<ul class="wp-block-list">
+<li><a href="http://ottopress.com/2011/tutorial-using-the-wp_filesystem/">Tutorial: Using the WP_Filesystem</a> by Otto</li>
+<li><a href="https://github.com/eventespresso/filesystem-debug-helper">Filesystem Debug Helper Plugin</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

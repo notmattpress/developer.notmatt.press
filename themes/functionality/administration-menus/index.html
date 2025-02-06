@@ -1,0 +1,421 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/functionality/">Theme Functionality</a></span><span class="is-current-page">Administration Menus</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Administration Menus</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<div class="wp-block-wporg-notice is-warning-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">This is no longer the recommended way to work with theme options. The <a href="https://developer.notmatt.press/themes/customize-api/">Customizer API</a> is the recommended way to give more control and flexibility to your users</div></div>
+<p>Theme authors might need to provide a settings screen, so users can customize how their theme is used or works. The best way to do this is to create an administration menu item that allows the user to access that settings screen from all the administration screens.</p>
+<h2 class="is-toc-heading wp-block-heading" id="function-reference" tabindex="-1"><a href="#function-reference">Function Reference</a></h2>
+<h3 class="is-toc-heading wp-block-heading" id="menu-pages" tabindex="-1"><a href="#menu-pages">Menu Pages</a></h3>
+<p><a href="https://codex.wordpress.org/Function_Reference/add_menu_page">add_menu_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_object_page">add_object_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_utility_page">add_utility_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/remove_menu_page">remove_menu_page()</a></p>
+<h3 class="is-toc-heading wp-block-heading" id="sub-menu-pages" tabindex="-1"><a href="#sub-menu-pages">Sub-menu Pages</a></h3>
+<p><a href="https://codex.wordpress.org/Function_Reference/add_submenu_page">add_submenu_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/remove_submenu_page">remove_submenu_page()</a></p>
+<h3 class="is-toc-heading wp-block-heading" id="wordpress-administration-menus" tabindex="-1"><a href="#wordpress-administration-menus">WordPress Administration Menus</a></h3>
+<p><a href="https://codex.wordpress.org/Function_Reference/add_dashboard_page">add_dashboard_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_posts_page">add_posts_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_media_page">add_media_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_links_page">add_links_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_pages_page">add_pages_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_comments_page">add_comments_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_theme_page">add_theme_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_plugins_page">add_plugins_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_users_page">add_users_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_management_page">add_management_page()</a><br/><a href="https://codex.wordpress.org/Function_Reference/add_options_page">add_options_page()</a></p>
+<h2 class="is-toc-heading wp-block-heading" id="every-plot-needs-a-hook" tabindex="-1"><a href="#every-plot-needs-a-hook">Every Plot Needs a Hook</a></h2>
+<p>To add an administration menu, there are three things you need to do:</p>
+<ol class="wp-block-list">
+<li>Create a function that contains the menu-building code.</li>
+<li>Register the above function using the <code>admin_menu</code> action hook – or <code>network_admin_menu</code>, if you are adding a menu for the Network.</li>
+<li>Create the HTML output for the screen, displayed when the menu item is clicked.</li>
+</ol>
+<p>Most developers overlook the second step in this list. You can’t simply call the menu code. You need to put it <strong>inside a function</strong>, and then register this function.</p>
+<p>Here is a simple example of these three steps described. This will add a sub-level menu item under the Settings top-level menu. When selected, that menu item will show a very basic screen.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/** Step 2 (from text above). */
+add_action( 'admin_menu', 'my_menu' );
+
+/** Step 1. */
+function my_menu() {
+	add_options_page(
+		'My Options',
+		'My Menu',
+		'manage_options',
+		'my-unique-identifier',
+		'my_options'
+	);
+}
+
+/** Step 3. */
+function my_options() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+	}
+	echo 'Here is where I output the HTML for my screen.';
+	echo '&lt;/div&gt;&lt;pre&gt;';
+}</code></pre>
+<p>In this example, the function <code>my_menu()</code> adds a new item to the Settings administration menu via the <a href="https://codex.wordpress.org/Function_Reference/add_options_page"><code>add_options_page()</code></a> function.</p>
+<p><em>Note:</em> Note that the <a href="https://codex.wordpress.org/Function_Reference/add_action">add_action()</a> call in Step 2 <em>registers</em> the my_menu() function under the <a href="https://codex.wordpress.org/Plugin_API/Action_Reference/admin_menu">admin_menu</a> hook. <strong>Without that, <a href="https://developer.notmatt.press/reference/functions/add_action/" rel="function">add_action()</a>  call, a PHP error for undefined function will be thrown</strong>. Finally, the <code>add_options_page()</code> call refers to the <code>my_options()</code> function which contains the actual page to be displayed (and PHP code to be processed) when someone clicks the menu item.</p>
+<p>These steps are described in more detail in the sections below. Remember to enclose the creation of the menu and the page in functions, and use the <code>admin_menu</code> <a href="https://codex.wordpress.org/Plugin_API/Action_Reference">hook</a> to get the whole process started at the right time.</p>
+<h2 class="is-toc-heading wp-block-heading" id="determining-location-for-new-menus" tabindex="-1"><a href="#determining-location-for-new-menus">Determining Location for New Menus</a></h2>
+<p>Before creating a new menu, first decide if the menu should be a <strong>top-level</strong> menu, or a <strong>sub-level</strong> menu item. A top-level menu displays as new section in the administration menus and contains sub-level menu items. This means a sub-level menu item is a member of an existing top-level menu.</p>
+<p>It is rare that a theme would require the creation of a new top-level menu. If the theme introduces an entirely new concept to WordPress and needs many screens to do it, then that theme may warrant a new top-level menu. Adding a top-level menu should only be considered if you really need multiple, related screens to make WordPress do something it was not originally designed to accomplish. Examples of new top-level menus might include job management or conference management. Please note that, with the native <a href="https://codex.wordpress.org/Glossary#Post_Type">post type</a> registration, WordPress automatically creates top-level menus to manage this kind of features.</p>
+<p>If the creation of a top-level menu is not necessary, you need to decide under what top-level menu to place your new sub-level menu item. As a point of reference, several themes add sub-level menu items underneath existing WordPress top-level menus.</p>
+<p>Use this guide of the WordPress top-level menus to determine the correct location for your sub-level menu item:</p>
+<ul class="wp-block-list">
+<li>Dashboard – information central for your site and include the Updates option for updating WordPress core, plugins, and themes.</li>
+<li>Posts – displays tools for writing posts (time oriented content).</li>
+<li>Media – uploading and managing your pictures, videos, and audio.</li>
+<li>Links – manage references to other blogs and sites of interest.</li>
+<li>Pages – displays tools for writing your static content called pages.</li>
+<li>Comments – controlling and regulation reader to responses to posts.</li>
+<li>Appearance – displays controls for manipulation of theme/style files, sidebars, etc.</li>
+<li>Plugins – displays controls dealing with plugin management, not configuration options for a plugin itself.</li>
+<li>Users – displays controls for user management.</li>
+<li>Tools – manage the export, import, and even backup of blog data.</li>
+<li>Settings – displays plugin options that only administrators should view.</li>
+<li>Network Admin – displays plugin options that are set on the Network. Instead of <code>admin_menu</code>, you should use <code>network_admin_menu</code> (see also <a href="https://codex.wordpress.org/Create_A_Network">Create A Network</a>)</li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="top-level-menus" tabindex="-1"><a href="#top-level-menus">Top-Level Menus</a></h3>
+<p>If you have decided your theme requires a brand-new top-level menu, the first thing you’ll need to do is to create one with the <code>add_menu_page()</code> function. <em>Note:</em> skip to <a href="#sub-level-menus">Sub-Level Menus</a> if you don’t need a top-level menu.</p>
+<p>Parameter values:</p>
+<ul class="wp-block-list">
+<li><code>page_title</code> – the text to be displayed in the title tags of the page when the menu is selected.</li>
+<li><code>menu_title</code> – the on-screen name text for the menu.</li>
+<li><code>capability</code> – the capability required for this menu to be displayed to the user. When using the Settings API to handle your form, you should use <code>manage_options</code> here as the user won’t be able to save options without it. User levels are deprecated and should not be used here.</li>
+<li><code>menu_slug</code> – the slug name to refer to this menu by (should be unique for this menu). Prior to Version 3.0 this was called the file (or handle) parameter. If the function parameter is omitted, the <code>menu_slug</code> should be the PHP file that handles the display of the menu page content.</li>
+<li><code>function</code> – the function that displays the page content for the menu page.</li>
+<li><code>icon_url</code> – the URL to the icon to be used for this menu. This parameter is optional.</li>
+<li><code>position</code> – the position in the menu order this menu should appear. By default, if this parameter is omitted, the menu will appear at the bottom of the menu structure. To see the current menu positions, use <code>print_r( $GLOBALS[ 'menu' ] )</code> after the menu has loaded.</li>
+<li>Sub-Level Menus – once your top-level menu is defined, or you have chosen to use an existing WordPress top-level menu, you are ready to define one or more sub-level menu items using the <code>add_submenu_page()</code> function.</li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="sub-level-menus" tabindex="-1"><a href="#sub-level-menus">Sub-Level Menus</a></h3>
+<p>If you want your new menu item to be a sub-menu item, you can create it using the <code>add_submenu_page()</code> function instead.</p>
+<p>Parameter values:</p>
+<ul class="wp-block-list">
+<li><code>parent_slug</code> – the slug name for the parent menu, or the file name of a standard WordPress admin file that supplies the top-level menu in which you want to insert your sub-menu, or your plugin file if this sub-menu is going into a custom top-level menu. Examples:
+<ul class="wp-block-list">
+<li>Dashboard – <code>add_submenu_page('index.php', ...)</code></li>
+<li>Posts – <code>add_submenu_page('edit.php', ...)</code></li>
+<li>Media – <code>add_submenu_page('upload.php', ...)</code></li>
+<li>Links – <code>add_submenu_page('link-manager.php', ...)</code></li>
+<li>Pages – <code>add_submenu_page('edit.php?post_type=page', ...)</code></li>
+<li>Comments – <code>add_submenu_page('edit-comments.php', ...)</code></li>
+<li>Custom Post Types – <code>add_submenu_page('edit.php?post_type=your_post_type', ...)</code></li>
+<li>Appearance – <code>add_submenu_page('themes.php', ...)</code></li>
+<li>Plugins – <code>add_submenu_page('plugins.php', ...)</code></li>
+<li>Users – <code>add_submenu_page('users.php', ...)</code></li>
+<li>Tools – <code>add_submenu_page('tools.php', ...)</code></li>
+<li>Settings – <code>add_submenu_page('options-general.php', ...)</code></li>
+</ul>
+</li>
+<li><code>page_title</code> – text that will go into the HTML page title for the page when the submenu is active.</li>
+<li><code>menu_title</code> – the text to be displayed in the title tags of the page when the menu is selected.</li>
+<li><code>capability</code> – the capability required for this menu to be displayed to the user. User levels are deprecated and should not be used here.</li>
+<li><code>menu_slug</code> – for existing WordPress menus, the PHP file that handles the display of the menu page content. For sub-menus of a custom top-level menu, a unique identifier for this sub-menu page.</li>
+<li><code>function</code> – the function that displays the page content for the menu page. Technically, as in the <code>add_menu_page</code> function, the function parameter is optional, but if it is not supplied, then WordPress will basically assume that including the PHP file will generate the administration screen, without calling a function.</li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="using-wrapper-functions" tabindex="-1"><a href="#using-wrapper-functions">Using Wrapper Functions</a></h3>
+<p>Since most sub-level menus belong under the Settings, Tools, or Appearance menus, WordPress supplies wrapper functions that make adding a sub-level menu items to these top-level menus easier. Note that the function names may not match the names seen in the admin UI as they have changed over time:</p>
+<h4 class="wp-block-heading">Dashboard</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_dashboard_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Posts</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_posts_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Media</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_media_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Links</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_links_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Pages</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_pages_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Comments</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_comments_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Appearance</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_theme_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Plugins</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_plugins_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Users</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_users_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Tools</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_management_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<h4 class="wp-block-heading">Settings</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_options_page(
+	$page_title,
+	$menu_title,
+	$capability,
+	$menu_slug,
+	$function
+);</code></pre>
+<p>Also see <a href="https://developer.notmatt.press/themes/customize-api/">Theme Options</a> for the currently recommended way of creating options via the Customizer API.</p>
+<h3 class="is-toc-heading wp-block-heading" id="example" tabindex="-1"><a href="#example">Example</a></h3>
+<p>Here’s a quick example illustrating how to insert a top-level menu page and a sub-menu page, where the title on the sub-menu page is different from the top-level page. In this example, <code>register_my_theme_more_settings_menu</code> is the name of the function that displays the first sub-menu page:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+function register_my_theme_settings_menu() {
+	add_menu_page(
+		"My Theme's Settings",
+		'My Theme',
+		'manage_options',
+		'my-theme-settings-menu'
+	);
+}
+
+function register_my_theme_more_settings_menu() {
+	add_submenu_page(
+		'my-theme-settings-menu',
+		'More Settings for My Theme',
+		'More Settings',
+		'manage_options',
+		'my-theme-more-settings-menu'
+	);
+}
+
+add_action( 'admin_menu', 'register_my_theme_settings_menu' );
+add_action( 'admin_menu', 'register_my_theme_more_settings_menu' );</code></pre>
+<p>Here’s an example of adding an option page under a custom post type menu block (see also here):</p>
+<p>CODE</p>
+<h2 class="is-toc-heading wp-block-heading" id="inserting-the-pages" tabindex="-1"><a href="#inserting-the-pages">Inserting the Pages</a></h2>
+<p>Here is an example of how to insert multiple menus into various places:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+// Hook for adding admin menus
+add_action( 'admin_menu', 'mt_add_pages' );
+
+// Action function for hook above
+function mt_add_pages() {
+	// Add a new submenu under Settings:
+	add_options_page( __( 'Test Settings', 'menu-test' ), __( 'Test Settings', 'menu-test' ), 'manage_options', 'testsettings', 'mt_settings_page' );
+
+	// Add a new submenu under Tools:
+	add_management_page( __( 'Test Tools', 'menu-test' ), __( 'Test Tools', 'menu-test' ), 'manage_options', 'testtools', 'mt_tools_page' );
+
+	// Add a new top-level menu (ill-advised):
+	add_menu_page( __( 'Test Toplevel', 'menu-test' ), __( 'Test Top-level', 'menu-test' ), 'manage_options', 'mt-top-level-handle', 'mt_toplevel_page' );
+
+	// Add a submenu to the custom top-level menu:
+	add_submenu_page( 'mt-top-level-handle', __( 'Test Sub-Level', 'menu-test' ), __( 'Test Sub-Level', 'menu-test' ), 'manage_options', 'sub-page', 'mt_sublevel_page' );
+
+	// Add a second submenu to the custom top-level menu:
+	add_submenu_page( 'mt-top-level-handle', __( 'Test Sub-Level 2', 'menu-test' ), __( 'Test Sub-Level 2', 'menu-test' ), 'manage_options', 'sub-page2', 'mt_sublevel_page2' );
+}
+
+// mt_settings_page() displays the page content for the Test settings sub-menu.
+function mt_settings_page() {
+	echo '&lt;/pre&gt;&lt;h2&gt;' . __( 'Test Settings', 'menu-test' ) . '&lt;/h2&gt;&lt;pre&gt;';
+}
+
+// mt_tools_page() displays the page content for the Test Tools sub-menu.
+function mt_tools_page() {
+	echo '&lt;/pre&gt;&lt;h2&gt;' . __( 'Test Tools', 'menu-test' ) . '&lt;/h2&gt;&lt;pre&gt;';
+}
+
+// mt_toplevel_page() displays the page content for the custom Test Top-Level menu.
+function mt_toplevel_page() {
+	echo '&lt;/pre&gt;&lt;h2&gt;' . __( 'Test Top-Level', 'menu-test' ) . '&lt;/h2&gt;&lt;pre&gt;';
+}
+
+// mt_sublevel_page() displays the page content for the first sub-menu of the custom Test Toplevel menu.
+function mt_sublevel_page() {
+	echo '&lt;/pre&gt;&lt;h2&gt;' . __( 'Test Sub-Level', 'menu-test' ) . '&lt;/h2&gt;&lt;pre&gt;';
+}
+
+// mt_sublevel_page2() displays the page content for the second sub-menu of the custom Test Top-Level menu.
+function mt_sublevel_page2() {
+	echo '&lt;/pre&gt;&lt;h2&gt;' . __( 'Test Sub-Level 2', 'menu-test' ) . '&lt;/h2&gt;&lt;pre&gt;';
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="sample-menu-page" tabindex="-1"><a href="#sample-menu-page">Sample Menu Page</a></h2>
+<p><em>Note:</em> See the <a href="https://codex.wordpress.org/Settings_API">Settings API</a> for information on creating settings pages.</p>
+<p>The previous example contains several dummy functions, such as <code>mt_settings_page()</code>, as placeholders for actual page content. Let’s expand on them. What if you wanted to create an option called <code>mt_favorite_color</code> that allows the site owner to type in their favorite color via a Settings page? The <code>mt_options_page()</code> function will need to output a data entry form on the screen, as well as to process the entered data.</p>
+<p>Here is a function that does this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+// mt_settings_page() displays the page content for the Test settings sub-menu.
+function mt_settings_page() {
+	// Must check that the user has the required capability.
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+	}
+
+	// Variables for the field and option names
+	$opt_name          = 'mt_favorite_color';
+	$hidden_field_name = 'mt_submit_hidden';
+	$data_field_name   = 'mt_favorite_color';
+
+	// Read in existing option value from database
+	$opt_val = get_option( $opt_name );
+
+	// See if the user has posted us some information. If they did, this hidden field will be set to 'Y'.
+	if ( isset( $_POST[ $hidden_field_name ] ) &amp;&amp; $_POST[ $hidden_field_name ] == 'Y' ) {
+		// Read their posted value.
+		$opt_val = $_POST[ $data_field_name ];
+
+		// Save the posted value in the database.
+		update_option( $opt_name, $opt_val );
+
+		// Put a "Settings updated" message on the screen
+		?&gt;
+		&lt;div class="updated"&gt;&lt;/div&gt;&lt;!-- .updated --&gt;
+
+		&lt;div class="wrap"&gt;
+			&lt;?php echo '&lt;h2&gt;' . __( 'Menu Test Settings', 'menu-test' ) . '&lt;/h2&gt;'; ?&gt;
+			&lt;form action="" method="post" name="form1"&gt;&lt;/form&gt;
+			&lt;?php _e( 'Favorite Color:', 'menu-test' ); ?&gt;
+			&lt;hr /&gt;
+		&lt;/div&gt;&lt;!-- .wrap --&gt;
+
+		&lt;?php
+	}
+}</code></pre>
+<p><strong>A few notes:</strong></p>
+<ul class="wp-block-list">
+<li>The WordPress functions such as <code>add_menu_page()</code> and <code>add_submenu_page()</code> take a capability which will be used to determine whether the top-level or sub-level menu is displayed.</li>
+<li>The function which is hooked in to handle the output of the page must check that the user has the required capability as well.</li>
+<li>The WordPress administration functions take care of validating the user login, so you don’t have to worry about it in your function.</li>
+<li>The function example above has been internationalized — see the <a href="https://codex.wordpress.org/I18n_for_WordPress_Developers">I18n for WordPress Developers</a> for more details.</li>
+<li>The function processes any entered data before putting the data entry form on the screen, so that the new values will be shown in the form (rather than the values from the database).</li>
+<li>You don’t have to worry about this working the first time, because the WordPress <code>update_option</code> function will automatically add an option to the database if it doesn’t already exist.</li>
+<li>These admin-menu-adding procedures are parsed every single time you navigate to a page in Admin. So if you are writing a theme which has no options page, but add one later, you can just add it using the instructions above and re-upload, and tweak until you’re happy with it. In other words, menus are not “permanently added” or put into a database upon activating a theme. They’re parsed on the fly, so you can add or subtract menu items at will, re-upload, and the change will be reflected right away.</li>
+</ul>
+<h2 class="is-toc-heading wp-block-heading" id="page-hook-suffix" tabindex="-1"><a href="#page-hook-suffix">Page Hook Suffix</a></h2>
+<p>Every function that adds a new administration menu – <code>add_menu_page()</code>, <code>add_submenu_page()</code> and its specialized versions such as <code>add_options_page()</code> – returns a special value called <strong>Page Hook Suffix</strong>. It can be used later as a hook to which an action called only on that particular page can be registered.</p>
+<p>One such action hook is <code>load-{page_hook}</code>, where <code>{page_hook}</code> is the value returned by one of these <code>add_*_page()</code> functions. This hook is called when the particular page is loaded. In the example below, it is used to display the “Theme is not configured” notice on all admin pages except for plugin’s options page:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+add_action( 'admin_menu', 'my_menu' );
+
+// Here you can check if plugin is configured (e.g. check if some option is set). If not, add new hook.
+// In this example hook is always added.
+add_action( 'admin_notices', 'my_admin_notices' );
+
+function my_menu() {
+	// Add the new admin menu and page and save the returned hook suffix
+	$hook_suffix = add_options_page( 'My Options', 'My Theme', 'manage_options', 'my-unique-identifier', 'my_options' );
+	// Use the hook suffix to compose the hook and register an action executed when plugin's options page is loaded
+	add_action( 'load-' . $hook_suffix, 'my_load_function' );
+}
+
+function my_load_function() {
+	// Current admin page is the options page for our plugin, so do not display the notice
+	// (remove the action responsible for this)
+	remove_action( 'admin_notices', 'my_admin_notices' );
+}
+
+function my_admin_notices() {
+	echo '&lt;pre&gt;&lt;div class="updated fade" id="notice"&gt;My Plugin is not configured yet. Please do it now.&lt;/div&gt;&lt;/pre&gt;';
+}
+
+function my_options() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( __( 'You do not have sufficient permissions to access this page.' ) );
+	}
+
+	echo '&lt;/pre&gt;&lt;div class="wrap"&gt;';
+	echo 'Here is where the form would go if I actually had options.';
+	echo '&lt;/div&gt;&lt;pre&gt;';
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="resources" tabindex="-1"><a href="#resources">Resources</a></h2>
+<p><a href="http://comox.textdrive.com/pipermail/wp-hackers/2009-February/024632.html">Top Level Menu discussion on wp-hackers<br/></a><a href="https://wordpress.org/extend/plugins/admin-menu-editor/">Admin Menu Editor Plugin</a></p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

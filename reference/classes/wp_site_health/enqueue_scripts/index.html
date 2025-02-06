@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_site_health/">WP_Site_Health</a></span><span class="is-current-page">WP_Site_Health::enqueue_scripts()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Site_Health::enqueue_scripts()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Site_Health::enqueue_scripts()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Enqueues the site health scripts.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="92"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function enqueue_scripts() {
+	$screen = get_current_screen();
+	if ( 'site-health' !== $screen-&gt;id &amp;&amp; 'dashboard' !== $screen-&gt;id ) {
+		return;
+	}
+
+	$health_check_js_variables = array(
+		'screen'      =&gt; $screen-&gt;id,
+		'nonce'       =&gt; array(
+			'site_status'        =&gt; wp_create_nonce( 'health-check-site-status' ),
+			'site_status_result' =&gt; wp_create_nonce( 'health-check-site-status-result' ),
+		),
+		'site_status' =&gt; array(
+			'direct' =&gt; array(),
+			'async'  =&gt; array(),
+			'issues' =&gt; array(
+				'good'        =&gt; 0,
+				'recommended' =&gt; 0,
+				'critical'    =&gt; 0,
+			),
+		),
+	);
+
+	$issue_counts = get_transient( 'health-check-site-status-result' );
+
+	if ( false !== $issue_counts ) {
+		$issue_counts = json_decode( $issue_counts );
+
+		$health_check_js_variables['site_status']['issues'] = $issue_counts;
+	}
+
+	if ( 'site-health' === $screen-&gt;id &amp;&amp; ( ! isset( $_GET['tab'] ) || empty( $_GET['tab'] ) ) ) {
+		$tests = WP_Site_Health::get_tests();
+
+		// Don't run https test on development environments.
+		if ( $this-&gt;is_development_environment() ) {
+			unset( $tests['async']['https_status'] );
+		}
+
+		foreach ( $tests['direct'] as $test ) {
+			if ( is_string( $test['test'] ) ) {
+				$test_function = sprintf(
+					'get_test_%s',
+					$test['test']
+				);
+
+				if ( method_exists( $this, $test_function ) &amp;&amp; is_callable( array( $this, $test_function ) ) ) {
+					$health_check_js_variables['site_status']['direct'][] = $this-&gt;perform_test( array( $this, $test_function ) );
+					continue;
+				}
+			}
+
+			if ( is_callable( $test['test'] ) ) {
+				$health_check_js_variables['site_status']['direct'][] = $this-&gt;perform_test( $test['test'] );
+			}
+		}
+
+		foreach ( $tests['async'] as $test ) {
+			if ( is_string( $test['test'] ) ) {
+				$health_check_js_variables['site_status']['async'][] = array(
+					'test'      =&gt; $test['test'],
+					'has_rest'  =&gt; ( isset( $test['has_rest'] ) ? $test['has_rest'] : false ),
+					'completed' =&gt; false,
+					'headers'   =&gt; isset( $test['headers'] ) ? $test['headers'] : array(),
+				);
+			}
+		}
+	}
+
+	wp_localize_script( 'site-health', 'SiteHealth', $health_check_js_variables );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-site-health.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-site-health.php#L92">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-site-health.php#L92-L162">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/is_development_environment/">WP_Site_Health::is_development_environment()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Checks if the current environment type is set to ‘development’ or ‘local’.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/perform_test/">WP_Site_Health::perform_test()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Runs a Site Health test directly.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_tests/">WP_Site_Health::get_tests()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Returns a set of tests that belong to the site status page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_current_screen/">get_current_screen()</a><code>wp-admin/includes/screen.php</code></td><td><p>Get the current screen object</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_create_nonce/">wp_create_nonce()</a><code>wp-includes/pluggable.php</code></td><td><p>Creates a cryptographic token tied to a specific action, user, user session, and window of time.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_localize_script/">wp_localize_script()</a><code>wp-includes/functions.wp-scripts.php</code></td><td><p>Localizes a script.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_transient/">get_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a transient.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

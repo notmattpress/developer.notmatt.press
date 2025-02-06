@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/testing-overview/">Testing Overview</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/testing-overview/e2e/">End-to-End Testing</a></span><span class="is-current-page">Overusing snapshots</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Overusing snapshots</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Take a look at the below code. Could you understand what the test is trying to do at first glance?</p>
+<pre><code class="language-js">await editor.insertBlock( { name: 'core/quote' } );
+await page.keyboard.type( '1' );
+await page.keyboard.press( 'Enter' );
+await page.keyboard.press( 'Enter' );
+
+expect( await editor.getEditedPostContent() ).toMatchSnapshot();
+
+await page.keyboard.press( 'Backspace' );
+await page.keyboard.type( '2' );
+
+expect( await editor.getEditedPostContent() ).toMatchSnapshot();
+</code></pre>
+<p>This is borrowed from the real code in gutenberg, with the test title and the comments removed and refactored into Playwright. Ideally, E2E tests should be self-documented and readable to end users; in the end, they are trying to resemble how end users interact with the app. However, there are a couple of red flags in the code.</p>
+<h2 class="is-toc-heading" id="problems-with-snapshot-testing" tabindex="-1"><a href="#problems-with-snapshot-testing">Problems with snapshot testing</a></h2>
+<p>Popularized by Jest, <a href="https://jestjs.io/docs/snapshot-testing">snapshot testing</a> is a great tool to help test our app <em>when it makes sense</em>. However, probably because it’s so powerful, it’s often overused by developers. There are already multiple <a href="https://kentcdodds.com/blog/effective-snapshot-testing">articles</a> about this. In this particular case, snapshot testing fails to reflect the developer’s intention. It’s not clear what the assertions are about without looking into other information. This makes the code harder to understand and creates a mental overhead for all the other readers other than the one who wrote it. As readers, we have to jump around the code to fully understand them. The added complexity of the code discourages contributors from changing the test to fit their needs. It could sometimes even confuse the authors and make them accidentally <a href="https://github.com/WordPress/gutenberg/pull/42780#discussion_r949865612">commit the wrong snapshots</a>.</p>
+<p>Here’s the same test with the test title and comments. Now you know what these assertions are actually about.</p>
+<pre><code class="language-js">it( 'can be split at the end', async () =&gt; {
+    // ...
+
+    // Expect empty paragraph outside quote block.
+    expect( await getEditedPostContent() ).toMatchSnapshot();
+
+    // ...
+
+    // Expect the paragraph to be merged into the quote block.
+    expect( await getEditedPostContent() ).toMatchSnapshot();
+} );
+</code></pre>
+<p>The developer’s intention is a bit more readable, but it still feels disconnected from the test. You might be tempted to try <a href="https://jestjs.io/docs/snapshot-testing#inline-snapshots">inline snapshots</a>, which do solve the issue of having to jump around files, but they’re still not self-documented nor explicit. We can do better.</p>
+<h2 class="is-toc-heading" id="the-solution" tabindex="-1"><a href="#the-solution">The solution</a></h2>
+<p>Instead of writing the assertions in comments, we can try directly writing them out explicitly. With the help of <code>editor.getBlocks</code>, we can rewrite them into simpler and atomic assertions.</p>
+<pre><code class="language-js">// ...
+
+// Expect empty paragraph outside quote block.
+await expect.poll( editor.getBlocks ).toMatchObject( [
+    {
+        name: 'core/quote',
+        innerBlocks: [
+            {
+                name: 'core/paragraph',
+                attributes: { content: '1' },
+            },
+        ],
+    },
+    {
+        name: 'core/paragraph',
+        attributes: { content: '' },
+    }
+] );
+
+// ...
+
+// Expect the paragraph to be merged into the quote block.
+await expect.poll( editor.getBlocks ).toMatchObject( [ {
+    name: 'core/quote',
+    innerBlocks: [
+        {
+            name: 'core/paragraph',
+            attributes: { content: '1' },
+        },
+        {
+            name: 'core/paragraph',
+            attributes: { content: '2' },
+        },
+    ],
+} ] );
+</code></pre>
+<p>These assertions are more readable and explicit. You can add additional assertions or split existing ones into multiple ones to highlight their importance. Whether to keep the comments is up to you, but it’s usually fine to omit them when the code is already readable without them.</p>
+<h2 class="is-toc-heading" id="snapshot-variants" tabindex="-1"><a href="#snapshot-variants">Snapshot variants</a></h2>
+<p>Due to the lack of inline snapshots in Playwright, some migrated tests are using string assertions (<code>toBe</code>) to simulate similar effects without having to create dozens of snapshot files.</p>
+<pre><code class="language-js">expect( await editor.getEditedPostContent() ).toBe( `&lt;!-- wp:paragraph --&gt;
+&lt;p&gt;Paragraph&lt;/p&gt;
+&lt;!-- /wp:paragraph --&gt;` );
+</code></pre>
+<p>We can consider this pattern as a variant of snapshot testing, and we should follow the same rule when writing them. It’s often better to rewrite them using <code>editor.getBlocks</code> or other methods to make explicit assertions.</p>
+<pre><code class="language-js">await expect.poll( editor.getBlocks ).toMatchObject( [ {
+    name: 'core/paragraph',
+    attributes: { content: 'Paragraph' },
+} ] );
+</code></pre>
+<h2 class="is-toc-heading" id="what-about-test-coverage" tabindex="-1"><a href="#what-about-test-coverage">What about test coverage?</a></h2>
+<p>Comparing the explicit assertions to snapshot testing, we’re definitely losing some test coverage in this test. Snapshot testing is still useful when we want to assert the full serialized content of the block. Fortunately, though, some tests in the integration test already assert the <a href="https://github.com/WordPress/gutenberg/blob/trunk/test/integration/fixtures/blocks/README.md">full content</a> of each core block. They run in Node.js, making them way faster than repeating the same test in Playwright. Running 273 test cases in my machine only costs about 5.7 seconds. These sorts of tests work great at the unit or integration level, and we can run them much faster without losing test coverage.</p>
+<h2 class="is-toc-heading" id="best-practices" tabindex="-1"><a href="#best-practices">Best practices</a></h2>
+<p>Snapshot testing should rarely be required in E2E tests, often there are better alternatives that leverage explicit assertions. For times when there isn’t any other suitable alternative, we should follow the best practices when using them.</p>
+<h3 class="is-toc-heading" id="avoid-huge-snapshots" tabindex="-1"><a href="#avoid-huge-snapshots">Avoid huge snapshots</a></h3>
+<p>Huge snapshots are hard to read and difficult to review. Moreover, when everything is important then nothing is important. Huge snapshots prevent us from focusing on the important parts of the snapshots.</p>
+<h3 class="is-toc-heading" id="avoid-repetitive-snapshots" tabindex="-1"><a href="#avoid-repetitive-snapshots">Avoid repetitive snapshots</a></h3>
+<p>If you find yourself creating multiple snapshots of similar contents in the same test, then it’s probably a sign that you want to make more atomic assertions instead. Rethink what you want to test, if the first snapshot is only just a reference for the second one, then what you want is likely the <strong>difference</strong> between the snapshots. Store the first result in a variable and assert the difference between the results instead.</p>
+<h2 class="is-toc-heading" id="further-readings" tabindex="-1"><a href="#further-readings">Further readings</a></h2>
+<ul>
+<li><a href="https://kentcdodds.com/blog/effective-snapshot-testing">Effective Snapshot Testing – Kent C. Dodds</a></li>
+<li><a href="https://kentcdodds.com/blog/common-testing-mistakes">Common Testing Mistakes – Kent C. Dodds</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

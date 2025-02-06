@@ -1,0 +1,350 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">add_shortcode()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>add_shortcode()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">add_shortcode( <span class="arg-type">string</span> <span class="arg-name">$tag</span>,  <span class="arg-type">callable</span> <span class="arg-name">$callback</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Adds a new shortcode.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Care should be taken through prefixing or other means to ensure that the shortcode tag being added is unique and will not conflict with other, already-added shortcode tags. In the event of a duplicated tag, the tag loaded last will take precedence.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$tag</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Shortcode tag to be searched in post content.</span></div></dd><dt><code>$callback</code><span class="type"><span class="callable">callable</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The callback function to run when the shortcode is found.<br/>
+Every shortcode callback is passed three parameters by default,                           including an array of attributes (<code>$atts</code>), the shortcode content                           or null if not set (<code>$content</code>), and finally the shortcode tag                           itself (<code>$shortcode_tag</code>), in that order.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>The shortcode callback will be passed three arguments: the shortcode attributes, the shortcode content (if any), and the name of the shortcode.</p>
+<p>There can only be one hook for each shortcode. This means that if another plugin has a similar shortcode, it will override yours, or yours will override theirs depending on which order the plugins are included and/or ran.</p>
+<p>Shortcode attribute names are always converted to lowercase before they are passed into the handler function. Values are untouched.</p>
+<p>Note that the function called by the shortcode should <i>never</i> produce an output of any kind. Shortcode functions should <i>return</i> the text that is to be used to replace the shortcode. Producing the output directly will lead to unexpected results. This is similar to the way filter functions should behave, in that they should not produce unexpected side effects from the call since you cannot control when and where they are called from.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="63"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function add_shortcode( $tag, $callback ) {
+	global $shortcode_tags;
+
+	if ( '' === trim( $tag ) ) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			__( 'Invalid shortcode name: Empty name given.' ),
+			'4.4.0'
+		);
+		return;
+	}
+
+	if ( 0 !== preg_match( '@[&lt;&gt;&amp;/\[\]\x00-\x20=]@', $tag ) ) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			sprintf(
+				/* translators: 1: Shortcode name, 2: Space-separated list of reserved characters. */
+				__( 'Invalid shortcode name: %1$s. Do not use spaces or reserved characters: %2$s' ),
+				$tag,
+				'&amp; / &lt; &gt; [ ] ='
+			),
+			'4.4.0'
+		);
+		return;
+	}
+
+	$shortcode_tags[ $tag ] = $callback;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/shortcodes.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/shortcodes.php#L63">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/shortcodes.php#L63-L90">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_embed/__construct/">WP_Embed::__construct()</a><code>wp-includes/class-wp-embed.php</code></td><td><p>Constructor</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_embed/run_shortcode/">WP_Embed::run_shortcode()</a><code>wp-includes/class-wp-embed.php</code></td><td><p>Processes the  shortcode.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="444" id="comment-444">
+<article class="comment-body" id="div-comment-444">
+<a class="screen-reader-text" href="#comment-content-444">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-444">
+<p><strong>Examples</strong></p>
+<p>Simplest example of a shortcode tag using the API: <code>[footag foo="bar"]</code></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_shortcode( 'footag', 'wpdocs_footag_func' );
+function wpdocs_footag_func( $atts ) {
+	return "foo = {$atts['foo']}";
+}</code></pre>
+<p>Example with nice attribute defaults: <code>[bartag foo="bar"]</code></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_shortcode( 'bartag', 'wpdocs_bartag_func' );
+function wpdocs_bartag_func( $atts ) {
+	$atts = shortcode_atts( array(
+		'foo' =&gt; 'no foo',
+		'baz' =&gt; 'default baz'
+	), $atts, 'bartag' );
+
+	return "foo = {$atts['foo']}";
+}</code></pre>
+<p>Example with enclosed content: <code>[baztag]content[/baztag]</code></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_shortcode( 'baztag', 'wpdocs_baztag_func' );
+function wpdocs_baztag_func( $atts, $content = "" ) {
+	return "content = $content";
+}</code></pre>
+<p>If your plugin is designed as a class write as follows:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_shortcode( 'baztag', array( 'MyPlugin', 'wpdocs_baztag_func' ) );
+class MyPlugin {
+	public static function wpdocs_baztag_func( $atts, $content = "" ) {
+		return "content = $content";
+	}
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-444">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-dingo_d even thread-even depth-1" data-comment-id="3473" id="comment-3473">
+<article class="comment-body" id="div-comment-3473">
+<a class="screen-reader-text" href="#comment-content-3473">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3473">
+<p>When adding `<a href="https://developer.notmatt.press/reference/functions/add_shortcode/" rel="function">add_shortcode()</a> ` function in a plugin, it’s good to add it in a function that is hooked to `init` hook. So that WordPress has time to initialize properly.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'init', 'wpdocs_add_custom_shortcode' );
+
+function wpdocs_add_custom_shortcode() {
+	add_shortcode( 'footag', 'wpdocs_footag_func' );
+}</code></pre>
+<p>As described in the <a href="https://developer.notmatt.press/plugins/shortcodes/basic-shortcodes/#add-a-shortcode">plugins handbook</a>.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-3473">
+<ul class="children">
+<li class="comment byuser comment-author-spartelfant odd alt depth-2" data-comment-id="4681" id="comment-4681">
+<article class="comment-body" id="div-comment-4681">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4681">
+<div>There is currently (2020-12-23) no such recommendation in the <a href="https://developer.notmatt.press/plugins/shortcodes/basic-shortcodes/#add-a-shortcode">plugins handbook</a> nor in the <a href="https://codex.wordpress.org/Shortcode_API" rel="nofollow ugc">codex</a>.</div>
+<div><a class="url" href="https://profiles.wordpress.org/spartelfant/" rel="external nofollow">Bart Kuijper</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/add_shortcode/#comment-4681"><time datetime="2020-12-23T22:00:53+00:00">4 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-ahmadkarim even thread-odd thread-alt depth-1" data-comment-id="5089" id="comment-5089">
+<article class="comment-body" id="div-comment-5089">
+<a class="screen-reader-text" href="#comment-content-5089">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5089">
+<p>Example of <code>add_shortcode</code> function that uses <code>get_template_part</code> function to include a template.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function wpdocs_the_shortcode_func( $atts ) {
+	$attributes = shortcode_atts( array(
+		'title' =&gt; false,
+		'limit' =&gt; 4,
+	), $atts );
+	
+	ob_start();
+
+	// include template with the arguments (The $args parameter was added in v5.5.0)
+	get_template_part( 'template-parts/wpdocs-the-shortcode-template', null, $attributes );
+
+	return ob_get_clean();
+
+}
+add_shortcode( 'wpdocs_the_shortcode', 'wpdocs_the_shortcode_func' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5089">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-nasifshuvo123 odd alt thread-even depth-1" data-comment-id="5379" id="comment-5379">
+<article class="comment-body" id="div-comment-5379">
+<a class="screen-reader-text" href="#comment-content-5379">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5379">
+<p>For wppb plugin boilerplate I add code to define_public_hooks()<br>
+<code>$this-&gt;loader-&gt;add_action( 'init', $plugin_public, 'register_shortcodes' );</code></br></p>
+<p>Then in public folder, in class_public file I added:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">public function register_shortcodes(){
+
+		add_shortcode( 'sample-shortcode','shortcode_function'  );
+		function shortcode_function(  ) {
+			return "Hello Shortcode";
+		}
+	}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5379">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-kittmedia even thread-odd thread-alt depth-1" data-comment-id="5691" id="comment-5691">
+<article class="comment-body" id="div-comment-5691">
+<a class="screen-reader-text" href="#comment-content-5691">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5691">
+<p>Beware that the first argument passed to the callback is an empty string if no attributes are set in the shortcode. So a type declaration will fail:</p>
+<p>“Fatal error: Uncaught Error: Argument 1 passed to shortcode_callback() must be of the type array, string given”</p>
+<p>Use a check whether <code>$arguments</code> is not an array and if so, replace it with an empty array:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function shortcode_callback( $attributes, string $content, string $shortcode ) {
+	if ( ! is_array( $attributes ) ) {
+		$attributes = [];
+	}
+	
+	// do stuff
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="2" id="feedback-5691">
+<ul class="children">
+<li class="comment byuser comment-author-dargus odd alt depth-2" data-comment-id="6953" id="comment-6953">
+<article class="comment-body" id="div-comment-6953">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6953">
+<div>If using <code>shortcode_atts()</code> this will already be taken care of. If using PHP 8.0+, you can also declare the parameter as <code>array|string</code>.  <code> function shortcode_callback( array|string $atts, string $content, string $shortcode_tag ) { 	$atts = shortcode_atts( array( 		'attribute' =&gt; 'default_value' 	), $atts ); 	 	// do stuff } </code></div>
+<div><a class="url" href="https://profiles.wordpress.org/dargus/" rel="external nofollow">Old account</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/add_shortcode/#comment-6953"><time datetime="2024-03-20T08:23:23+00:00">11 months ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-gerardreches even depth-2" data-comment-id="6954" id="comment-6954">
+<article class="comment-body" id="div-comment-6954">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6954">
+<div>If using <code>shortcode_atts()</code> this will already be taken care of. If using PHP 8.0+, you can also declare the parameter as <code>array|string</code>.</div>
+<div><a class="url" href="https://profiles.wordpress.org/gerardreches/" rel="external nofollow">Gerard Reches</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/add_shortcode/#comment-6954"><time datetime="2024-03-20T08:25:30+00:00">11 months ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-pjohanneson odd alt thread-even depth-1" data-comment-id="2464" id="comment-2464">
+<article class="comment-body" id="div-comment-2464">
+<a class="screen-reader-text" href="#comment-content-2464">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2464">
+<p>Notes (from the Codex — <a href="https://codex.wordpress.org/Function_Reference/add_shortcode#Notes" rel="nofollow ugc">https://codex.wordpress.org/Function_Reference/add_shortcode#Notes</a>)</p>
+<ul>
+<li>The shortcode callback will be passed three arguments: the shortcode attributes, the shortcode content (if any), and the name of the shortcode.</li>
+<li>There can only be one hook for each shortcode. Which means that if another plugin has a similar shortcode, it will override yours or yours will override theirs depending on which order the plugins are included and/or ran.</li>
+<li>Shortcode attribute names are always converted to lowercase before they are passed into the handler function. Values are untouched.</li>
+<li>Note that the function called by the shortcode should never produce output of any kind. Shortcode functions should return the text that is to be used to replace the shortcode. Producing the output directly will lead to unexpected results. This is similar to the way filter functions should behave, in that they should not produce expected side effects from the call, since you cannot control when and where they are called from.</li>
+</ul>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2464">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-xedinunknown even thread-odd thread-alt depth-1" data-comment-id="6692" id="comment-6692">
+<article class="comment-body" id="div-comment-6692">
+<a class="screen-reader-text" href="#comment-content-6692">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6692">
+<p>⚠️⚠️<br/>
+Currently, and for some time now, viewing a post with a shortcode in the editor caused the shortcode to get rendered. This is very unexpected behaviour described in <a href="https://github.com/WordPress/gutenberg/issues/18988" rel="nofollow ugc">an old issue</a>. It can, for example, cause the post to become uneditable via the admin if there’s an error in the shortcode, such as some visitor-facing area variables or functions not being declared, etc.</p>
+<p>To go around this, as mentioned in <a href="https://github.com/WordPress/gutenberg/issues/18394#issuecomment-552593461" rel="nofollow ugc">a comment</a>, use the <a href="https://developer.notmatt.press/reference/functions/is_admin/" rel="ugc"><code>is_admin()</code></a> function to prevent computation on admin pages.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-6692">
+<ul class="children">
+<li class="comment byuser comment-author-webunraveling odd alt depth-2" data-comment-id="6863" id="comment-6863">
+<article class="comment-body" id="div-comment-6863">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6863">
+<div>The only time I ran in to an issue with saving is when I used <code>echo</code> instead of <code>return</code> in the callback. Maybe this was fixed in the past few months… or you were using <code>echo</code> like me. Also, if you use <code>echo</code> the shortcode content will not appear where the shortcode was placed. So it is best to <code>return</code> the output of the callback function.</div>
+<div><a class="url" href="https://profiles.wordpress.org/webunraveling/" rel="external nofollow">Jason Raveling</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/add_shortcode/#comment-6863"><time datetime="2024-01-12T17:47:11+00:00">1 year ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-sabbir009 even thread-even depth-1" data-comment-id="5631" id="comment-5631">
+<article class="comment-body" id="div-comment-5631">
+<a class="screen-reader-text" href="#comment-content-5631">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5631">
+<p>$atts: an associative array of attributes, you can access the <strong>associative array anywhere</strong>.<br/>
+$content: the enclosed content (if the shortcode is used in its enclosing form)</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Appends a &lt;a&gt; tag with URL to the content.
+ * 
+ * @param array $atts the shortcode attributes.
+ * @param sring $content the editor enclosed content.
+ * @return string
+ */
+function button_callback( $atts, $content ) {
+	// It's a default value.
+	$default = array(
+		'url' =&gt; '',
+	);
+	// You will pass default value after that user define values.
+	$button_attrs = shortcode_atts( $default, $atts );
+
+	return sprintf( '&lt;a href="%s"&gt;%s&lt;/a&gt;', $button_attrs['url'], do_shortcode( $content ) );
+}
+
+add_shortcode( 'test-button', 'button_callback' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5631">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-123host odd alt thread-odd thread-alt depth-1" data-comment-id="6421" id="comment-6421">
+<article class="comment-body" id="div-comment-6421">
+<a class="screen-reader-text" href="#comment-content-6421">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6421">
+<p>When passing values via the shortcode e.g. <code>[myshortcode FooBar="one" SomethingElse="two"]</code> the keys in the array are transformed to lowercase </p>
+<p>The array passed to the callback function will be: <code>Array( foobar =&gt; "one", somethingelse=&gt; "two" )</code></p>
+<p>Don’t be like me and spend hours trying to figure out why the values weren’t being passed.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6421">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

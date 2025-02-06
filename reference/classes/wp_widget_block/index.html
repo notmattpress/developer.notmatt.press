@@ -1,0 +1,277 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Widget_Block</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Widget_Block</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Widget_Block {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Core class used to implement a Block widget.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/classes/wp_widget">WP_Widget</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_block/__construct/">WP_Widget_Block::__construct</a></td><td>Sets up a new Block widget instance.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_block/form/">WP_Widget_Block::form</a></td><td>Outputs the Block widget settings form.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_block/get_dynamic_classname/">WP_Widget_Block::get_dynamic_classname</a></td><td>Calculates the classname to use in the block widget’s container HTML.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_block/set_is_wide_widget_in_customizer/">WP_Widget_Block::set_is_wide_widget_in_customizer</a></td><td>Makes sure no block widget is considered to be wide.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_block/update/">WP_Widget_Block::update</a></td><td>Handles updating settings for the current Block widget instance.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_block/widget/">WP_Widget_Block::widget</a></td><td>Outputs the content for the current Block widget instance.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="17"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Widget_Block extends WP_Widget {
+
+	/**
+	 * Default instance.
+	 *
+	 * @since 5.8.0
+	 * @var array
+	 */
+	protected $default_instance = array(
+		'content' =&gt; '',
+	);
+
+	/**
+	 * Sets up a new Block widget instance.
+	 *
+	 * @since 5.8.0
+	 */
+	public function __construct() {
+		$widget_ops  = array(
+			'classname'                   =&gt; 'widget_block',
+			'description'                 =&gt; __( 'A widget containing a block.' ),
+			'customize_selective_refresh' =&gt; true,
+			'show_instance_in_rest'       =&gt; true,
+		);
+		$control_ops = array(
+			'width'  =&gt; 400,
+			'height' =&gt; 350,
+		);
+		parent::__construct( 'block', __( 'Block' ), $widget_ops, $control_ops );
+
+		add_filter( 'is_wide_widget_in_customizer', array( $this, 'set_is_wide_widget_in_customizer' ), 10, 2 );
+	}
+
+	/**
+	 * Outputs the content for the current Block widget instance.
+	 *
+	 * @since 5.8.0
+	 *
+	 * @param array $args     Display arguments including 'before_title', 'after_title',
+	 *                        'before_widget', and 'after_widget'.
+	 * @param array $instance Settings for the current Block widget instance.
+	 */
+	public function widget( $args, $instance ) {
+		$instance = wp_parse_args( $instance, $this-&gt;default_instance );
+
+		echo str_replace(
+			'widget_block',
+			$this-&gt;get_dynamic_classname( $instance['content'] ),
+			$args['before_widget']
+		);
+
+		/**
+		 * Filters the content of the Block widget before output.
+		 *
+		 * @since 5.8.0
+		 *
+		 * @param string          $content  The widget content.
+		 * @param array           $instance Array of settings for the current widget.
+		 * @param WP_Widget_Block $widget   Current Block widget instance.
+		 */
+		echo apply_filters(
+			'widget_block_content',
+			$instance['content'],
+			$instance,
+			$this
+		);
+
+		echo $args['after_widget'];
+	}
+
+	/**
+	 * Calculates the classname to use in the block widget's container HTML.
+	 *
+	 * Usually this is set to `$this-&gt;widget_options['classname']` by
+	 * dynamic_sidebar(). In this case, however, we want to set the classname
+	 * dynamically depending on the block contained by this block widget.
+	 *
+	 * If a block widget contains a block that has an equivalent legacy widget,
+	 * we display that legacy widget's class name. This helps with theme
+	 * backwards compatibility.
+	 *
+	 * @since 5.8.0
+	 *
+	 * @param string $content The HTML content of the current block widget.
+	 * @return string The classname to use in the block widget's container HTML.
+	 */
+	private function get_dynamic_classname( $content ) {
+		$blocks = parse_blocks( $content );
+
+		$block_name = isset( $blocks[0] ) ? $blocks[0]['blockName'] : null;
+
+		switch ( $block_name ) {
+			case 'core/paragraph':
+				$classname = 'widget_block widget_text';
+				break;
+			case 'core/calendar':
+				$classname = 'widget_block widget_calendar';
+				break;
+			case 'core/search':
+				$classname = 'widget_block widget_search';
+				break;
+			case 'core/html':
+				$classname = 'widget_block widget_custom_html';
+				break;
+			case 'core/archives':
+				$classname = 'widget_block widget_archive';
+				break;
+			case 'core/latest-posts':
+				$classname = 'widget_block widget_recent_entries';
+				break;
+			case 'core/latest-comments':
+				$classname = 'widget_block widget_recent_comments';
+				break;
+			case 'core/tag-cloud':
+				$classname = 'widget_block widget_tag_cloud';
+				break;
+			case 'core/categories':
+				$classname = 'widget_block widget_categories';
+				break;
+			case 'core/audio':
+				$classname = 'widget_block widget_media_audio';
+				break;
+			case 'core/video':
+				$classname = 'widget_block widget_media_video';
+				break;
+			case 'core/image':
+				$classname = 'widget_block widget_media_image';
+				break;
+			case 'core/gallery':
+				$classname = 'widget_block widget_media_gallery';
+				break;
+			case 'core/rss':
+				$classname = 'widget_block widget_rss';
+				break;
+			default:
+				$classname = 'widget_block';
+		}
+
+		/**
+		 * The classname used in the block widget's container HTML.
+		 *
+		 * This can be set according to the name of the block contained by the block widget.
+		 *
+		 * @since 5.8.0
+		 *
+		 * @param string $classname  The classname to be used in the block widget's container HTML,
+		 *                           e.g. 'widget_block widget_text'.
+		 * @param string $block_name The name of the block contained by the block widget,
+		 *                           e.g. 'core/paragraph'.
+		 */
+		return apply_filters( 'widget_block_dynamic_classname', $classname, $block_name );
+	}
+
+	/**
+	 * Handles updating settings for the current Block widget instance.
+	 *
+	 * @since 5.8.0
+
+	 * @param array $new_instance New settings for this instance as input by the user via
+	 *                            WP_Widget::form().
+	 * @param array $old_instance Old settings for this instance.
+	 * @return array Settings to save or bool false to cancel saving.
+	 */
+	public function update( $new_instance, $old_instance ) {
+		$instance = array_merge( $this-&gt;default_instance, $old_instance );
+
+		if ( current_user_can( 'unfiltered_html' ) ) {
+			$instance['content'] = $new_instance['content'];
+		} else {
+			$instance['content'] = wp_kses_post( $new_instance['content'] );
+		}
+
+		return $instance;
+	}
+
+	/**
+	 * Outputs the Block widget settings form.
+	 *
+	 * @since 5.8.0
+	 *
+	 * @see WP_Widget_Custom_HTML::render_control_template_scripts()
+	 *
+	 * @param array $instance Current instance.
+	 */
+	public function form( $instance ) {
+		$instance = wp_parse_args( (array) $instance, $this-&gt;default_instance );
+		?&gt;
+		&lt;p&gt;
+			&lt;label for="&lt;?php echo $this-&gt;get_field_id( 'content' ); ?&gt;"&gt;
+				&lt;?php
+				/* translators: HTML code of the block, not an option that blocks HTML. */
+				_e( 'Block HTML:' );
+				?&gt;
+			&lt;/label&gt;
+			&lt;textarea id="&lt;?php echo $this-&gt;get_field_id( 'content' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'content' ); ?&gt;" rows="6" cols="50" class="widefat code"&gt;&lt;?php echo esc_textarea( $instance['content'] ); ?&gt;&lt;/textarea&gt;
+		&lt;/p&gt;
+		&lt;?php
+	}
+
+	/**
+	 * Makes sure no block widget is considered to be wide.
+	 *
+	 * @since 5.8.0
+	 *
+	 * @param bool   $is_wide   Whether the widget is considered wide.
+	 * @param string $widget_id Widget ID.
+	 * @return bool Updated `is_wide` value.
+	 */
+	public function set_is_wide_widget_in_customizer( $is_wide, $widget_id ) {
+		if ( str_starts_with( $widget_id, 'block-' ) ) {
+			return false;
+		}
+
+		return $is_wide;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/widgets/class-wp-widget-block.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/widgets/class-wp-widget-block.php#L17">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/widgets/class-wp-widget-block.php#L17-L232">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget/">WP_Widget</a><code>wp-includes/class-wp-widget.php</code></td><td><p>Core base class extended to register widgets.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

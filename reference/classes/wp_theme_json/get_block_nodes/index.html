@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_theme_json/">WP_Theme_JSON</a></span><span class="is-current-page">WP_Theme_JSON::get_block_nodes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Theme_JSON::get_block_nodes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Theme_JSON::get_block_nodes( <span class="arg-type">array</span> <span class="arg-name">$theme_json</span> ): <span class="return-type">array</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>An internal method to get the block nodes from a theme.json file.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$theme_json</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The theme.json converted to an array.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The block nodes in theme.json.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2238"><code class="language-php line-numbers" id="wporg-source-code" lang="php"> * It also transforms camelCase names into kebab-case
+ * and substitutes '/' by '-'.
+ *
+ * This is thought to be useful to generate
+ * CSS Custom Properties from a tree,
+ * although there's nothing in the implementation
+ * of this function that requires that format.
+ *
+ * For example, assuming the given prefix is '--wp'
+ * and the token is '--', for this input tree:
+ *
+ *     {
+ *       'some/property': 'value',
+ *       'nestedProperty': {
+ *         'sub-property': 'value'
+ *       }
+ *     }
+ *
+ * it'll return this output:
+ *
+ *     {
+ *       '--wp--some-property': 'value',
+ *       '--wp--nested-property--sub-property': 'value'
+ *     }
+ *
+ * @since 5.8.0
+ *
+ * @param array  $tree   Input tree to process.
+ * @param string $prefix Optional. Prefix to prepend to each variable. Default empty string.
+ * @param string $token  Optional. Token to use between levels. Default '--'.
+ * @return array The flattened tree.
+ */
+protected static function flatten_tree( $tree, $prefix = '', $token = '--' ) {
+	$result = array();
+	foreach ( $tree as $property =&gt; $value ) {
+		$new_key = $prefix . str_replace(
+			'/',
+			'-',
+			strtolower( _wp_to_kebab_case( $property ) )
+		);
+
+		if ( is_array( $value ) ) {
+			$new_prefix        = $new_key . $token;
+			$flattened_subtree = static::flatten_tree( $value, $new_prefix, $token );
+			foreach ( $flattened_subtree as $subtree_key =&gt; $subtree_value ) {
+				$result[ $subtree_key ] = $subtree_value;
+			}
+		} else {
+			$result[ $new_key ] = $value;
+		}
+	}
+	return $result;
+}
+
+/**
+ * Given a styles array, it extracts the style properties
+ * and adds them to the $declarations array following the format:
+ *
+ *     array(
+ *       'name'  =&gt; 'property_name',
+ *       'value' =&gt; 'property_value',
+ *     )
+ *
+ * @since 5.8.0
+ * @since 5.9.0 Added the `$settings` and `$properties` parameters.
+ * @since 6.1.0 Added `$theme_json`, `$selector`, and `$use_root_padding` parameters.
+ * @since 6.5.0 Output a `min-height: unset` rule when `aspect-ratio` is set.
+ * @since 6.6.0 Pass current theme JSON settings to wp_get_typography_font_size_value(), and process background properties.
+ * @since 6.7.0 `ref` resolution of background properties, and assigning custom default values.
+ *
+ * @param array   $styles Styles to process.
+ * @param array   $settings Theme settings.
+ * @param array   $properties Properties metadata.
+ * @param array   $theme_json Theme JSON array.
+ * @param string  $selector The style block selector.
+ * @param boolean $use_root_padding Whether to add custom properties at root level.
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-theme-json.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-theme-json.php#L2238">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-theme-json.php#L2238-L2313">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td><span class="since-description">Refactored and stabilized selectors API.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_page_template()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_page_template()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_page_template(): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves path of page template in current or parent template.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Note: For block themes, use <a href="https://developer.notmatt.press/reference/functions/locate_block_template/" rel="function">locate_block_template()</a>  function instead.</p>
+<p>The hierarchy for this template looks like:</p>
+<ol>
+<li>{Page Template}.php</li>
+<li>page-{page_name}.php</li>
+<li>page-{id}.php</li>
+<li>page.php</li>
+</ol>
+<p>An example of this is:</p>
+<ol>
+<li>page-templates/full-width.php</li>
+<li>page-about.php</li>
+<li>page-4.php</li>
+<li>page.php</li>
+</ol>
+<p>The template hierarchy and template path are filterable via the <a href="https://developer.notmatt.press/reference/hooks/type_template_hierarchy/">‘$type_template_hierarchy’</a> and <a href="https://developer.notmatt.press/reference/hooks/type_template/">‘$type_template’</a> dynamic hooks, where <code>$type</code> is ‘page’.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/get_query_template">get_query_template()</a></li>
+</ul></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Full path to page template file.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="467"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_page_template() {
+	$id       = get_queried_object_id();
+	$template = get_page_template_slug();
+	$pagename = get_query_var( 'pagename' );
+
+	if ( ! $pagename &amp;&amp; $id ) {
+		/*
+		 * If a static page is set as the front page, $pagename will not be set.
+		 * Retrieve it from the queried object.
+		 */
+		$post = get_queried_object();
+		if ( $post ) {
+			$pagename = $post-&gt;post_name;
+		}
+	}
+
+	$templates = array();
+	if ( $template &amp;&amp; 0 === validate_file( $template ) ) {
+		$templates[] = $template;
+	}
+	if ( $pagename ) {
+		$pagename_decoded = urldecode( $pagename );
+		if ( $pagename_decoded !== $pagename ) {
+			$templates[] = "page-{$pagename_decoded}.php";
+		}
+		$templates[] = "page-{$pagename}.php";
+	}
+	if ( $id ) {
+		$templates[] = "page-{$id}.php";
+	}
+	$templates[] = 'page.php';
+
+	return get_query_template( 'page', $templates );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/template.php#L467">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/template.php#L467-L500">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_queried_object_id/">get_queried_object_id()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the ID of the currently queried object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_query_var/">get_query_var()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the value of a query variable in the <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> class.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_queried_object/">get_queried_object()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the currently queried object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/validate_file/">validate_file()</a><code>wp-includes/functions.php</code></td><td><p>Validates a file name and path against an allowed set of rules.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_query_template/">get_query_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves path to a template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_page_template_slug/">get_page_template_slug()</a><code>wp-includes/post-template.php</code></td><td><p>Gets the specific template filename for a given post.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.7.0/">4.7.0</a></td><td><span class="since-description">The decoded form of <code>page-{page_name}.php</code> was added to the top of the              template hierarchy when the page name contains multibyte characters.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="523" id="comment-523">
+<article class="comment-body" id="div-comment-523">
+<a class="screen-reader-text" href="#comment-content-523">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-523">
+<p>Display the filename of the page template used to render a page (printed within an HTML comment, in this example) :</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo '&lt;!-- ' . basename( get_page_template() ) . ' --&gt;'; ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-523">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-speedy_snail odd alt thread-even depth-1" data-comment-id="868" id="comment-868">
+<article class="comment-body" id="div-comment-868">
+<a class="screen-reader-text" href="#comment-content-868">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-868">
+<p>The link for $type_template is not found on this page. It needs updating.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-868">
+<ul class="children">
+<li class="comment byuser comment-author-dbrumbaugh10up even depth-2" data-comment-id="875" id="comment-875">
+<article class="comment-body" id="div-comment-875">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-875">
+<div>Yes, here’s the missing link:<a href="https://developer.notmatt.press/reference/hooks/type_template/" rel="nofollow"> {$type}_template</a></div>
+<div><a class="url" href="https://profiles.wordpress.org/dbrumbaugh10up/" rel="external nofollow">David Brumbaugh</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/get_page_template/#comment-875"><time datetime="2015-10-10T15:22:04+00:00">9 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-thomask odd alt thread-odd thread-alt depth-1" data-comment-id="5978" id="comment-5978">
+<article class="comment-body" id="div-comment-5978">
+<a class="screen-reader-text" href="#comment-content-5978">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5978">
+<p>this function is probably useless / not working as intended with Gutenberg Full Site Edit, as it returns /wp-includes/template-canvas.php</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5978">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

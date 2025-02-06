@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_post_time()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_post_time()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_post_time( <span class="arg-type">string</span> <span class="arg-name">$format</span> = <span class="arg-default">'U'</span>,  <span class="arg-type">bool</span> <span class="arg-name">$gmt</span> = <span class="arg-default">false</span>,  <span class="arg-type">int|WP_Post</span> <span class="arg-name">$post</span> = <span class="arg-default">null</span>,  <span class="arg-type">bool</span> <span class="arg-name">$translate</span> = <span class="arg-default">false</span> ): <span class="return-type">string|int|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the time at which the post was written.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$format</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Format to use for retrieving the time the post                               was written. Accepts <code>'G'</code>, <code>'U'</code>, or PHP date format. Default <code>'U'</code>.</span></div><p class="default">Default:<code>'U'</code></p></dd><dt><code>$gmt</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to retrieve the GMT time. </span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID or post object. Default is global <code>$post</code> object.</span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$translate</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to translate the time string. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|int|false</span> Formatted date string or Unix timestamp if <code>$format</code> is <code>'U'</code> or <code>'G'</code>.<br/>
+False on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2745"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_post_time( $format = 'U', $gmt = false, $post = null, $translate = false ) {
+	$post = get_post( $post );
+
+	if ( ! $post ) {
+		return false;
+	}
+
+	$source   = ( $gmt ) ? 'gmt' : 'local';
+	$datetime = get_post_datetime( $post, 'date', $source );
+
+	if ( false === $datetime ) {
+		return false;
+	}
+
+	if ( 'U' === $format || 'G' === $format ) {
+		$time = $datetime-&gt;getTimestamp();
+
+		// Returns a sum of timestamp with timezone offset. Ideally should never be used.
+		if ( ! $gmt ) {
+			$time += $datetime-&gt;getOffset();
+		}
+	} elseif ( $translate ) {
+		$time = wp_date( $format, $datetime-&gt;getTimestamp(), $gmt ? new DateTimeZone( 'UTC' ) : null );
+	} else {
+		if ( $gmt ) {
+			$datetime = $datetime-&gt;setTimezone( new DateTimeZone( 'UTC' ) );
+		}
+
+		$time = $datetime-&gt;format( $format );
+	}
+
+	/**
+	 * Filters the localized time a post was written.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param string|int $time   Formatted date string or Unix timestamp if `$format` is 'U' or 'G'.
+	 * @param string     $format Format to use for retrieving the time the post was written.
+	 *                           Accepts 'G', 'U', or PHP date format.
+	 * @param bool       $gmt    Whether to retrieve the GMT time.
+	 */
+	return apply_filters( 'get_post_time', $time, $format, $gmt );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/general-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/general-template.php#L2745">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/general-template.php#L2745-L2787">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_post_time/"><span class="hook-func">apply_filters</span>( ‘get_post_time’,  <nobr><span class="arg-type">string|int</span> <span class="arg-name">$time</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$format</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$gmt</span></nobr> )</a></dt><dd><p>Filters the localized time a post was written.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_date/">wp_date()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the date, in localized format.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_datetime/">get_post_datetime()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves post published or modified time as a <code>DateTimeImmutable</code> object instance.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_the_time/">get_the_time()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves the time at which the post was written.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/the_weekday/">the_weekday()</a><code>wp-includes/general-template.php</code></td><td><p>Displays the weekday on which the post was written.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/the_weekday_date/">the_weekday_date()</a><code>wp-includes/general-template.php</code></td><td><p>Displays the weekday on which the post was written.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_the_date/">get_the_date()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves the date on which the post was written.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.0/">2.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-gwynethllewelyn odd alt thread-odd thread-alt depth-1" data-comment-id="6836" id="comment-6836">
+<article class="comment-body" id="div-comment-6836">
+<a class="screen-reader-text" href="#comment-content-6836">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6836">
+<p>For a complete list of date/time formatting options, the ‘PHP date format’ is available from the <a href="https://www.php.net/manual/en/datetimeimmutable.createfromformat.php#datetimeimmutable.createfromformat.parameters" rel="nofollow ugc">PHP.net reference website</a>.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6836">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

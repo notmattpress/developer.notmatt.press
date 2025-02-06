@@ -1,0 +1,488 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span class="is-current-page">Testing Overview</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Testing Overview</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Gutenberg contains both PHP and JavaScript code, and encourages testing and code style linting for both.</p>
+<h2 class="is-toc-heading" id="why-test" tabindex="-1"><a href="#why-test">Why test?</a></h2>
+<p>Aside from the joy testing will bring to your life, tests are important not only because they help to ensure that our application behaves as it should, but also because they provide concise examples of how to use a piece of code.</p>
+<p>Tests are also part of our code base, which means we apply to them the same standards we apply to all our application code.</p>
+<p>As with all code, tests have to be maintained. Writing tests for the sake of having a test isn’t the goal – rather we should try to strike the right balance between covering expected and unexpected behaviours, speedy execution and code maintenance.</p>
+<p>When writing tests consider the following:</p>
+<ul>
+<li>What behaviour(s) are we testing?</li>
+<li>What errors are likely to occur when we run this code?</li>
+<li>Does the test test what we think it is testing? Or are we introducing false positives/negatives?</li>
+<li>Is it readable? Will other contributors be able to understand how our code behaves by looking at its corresponding test?</li>
+</ul>
+<h2 class="is-toc-heading" id="javascript-testing" tabindex="-1"><a href="#javascript-testing">JavaScript testing</a></h2>
+<p>Tests for JavaScript use <a href="https://jestjs.io/">Jest</a> as the test runner and its API for <a href="https://jestjs.io/docs/en/api.html">globals</a> (<code>describe</code>, <code>test</code>, <code>beforeEach</code> and so on) <a href="https://jestjs.io/docs/en/expect.html">assertions</a>, <a href="https://jestjs.io/docs/en/mock-functions.html">mocks</a>, <a href="https://jestjs.io/docs/en/jest-object.html#jestspyonobject-methodname">spies</a> and <a href="https://jestjs.io/docs/en/mock-function-api.html">mock functions</a>. If needed, you can also use <a href="https://testing-library.com/docs/react-testing-library/intro">React Testing Library</a> for React component testing.</p>
+<p><em>It should be noted that in the past, React components were unit tested with <a href="https://github.com/airbnb/enzyme">Enzyme</a>. However, React Testing Library (RTL) is now used for all existing and new tests instead.</em></p>
+<p>Assuming you’ve followed the <a href="https://developer.notmatt.press/block-editor/contributors/code/getting-started-with-code-contribution/">instructions</a> to install Node and project dependencies, tests can be run from the command-line with NPM:</p>
+<pre><code>npm test
+</code></pre>
+<p>Linting is static code analysis used to enforce coding standards and to avoid potential errors. This project uses <a href="https://eslint.org/">ESLint</a> and <a href="https://www.typescriptlang.org/docs/handbook/type-checking-javascript-files.html">TypeScript’s JavaScript type-checking</a> to capture these issues. While the above <code>npm test</code> will execute both unit tests and code linting, code linting can be verified independently by running <code>npm run lint</code>. Some JavaScript issues can be fixed automatically by running <code>npm run lint:js:fix</code>.</p>
+<p>To improve your developer workflow, you should setup an editor linting integration. See the <a href="https://developer.notmatt.press/block-editor/contributors/code/getting-started-with-code-contribution/">getting started documentation</a> for additional information.</p>
+<p>To run unit tests only, without the linter, use <code>npm run test:unit</code> instead.</p>
+<h3 class="is-toc-heading" id="folder-structure" tabindex="-1"><a href="#folder-structure">Folder structure</a></h3>
+<p>Keep your tests in a <code>test</code> folder in your working directory. The test file should have the same name as the test subject file.</p>
+<pre><code>+-- test
+|   +-- bar.js
++-- bar.js
+</code></pre>
+<p>Only test files (with at least one test case) should live directly under <code>/test</code>. If you need to add external mocks or fixtures, place them in a sub folder, for example:</p>
+<ul>
+<li><code>test/mocks/[file-name].js</code></li>
+<li><code>test/fixtures/[file-name].js</code></li>
+</ul>
+<h3 class="is-toc-heading" id="importing-tests" tabindex="-1"><a href="#importing-tests">Importing tests</a></h3>
+<p>Given the previous folder structure, try to use relative paths when importing of the <strong>code you’re testing</strong>, as opposed to using project paths.</p>
+<p><strong>Good</strong></p>
+<p><code>import { bar } from '../bar';</code></p>
+<p><strong>Not so good</strong></p>
+<p><code>import { bar } from 'components/foo/bar';</code></p>
+<p>It will make your life easier should you decide to relocate your code to another position in the application directory.</p>
+<h3 class="is-toc-heading" id="describing-tests" tabindex="-1"><a href="#describing-tests">Describing tests</a></h3>
+<p>Use a <code>describe</code> block to group test cases. Each test case should ideally describe one behaviour only.</p>
+<p>In test cases, try to describe in plain words the expected behaviour. For UI components, this might entail describing expected behaviour from a user perspective rather than explaining code internals.</p>
+<p><strong>Good</strong></p>
+<pre><code class="language-javascript">describe( 'CheckboxWithLabel', () =&gt; {
+    test( 'checking checkbox should disable the form submit button', () =&gt; {
+        ...
+    } );
+} );
+</code></pre>
+<p><strong>Not so good</strong></p>
+<pre><code class="language-javascript">describe( 'CheckboxWithLabel', () =&gt; {
+    test( 'checking checkbox should set this.state.disableButton to `true`', () =&gt; {
+        ...
+    } );
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="setup-and-teardown-methods" tabindex="-1"><a href="#setup-and-teardown-methods">Setup and teardown methods</a></h3>
+<p>The Jest API includes some nifty <a href="https://jestjs.io/docs/en/setup-teardown.html">setup and teardown methods</a> that allow you to perform tasks <em>before</em> and <em>after</em> each or all of your tests, or tests within a specific <code>describe</code> block.</p>
+<p>These methods can handle asynchronous code to allow setup that you normally cannot do inline. As with <a href="https://jestjs.io/docs/en/asynchronous.html#promises">individual test cases</a>, you can return a Promise and Jest will wait for it to resolve:</p>
+<pre><code class="language-javascript">// one-time setup for *all* tests
+beforeAll( () =&gt;
+    someAsyncAction().then( ( resp ) =&gt; {
+        window.someGlobal = resp;
+    } )
+);
+
+// one-time teardown for *all* tests
+afterAll( () =&gt; {
+    window.someGlobal = null;
+} );
+</code></pre>
+<p><code>afterEach</code> and <code>afterAll</code> provide a perfect (and preferred) way to ‘clean up’ after our tests, for example, by resetting state data.</p>
+<p>Avoid placing clean up code after assertions since, if any of those tests fail, the clean up won’t take place and may cause failures in unrelated tests.</p>
+<h3 class="is-toc-heading" id="mocking-dependencies" tabindex="-1"><a href="#mocking-dependencies">Mocking dependencies</a></h3>
+<h4>Dependency injection</h4>
+<p>Passing dependencies to a function as arguments can often make your code simpler to test. Where possible, avoid referencing dependencies in a higher scope.</p>
+<p><strong>Not so good</strong></p>
+<pre><code class="language-javascript">import VALID_VALUES_LIST from './constants';
+
+function isValueValid( value ) {
+    return VALID_VALUES_LIST.includes( value );
+}
+</code></pre>
+<p>Here we’d have to import and use a value from <code>VALID_VALUES_LIST</code> in order to pass:</p>
+<p><code>expect( isValueValid( VALID_VALUES_LIST[ 0 ] ) ).toBe( true );</code></p>
+<p>The above assertion is testing two behaviours: 1) that the function can detect an item in a list, and 2) that it can detect an item in <code>VALID_VALUES_LIST</code>.</p>
+<p>But what if we don’t care what’s stored in <code>VALID_VALUES_LIST</code>, or if the list is fetched via an HTTP request, and we only want to test whether <code>isValueValid</code> can detect an item in a list?</p>
+<p><strong>Good</strong></p>
+<pre><code class="language-javascript">function isValueValid( value, validValuesList = [] ) {
+    return validValuesList.includes( value );
+}
+</code></pre>
+<p>Because we’re passing the list as an argument, we can pass mock <code>validValuesList</code> values in our tests and, as a bonus, test a few more scenarios:</p>
+<p><code>expect( isValueValid( 'hulk', [ 'batman', 'superman' ] ) ).toBe( false );</code></p>
+<p><code>expect( isValueValid( 'hulk', null ) ).toBe( false );</code></p>
+<p><code>expect( isValueValid( 'hulk', [] ) ).toBe( false );</code></p>
+<p><code>expect( isValueValid( 'hulk', [ 'iron man', 'hulk' ] ) ).toBe( true );</code></p>
+<h4>Imported dependencies</h4>
+<p>Often our code will use methods and properties from imported external and internal libraries in multiple places, which makes passing around arguments messy and impracticable. For these cases <code>jest.mock</code> offers a neat way to stub these dependencies.</p>
+<p>For instance, lets assume we have <code>config</code> module to control a great deal of functionality via feature flags.</p>
+<pre><code class="language-javascript">// bilbo.js
+import config from 'config';
+export const isBilboVisible = () =&gt;
+    config.isEnabled( 'the-ring' ) ? false : true;
+</code></pre>
+<p>To test the behaviour under each condition, we stub the config object and use a jest mocking function to control the return value of <code>isEnabled</code>.</p>
+<pre><code class="language-javascript">// test/bilbo.js
+import { isEnabled } from 'config';
+import { isBilboVisible } from '../bilbo';
+
+jest.mock( 'config', () =&gt; ( {
+    // bilbo is visible by default
+    isEnabled: jest.fn( () =&gt; false ),
+} ) );
+
+describe( 'The bilbo module', () =&gt; {
+    test( 'bilbo should be visible by default', () =&gt; {
+        expect( isBilboVisible() ).toBe( true );
+    } );
+
+    test( 'bilbo should be invisible when the `the-ring` config feature flag is enabled', () =&gt; {
+        isEnabled.mockImplementationOnce( ( name ) =&gt; name === 'the-ring' );
+        expect( isBilboVisible() ).toBe( false );
+    } );
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="testing-globals" tabindex="-1"><a href="#testing-globals">Testing globals</a></h3>
+<p>We can use <a href="https://jestjs.io/docs/en/jest-object.html#jestspyonobject-methodname">Jest spies</a> to test code that calls global methods.</p>
+<pre><code class="language-javascript">import { myModuleFunctionThatOpensANewWindow } from '../my-module';
+
+describe( 'my module', () =&gt; {
+    beforeAll( () =&gt; {
+        jest.spyOn( global, 'open' ).mockImplementation( () =&gt; true );
+    } );
+
+    test( 'something', () =&gt; {
+        myModuleFunctionThatOpensANewWindow();
+        expect( global.open ).toHaveBeenCalled();
+    } );
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="user-interactions" tabindex="-1"><a href="#user-interactions">User interactions</a></h3>
+<p>Simulating user interactions is a great way to <strong>write tests from the user’s perspective</strong>, and therefore avoid testing implementation details.</p>
+<p>When writing tests with Testing Library, there are two main alternatives for simulating user interactions:</p>
+<ol>
+<li>The <a href="https://testing-library.com/docs/dom-testing-library/api-events/#fireevent"><code>fireEvent</code></a> API, a utility for firing DOM events part of the Testing Library core API.</li>
+<li>The <a href="https://testing-library.com/docs/user-event/intro/"><code>user-event</code></a> library, a companion library to Testing Library that simulates user interactions by dispatching the events that would happen if the interaction took place in a browser.</li>
+</ol>
+<p>The built-in <code>fireEvent</code> is a utility for dispatching DOM events. It dispatches exactly the events that are described in the test spec – even if those exact events never had been dispatched in a real interaction in a browser.</p>
+<p>On the other hand, the <code>user-event</code> library exposes higher-level methods (e.g. <code>type</code>, <code>selectOptions</code>, <code>clear</code>, <code>doubleClick</code>…), that dispatch events like they would happen if a user interacted with the document, and take care of any react-specific quirks.</p>
+<p>For the above reasons, <strong>the <code>user-event</code> library is recommended when writing tests for user interactions</strong>.</p>
+<p><strong>Not so good</strong>: using <code>fireEvent</code> to dispatch DOM events.</p>
+<pre><code class="language-javascript">import { render, screen } from '@testing-library/react';
+
+test( 'fires onChange when a new value is typed', () =&gt; {
+    const spyOnChange = jest.fn();
+
+    // A component with one `input` and one `select`.
+    render( &lt;MyComponent onChange={ spyOnChange } /&gt; );
+
+    const input = screen.getByRole( 'textbox' );
+    input.focus();
+    // No clicks, no key events.
+    fireEvent.change( input, { target: { value: 62 } } );
+
+    // The `onChange` callback gets called once with '62' as the argument.
+    expect( spyOnChange ).toHaveBeenCalledTimes( 1 );
+
+    const select = screen.getByRole( 'listbox' );
+    select.focus();
+    // No pointer events dispatched.
+    fireEvent.change( select, { target: { value: 'optionValue' } } );
+
+    // ...
+</code></pre>
+<p><strong>Good</strong>: using <code>user-event</code> to simulate user events.</p>
+<pre><code class="language-javascript">import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+test( 'fires onChange when a new value is typed', async () =&gt; {
+    const user = userEvent.setup();
+
+    const spyOnChange = jest.fn();
+
+    // A component with one `input` and one `select`.
+    render( &lt;MyComponent onChange={ spyOnChange } /&gt; );
+
+    const input = screen.getByRole( 'textbox' );
+    // Focus the element, select and delete all its contents.
+    await user.clear( input );
+    // Click the element, type each character separately (generating keydown,
+    // keypress and keyup events).
+    await user.type( input, '62' );
+
+    // The `onChange` callback gets called 3 times with the following arguments:
+    // - 1: clear ('')
+    // - 2: '6'
+    // - 3: '62'
+    expect( spyOnChange ).toHaveBeenCalledTimes( 3 );
+
+    const select = screen.getByRole( 'listbox' );
+    // Dispatches events for focus, pointer, mouse, click and change.
+    await user.selectOptions( select, [ 'optionValue' ] );
+
+    // ...
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="integration-testing-for-block-ui" tabindex="-1"><a href="#integration-testing-for-block-ui">Integration testing for block UI</a></h3>
+<p>Integration testing is defined as a type of testing where different parts are tested as a group. In this case, the parts that we want to test are the different components that are required to be rendered for a specific block or editor logic. In the end, they are very similar to unit tests as they are run with the same command using the Jest library. The main difference is that for the integration tests the blocks are run within a <a href="https://github.com/WordPress/gutenberg/blob/trunk/test/integration/helpers/integration-test-editor.js#L60"><code>special instance of the block editor</code></a>.</p>
+<p>The advantage of this approach is that the bulk of a block editor’s functionality (block toolbar and inspector panel interactions, etc.) can be tested without having to fire up the full e2e test framework. This means the tests can run much faster and more reliably. It is suggested that as much of a block’s UI functionality as possible is covered with integration tests, with e2e tests used for interactions that require a full browser environment, eg. file uploads, drag and drop, etc.</p>
+<p><a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/cover/test/edit.js"><code>The Cover block</code></a> is an example of a block that uses this level of testing to provide coverage for a large percentage of the editor interactions.</p>
+<p>To set up a jest file for integration tests:</p>
+<pre><code class="language-js">import { initializeEditor } from 'test/integration/helpers/integration-test-editor';
+
+async function setup( attributes ) {
+    const testBlock = { name: 'core/cover', attributes };
+    return initializeEditor( testBlock );
+}
+</code></pre>
+<p>The <code>initializeEditor</code> function returns the output of the <code>@testing-library/react</code> <code>render</code> method. It will also accept an array of block metadata objects, allowing you to set up the editor with multiple blocks.</p>
+<p>The integration test editor module also exports a <code>selectBlock</code> which can be used to select the block to be tested by the aria-label on the block wrapper, eg. “Block: Cover”.</p>
+<h3 class="is-toc-heading" id="snapshot-testing" tabindex="-1"><a href="#snapshot-testing">Snapshot testing</a></h3>
+<p>This is an overview of <a href="https://jestjs.io/docs/en/snapshot-testing.html">snapshot testing</a> and how to best leverage snapshot tests.</p>
+<h4>TL;DR Broken snapshots</h4>
+<p>When a snapshot test fails, it just means that a component’s rendering has changed. If that was unintended, then the snapshot test just prevented a bug 😊</p>
+<p>However, if the change was intentional, follow these steps to update the snapshot. Run the following to update the snapshots:</p>
+<pre><code class="language-sh"># --testPathPattern is optional but will be much faster by only running matching tests
+npm run test:unit -- --updateSnapshot --testPathPattern path/to/tests
+
+# Update snapshot for e2e tests
+npm run test:e2e -- --update-snapshots path/to/spec
+</code></pre>
+<ol>
+<li>Review the diff and ensure the changes are expected and intentional.</li>
+<li>Commit.</li>
+</ol>
+<h4>What are snapshots?</h4>
+<p>Snapshots are just a representation of some data structure generated by tests. Snapshots are stored in files and committed alongside the tests. When the tests are run, the data structure generated is compared with the snapshot on file.</p>
+<p>It’s very easy to make a snapshot:</p>
+<pre><code class="language-js">test( 'foobar test', () =&gt; {
+    const foobar = { foo: 'bar' };
+
+    expect( foobar ).toMatchSnapshot();
+} );
+</code></pre>
+<p>This is the produced snapshot:</p>
+<pre><code class="language-js">exports[ `test foobar test 1` ] = `
+  Object {
+    "foo": "bar",
+  }
+`;
+</code></pre>
+<p>You should never create or modify a snapshot directly, they are generated and updated by tests.</p>
+<h4>Advantages</h4>
+<ul>
+<li>Trivial and concise to add tests.</li>
+<li>Protect against unintentional changes.</li>
+<li>Simple to work with.</li>
+<li>Reveal internal structures without running the application.</li>
+</ul>
+<h4>Disadvantages</h4>
+<ul>
+<li>Not expressive.</li>
+<li>Only catch issues when changes are introduced.</li>
+<li>Are problematic for anything non-deterministic.</li>
+</ul>
+<h4>Use cases</h4>
+<p>Snapshot are mostly targeted at component testing. They make us conscious of changes to a component’s structure which makes them <em>ideal</em> for refactoring. If a snapshot is kept up to date over the course of a series of commits, the snapshot diffs record the evolution of a component’s structure. Pretty cool 😎</p>
+<pre><code class="language-jsx">import { render, screen } from '@testing-library/react';
+import SolarSystem from 'solar-system';
+
+describe( 'SolarSystem', () =&gt; {
+    test( 'should render', () =&gt; {
+        const { container } = render( &lt;SolarSystem /&gt; );
+
+        expect( container ).toMatchSnapshot();
+    } );
+
+    test( 'should contain mars if planets is true', () =&gt; {
+        const { container } = render( &lt;SolarSystem planets /&gt; );
+
+        expect( container ).toMatchSnapshot();
+        expect( screen.getByText( /mars/i ) ).toBeInTheDocument();
+    } );
+} );
+</code></pre>
+<p>Reducer tests are also a great fit for snapshots. They are often large, complex data structures that shouldn’t change unexpectedly, exactly what snapshots excel at!</p>
+<h4>Working with snapshots</h4>
+<p>You might be blindsided by CI tests failing when snapshots don’t match. You’ll need to <a href="https://jestjs.io/docs/en/snapshot-testing.html#updating-snapshots">update snapshots</a> if the changes are expected. The quick and dirty solution is to invoke Jest with <code>--updateSnapshot</code>. That can be done as follows:</p>
+<pre><code class="language-sh">npm run test:unit -- --updateSnapshot --testPathPattern path/to/tests
+</code></pre>
+<p><code>--testPathPattern</code> is not required, but specifying a path will speed things up by running a subset of tests.</p>
+<p>It’s a great idea to keep <code>npm run test:unit:watch</code> running in the background as you work. Jest will run only the relevant tests for changed files, and when snapshot tests fail, just hit <code>u</code> to update a snapshot!</p>
+<h4>Pain points</h4>
+<p>Non-deterministic tests may not make consistent snapshots, so beware. When working with anything random, time-based, or otherwise non-deterministic, snapshots will be problematic.</p>
+<p>Connected components are tricky to work with. To snapshot a connected component you’ll probably want to export the unconnected component:</p>
+<pre><code class="language-js">// my-component.js
+export { MyComponent };
+export default connect( mapStateToProps )( MyComponent );
+
+// test/my-component.js
+import { MyComponent } from '..';
+// run those MyComponent tests…
+</code></pre>
+<p>The connected props will need to be manually provided. This is a good opportunity to audit the connected state.</p>
+<h4>Best practices</h4>
+<p>If you’re starting a refactor, snapshots are quite nice, you can add them as the first commit on a branch and watch as they evolve.</p>
+<p>Snapshots themselves don’t express anything about what we expect. Snapshots are best used in conjunction with other tests that describe our expectations, like in the example above:</p>
+<pre><code class="language-jsx">test( 'should contain mars if planets is true', () =&gt; {
+    const { container } = render( &lt;SolarSystem planets /&gt; );
+
+    // Snapshot will catch unintended changes
+    expect( container ).toMatchSnapshot();
+
+    // This is what we actually expect to find in our test
+    expect( screen.getByText( /mars/i ) ).toBeInTheDocument();
+} );
+</code></pre>
+<p>Another good technique is to use the <code>toMatchDiffSnapshot</code> function (provided by the <a href="https://github.com/jest-community/snapshot-diff"><code>snapshot-diff</code> package</a>), which allows to snapshot only the difference between two different states of the DOM. This approach is useful to test the effects of a prop change on the resulting DOM while generating a much smaller snapshot, like in this example:</p>
+<pre><code class="language-jsx">test( 'should render a darker background when isShady is true', () =&gt; {
+    const { container } = render( &lt;CardBody&gt;Body&lt;/CardBody&gt; );
+    const { container: containerShady } = render(
+        &lt;CardBody isShady&gt;Body&lt;/CardBody&gt;
+    );
+    expect( container ).toMatchDiffSnapshot( containerShady );
+} );
+</code></pre>
+<p>Similarly, the <code>toMatchStyleDiffSnapshot</code> function allows to snapshot only the difference between the <em>styles</em> associated to two different states of a component, like in this example:</p>
+<pre><code class="language-jsx">test( 'should render margin', () =&gt; {
+    const { container: spacer } = render( &lt;Spacer /&gt; );
+    const { container: spacerWithMargin } = render( &lt;Spacer margin={ 5 } /&gt; );
+    expect( spacerWithMargin ).toMatchStyleDiffSnapshot( spacer );
+} );
+</code></pre>
+<h4>Troubleshooting</h4>
+<p>Sometimes we need to mock refs for some stories which use them. Check the following documents to learn more:</p>
+<ul>
+<li>Why we need to use <a href="https://reactjs.org/blog/2016/11/16/react-v15.4.0.html#mocking-refs-for-snapshot-testing">Mocking Refs for Snapshot Testing</a> with React.</li>
+</ul>
+<p>In that case, you might see test failures and <code>TypeError</code> reported by Jest in the lines which try to access a property from <code>ref.current</code>.</p>
+<h3 class="is-toc-heading" id="debugging-jest-unit-tests" tabindex="-1"><a href="#debugging-jest-unit-tests">Debugging Jest unit tests</a></h3>
+<p>Running <code>npm run test:unit:debug</code> will start the tests in debug mode so a <a href="https://nodejs.org/en/docs/guides/debugging-getting-started/#inspector-clients">node inspector client</a> can connect to the process and inspect the execution. Instructions for using Google Chrome or Visual Studio Code as an inspector client can be found in the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-scripts/#debugging-jest-unit-tests">wp-scripts documentation</a>.</p>
+<h2 class="is-toc-heading" id="native-mobile-testing" tabindex="-1"><a href="#native-mobile-testing">Native mobile testing</a></h2>
+<p>Part of the unit-tests suite is a set of Jest tests run exercise native-mobile codepaths, developed in React Native. Since those tests run on Node, they can be launched locally on your development machine without the need for specific native Android or iOS dev tools or SDKs. It also means that they can be debugged using typical dev tools. Read on for instructions how to debug.</p>
+<h3 class="is-toc-heading" id="debugging-the-native-mobile-unit-tests" tabindex="-1"><a href="#debugging-the-native-mobile-unit-tests">Debugging the native mobile unit tests</a></h3>
+<p>To locally run the tests in debug mode, follow these steps:</p>
+<ol>
+<li>Make sure you have ran <code>npm ci</code> to install all the packages</li>
+<li>Run <code>npm run test:native:debug</code> inside the Gutenberg root folder, on the CLI. Node is now waiting for the debugger to connect.</li>
+<li>Open <code>chrome://inspect</code> in Chrome</li>
+<li>Under the “Remote Target” section, look for a <code>../../node_modules/.bin/jest</code> target and click on the “inspect” link. That will open a new window with the Chrome DevTools debugger attached to the process and stopped at the beginning of the <code>jest.js</code> file. Alternatively, if the targets are not visible, click on the <code>Open dedicated DevTools for Node</code> link in the same page.</li>
+<li>You can place breakpoints or <code>debugger;</code> statements throughout the code, including the tests code, to stop and inspect</li>
+<li>Click on the “Play” button to resume execution</li>
+<li>Enjoy debugging the native mobile unit tests!</li>
+</ol>
+<h3 class="is-toc-heading" id="native-mobile-end-to-end-tests" tabindex="-1"><a href="#native-mobile-end-to-end-tests">Native mobile end-to-end tests</a></h3>
+<p>Contributors to Gutenberg will note that PRs include continuous integration E2E tests running the native mobile E2E tests on Android and iOS. For troubleshooting failed tests, check our guide on <a href="https://developer.notmatt.press/block-editor/contributors/code/react-native/integration-test-guide/">native mobile tests in continuous integration</a>. More information on running these tests locally can be found in <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-react-native-editor/__device-tests__/">here</a>.</p>
+<h3 class="is-toc-heading" id="native-mobile-integration-tests" tabindex="-1"><a href="#native-mobile-integration-tests">Native mobile integration tests</a></h3>
+<p>There is an ongoing effort to add integration tests to the native mobile project using the <a href="https://testing-library.com/docs/react-native-testing-library/intro/"><code>react-native-testing-library</code></a> library. A guide to writing integration tests can be found <a href="https://developer.notmatt.press/block-editor/contributors/code/react-native/integration-test-guide/">here</a>.</p>
+<h2 class="is-toc-heading" id="end-to-end-testing" tabindex="-1"><a href="#end-to-end-testing">End-to-end testing</a></h2>
+<p>Most existing End-to-end tests currently use <a href="https://github.com/puppeteer/puppeteer">Puppeteer</a> as a headless Chromium driver to run the tests in <code>packages/e2e-tests</code>, and are otherwise still run by a <a href="https://jestjs.io/">Jest</a> test runner.</p>
+<p>There’s an ongoing <a href="https://github.com/WordPress/gutenberg/issues/38851">project</a> to migrate them from Puppeteer to Playwright. <strong>It’s recommended to write new e2e tests in Playwright whenever possible</strong>. The sections below mostly apply to the old Jest + Puppeteer framework. See the dedicated <a href="https://developer.notmatt.press/block-editor/contributors/code/e2e/">guide</a> if you’re writing tests with Playwright.</p>
+<h3 class="is-toc-heading" id="using-wp-env" tabindex="-1"><a href="#using-wp-env">Using wp-env</a></h3>
+<p>If you’re using the built-in <a href="https://developer.notmatt.press/block-editor/contributors/code/getting-started-with-code-contribution/#local-environment">local environment</a>, you can run the e2e tests locally using this command:</p>
+<pre><code class="language-bash">npm run test:e2e
+</code></pre>
+<p>or interactively</p>
+<pre><code class="language-bash">npm run test:e2e:watch
+</code></pre>
+<p>Sometimes it’s useful to observe the browser while running tests. Then, use this command:</p>
+<pre><code class="language-bash">npm run test:e2e:watch -- --puppeteer-interactive
+</code></pre>
+<p>You can control the speed of execution with <code>--puppeteer-slowmo</code>:</p>
+<pre><code class="language-bash">npm run test:e2e:watch -- --puppeteer-interactive --puppeteer-slowmo=200
+</code></pre>
+<p>You can additionally have the devtools automatically open for interactive debugging in the browser:</p>
+<pre><code class="language-bash">npm run test:e2e:watch -- --puppeteer-devtools
+</code></pre>
+<h3 class="is-toc-heading" id="using-alternate-environment" tabindex="-1"><a href="#using-alternate-environment">Using alternate environment</a></h3>
+<p>If using a different setup than <code>wp-env</code>, you first need to symlink the e2e test plugins to your test site, from your site’s plugins directory run:</p>
+<pre><code class="language-bash">ln -s gutenberg/packages/e2e-tests/plugins/* .
+</code></pre>
+<p>Then to run the tests, specify the base URL, username, and passwords for your site. For example, if your test site is at `http://wp.test`, use:</p>
+<pre><code class="language-bash">WP_BASE_URL=http://wp.test npm run test:e2e -- --wordpress-username=admin --wordpress-password=password
+</code></pre>
+<h3 class="is-toc-heading" id="scenario-testing" tabindex="-1"><a href="#scenario-testing">Scenario testing</a></h3>
+<p>If you find that end-to-end tests pass when run locally, but fail in GitHub Actions, you may be able to isolate a CPU- or network-bound race condition by simulating a slow CPU or network:</p>
+<pre><code>THROTTLE_CPU=4 npm run test:e2e
+</code></pre>
+<p><code>THROTTLE_CPU</code> is a slowdown factor (in this example, a 4x slowdown multiplier)</p>
+<p>See <a href="https://chromedevtools.github.io/devtools-protocol/tot/Emulation#method-setCPUThrottlingRate">Chrome docs: setCPUThrottlingRate</a></p>
+<pre><code>SLOW_NETWORK=true npm run test:e2e
+</code></pre>
+<p><code>SLOW_NETWORK</code> emulates a network speed equivalent to “Fast 3G” in the Chrome devtools.</p>
+<p>See <a href="https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions">Chrome docs: emulateNetworkConditions</a> and <a href="https://github.com/ChromeDevTools/devtools-frontend/blob/80c102878fd97a7a696572054007d40560dcdd21/front_end/sdk/NetworkManager.js#L252-L274">NetworkManager.js</a></p>
+<pre><code>OFFLINE=true npm run test:e2e
+</code></pre>
+<p><code>OFFLINE</code> emulates network disconnection.</p>
+<p>See <a href="https://chromedevtools.github.io/devtools-protocol/tot/Network#method-emulateNetworkConditions">Chrome docs: emulateNetworkConditions</a></p>
+<h3 class="is-toc-heading" id="core-block-testing" tabindex="-1"><a href="#core-block-testing">Core block testing</a></h3>
+<p>Every core block is required to have at least one set of fixture files for its main save function and one for each deprecation. These fixtures test the parsing and serialization of the block. See <a href="https://github.com/wordpress/gutenberg/blob/HEAD/test/integration/fixtures/blocks/README.md">the integration tests fixtures readme</a> for more information and instructions.</p>
+<h3 class="is-toc-heading" id="flaky-tests" tabindex="-1"><a href="#flaky-tests">Flaky tests</a></h3>
+<p>A test is considered to be <strong>flaky</strong> when it can pass and fail across multiple retry attempts without any code changes. We auto retry failed tests at most <strong>twice</strong> on CI to detect and report them to GitHub issues automatically under the <a href="https://github.com/WordPress/gutenberg/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3A%22%5BType%5D+Flaky+Test%22"><code>[Type] Flaky Test</code></a> label via <a href="https://github.com/WordPress/gutenberg/tree/trunk/packages/report-flaky-tests"><code>report-flaky-tests</code></a> GitHub action. Note that a test that failed three times in a row is not counted as a flaky test and will not be reported to an issue.</p>
+<h2 class="is-toc-heading" id="php-testing" tabindex="-1"><a href="#php-testing">PHP testing</a></h2>
+<p>Tests for PHP use <a href="https://phpunit.de/">PHPUnit</a> as the testing framework. If you’re using the built-in <a href="https://developer.notmatt.press/block-editor/contributors/code/getting-started-with-code-contribution/#local-environment">local environment</a>, you can run the PHP tests locally using this command:</p>
+<pre><code class="language-bash">npm run test:php
+</code></pre>
+<p>To re-run tests automatically when files change (similar to Jest), run:</p>
+<pre><code>npm run test:php:watch
+</code></pre>
+<p><em>Note: The phpunit commands require <code>wp-env</code> to be running and composer dependencies to be installed. The package script will start wp-env for you if it is not already running.</em></p>
+<p>In other environments, run <code>composer run test</code> and <code>composer run test:watch</code>.</p>
+<p>Code style in PHP is enforced using <a href="https://github.com/squizlabs/PHP_CodeSniffer">PHP_CodeSniffer</a>. It is recommended that you install PHP_CodeSniffer and the <a href="https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards#installation">WordPress Coding Standards for PHP_CodeSniffer</a> ruleset using <a href="https://getcomposer.org/">Composer</a>. With Composer installed, run <code>composer install</code> from the project directory to install dependencies. The above <code>npm run test:php</code> will execute both unit tests and code linting. Code linting can be verified independently by running <code>npm run lint:php</code>.</p>
+<p>To run unit tests only, without the linter, use <code>npm run test:unit:php</code> instead.</p>
+<h2 class="is-toc-heading" id="performance-testing" tabindex="-1"><a href="#performance-testing">Performance testing</a></h2>
+<p>To ensure that the editor stays performant as we add features, we monitor the impact pull requests and releases can have on some key metrics including:</p>
+<ul>
+<li>The time it takes to load the editor.</li>
+<li>The time it takes for the browser to respond when typing.</li>
+<li>The time it takes to select a block.</li>
+</ul>
+<p>Performance tests are end-to-end tests running the editor and capturing these measures. Make sure you have an e2e testing environment ready.</p>
+<p>To set up the e2e testing environment, checkout the Gutenberg repository and switch to the branch that you would like to test. Run the following command to prepare the environment.</p>
+<pre><code>nvm use &amp;&amp; npm install
+npm run build:packages
+</code></pre>
+<p>To run the tests run the following command:</p>
+<pre><code>npm run test:performance
+</code></pre>
+<p>This gives you the result for the current branch/code on the running environment.</p>
+<p>In addition to that, you can also compare the metrics across branches (or tags or commits) by running the following command <code>./bin/plugin/cli.js perf [branches]</code>, example:</p>
+<pre><code>./bin/plugin/cli.js perf trunk v8.1.0 v8.0.0
+</code></pre>
+<p>Finally, you can pass an additional <code>--tests-branch</code> argument to specify which branch’s performance test files you’d like to run. This is particularly useful when modifying/extending the perf tests:</p>
+<pre><code>./bin/plugin/cli.js perf trunk v8.1.0 v8.0.0 --tests-branch add/perf-tests-coverage
+</code></pre>
+<p><strong>Note</strong> This command needs may take some time to perform the benchmark. While running make sure to avoid using your computer or have a lot of background process to minimize external factors that can impact the results across branches.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

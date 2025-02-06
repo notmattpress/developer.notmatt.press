@@ -1,0 +1,384 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span class="is-current-page">SlotFills Reference</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>SlotFills Reference</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Slot and Fill are components that have been exposed to allow developers to inject items into some predefined places in the Gutenberg admin experience.<br/>
+Please see the <a href="https://developer.notmatt.press/block-editor/reference-guide/components/slot-fill/">SlotFill component docs</a> for more details.</p>
+<p>In order to use them, we must leverage the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-plugins/">@wordpress/plugins</a> api to register a plugin that will inject our items.</p>
+<h2 class="is-toc-heading" id="usage-overview" tabindex="-1"><a href="#usage-overview">Usage overview</a></h2>
+<p>In order to access the SlotFills, we need to do four things:</p>
+<ol>
+<li>Import the <code>registerPlugin</code> method from the <code>@wordpress/plugins</code> package.</li>
+<li>Import the SlotFill we want from the <code>@wordpress/editor'</code> package.</li>
+<li>Define a component to render our changes. Our changes/additions will be wrapped in the SlotFill component we imported.</li>
+<li>Register the plugin.</li>
+</ol>
+<p>Here is an example using the <code>PluginPostStatusInfo</code> slotFill:</p>
+<pre><code class="language-js">import { registerPlugin } from '@wordpress/plugins';
+import { PluginPostStatusInfo } from '@wordpress/editor';
+
+const PluginPostStatusInfoTest = () =&gt; (
+    &lt;PluginPostStatusInfo&gt;
+        &lt;p&gt;Post Status Info SlotFill&lt;/p&gt;
+    &lt;/PluginPostStatusInfo&gt;
+);
+
+registerPlugin( 'post-status-info-test', { render: PluginPostStatusInfoTest } );
+</code></pre>
+<h2 class="is-toc-heading" id="conditionally-rendering-slotfill-content" tabindex="-1"><a href="#conditionally-rendering-slotfill-content">Conditionally rendering SlotFill content</a></h2>
+<p>With the exception of <a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/main-dashboard-button/">MainDashboardButton</a>, every available SlotFill is exposed in both the Post Editor and Site Editor and any Fill that is registered will be rendered in both contexts. There are a number of approaches that can be implemented to conditionally render Fills.</p>
+<h3 class="is-toc-heading" id="restricting-fills-to-the-post-editor" tabindex="-1"><a href="#restricting-fills-to-the-post-editor">Restricting fills to the Post Editor</a></h3>
+<p>A fill can be restricted to the Post Editor by checking to see if the current post type object property <code>viewable</code> is set to <code>true</code>. Any post type not set to <code>viewable</code>, does not have an associated edit post screen and is a good indicator that the user is not in the Post Editor. The example below will render its content on the edit post screen for any registered post type.</p>
+<pre><code class="language-js">/**
+ * WordPress dependencies
+ */
+import { registerPlugin } from '@wordpress/plugins';
+import {
+    PluginDocumentSettingPanel,
+    store as editorStore,
+} from '@wordpress/editor';
+import { store as coreStore } from '@wordpress/core-data';
+import { useSelect } from '@wordpress/data';
+import { __ } from '@wordpress/i18n';
+
+/**
+ * The component to be rendered  as part of the plugin.
+ */
+const EditPostDocumentSettingPanel = () =&gt; {
+    // Retrieve information about the current post type.
+    const isViewable = useSelect( ( select ) =&gt; {
+        const postTypeName = select( editorStore ).getCurrentPostType();
+        const postTypeObject = select( coreStore ).getPostType( postTypeName );
+        return postTypeObject?.viewable;
+    }, [] );
+
+    // If the post type is not viewable, then do not render my the fill.
+    if ( ! isViewable ) {
+        return null;
+    }
+
+    return (
+        &lt;PluginDocumentSettingPanel
+            name="custom-panel"
+            title={ __( 'Post Editor Example' ) }
+            className="custom-panel"
+        &gt;
+            &lt;p&gt;{ __( 'Only appears in the Edit Post screen' ) }&lt;/p&gt;
+        &lt;/PluginDocumentSettingPanel&gt;
+    );
+};
+
+registerPlugin( 'example-post-edit-only', {
+    render: EditPostDocumentSettingPanel,
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="restricting-fills-to-certain-post-types" tabindex="-1"><a href="#restricting-fills-to-certain-post-types">Restricting fills to certain post types.</a></h3>
+<p>The following example expands on the example above by creating an allow list of post types where the fill should be rendered. In this case, the fill is only rendered when editing pages.</p>
+<pre><code class="language-js">/**
+ * WordPress dependencies
+ */
+import { registerPlugin } from '@wordpress/plugins';
+import {
+    PluginDocumentSettingPanel,
+    store as editorStore,
+} from '@wordpress/editor';
+import { store as coreStore } from '@wordpress/core-data';
+import { useSelect } from '@wordpress/data';
+import { __, sprintf } from '@wordpress/i18n';
+
+/**
+ * The component to be rendered  as part of the plugin.
+ */
+const RestrictPostTypes = () =&gt; {
+    // Retrieve information about the current post type.
+    const { isViewable, postTypeName } = useSelect( ( select ) =&gt; {
+        const postType = select( editorStore ).getCurrentPostType();
+        const postTypeObject = select( coreStore ).getPostType( postType );
+        return {
+            isViewable: postTypeObject?.viewable,
+            postTypeName: postType,
+        };
+    }, [] );
+
+    // The list of post types that are allowed to render the plugin.
+    const allowedPostTypes = [ 'page' ];
+
+    // If the post type is not viewable or not in the allowed list, do not render the plugin.
+    if ( ! isViewable || ! allowedPostTypes.includes( postTypeName ) ) {
+        return null;
+    }
+
+    return (
+        &lt;PluginDocumentSettingPanel
+            name="custom-panel"
+            title={ __( 'Restrict Post Types Example' ) }
+            className="custom-panel"
+        &gt;
+            &lt;p&gt;
+                { sprintf(
+                    __(
+                        'Only appears on Post Types that are in the allowed list. %s'
+                    ),
+                    allowedPostTypes.join( ', ' )
+                ) }
+            &lt;/p&gt;
+        &lt;/PluginDocumentSettingPanel&gt;
+    );
+};
+
+registerPlugin( 'example-restrict-post-types', {
+    render: RestrictPostTypes,
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="restricting-fills-to-the-side-editor" tabindex="-1"><a href="#restricting-fills-to-the-side-editor">Restricting fills to the Side Editor</a></h3>
+<p>To restrict fills to the Site Editor, the reverse logic is true. If the post type object’s <code>viewable</code> property is set to <code>true</code>, then the fill should not be rendered. The example below will render its content on any Site Editor screen.</p>
+<pre><code class="language-js">/**
+ * WordPress dependencies
+ */
+import { registerPlugin } from '@wordpress/plugins';
+import {
+    PluginDocumentSettingPanel,
+    store as editorStore,
+} from '@wordpress/editor';
+import { store as coreStore } from '@wordpress/core-data';
+import { useSelect } from '@wordpress/data';
+import { __ } from '@wordpress/i18n';
+
+/**
+ * The component to be rendered  as part of the plugin.
+ */
+const SiteEditorDocumentSettingPanel = () =&gt; {
+    // Retrieve information about the current post type.
+    const isViewable = useSelect( ( select ) =&gt; {
+        const postTypeName = select( editorStore ).getCurrentPostType();
+        const postTypeObject = select( coreStore ).getPostType( postTypeName );
+
+        // A viewable post type is one than can be viewed in the WordPress admin. Internal ones are not set to viewable.
+        return postTypeObject?.viewable;
+    }, [] );
+
+    // If the post type is viewable, do not render my fill
+    if ( isViewable ) {
+        return null;
+    }
+
+    return (
+        &lt;PluginDocumentSettingPanel
+            name="custom-panel"
+            title={ __( 'Site Editor Example' ) }
+            className="custom-panel"
+        &gt;
+            &lt;p&gt;{ __( 'Only appears in the Site Editor' ) }&lt;/p&gt;
+        &lt;/PluginDocumentSettingPanel&gt;
+    );
+};
+
+registerPlugin( 'example-site-editor', {
+    render: SiteEditorDocumentSettingPanel,
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="restricting-fills-to-certain-screens-in-the-site-editor" tabindex="-1"><a href="#restricting-fills-to-certain-screens-in-the-site-editor">Restricting fills to certain screens in the Site Editor.</a></h3>
+<p>This example builds on the example above by providing an allow list to control which screens a fill can be rendered within the Site Editor.</p>
+<pre><code class="language-js">/**
+ * WordPress dependencies
+ */
+import { registerPlugin } from '@wordpress/plugins';
+import {
+    PluginDocumentSettingPanel,
+    store as editorStore,
+} from '@wordpress/editor';
+import { store as coreStore } from '@wordpress/core-data';
+import { useSelect } from '@wordpress/data';
+import { __, sprintf } from '@wordpress/i18n';
+
+/**
+ * The component to be rendered  as part of the plugin.
+ */
+const SiteEditorDocumentSettingPanel = () =&gt; {
+    // Allowed areas in the Site Editor.
+    const allowedSiteEditorScreens = [
+        'wp_template', // Templates
+        'wp_block', // Patterns
+        'wp_template_part', // Template Parts
+    ];
+
+    const { isViewable, postType } = useSelect( ( select ) =&gt; {
+        const postTypeName = select( editorStore ).getCurrentPostType();
+        const postTypeObject = select( coreStore ).getPostType( postTypeName );
+
+        return {
+            // A viewable post type is one than can be viewed in the WordPress admin. Internal ones are not set to viewable.
+            isViewable: postTypeObject?.viewable,
+            postType: postTypeName,
+        };
+    }, [] );
+
+    // If the post type is viewable, do not render my plugin.
+    if ( isViewable || ! allowedSiteEditorScreens.includes( postType ) ) {
+        return null;
+    }
+
+    return (
+        &lt;PluginDocumentSettingPanel
+            name="custom-panel"
+            title={ __( 'Restricted to Site Editor screens' ) }
+            className="custom-panel"
+        &gt;
+            &lt;p&gt;
+                { sprintf(
+                    __(
+                        'Only appears on Editor Screens that are in the allowed list. %s'
+                    ),
+                    allowedSiteEditorScreens.join( ', ' )
+                ) }
+            &lt;/p&gt;
+        &lt;/PluginDocumentSettingPanel&gt;
+    );
+};
+
+registerPlugin( 'example-site-editor-only', {
+    render: SiteEditorDocumentSettingPanel,
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="how-do-they-work" tabindex="-1"><a href="#how-do-they-work">How do they work?</a></h2>
+<p>SlotFills are created using <code>createSlotFill</code>. This creates two components, <code>Slot</code> and <code>Fill</code> which are then used to create a new component that is exported on the <code>wp.plugins</code> global.</p>
+<p><strong>Definition of the <code>PluginPostStatusInfo</code> SlotFill</strong> (<a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/editor/src/components/plugin-post-status-info/index.js#L55">see core code</a>)</p>
+<pre><code class="language-js">/**
+ * Defines as extensibility slot for the Summary panel.
+ */
+
+/**
+ * WordPress dependencies
+ */
+import { createSlotFill, PanelRow } from '@wordpress/components';
+
+export const { Fill, Slot } = createSlotFill( 'PluginPostStatusInfo' );
+
+const PluginPostStatusInfo = ( { children, className } ) =&gt; (
+    &lt;Fill&gt;
+        &lt;PanelRow className={ className }&gt;{ children }&lt;/PanelRow&gt;
+    &lt;/Fill&gt;
+);
+
+PluginPostStatusInfo.Slot = Slot;
+
+export default PluginPostStatusInfo;
+</code></pre>
+<p>This new Slot is then exposed in the editor. The example below is from core and represents the Summary panel.</p>
+<p>As we can see, the <code>&lt;PluginPostStatusInfo.Slot&gt;</code> is wrapping all of the items that will appear in the panel.<br/>
+Any items that have been added via the SlotFill ( see the example above ), will be included in the <code>fills</code> parameter and be displayed in the end of the component.</p>
+<p>See <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/editor/src/components/sidebar/post-summary.js#L39">core code</a>.</p>
+<pre><code class="language-js">export default function PostSummary( { onActionPerformed } ) {
+    const { isRemovedPostStatusPanel } = useSelect( ( select ) =&gt; {
+        // We use isEditorPanelRemoved to hide the panel if it was programmatically removed. We do
+        // not use isEditorPanelEnabled since this panel should not be disabled through the UI.
+        const { isEditorPanelRemoved } = select( editorStore );
+        return {
+            isRemovedPostStatusPanel: isEditorPanelRemoved( PANEL_NAME ),
+        };
+    }, [] );
+
+    return (
+        &lt;PostPanelSection className="editor-post-summary"&gt;
+            &lt;PluginPostStatusInfo.Slot&gt;
+                { ( fills ) =&gt; (
+                    &lt;&gt;
+                        &lt;VStack spacing={ 4 }&gt;
+                            &lt;PostCardPanel
+                                onActionPerformed={ onActionPerformed }
+                            /&gt;
+                            &lt;PostFeaturedImagePanel withPanelBody={ false } /&gt;
+                            &lt;PostExcerptPanel /&gt;
+                            &lt;VStack spacing={ 1 }&gt;
+                                &lt;PostContentInformation /&gt;
+                                &lt;PostLastEditedPanel /&gt;
+                            &lt;/VStack&gt;
+                            { ! isRemovedPostStatusPanel &amp;&amp; (
+                                &lt;VStack spacing={ 2 }&gt;
+                                    &lt;VStack spacing={ 1 }&gt;
+                                        &lt;PostStatusPanel /&gt;
+                                        &lt;PostSchedulePanel /&gt;
+                                        &lt;PostURLPanel /&gt;
+                                        &lt;PostAuthorPanel /&gt;
+                                        &lt;PostTemplatePanel /&gt;
+                                        &lt;PostDiscussionPanel /&gt;
+                                        &lt;PageAttributesPanel /&gt;
+                                        &lt;PostSyncStatus /&gt;
+                                        &lt;BlogTitle /&gt;
+                                        &lt;PostsPerPage /&gt;
+                                        &lt;SiteDiscussion /&gt;
+                                        &lt;PostFormatPanel /&gt;
+                                        &lt;PostStickyPanel /&gt;
+                                    &lt;/VStack&gt;
+                                    &lt;TemplateAreas /&gt;
+                                    { fills }
+                                &lt;/VStack&gt;
+                            ) }
+                        &lt;/VStack&gt;
+                    &lt;/&gt;
+                ) }
+            &lt;/PluginPostStatusInfo.Slot&gt;
+        &lt;/PostPanelSection&gt;
+    );
+}
+</code></pre>
+<h2 class="is-toc-heading" id="currently-available-slotfills-and-examples" tabindex="-1"><a href="#currently-available-slotfills-and-examples">Currently available SlotFills and examples</a></h2>
+<p>The following SlotFills are available in the <code>edit-post</code> or <code>editor</code> packages. Please refer to the individual items below for usage and example details:</p>
+<ul>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/main-dashboard-button/">MainDashboardButton</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/plugin-block-settings-menu-item/">PluginBlockSettingsMenuItem</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/plugin-document-setting-panel/">PluginDocumentSettingPanel</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/plugin-more-menu-item/">PluginMoreMenuItem</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/plugin-post-publish-panel/">PluginPostPublishPanel</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/plugin-post-status-info/">PluginPostStatusInfo</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/plugin-pre-publish-panel/">PluginPrePublishPanel</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/plugin-sidebar/">PluginSidebar</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/slotfills/plugin-sidebar-more-menu-item/">PluginSidebarMoreMenuItem</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

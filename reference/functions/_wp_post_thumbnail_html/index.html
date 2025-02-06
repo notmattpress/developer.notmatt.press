@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_wp_post_thumbnail_html()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_wp_post_thumbnail_html()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_wp_post_thumbnail_html( <span class="arg-type">int|null</span> <span class="arg-name">$thumbnail_id</span> = <span class="arg-default">null</span>,  <span class="arg-type">int|WP_Post|null</span> <span class="arg-name">$post</span> = <span class="arg-default">null</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns HTML for the post thumbnail meta box.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$thumbnail_id</code><span class="type"><span class="int">int</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Thumbnail attachment ID. </span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The post ID or object associated                                       with the thumbnail. Defaults to global $post.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The post thumbnail HTML.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1628"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _wp_post_thumbnail_html( $thumbnail_id = null, $post = null ) {
+	$_wp_additional_image_sizes = wp_get_additional_image_sizes();
+
+	$post               = get_post( $post );
+	$post_type_object   = get_post_type_object( $post-&gt;post_type );
+	$set_thumbnail_link = '&lt;p class="hide-if-no-js"&gt;&lt;a href="%s" id="set-post-thumbnail"%s class="thickbox"&gt;%s&lt;/a&gt;&lt;/p&gt;';
+	$upload_iframe_src  = get_upload_iframe_src( 'image', $post-&gt;ID );
+
+	$content = sprintf(
+		$set_thumbnail_link,
+		esc_url( $upload_iframe_src ),
+		'', // Empty when there's no featured image set, `aria-describedby` attribute otherwise.
+		esc_html( $post_type_object-&gt;labels-&gt;set_featured_image )
+	);
+
+	if ( $thumbnail_id &amp;&amp; get_post( $thumbnail_id ) ) {
+		$size = isset( $_wp_additional_image_sizes['post-thumbnail'] ) ? 'post-thumbnail' : array( 266, 266 );
+
+		/**
+		 * Filters the size used to display the post thumbnail image in the 'Featured image' meta box.
+		 *
+		 * Note: When a theme adds 'post-thumbnail' support, a special 'post-thumbnail'
+		 * image size is registered, which differs from the 'thumbnail' image size
+		 * managed via the Settings &gt; Media screen.
+		 *
+		 * @since 4.4.0
+		 *
+		 * @param string|int[] $size         Requested image size. Can be any registered image size name, or
+		 *                                   an array of width and height values in pixels (in that order).
+		 * @param int          $thumbnail_id Post thumbnail attachment ID.
+		 * @param WP_Post      $post         The post object associated with the thumbnail.
+		 */
+		$size = apply_filters( 'admin_post_thumbnail_size', $size, $thumbnail_id, $post );
+
+		$thumbnail_html = wp_get_attachment_image( $thumbnail_id, $size );
+
+		if ( ! empty( $thumbnail_html ) ) {
+			$content  = sprintf(
+				$set_thumbnail_link,
+				esc_url( $upload_iframe_src ),
+				' aria-describedby="set-post-thumbnail-desc"',
+				$thumbnail_html
+			);
+			$content .= '&lt;p class="hide-if-no-js howto" id="set-post-thumbnail-desc"&gt;' . __( 'Click the image to edit or update' ) . '&lt;/p&gt;';
+			$content .= '&lt;p class="hide-if-no-js"&gt;&lt;a href="#" id="remove-post-thumbnail"&gt;' . esc_html( $post_type_object-&gt;labels-&gt;remove_featured_image ) . '&lt;/a&gt;&lt;/p&gt;';
+		}
+	}
+
+	$content .= '&lt;input type="hidden" id="_thumbnail_id" name="_thumbnail_id" value="' . esc_attr( $thumbnail_id ? $thumbnail_id : '-1' ) . '" /&gt;';
+
+	/**
+	 * Filters the admin post thumbnail HTML markup to return.
+	 *
+	 * @since 2.9.0
+	 * @since 3.5.0 Added the `$post_id` parameter.
+	 * @since 4.6.0 Added the `$thumbnail_id` parameter.
+	 *
+	 * @param string   $content      Admin post thumbnail HTML markup.
+	 * @param int      $post_id      Post ID.
+	 * @param int|null $thumbnail_id Thumbnail attachment ID, or null if there isn't one.
+	 */
+	return apply_filters( 'admin_post_thumbnail_html', $content, $post-&gt;ID, $thumbnail_id );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/post.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/post.php#L1628">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/post.php#L1628-L1690">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/admin_post_thumbnail_html/"><span class="hook-func">apply_filters</span>( ‘admin_post_thumbnail_html’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$content</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">int|null</span> <span class="arg-name">$thumbnail_id</span></nobr> )</a></dt><dd><p>Filters the admin post thumbnail HTML markup to return.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/admin_post_thumbnail_size/"><span class="hook-func">apply_filters</span>( ‘admin_post_thumbnail_size’,  <nobr><span class="arg-type">string|int[]</span> <span class="arg-name">$size</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$thumbnail_id</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the size used to display the post thumbnail image in the ‘Featured image’ meta box.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_upload_iframe_src/">get_upload_iframe_src()</a><code>wp-admin/includes/media.php</code></td><td><p>Retrieves the upload iframe source URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_object/">get_post_type_object()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post type object by name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_get_post_thumbnail_html/">wp_ajax_get_post_thumbnail_html()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles retrieving HTML for the featured image via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_set_post_thumbnail/">wp_ajax_set_post_thumbnail()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles setting the featured image via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/post_thumbnail_meta_box/">post_thumbnail_meta_box()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays post thumbnail meta box.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.9.0/">2.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-sakibsnaz odd alt thread-odd thread-alt depth-1" data-comment-id="6810" id="comment-6810">
+<article class="comment-body" id="div-comment-6810">
+<a class="screen-reader-text" href="#comment-content-6810">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6810">
+<p>The <strong>_wp_post_thumbnail_html</strong> function is responsible for generating HTML markup for post thumbnails, often known as featured images. Let’s get into the specifics of what this function can do:</p>
+<p><strong><a href="https://developer.notmatt.press/reference/functions/wp_get_additional_image_sizes/" rel="function">wp_get_additional_image_sizes()</a> </strong> retrieves additional image sizes and puts them in <strong>$_wp_additional_image_sizes</strong>. This provides flexibility in dealing with different image dimensions.</p>
+<p>This <strong>get_post($post)</strong> function gets information about the current post and the post type object using <strong>get_post_type_object($post-&gt;post_type)</strong>. This provides the structure for explaining the featured image within the context of the selected post type.</p>
+<p><strong>$set_thumbnail_link</strong> function creates a link that is in charge of setting the post thumbnail. This link is contained within a paragraph and contains an ID, URL, and caption for modifying the featured image. It is intended to work in combination with the Thickbox JavaScript library to provide a user-friendly interface.</p>
+<p>When a post has a thumbnail attached, the <strong><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_image/" rel="function">wp_get_attachment_image()</a> </strong> function comes into play by providing the necessary HTML code. A key benefit of this function is its ability to let developers adjust the size of the displayed image within the admin interface using suitable filters.</p>
+<p>When a thumbnail is present, the <strong>$_wp_additional_image_sizes</strong> function goes the extra mile by appending descriptive components to the output. These include helpful directives for editing or upgrading the image, as well as a convenient removal link for the featured image. This enriches the overall user experience.</p>
+<p>In order to smooth the submission process of thumbnail-related data with each post, the function expertly creates a hidden input field. This field expertly stores the <strong>thumbnail ID</strong>, guaranteeing its connection to the proper post.</p>
+<p>Developers can easily customize the generated HTML markup to meet their specific needs by using the <strong>Admin_post_thumbnail_html</strong> filter, providing a high level of flexibility and personalization.</p>
+<p>Lastly, this function can be seen as the unsung hero working tirelessly in the background, carefully managing post thumbnails to guarantee their aesthetic appeal, adaptability to different post formats, and ultimately creating a superior experience for both users and developers.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6810">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

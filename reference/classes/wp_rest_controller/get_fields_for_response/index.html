@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_controller/">WP_REST_Controller</a></span><span class="is-current-page">WP_REST_Controller::get_fields_for_response()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_Controller::get_fields_for_response()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_Controller::get_fields_for_response( <span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span> ): <span class="return-type">string[]</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Gets an array of fields to be included on the response.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Included fields are based on item schema and <code>_fields=</code> request argument.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$request</code><span class="type"><span class="WP_REST_Request"><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/" rel="class">WP_REST_Request</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Full details about the request.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string[]</span> Fields to be included in the response.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="572"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_fields_for_response( $request ) {
+	$schema     = $this-&gt;get_item_schema();
+	$properties = isset( $schema['properties'] ) ? $schema['properties'] : array();
+
+	$additional_fields = $this-&gt;get_additional_fields();
+
+	foreach ( $additional_fields as $field_name =&gt; $field_options ) {
+		/*
+		 * For back-compat, include any field with an empty schema
+		 * because it won't be present in $this-&gt;get_item_schema().
+		 */
+		if ( is_null( $field_options['schema'] ) ) {
+			$properties[ $field_name ] = $field_options;
+		}
+	}
+
+	// Exclude fields that specify a different context than the request context.
+	$context = $request['context'];
+	if ( $context ) {
+		foreach ( $properties as $name =&gt; $options ) {
+			if ( ! empty( $options['context'] ) &amp;&amp; ! in_array( $context, $options['context'], true ) ) {
+				unset( $properties[ $name ] );
+			}
+		}
+	}
+
+	$fields = array_keys( $properties );
+
+	/*
+	 * '_links' and '_embedded' are not typically part of the item schema,
+	 * but they can be specified in '_fields', so they are added here as a
+	 * convenience for checking with rest_is_field_included().
+	 */
+	$fields[] = '_links';
+	if ( $request-&gt;has_param( '_embed' ) ) {
+		$fields[] = '_embedded';
+	}
+
+	$fields = array_unique( $fields );
+
+	if ( ! isset( $request['_fields'] ) ) {
+		return $fields;
+	}
+	$requested_fields = wp_parse_list( $request['_fields'] );
+	if ( 0 === count( $requested_fields ) ) {
+		return $fields;
+	}
+	// Trim off outside whitespace from the comma delimited list.
+	$requested_fields = array_map( 'trim', $requested_fields );
+	// Always persist 'id', because it can be needed for add_additional_fields_to_object().
+	if ( in_array( 'id', $fields, true ) ) {
+		$requested_fields[] = 'id';
+	}
+	// Return the list of all requested fields which appear in the schema.
+	return array_reduce(
+		$requested_fields,
+		static function ( $response_fields, $field ) use ( $fields ) {
+			if ( in_array( $field, $fields, true ) ) {
+				$response_fields[] = $field;
+				return $response_fields;
+			}
+			// Check for nested fields if $field is not a direct match.
+			$nested_fields = explode( '.', $field );
+			/*
+			 * A nested field is included so long as its top-level property
+			 * is present in the schema.
+			 */
+			if ( in_array( $nested_fields[0], $fields, true ) ) {
+				$response_fields[] = $field;
+			}
+			return $response_fields;
+		},
+		array()
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/endpoints/class-wp-rest-controller.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-controller.php#L572">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-controller.php#L572-L646">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_list/">wp_parse_list()</a><code>wp-includes/functions.php</code></td><td><p>Converts a comma- or space-separated list of scalar values to an array.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_controller/get_additional_fields/">WP_REST_Controller::get_additional_fields()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-controller.php</code></td><td><p>Retrieves all of the registered additional fields for a given object-type.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_controller/get_item_schema/">WP_REST_Controller::get_item_schema()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-controller.php</code></td><td><p>Retrieves the item’s schema, conforming to JSON Schema.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_controller/add_additional_fields_to_object/">WP_REST_Controller::add_additional_fields_to_object()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-controller.php</code></td><td><p>Adds the values from additional fields to a data object.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.9.6/">4.9.6</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

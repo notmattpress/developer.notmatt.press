@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_post_class()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_post_class()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_post_class( <span class="arg-type">string|string[]</span> <span class="arg-name">$css_class</span> = <span class="arg-default">''</span>,  <span class="arg-type">int|WP_Post</span> <span class="arg-name">$post</span> = <span class="arg-default">null</span> ): <span class="return-type">string[]</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves an array of the class names for the post container element.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The class names are many:</p>
+<ul>
+<li>If the post has a post thumbnail, <code>has-post-thumbnail</code> is added as a class.</li>
+<li>If the post is sticky, then the <code>sticky</code> class name is added.</li>
+<li>The class <code>hentry</code> is always added to each post.</li>
+<li>For each taxonomy that the post belongs to, a class will be added of the format <code>{$taxonomy}-{$slug}</code>, e.g. <code>category-foo</code> or <code>my_custom_taxonomy-bar</code>.<br/>The <code>post_tag</code> taxonomy is a special case; the class has the <code>tag-</code> prefix instead of <code>post_tag-</code>.</li>
+</ul>
+<p>All class names are passed through the filter, <a href="https://developer.notmatt.press/reference/hooks/post_class/">‘post_class’</a>, followed by <code>$css_class</code> parameter value, with the post ID as the last parameter.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$css_class</code><span class="type"><span class="string">string</span>|<span class="string[]">string[]</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Space-separated string or array of class names                                   to add to the class list. </span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID or post object.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string[]</span> Array of class names.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="494"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_post_class( $css_class = '', $post = null ) {
+	$post = get_post( $post );
+
+	$classes = array();
+
+	if ( $css_class ) {
+		if ( ! is_array( $css_class ) ) {
+			$css_class = preg_split( '#\s+#', $css_class );
+		}
+		$classes = array_map( 'esc_attr', $css_class );
+	} else {
+		// Ensure that we always coerce class to being an array.
+		$css_class = array();
+	}
+
+	if ( ! $post ) {
+		return $classes;
+	}
+
+	$classes[] = 'post-' . $post-&gt;ID;
+	if ( ! is_admin() ) {
+		$classes[] = $post-&gt;post_type;
+	}
+	$classes[] = 'type-' . $post-&gt;post_type;
+	$classes[] = 'status-' . $post-&gt;post_status;
+
+	// Post Format.
+	if ( post_type_supports( $post-&gt;post_type, 'post-formats' ) ) {
+		$post_format = get_post_format( $post-&gt;ID );
+
+		if ( $post_format &amp;&amp; ! is_wp_error( $post_format ) ) {
+			$classes[] = 'format-' . sanitize_html_class( $post_format );
+		} else {
+			$classes[] = 'format-standard';
+		}
+	}
+
+	$post_password_required = post_password_required( $post-&gt;ID );
+
+	// Post requires password.
+	if ( $post_password_required ) {
+		$classes[] = 'post-password-required';
+	} elseif ( ! empty( $post-&gt;post_password ) ) {
+		$classes[] = 'post-password-protected';
+	}
+
+	// Post thumbnails.
+	if ( current_theme_supports( 'post-thumbnails' ) &amp;&amp; has_post_thumbnail( $post-&gt;ID ) &amp;&amp; ! is_attachment( $post ) &amp;&amp; ! $post_password_required ) {
+		$classes[] = 'has-post-thumbnail';
+	}
+
+	// Sticky for Sticky Posts.
+	if ( is_sticky( $post-&gt;ID ) ) {
+		if ( is_home() &amp;&amp; ! is_paged() ) {
+			$classes[] = 'sticky';
+		} elseif ( is_admin() ) {
+			$classes[] = 'status-sticky';
+		}
+	}
+
+	// hentry for hAtom compliance.
+	$classes[] = 'hentry';
+
+	// All public taxonomies.
+	$taxonomies = get_taxonomies( array( 'public' =&gt; true ) );
+
+	/**
+	 * Filters the taxonomies to generate classes for each individual term.
+	 *
+	 * Default is all public taxonomies registered to the post type.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param string[] $taxonomies List of all taxonomy names to generate classes for.
+	 * @param int      $post_id    The post ID.
+	 * @param string[] $classes    An array of post class names.
+	 * @param string[] $css_class  An array of additional class names added to the post.
+	*/
+	$taxonomies = apply_filters( 'post_class_taxonomies', $taxonomies, $post-&gt;ID, $classes, $css_class );
+
+	foreach ( (array) $taxonomies as $taxonomy ) {
+		if ( is_object_in_taxonomy( $post-&gt;post_type, $taxonomy ) ) {
+			foreach ( (array) get_the_terms( $post-&gt;ID, $taxonomy ) as $term ) {
+				if ( empty( $term-&gt;slug ) ) {
+					continue;
+				}
+
+				$term_class = sanitize_html_class( $term-&gt;slug, $term-&gt;term_id );
+				if ( is_numeric( $term_class ) || ! trim( $term_class, '-' ) ) {
+					$term_class = $term-&gt;term_id;
+				}
+
+				// 'post_tag' uses the 'tag' prefix for backward compatibility.
+				if ( 'post_tag' === $taxonomy ) {
+					$classes[] = 'tag-' . $term_class;
+				} else {
+					$classes[] = sanitize_html_class( $taxonomy . '-' . $term_class, $taxonomy . '-' . $term-&gt;term_id );
+				}
+			}
+		}
+	}
+
+	$classes = array_map( 'esc_attr', $classes );
+
+	/**
+	 * Filters the list of CSS class names for the current post.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param string[] $classes   An array of post class names.
+	 * @param string[] $css_class An array of additional class names added to the post.
+	 * @param int      $post_id   The post ID.
+	 */
+	$classes = apply_filters( 'post_class', $classes, $css_class, $post-&gt;ID );
+
+	return array_unique( $classes );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/post-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/post-template.php#L494">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/post-template.php#L494-L610">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/post_class/"><span class="hook-func">apply_filters</span>( ‘post_class’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$classes</span></nobr>,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$css_class</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr> )</a></dt><dd><p>Filters the list of CSS class names for the current post.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/post_class_taxonomies/"><span class="hook-func">apply_filters</span>( ‘post_class_taxonomies’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$taxonomies</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$classes</span></nobr>,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$css_class</span></nobr> )</a></dt><dd><p>Filters the taxonomies to generate classes for each individual term.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_the_terms/">get_the_terms()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves the terms of the taxonomy that are attached to the post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_html_class/">sanitize_html_class()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes an HTML classname to ensure it only contains valid characters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_attachment/">is_attachment()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing attachment page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_paged/">is_paged()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for a paged result and not for the first page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_home/">is_home()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for the blog homepage.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_object_in_taxonomy/">is_object_in_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Determines if the given object type is associated with the given taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomies/">get_taxonomies()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves a list of registered taxonomy names or objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/has_post_thumbnail/">has_post_thumbnail()</a><code>wp-includes/post-thumbnail-template.php</code></td><td><p>Determines whether a post has an image attached.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_password_required/">post_password_required()</a><code>wp-includes/post-template.php</code></td><td><p>Determines whether the post requires password and whether a correct password has been provided.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_sticky/">is_sticky()</a><code>wp-includes/post.php</code></td><td><p>Determines whether a post is sticky.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_type_supports/">post_type_supports()</a><code>wp-includes/post.php</code></td><td><p>Checks a post type’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_format/">get_post_format()</a><code>wp-includes/post-formats.php</code></td><td><p>Retrieve the format slug for a post</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_theme_supports/">current_theme_supports()</a><code>wp-includes/theme.php</code></td><td><p>Checks a theme’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_admin/">is_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for an administrative interface page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 12 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_posts_controller/prepare_item_for_response/">WP_REST_Posts_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php</code></td><td><p>Prepares a single post output for response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/single_row/">WP_Posts_List_Table::single_row()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/post_class/">post_class()</a><code>wp-includes/post-template.php</code></td><td><p>Displays the classes for the post container element.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.2.0/">4.2.0</a></td><td><span class="since-description">Custom taxonomy class names were added.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.7.0/">2.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-flomei odd alt thread-odd thread-alt depth-1" data-comment-id="3854" id="comment-3854">
+<article class="comment-body" id="div-comment-3854">
+<a class="screen-reader-text" href="#comment-content-3854">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3854">
+<p>If you are writing custom themes and are using this function, make sure to pass the first parameter, although it might be empty.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$classes = get_post_class( '', $post-&gt;ID );
+
+# later...
+
+echo '&lt;article class="' . esc_attr( implode( ' ', $classes ) ) . '" itemscope="" itemtype="<a href='http://schema.org/Article"&amp;gt' rel="nofollow ugc">http://schema.org/Article"&amp;gt</a>;';</code></pre>
+<p>If you omit this parameter (in a loop), all posts of your listing will have the same classes.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3854">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="792" id="comment-792">
+<article class="comment-body" id="div-comment-792">
+<a class="screen-reader-text" href="#comment-content-792">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-792">
+<p><strong>Default Usage</strong><br/>
+Default example without params and global <code>$post</code> object available (or in the loop).</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">var_dump( get_post_class() );
+ 
+/*Output:*/
+array() {
+	0 =&gt; string 'post-[ID]' (length=7)
+	1 =&gt; string '[post_type]' (length=4)
+	2 =&gt; string 'type-[post_type]' (length=9)
+	3 =&gt; string 'status-[post_status]' (length=14)
+	4 =&gt; string 'format-[post_format]' (length=15)
+	5 =&gt; string 'hentry' (length=6)
+	6 =&gt; string 'category-[...]'
+	X =&gt; string 'tag-[...]'
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-792">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="793" id="comment-793">
+<article class="comment-body" id="div-comment-793">
+<a class="screen-reader-text" href="#comment-content-793">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-793">
+<p><strong>With Params</strong><br/>
+Passing an array of your own classes.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/* Optional:
+global $post;
+$postID = $post-&gt;ID;
+ OR $postID = get_the_ID();
+$postClass = get_post_class(array('my-class'));
+ OR $postClass = get_post_class(array('my-class'), (int) $postID);
+*/
+
+$post_class = get_post_class( array( 'my-class' ) );
+var_dump( $post_class );
+
+/* Output:
+array
+	0 =&gt; string 'post-[ID]' (length=7)
+	1 =&gt; string '[post_type]' (length=4)
+	2 =&gt; string 'type-[post_type]' (length=9)
+	3 =&gt; string 'status-[post_status]' (length=14)
+	4 =&gt; string 'format-[post_format]' (length=15)
+	5 =&gt; string 'hentry' (length=6)
+	6 =&gt; string 'category-[...]'
+	...
+	X =&gt; string 'tag-[...]'
+	...
+	X+1 =&gt; string 'my-class' (length=8)
+	...
+*/</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-793">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

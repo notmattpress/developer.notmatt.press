@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_html_processor/">WP_HTML_Processor</a></span><span class="is-current-page">WP_HTML_Processor::step()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_HTML_Processor::step()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_HTML_Processor::step( <span class="arg-type">string</span> <span class="arg-name">$node_to_process</span> = <span class="arg-default">self::PROCESS_NEXT_NODE</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Steps through the HTML document and stop at the next tag, if any.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/classes/self/PROCESS_NEXT_NODE">self::PROCESS_NEXT_NODE</a></li>
+<li><a href="https://developer.notmatt.press/reference/classes/self/REPROCESS_CURRENT_NODE">self::REPROCESS_CURRENT_NODE</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$node_to_process</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to parse the next node or reprocess the current node.</span></div><p class="default">Default:<code>self::PROCESS_NEXT_NODE</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> Whether a tag was matched.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="709"><code class="language-php line-numbers" id="wporg-source-code" lang="php">	return (
+		isset( $this-&gt;current_element-&gt;provenance ) &amp;&amp;
+		'virtual' === $this-&gt;current_element-&gt;provenance
+	);
+}
+
+/**
+ * Indicates if the currently-matched tag matches the given breadcrumbs.
+ *
+ * A "*" represents a single tag wildcard, where any tag matches, but not no tags.
+ *
+ * At some point this function _may_ support a `**` syntax for matching any number
+ * of unspecified tags in the breadcrumb stack. This has been intentionally left
+ * out, however, to keep this function simple and to avoid introducing backtracking,
+ * which could open up surprising performance breakdowns.
+ *
+ * Example:
+ *
+ *     $processor = WP_HTML_Processor::create_fragment( '&lt;div&gt;&lt;span&gt;&lt;figure&gt;&lt;img&gt;&lt;/figure&gt;&lt;/span&gt;&lt;/div&gt;' );
+ *     $processor-&gt;next_tag( 'img' );
+ *     true  === $processor-&gt;matches_breadcrumbs( array( 'figure', 'img' ) );
+ *     true  === $processor-&gt;matches_breadcrumbs( array( 'span', 'figure', 'img' ) );
+ *     false === $processor-&gt;matches_breadcrumbs( array( 'span', 'img' ) );
+ *     true  === $processor-&gt;matches_breadcrumbs( array( 'span', '*', 'img' ) );
+ *
+ * @since 6.4.0
+ *
+ * @param string[] $breadcrumbs DOM sub-path at which element is found, e.g. `array( 'FIGURE', 'IMG' )`.
+ *                              May also contain the wildcard `*` which matches a single element, e.g. `array( 'SECTION', '*' )`.
+ * @return bool Whether the currently-matched tag is found at the given nested structure.
+ */
+public function matches_breadcrumbs( $breadcrumbs ): bool {
+	// Everything matches when there are zero constraints.
+	if ( 0 === count( $breadcrumbs ) ) {
+		return true;
+	}
+
+	// Start at the last crumb.
+	$crumb = end( $breadcrumbs );
+
+	if ( '*' !== $crumb &amp;&amp; $this-&gt;get_tag() !== strtoupper( $crumb ) ) {
+		return false;
+	}
+
+	for ( $i = count( $this-&gt;breadcrumbs ) - 1; $i &gt;= 0; $i-- ) {
+		$node  = $this-&gt;breadcrumbs[ $i ];
+		$crumb = strtoupper( current( $breadcrumbs ) );
+
+		if ( '*' !== $crumb &amp;&amp; $node !== $crumb ) {
+			return false;
+		}
+
+		if ( false === prev( $breadcrumbs ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Indicates if the currently-matched node expects a closing
+ * token, or if it will self-close on the next step.
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/html-api/class-wp-html-processor.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/html-api/class-wp-html-processor.php#L709">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/html-api/class-wp-html-processor.php#L709-L771">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.4.0/">6.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

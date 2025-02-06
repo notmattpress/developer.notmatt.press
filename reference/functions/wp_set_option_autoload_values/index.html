@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_set_option_autoload_values()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_set_option_autoload_values()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_set_option_autoload_values( <span class="arg-type">array</span> <span class="arg-name">$options</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sets the autoload values for multiple options in the database.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Autoloading too many options can lead to performance problems, especially if the options are not frequently used.<br/>This function allows modifying the autoload value for multiple options without changing the actual option value.<br/>This is for example recommended for plugin activation and deactivation hooks, to ensure any options exclusively used by the plugin which are generally autoloaded can be set to not autoload when the plugin is inactive.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$options</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Associative array of option names and their autoload values to set. The option names are                       expected to not be SQL-escaped. The autoload values should be boolean values. For backward                       compatibility <code>'yes'</code> and <code>'no'</code> are also accepted, though using these values is deprecated.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Associative array of all provided $options as keys and boolean values for whether their autoload value               was updated.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="388"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_set_option_autoload_values( array $options ) {
+	global $wpdb;
+
+	if ( ! $options ) {
+		return array();
+	}
+
+	$grouped_options = array(
+		'on'  =&gt; array(),
+		'off' =&gt; array(),
+	);
+	$results         = array();
+	foreach ( $options as $option =&gt; $autoload ) {
+		wp_protect_special_option( $option ); // Ensure only valid options can be passed.
+
+		/*
+		 * Sanitize autoload value and categorize accordingly.
+		 * The values 'yes', 'no', 'on', and 'off' are supported for backward compatibility.
+		 */
+		if ( 'off' === $autoload || 'no' === $autoload || false === $autoload ) {
+			$grouped_options['off'][] = $option;
+		} else {
+			$grouped_options['on'][] = $option;
+		}
+		$results[ $option ] = false; // Initialize result value.
+	}
+
+	$where      = array();
+	$where_args = array();
+	foreach ( $grouped_options as $autoload =&gt; $options ) {
+		if ( ! $options ) {
+			continue;
+		}
+		$placeholders = implode( ',', array_fill( 0, count( $options ), '%s' ) );
+		$where[]      = "autoload != '%s' AND option_name IN ($placeholders)";
+		$where_args[] = $autoload;
+		foreach ( $options as $option ) {
+			$where_args[] = $option;
+		}
+	}
+	$where = 'WHERE ' . implode( ' OR ', $where );
+
+	/*
+	 * Determine the relevant options that do not already use the given autoload value.
+	 * If no options are returned, no need to update.
+	 */
+	// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+	$options_to_update = $wpdb-&gt;get_col( $wpdb-&gt;prepare( "SELECT option_name FROM $wpdb-&gt;options $where", $where_args ) );
+	if ( ! $options_to_update ) {
+		return $results;
+	}
+
+	// Run UPDATE queries as needed (maximum 2) to update the relevant options' autoload values to 'yes' or 'no'.
+	foreach ( $grouped_options as $autoload =&gt; $options ) {
+		if ( ! $options ) {
+			continue;
+		}
+		$options                      = array_intersect( $options, $options_to_update );
+		$grouped_options[ $autoload ] = $options;
+		if ( ! $grouped_options[ $autoload ] ) {
+			continue;
+		}
+
+		// Run query to update autoload value for all the options where it is needed.
+		$success = $wpdb-&gt;query(
+			$wpdb-&gt;prepare(
+				"UPDATE $wpdb-&gt;options SET autoload = %s WHERE option_name IN (" . implode( ',', array_fill( 0, count( $grouped_options[ $autoload ] ), '%s' ) ) . ')',
+				array_merge(
+					array( $autoload ),
+					$grouped_options[ $autoload ]
+				)
+			)
+		);
+		if ( ! $success ) {
+			// Set option list to an empty array to indicate no options were updated.
+			$grouped_options[ $autoload ] = array();
+			continue;
+		}
+
+		// Assume that on success all options were updated, which should be the case given only new values are sent.
+		foreach ( $grouped_options[ $autoload ] as $option ) {
+			$results[ $option ] = true;
+		}
+	}
+
+	/*
+	 * If any options were changed to 'on', delete their individual caches, and delete 'alloptions' cache so that it
+	 * is refreshed as needed.
+	 * If no options were changed to 'on' but any options were changed to 'no', delete them from the 'alloptions'
+	 * cache. This is not necessary when options were changed to 'on', since in that situation the entire cache is
+	 * deleted anyway.
+	 */
+	if ( $grouped_options['on'] ) {
+		wp_cache_delete_multiple( $grouped_options['on'], 'options' );
+		wp_cache_delete( 'alloptions', 'options' );
+	} elseif ( $grouped_options['off'] ) {
+		$alloptions = wp_load_alloptions( true );
+
+		foreach ( $grouped_options['off'] as $option ) {
+			if ( isset( $alloptions[ $option ] ) ) {
+				unset( $alloptions[ $option ] );
+			}
+		}
+
+		wp_cache_set( 'alloptions', $alloptions, 'options' );
+	}
+
+	return $results;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/option.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/option.php#L388">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/option.php#L388-L496">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_delete_multiple/">wp_cache_delete_multiple()</a><code>wp-includes/cache.php</code></td><td><p>Deletes multiple values from the cache in one call.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_delete/">wp_cache_delete()</a><code>wp-includes/cache.php</code></td><td><p>Removes the cache contents matching key and group.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set/">wp_cache_set()</a><code>wp-includes/cache.php</code></td><td><p>Saves the data to the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_load_alloptions/">wp_load_alloptions()</a><code>wp-includes/option.php</code></td><td><p>Loads and caches all autoloaded options, if available or all options.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_protect_special_option/">wp_protect_special_option()</a><code>wp-includes/option.php</code></td><td><p>Protects WordPress special option from being modified.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_col/">wpdb::get_col()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one column from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/query/">wpdb::query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Performs a database query, using current database connection.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_set_options_autoload/">wp_set_options_autoload()</a><code>wp-includes/option.php</code></td><td><p>Sets the autoload value for multiple options in the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_set_option_autoload/">wp_set_option_autoload()</a><code>wp-includes/option.php</code></td><td><p>Sets the autoload value for an option in the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/switch_theme/">switch_theme()</a><code>wp-includes/theme.php</code></td><td><p>Switches the theme.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td><span class="since-description">The autoload values <code>'yes'</code> and <code>'no'</code> are deprecated.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.4.0/">6.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

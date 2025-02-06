@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/rest-api/">REST API Handbook</a></span><span><a href="https://developer.wordpress.org/rest-api/using-the-rest-api/">Using the REST API</a></span><span class="is-current-page">Global Parameters</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Global Parameters</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The API includes a number of global parameters (also called “meta-parameters”) which control how the API handles the request/response handling. These operate at a layer above the actual resources themselves, and are available on all resources.</p>
+<h2 class="is-toc-heading" id="_fields" tabindex="-1"><a href="#_fields">_fields</a></h2>
+<p>A REST resource like a Post contains a large quantity of data: basic information such as content, title, and author ID, but also <a href="https://developer.notmatt.press/rest-api/extending-the-rest-api/modifying-responses/">registered metadata and fields</a>, media information, and links to other resources. Your application may not need all of this information on every request.</p>
+<p>To instruct WordPress to return only a subset of the fields in a response, you may use the <code>_fields</code> query parameter. If for example you are building an archive view and only need the ID, title, permalink, author and excerpt for a collection of posts, you can restrict the response to only those properties with this fields query:</p>
+<pre><code>/wp/v2/posts?_fields=author,id,excerpt,title,link
+</code></pre>
+<p>You may alternatively provide that same list using query parameter array syntax instead of a comma-separated list:</p>
+<pre><code>/wp/v2/posts?_fields[]=author&amp;_fields[]=id&amp;_fields[]=excerpt&amp;_fields[]=title&amp;_fields[]=link
+</code></pre>
+<p>When <code>_fields</code> is provided then WordPress will skip unneeded fields when generating your response object, avoiding potentially expensive internal computation or queries for data you don’t need. This also means the JSON object returned from the REST API will be smaller, requiring less time to download and less time to parse on your client device.</p>
+<p>Carefully design your queries to pull in only the needed properties from each resource to make your application faster to use and more efficient to run.</p>
+<p>As of WordPress 5.3 the <code>_fields</code> parameter supports nested properties. This can be useful if you have registered many meta keys, permitting you to request the value for only one of the registered meta properties:</p>
+<pre><code>?_fields=meta.one-of-many-keys
+</code></pre>
+<p>Only the meta value with the key <code>one-of-many-keys</code> will be returned, and others will be excluded.</p>
+<p>You can also request specific deeply-nested properties within a complex meta object:</p>
+<pre><code>?_fields=meta.key_name.nested_prop.deeply_nested_prop,meta.key_name.other_nested_prop
+</code></pre>
+<h2 class="is-toc-heading" id="_embed" tabindex="-1"><a href="#_embed">_embed</a></h2>
+<p>Most resources include links to related resources. For example, a post can link to the parent post, or to comments on the post. To reduce the number of HTTP requests required, clients may wish to fetch a resource as well as the linked resources. The <code>_embed</code> parameter indicates to the server that the response should include these embedded resources.</p>
+<p>Embed mode is enabled if the <code>_embed</code> parameter is passed in the query string (GET parameter). This parameter does not require a value (i.e. <code>?_embed</code> is valid), however can be passed “1” as a value if required by a client library.</p>
+<p>As of WordPress 5.4, the resources to embed can be limited by passing a list of link relation names to the <code>_embed</code> parameter. For example, <code>/wp/v2/posts?_embed=author,wp:term</code> will only embed the post’s author and the lists of terms associated with the post.</p>
+<p>Resources in embed mode will contain an additional <code>_embedded</code> key next to the <code>_links</code> key containing the linked resources. Only links with the <code>embeddable</code> parameter set to <code>true</code> will be embedded.</p>
+<p>In order to use <code>_embed</code> together with <code>_fields</code>, add <code>_embedded</code> as well as <code>_links</code> to the fields, for instance, <code>/wp-json/wp/v2/posts/_embed=author,wp:term&amp;_fields=title,author,_links,_embedded</code>.</p>
+<p>For more about linking and embedding, see the <a href="https://developer.notmatt.press/rest-api/linking-and-embedding/">Linking and Embedding</a> page.</p>
+<h2 class="is-toc-heading" id="_method-or-x-http-method-override-header" tabindex="-1"><a href="#_method-or-x-http-method-override-header">_method (or X-HTTP-Method-Override header)</a></h2>
+<p>Some servers and clients cannot correctly process some HTTP methods that the API makes use of. For example, all deletion requests on resources use the <code>DELETE</code> method, but some clients do not provide the ability to send this method.</p>
+<p>To ensure compatibility with these servers and clients, the API supports a method override. This can be passed either via a <code>_method</code> parameter or the <code>X-HTTP-Method-Override</code> header, with the value set to the HTTP method to use.</p>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><p>
+Clients should only ever send a method override parameter or header with POST requests. Using the method override with GET requests may cause the request to be incorrectly cached.</p>
+</div></div>
+<p>A <code>POST</code> to <code>/wp-json/wp/v2/posts/42?_method=DELETE</code> would be translated to a <code>DELETE</code> to the <code>wp/v2/posts/42</code> route.</p>
+<p>Similarly, the following POST request would become a DELETE:</p>
+<pre><code>POST /wp-json/wp/v2/posts/42 HTTP/1.1
+Host: example.com
+X-HTTP-Method-Override: DELETE
+</code></pre>
+<h2 class="is-toc-heading" id="_envelope" tabindex="-1"><a href="#_envelope">_envelope</a></h2>
+<p>Similarly to <code>_method</code>, some servers, clients, and proxies do not support accessing the full response data. The API supports passing an <code>_envelope</code> parameter, which sends all response data in the body, including headers and status code.</p>
+<p>Envelope mode is enabled if the <code>_envelope</code> parameter is passed in the query string (GET parameter). This parameter does not require a value (i.e. <code>?_envelope</code> is valid), but can be passed “1” as a value if required by a client library.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+For future compatibility, other values should not be passed.<br/>
+</div></div>
+<p>Enveloped responses include a “fake” HTTP 200 response code with no additional headers (apart from Content-Type) that should ensure the response correctly passes through intermediaries.</p>
+<p>For example, given the following response to a <code>GET</code> to <code>wp/v2/users/me</code>:</p>
+<pre><code>HTTP/1.1 302 Found
+Location: http://example.com/wp-json/wp/v2/users/42
+
+{
+  "id": 42,
+  ...
+}
+</code></pre>
+<p>The equivalent enveloped response (with a <code>GET</code> to <code>wp/v2/users/me?_envelope</code>) would be:</p>
+<pre><code>HTTP/1.1 200 OK
+
+{
+  "status": 302,
+  "headers": {
+    "Location": "http://example.com/wp-json/wp/v2/users/42"
+  },
+  "body": {
+    "id": 42
+  }
+}
+</code></pre>
+<h2 class="is-toc-heading" id="_jsonp" tabindex="-1"><a href="#_jsonp">_jsonp</a></h2>
+<p>The API natively supports <a href="https://en.wikipedia.org/wiki/JSONP">JSONP</a> responses to allow cross-domain requests for legacy browsers and clients. This parameter takes a JavaScript callback function which will be prepended to the data. This URL can then be loaded via a <code>&lt;script&gt;</code> tag.</p>
+<p>The callback function can contain any alphanumeric, <code>_</code> (underscore), or <code>.</code> (period) character. Callbacks which contain invalid characters will receive a HTTP 400 error response, and the callback will not be called.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+Modern browsers can use <a href="https://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross-Origin Resource Sharing (CORS)</a> preflight requests for cross-domain requests, but JSONP can be used to ensure support with all browsers.
+<ul>
+<li><a href="http://caniuse.com/#feat=cors">Browser Support</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS">MDN Article on CORS</a></li>
+</ul>
+<p></p></div></div>
+<p>For example:</p>
+<pre><code class="language-html">&lt;script&gt;
+function receiveData( data ) {
+  // Do something with the data here.
+  // For demonstration purposes, we'll simply log it.
+  console.log( data );
+}
+&lt;/script&gt;
+&lt;script src="https://example.com/wp-json/?_jsonp=receiveData"&gt;&lt;/script&gt;
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

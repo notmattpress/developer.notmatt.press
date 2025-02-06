@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_customize_widgets/">WP_Customize_Widgets</a></span><span class="is-current-page">WP_Customize_Widgets::wp_ajax_update_widget()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Customize_Widgets::wp_ajax_update_widget()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Customize_Widgets::wp_ajax_update_widget()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Updates widget settings asynchronously.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Allows the Customizer to update a widget using its form, but return the new instance info via Ajax instead of saving it to the options table.</p>
+<p>Most code here copied from <a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_widget/" rel="function">wp_ajax_save_widget()</a> .</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_widget">wp_ajax_save_widget()</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1697"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function wp_ajax_update_widget() {
+
+	if ( ! is_user_logged_in() ) {
+		wp_die( 0 );
+	}
+
+	check_ajax_referer( 'update-widget', 'nonce' );
+
+	if ( ! current_user_can( 'edit_theme_options' ) ) {
+		wp_die( -1 );
+	}
+
+	if ( empty( $_POST['widget-id'] ) ) {
+		wp_send_json_error( 'missing_widget-id' );
+	}
+
+	/** This action is documented in wp-admin/includes/ajax-actions.php */
+	do_action( 'load-widgets.php' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
+
+	/** This action is documented in wp-admin/includes/ajax-actions.php */
+	do_action( 'widgets.php' ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
+
+	/** This action is documented in wp-admin/widgets.php */
+	do_action( 'sidebar_admin_setup' );
+
+	$widget_id = $this-&gt;get_post_value( 'widget-id' );
+	$parsed_id = $this-&gt;parse_widget_id( $widget_id );
+	$id_base   = $parsed_id['id_base'];
+
+	$is_updating_widget_template = (
+		isset( $_POST[ 'widget-' . $id_base ] )
+		&amp;&amp;
+		is_array( $_POST[ 'widget-' . $id_base ] )
+		&amp;&amp;
+		preg_match( '/__i__|%i%/', key( $_POST[ 'widget-' . $id_base ] ) )
+	);
+	if ( $is_updating_widget_template ) {
+		wp_send_json_error( 'template_widget_not_updatable' );
+	}
+
+	$updated_widget = $this-&gt;call_widget_update( $widget_id ); // =&gt; {instance,form}
+	if ( is_wp_error( $updated_widget ) ) {
+		wp_send_json_error( $updated_widget-&gt;get_error_code() );
+	}
+
+	$form     = $updated_widget['form'];
+	$instance = $this-&gt;sanitize_widget_js_instance( $updated_widget['instance'], $id_base );
+
+	wp_send_json_success( compact( 'form', 'instance' ) );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-customize-widgets.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-customize-widgets.php#L1697">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-customize-widgets.php#L1697-L1746">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/load-widgets-php/"><span class="hook-func">do_action</span>( ‘load-widgets.php’ )</a></dt><dd><p>Fires early when editing the widgets displayed in sidebars.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/sidebar_admin_setup/"><span class="hook-func">do_action</span>( ‘sidebar_admin_setup’ )</a></dt><dd><p>Fires early before the Widgets administration screen loads, after scripts are enqueued.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/widgets-php/"><span class="hook-func">do_action</span>( ‘widgets.php’ )</a></dt><dd><p>Fires early when editing the widgets displayed in sidebars.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/call_widget_update/">WP_Customize_Widgets::call_widget_update()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Finds and invokes the widget update and control callbacks.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/sanitize_widget_js_instance/">WP_Customize_Widgets::sanitize_widget_js_instance()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Converts a widget instance into JSON-representable format.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/get_post_value/">WP_Customize_Widgets::get_post_value()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Retrieves an unslashed post value or return a default.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/parse_widget_id/">WP_Customize_Widgets::parse_widget_id()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Converts a widget ID into its id_base and number components.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_ajax_referer/">check_ajax_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Verifies the Ajax request to prevent processing requests external of the blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_error/">wp_send_json_error()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating failure.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_success/">wp_send_json_success()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating success.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_die/">wp_die()</a><code>wp-includes/functions.php</code></td><td><p>Kills WordPress execution and displays HTML page with an error message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 8 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.9.0/">3.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

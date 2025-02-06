@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">verify_file_signature()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>verify_file_signature()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">verify_file_signature( <span class="arg-type">string</span> <span class="arg-name">$filename</span>,  <span class="arg-type">string|array</span> <span class="arg-name">$signatures</span>,  <span class="arg-type">string|false</span> <span class="arg-name">$filename_for_errors</span> = <span class="arg-default">false</span> ): <span class="return-type">bool|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Verifies the contents of a file against its ED25519 signature.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$filename</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The file to validate.</span></div></dd><dt><code>$signatures</code><span class="type"><span class="string">string</span>|<span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">A Signature provided for the file.</span></div></dd><dt><code>$filename_for_errors</code><span class="type"><span class="string">string</span>|<span class="false">false</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A friendly filename for errors.</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> True on success, false if verification not attempted,                       or <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> describing an error condition.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1387"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function verify_file_signature( $filename, $signatures, $filename_for_errors = false ) {
+	if ( ! $filename_for_errors ) {
+		$filename_for_errors = wp_basename( $filename );
+	}
+
+	// Check we can process signatures.
+	if ( ! function_exists( 'sodium_crypto_sign_verify_detached' ) || ! in_array( 'sha384', array_map( 'strtolower', hash_algos() ), true ) ) {
+		return new WP_Error(
+			'signature_verification_unsupported',
+			sprintf(
+				/* translators: %s: The filename of the package. */
+				__( 'The authenticity of %s could not be verified as signature verification is unavailable on this system.' ),
+				'&lt;span class="code"&gt;' . esc_html( $filename_for_errors ) . '&lt;/span&gt;'
+			),
+			( ! function_exists( 'sodium_crypto_sign_verify_detached' ) ? 'sodium_crypto_sign_verify_detached' : 'sha384' )
+		);
+	}
+
+	// Verify runtime speed of Sodium_Compat is acceptable.
+	if ( ! extension_loaded( 'sodium' ) &amp;&amp; ! ParagonIE_Sodium_Compat::polyfill_is_fast() ) {
+		$sodium_compat_is_fast = false;
+
+		// Allow for an old version of Sodium_Compat being loaded before the bundled WordPress one.
+		if ( method_exists( 'ParagonIE_Sodium_Compat', 'runtime_speed_test' ) ) {
+			/*
+			 * Run `ParagonIE_Sodium_Compat::runtime_speed_test()` in optimized integer mode,
+			 * as that's what WordPress utilizes during signing verifications.
+			 */
+			// phpcs:disable WordPress.NamingConventions.ValidVariableName
+			$old_fastMult                      = ParagonIE_Sodium_Compat::$fastMult;
+			ParagonIE_Sodium_Compat::$fastMult = true;
+			$sodium_compat_is_fast             = ParagonIE_Sodium_Compat::runtime_speed_test( 100, 10 );
+			ParagonIE_Sodium_Compat::$fastMult = $old_fastMult;
+			// phpcs:enable
+		}
+
+		/*
+		 * This cannot be performed in a reasonable amount of time.
+		 * https://github.com/paragonie/sodium_compat#help-sodium_compat-is-slow-how-can-i-make-it-fast
+		 */
+		if ( ! $sodium_compat_is_fast ) {
+			return new WP_Error(
+				'signature_verification_unsupported',
+				sprintf(
+					/* translators: %s: The filename of the package. */
+					__( 'The authenticity of %s could not be verified as signature verification is unavailable on this system.' ),
+					'&lt;span class="code"&gt;' . esc_html( $filename_for_errors ) . '&lt;/span&gt;'
+				),
+				array(
+					'php'                =&gt; PHP_VERSION,
+					'sodium'             =&gt; defined( 'SODIUM_LIBRARY_VERSION' ) ? SODIUM_LIBRARY_VERSION : ( defined( 'ParagonIE_Sodium_Compat::VERSION_STRING' ) ? ParagonIE_Sodium_Compat::VERSION_STRING : false ),
+					'polyfill_is_fast'   =&gt; false,
+					'max_execution_time' =&gt; ini_get( 'max_execution_time' ),
+				)
+			);
+		}
+	}
+
+	if ( ! $signatures ) {
+		return new WP_Error(
+			'signature_verification_no_signature',
+			sprintf(
+				/* translators: %s: The filename of the package. */
+				__( 'The authenticity of %s could not be verified as no signature was found.' ),
+				'&lt;span class="code"&gt;' . esc_html( $filename_for_errors ) . '&lt;/span&gt;'
+			),
+			array(
+				'filename' =&gt; $filename_for_errors,
+			)
+		);
+	}
+
+	$trusted_keys = wp_trusted_keys();
+	$file_hash    = hash_file( 'sha384', $filename, true );
+
+	mbstring_binary_safe_encoding();
+
+	$skipped_key       = 0;
+	$skipped_signature = 0;
+
+	foreach ( (array) $signatures as $signature ) {
+		$signature_raw = base64_decode( $signature );
+
+		// Ensure only valid-length signatures are considered.
+		if ( SODIUM_CRYPTO_SIGN_BYTES !== strlen( $signature_raw ) ) {
+			++$skipped_signature;
+			continue;
+		}
+
+		foreach ( (array) $trusted_keys as $key ) {
+			$key_raw = base64_decode( $key );
+
+			// Only pass valid public keys through.
+			if ( SODIUM_CRYPTO_SIGN_PUBLICKEYBYTES !== strlen( $key_raw ) ) {
+				++$skipped_key;
+				continue;
+			}
+
+			if ( sodium_crypto_sign_verify_detached( $signature_raw, $file_hash, $key_raw ) ) {
+				reset_mbstring_encoding();
+				return true;
+			}
+		}
+	}
+
+	reset_mbstring_encoding();
+
+	return new WP_Error(
+		'signature_verification_failed',
+		sprintf(
+			/* translators: %s: The filename of the package. */
+			__( 'The authenticity of %s could not be verified.' ),
+			'&lt;span class="code"&gt;' . esc_html( $filename_for_errors ) . '&lt;/span&gt;'
+		),
+		// Error data helpful for debugging:
+		array(
+			'filename'    =&gt; $filename_for_errors,
+			'keys'        =&gt; $trusted_keys,
+			'signatures'  =&gt; $signatures,
+			'hash'        =&gt; bin2hex( $file_hash ),
+			'skipped_key' =&gt; $skipped_key,
+			'skipped_sig' =&gt; $skipped_signature,
+			'php'         =&gt; PHP_VERSION,
+			'sodium'      =&gt; defined( 'SODIUM_LIBRARY_VERSION' ) ? SODIUM_LIBRARY_VERSION : ( defined( 'ParagonIE_Sodium_Compat::VERSION_STRING' ) ? ParagonIE_Sodium_Compat::VERSION_STRING : false ),
+		)
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/file.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/file.php#L1387">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/file.php#L1387-L1513">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_trusted_keys/">wp_trusted_keys()</a><code>wp-admin/includes/file.php</code></td><td><p>Retrieves the list of signing keys trusted by WordPress.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_basename/">wp_basename()</a><code>wp-includes/formatting.php</code></td><td><p>i18n-friendly version of basename().</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/mbstring_binary_safe_encoding/">mbstring_binary_safe_encoding()</a><code>wp-includes/functions.php</code></td><td><p>Sets the mbstring internal encoding to a binary safe encoding when func_overload is enabled.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/reset_mbstring_encoding/">reset_mbstring_encoding()</a><code>wp-includes/functions.php</code></td><td><p>Resets the mbstring internal encoding to a users previously set encoding.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/download_url/">download_url()</a><code>wp-admin/includes/file.php</code></td><td><p>Downloads a URL to a local temporary file using the WordPress HTTP API.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

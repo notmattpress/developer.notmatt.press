@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_list_table/">WP_List_Table</a></span><span class="is-current-page">WP_List_Table::print_column_headers()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_List_Table::print_column_headers()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_List_Table::print_column_headers( <span class="arg-type">bool</span> <span class="arg-name">$with_id</span> = <span class="arg-default">true</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Prints column headers, accounting for hidden and sortable columns.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$with_id</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to set the ID attribute or not</span></div><p class="default">Default:<code>true</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>This method renders out the column headers. Generally, you don’t need to call this directly as it’s handled for you in the <tt>display()</tt> method.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1399"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function print_column_headers( $with_id = true ) {
+	list( $columns, $hidden, $sortable, $primary ) = $this-&gt;get_column_info();
+
+	$current_url = set_url_scheme( 'http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] );
+	$current_url = remove_query_arg( 'paged', $current_url );
+
+	// When users click on a column header to sort by other columns.
+	if ( isset( $_GET['orderby'] ) ) {
+		$current_orderby = $_GET['orderby'];
+		// In the initial view there's no orderby parameter.
+	} else {
+		$current_orderby = '';
+	}
+
+	// Not in the initial view and descending order.
+	if ( isset( $_GET['order'] ) &amp;&amp; 'desc' === $_GET['order'] ) {
+		$current_order = 'desc';
+	} else {
+		// The initial view is not always 'asc', we'll take care of this below.
+		$current_order = 'asc';
+	}
+
+	if ( ! empty( $columns['cb'] ) ) {
+		static $cb_counter = 1;
+		$columns['cb']     = '&lt;input id="cb-select-all-' . $cb_counter . '" type="checkbox" /&gt;
+		&lt;label for="cb-select-all-' . $cb_counter . '"&gt;' .
+			'&lt;span class="screen-reader-text"&gt;' .
+				/* translators: Hidden accessibility text. */
+				__( 'Select All' ) .
+			'&lt;/span&gt;' .
+			'&lt;/label&gt;';
+		++$cb_counter;
+	}
+
+	foreach ( $columns as $column_key =&gt; $column_display_name ) {
+		$class          = array( 'manage-column', "column-$column_key" );
+		$aria_sort_attr = '';
+		$abbr_attr      = '';
+		$order_text     = '';
+
+		if ( in_array( $column_key, $hidden, true ) ) {
+			$class[] = 'hidden';
+		}
+
+		if ( 'cb' === $column_key ) {
+			$class[] = 'check-column';
+		} elseif ( in_array( $column_key, array( 'posts', 'comments', 'links' ), true ) ) {
+			$class[] = 'num';
+		}
+
+		if ( $column_key === $primary ) {
+			$class[] = 'column-primary';
+		}
+
+		if ( isset( $sortable[ $column_key ] ) ) {
+			$orderby       = isset( $sortable[ $column_key ][0] ) ? $sortable[ $column_key ][0] : '';
+			$desc_first    = isset( $sortable[ $column_key ][1] ) ? $sortable[ $column_key ][1] : false;
+			$abbr          = isset( $sortable[ $column_key ][2] ) ? $sortable[ $column_key ][2] : '';
+			$orderby_text  = isset( $sortable[ $column_key ][3] ) ? $sortable[ $column_key ][3] : '';
+			$initial_order = isset( $sortable[ $column_key ][4] ) ? $sortable[ $column_key ][4] : '';
+
+			/*
+			 * We're in the initial view and there's no $_GET['orderby'] then check if the
+			 * initial sorting information is set in the sortable columns and use that.
+			 */
+			if ( '' === $current_orderby &amp;&amp; $initial_order ) {
+				// Use the initially sorted column $orderby as current orderby.
+				$current_orderby = $orderby;
+				// Use the initially sorted column asc/desc order as initial order.
+				$current_order = $initial_order;
+			}
+
+			/*
+			 * True in the initial view when an initial orderby is set via get_sortable_columns()
+			 * and true in the sorted views when the actual $_GET['orderby'] is equal to $orderby.
+			 */
+			if ( $current_orderby === $orderby ) {
+				// The sorted column. The `aria-sort` attribute must be set only on the sorted column.
+				if ( 'asc' === $current_order ) {
+					$order          = 'desc';
+					$aria_sort_attr = ' aria-sort="ascending"';
+				} else {
+					$order          = 'asc';
+					$aria_sort_attr = ' aria-sort="descending"';
+				}
+
+				$class[] = 'sorted';
+				$class[] = $current_order;
+			} else {
+				// The other sortable columns.
+				$order = strtolower( $desc_first );
+
+				if ( ! in_array( $order, array( 'desc', 'asc' ), true ) ) {
+					$order = $desc_first ? 'desc' : 'asc';
+				}
+
+				$class[] = 'sortable';
+				$class[] = 'desc' === $order ? 'asc' : 'desc';
+
+				/* translators: Hidden accessibility text. */
+				$asc_text = __( 'Sort ascending.' );
+				/* translators: Hidden accessibility text. */
+				$desc_text  = __( 'Sort descending.' );
+				$order_text = 'asc' === $order ? $asc_text : $desc_text;
+			}
+
+			if ( '' !== $order_text ) {
+				$order_text = ' &lt;span class="screen-reader-text"&gt;' . $order_text . '&lt;/span&gt;';
+			}
+
+			// Print an 'abbr' attribute if a value is provided via get_sortable_columns().
+			$abbr_attr = $abbr ? ' abbr="' . esc_attr( $abbr ) . '"' : '';
+
+			$column_display_name = sprintf(
+				'&lt;a href="%1$s"&gt;' .
+					'&lt;span&gt;%2$s&lt;/span&gt;' .
+					'&lt;span class="sorting-indicators"&gt;' .
+						'&lt;span class="sorting-indicator asc" aria-hidden="true"&gt;&lt;/span&gt;' .
+						'&lt;span class="sorting-indicator desc" aria-hidden="true"&gt;&lt;/span&gt;' .
+					'&lt;/span&gt;' .
+					'%3$s' .
+				'&lt;/a&gt;',
+				esc_url( add_query_arg( compact( 'orderby', 'order' ), $current_url ) ),
+				$column_display_name,
+				$order_text
+			);
+		}
+
+		$tag   = ( 'cb' === $column_key ) ? 'td' : 'th';
+		$scope = ( 'th' === $tag ) ? 'scope="col"' : '';
+		$id    = $with_id ? "id='$column_key'" : '';
+
+		if ( ! empty( $class ) ) {
+			$class = "class='" . implode( ' ', $class ) . "'";
+		}
+
+		echo "&lt;$tag $scope $id $class $aria_sort_attr $abbr_attr&gt;$column_display_name&lt;/$tag&gt;";
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-list-table.php#L1399">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-list-table.php#L1399-L1537">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_list_table/get_column_info/">WP_List_Table::get_column_info()</a><code>wp-admin/includes/class-wp-list-table.php</code></td><td><p>Gets a list of all, hidden, and sortable columns, with filter applied.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/remove_query_arg/">remove_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Removes an item or items from a query string.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_url_scheme/">set_url_scheme()</a><code>wp-includes/link-template.php</code></td><td><p>Sets the scheme for a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_query_arg/">add_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves a modified URL query string.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_list_table/display/">WP_List_Table::display()</a><code>wp-admin/includes/class-wp-list-table.php</code></td><td><p>Displays the table.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/print_column_headers/">print_column_headers()</a><code>wp-admin/includes/list-table.php</code></td><td><p>Prints column headers for a particular screen.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.0/">3.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

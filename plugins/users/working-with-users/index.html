@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/users/">Users</a></span><span class="is-current-page">Working with Users</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Working with Users</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="adding-users" tabindex="-1"><a href="#adding-users">Adding Users</a></h2>
+<p>To add a user you can use <code>wp_create_user()</code> or <code>wp_insert_user()</code>.</p>
+<p><code>wp_create_user()</code> creates a user using only the username, password and email parameters while <code>wp_insert_user()</code> accepts an array or object describing the user and its properties.</p>
+<h3 class="is-toc-heading wp-block-heading" id="create-user" tabindex="-1"><a href="#create-user">Create User</a></h3>
+<p><code>wp_create_user()</code> allows you to create a new WordPress user.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+It uses <a href="https://developer.notmatt.press/reference/functions/wp_slash/" rel="function">wp_slash()</a>  to escape the values. The PHP compact() function to create an array with these values. The <a href="https://developer.notmatt.press/reference/functions/wp_insert_user/" rel="function">wp_insert_user()</a>  to perform the insert operation.<br/>
+</div></div>
+<p>Please refer to the Function Reference about <code>wp_create_user()</code> for full explanation about the used parameters.</p>
+<h4 class="wp-block-heading">Example Create</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">// check if the username is taken
+$user_id = username_exists( $user_name );
+
+// check that the email address does not belong to a registered user
+if ( ! $user_id &amp;&amp; email_exists( $user_email ) === false ) {
+	// create a random password
+	$random_password = wp_generate_password( 12, false );
+	// create the user
+	$user_id = wp_create_user(
+		$user_name,
+		$random_password,
+		$user_email
+	);
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="insert-user" tabindex="-1"><a href="#insert-user">Insert User</a></h3>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_insert_user( $userdata );</code></pre>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+The function calls a filter for most predefined properties.
+<p>The function performs the action <code>user_register</code> when creating a user (user ID does not exist).</p>
+<p>The function performs the action <code>profile_update</code> when updating the user (user ID exists).<br/>
+</p></div></div>
+<p>Please refer to the Function Reference about <code>wp_insert_user()</code> for full explanation about the used parameters.</p>
+<h4 class="wp-block-heading">Example Insert</h4>
+<p>Below is an example showing how to insert a new user with the website profile field filled in.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$username  = $_POST['username'];
+$password  = $_POST['password'];
+$website   = $_POST['website'];
+$user_data = [
+	'user_login' =&gt; $username,
+	'user_pass'  =&gt; $password,
+	'user_url'   =&gt; $website,
+];
+
+$user_id = wp_insert_user( $user_data );
+
+// success
+if ( ! is_wp_error( $user_id ) ) {
+	echo 'User created: ' . $user_id;
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="updating-users" tabindex="-1"><a href="#updating-users">Updating Users</a></h2>
+<p><code>wp_update_user()</code> Updates a single user in the database. The update data is passed along in the <code>$userdata</code> array/object.</p>
+<p>To update a single piece of user meta data, use <code>update_user_meta()</code> instead. To create a new user, use <code>wp_insert_user()</code> instead.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+If current user’s password is being updated, then the cookies will be cleared!<br/>
+</div></div>
+<p>Please refer to the Function Reference about <code>wp_update_user()</code> for full explanation about the used parameters.</p>
+<h4 class="wp-block-heading">Example Update</h4>
+<p>Below is an example showing how to update a user’s website profile field.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$user_id = 1;
+$website = 'https://wordpress.org';
+
+$user_id = wp_update_user(
+	array(
+		'ID'       =&gt; $user_id,
+		'user_url' =&gt; $website,
+	)
+);
+
+if ( is_wp_error( $user_id ) ) {
+	// error
+} else {
+	// success
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="deleting-users" tabindex="-1"><a href="#deleting-users">Deleting Users</a></h2>
+<p><code>wp_delete_user()</code> deletes the user and optionally reassign associated entities to another user ID.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+The function performs the action <code>deleted_user</code> after the user have been deleted.<br/>
+</div></div>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+If the $reassign parameter is not set to a valid user ID, then all entities belonging to the deleted user will be deleted!<br/>
+</div></div>
+<p>Please refer to the Function Reference about <code>wp_delete_user()</code> for full explanation about the used parameters.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

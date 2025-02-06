@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_HTTP_IXR_Client</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_HTTP_IXR_Client</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_HTTP_IXR_Client {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p><a href="https://developer.notmatt.press/reference/classes/wp_http_ixr_client/" rel="class">WP_HTTP_IXR_Client</a></p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_ixr_client/__construct/">WP_HTTP_IXR_Client::__construct</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_ixr_client/query/">WP_HTTP_IXR_Client::query</a></td><td>–</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="9"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_HTTP_IXR_Client extends IXR_Client {
+	public $scheme;
+	/**
+	 * @var IXR_Error
+	 */
+	public $error;
+
+	/**
+	 * @param string       $server
+	 * @param string|false $path
+	 * @param int|false    $port
+	 * @param int          $timeout
+	 */
+	public function __construct( $server, $path = false, $port = false, $timeout = 15 ) {
+		if ( ! $path ) {
+			// Assume we have been given a URL instead.
+			$bits         = parse_url( $server );
+			$this-&gt;scheme = $bits['scheme'];
+			$this-&gt;server = $bits['host'];
+			$this-&gt;port   = isset( $bits['port'] ) ? $bits['port'] : $port;
+			$this-&gt;path   = ! empty( $bits['path'] ) ? $bits['path'] : '/';
+
+			// Make absolutely sure we have a path.
+			if ( ! $this-&gt;path ) {
+				$this-&gt;path = '/';
+			}
+
+			if ( ! empty( $bits['query'] ) ) {
+				$this-&gt;path .= '?' . $bits['query'];
+			}
+		} else {
+			$this-&gt;scheme = 'http';
+			$this-&gt;server = $server;
+			$this-&gt;path   = $path;
+			$this-&gt;port   = $port;
+		}
+		$this-&gt;useragent = 'The Incutio XML-RPC PHP Library';
+		$this-&gt;timeout   = $timeout;
+	}
+
+	/**
+	 * @since 3.1.0
+	 * @since 5.5.0 Formalized the existing `...$args` parameter by adding it
+	 *              to the function signature.
+	 *
+	 * @return bool
+	 */
+	public function query( ...$args ) {
+		$method  = array_shift( $args );
+		$request = new IXR_Request( $method, $args );
+		$xml     = $request-&gt;getXml();
+
+		$port = $this-&gt;port ? ":$this-&gt;port" : '';
+		$url  = $this-&gt;scheme . '://' . $this-&gt;server . $port . $this-&gt;path;
+		$args = array(
+			'headers'    =&gt; array( 'Content-Type' =&gt; 'text/xml' ),
+			'user-agent' =&gt; $this-&gt;useragent,
+			'body'       =&gt; $xml,
+		);
+
+		// Merge Custom headers ala #8145.
+		foreach ( $this-&gt;headers as $header =&gt; $value ) {
+			$args['headers'][ $header ] = $value;
+		}
+
+		/**
+		 * Filters the headers collection to be sent to the XML-RPC server.
+		 *
+		 * @since 4.4.0
+		 *
+		 * @param string[] $headers Associative array of headers to be sent.
+		 */
+		$args['headers'] = apply_filters( 'wp_http_ixr_client_headers', $args['headers'] );
+
+		if ( false !== $this-&gt;timeout ) {
+			$args['timeout'] = $this-&gt;timeout;
+		}
+
+		// Now send the request.
+		if ( $this-&gt;debug ) {
+			echo '&lt;pre class="ixr_request"&gt;' . htmlspecialchars( $xml ) . "\n&lt;/pre&gt;\n\n";
+		}
+
+		$response = wp_remote_post( $url, $args );
+
+		if ( is_wp_error( $response ) ) {
+			$errno       = $response-&gt;get_error_code();
+			$errorstr    = $response-&gt;get_error_message();
+			$this-&gt;error = new IXR_Error( -32300, "transport error: $errno $errorstr" );
+			return false;
+		}
+
+		if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			$this-&gt;error = new IXR_Error( -32301, 'transport error - HTTP status code was not 200 (' . wp_remote_retrieve_response_code( $response ) . ')' );
+			return false;
+		}
+
+		if ( $this-&gt;debug ) {
+			echo '&lt;pre class="ixr_response"&gt;' . htmlspecialchars( wp_remote_retrieve_body( $response ) ) . "\n&lt;/pre&gt;\n\n";
+		}
+
+		// Now parse what we've got back.
+		$this-&gt;message = new IXR_Message( wp_remote_retrieve_body( $response ) );
+		if ( ! $this-&gt;message-&gt;parse() ) {
+			// XML error.
+			$this-&gt;error = new IXR_Error( -32700, 'parse error. not well formed' );
+			return false;
+		}
+
+		// Is the message a fault?
+		if ( 'fault' === $this-&gt;message-&gt;messageType ) {
+			$this-&gt;error = new IXR_Error( $this-&gt;message-&gt;faultCode, $this-&gt;message-&gt;faultString );
+			return false;
+		}
+
+		// Message must be OK.
+		return true;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-http-ixr-client.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-http-ixr-client.php#L9">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-http-ixr-client.php#L9-L127">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/ixr_client/">IXR_Client</a><code>wp-includes/IXR/class-IXR-client.php</code></td><td><p><a href="https://developer.notmatt.press/reference/classes/ixr_client/" rel="class">IXR_Client</a></p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.0/">3.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

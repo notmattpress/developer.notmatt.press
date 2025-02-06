@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">register_block_script_handle()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>register_block_script_handle()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">register_block_script_handle( <span class="arg-type">array</span> <span class="arg-name">$metadata</span>,  <span class="arg-type">string</span> <span class="arg-name">$field_name</span>,  <span class="arg-type">int</span> <span class="arg-name">$index</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Finds a script handle for the selected block metadata field. It detects when a path to file was provided and optionally finds a corresponding asset file with details necessary to register the script under automatically generated handle name. It returns unprocessed script handle otherwise.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$metadata</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Block metadata.</span></div></dd><dt><code>$field_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Field name to pick from metadata.</span></div></dd><dt><code>$index</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Index of the script to register when multiple items passed.<br/>
+Default 0.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> Script handle provided directly or created through                      script’s registration, or false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="205"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function register_block_script_handle( $metadata, $field_name, $index = 0 ) {
+	if ( empty( $metadata[ $field_name ] ) ) {
+		return false;
+	}
+
+	$script_handle_or_path = $metadata[ $field_name ];
+	if ( is_array( $script_handle_or_path ) ) {
+		if ( empty( $script_handle_or_path[ $index ] ) ) {
+			return false;
+		}
+		$script_handle_or_path = $script_handle_or_path[ $index ];
+	}
+
+	$script_path = remove_block_asset_path_prefix( $script_handle_or_path );
+	if ( $script_handle_or_path === $script_path ) {
+		return $script_handle_or_path;
+	}
+
+	$path                  = dirname( $metadata['file'] );
+	$script_asset_raw_path = $path . '/' . substr_replace( $script_path, '.asset.php', - strlen( '.js' ) );
+	$script_asset_path     = wp_normalize_path(
+		realpath( $script_asset_raw_path )
+	);
+
+	// Asset file for blocks is optional. See https://core.trac.wordpress.org/ticket/60460.
+	$script_asset  = ! empty( $script_asset_path ) ? require $script_asset_path : array();
+	$script_handle = isset( $script_asset['handle'] ) ?
+		$script_asset['handle'] :
+		generate_block_asset_handle( $metadata['name'], $field_name, $index );
+	if ( wp_script_is( $script_handle, 'registered' ) ) {
+		return $script_handle;
+	}
+
+	$script_path_norm    = wp_normalize_path( realpath( $path . '/' . $script_path ) );
+	$script_uri          = get_block_asset_url( $script_path_norm );
+	$script_dependencies = isset( $script_asset['dependencies'] ) ? $script_asset['dependencies'] : array();
+	$block_version       = isset( $metadata['version'] ) ? $metadata['version'] : false;
+	$script_version      = isset( $script_asset['version'] ) ? $script_asset['version'] : $block_version;
+	$script_args         = array();
+	if ( 'viewScript' === $field_name &amp;&amp; $script_uri ) {
+		$script_args['strategy'] = 'defer';
+	}
+
+	$result = wp_register_script(
+		$script_handle,
+		$script_uri,
+		$script_dependencies,
+		$script_version,
+		$script_args
+	);
+	if ( ! $result ) {
+		return false;
+	}
+
+	if ( ! empty( $metadata['textdomain'] ) &amp;&amp; in_array( 'wp-i18n', $script_dependencies, true ) ) {
+		wp_set_script_translations( $script_handle, $metadata['textdomain'] );
+	}
+
+	return $script_handle;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/blocks.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/blocks.php#L205">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/blocks.php#L205-L264">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_block_asset_url/">get_block_asset_url()</a><code>wp-includes/blocks.php</code></td><td><p>Gets the URL to a block asset.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/generate_block_asset_handle/">generate_block_asset_handle()</a><code>wp-includes/blocks.php</code></td><td><p>Generates the name for an asset based on the name of the block and the field name provided.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/remove_block_asset_path_prefix/">remove_block_asset_path_prefix()</a><code>wp-includes/blocks.php</code></td><td><p>Removes the block asset’s path prefix if provided.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_set_script_translations/">wp_set_script_translations()</a><code>wp-includes/functions.wp-scripts.php</code></td><td><p>Sets translated strings for a script.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_script_is/">wp_script_is()</a><code>wp-includes/functions.wp-scripts.php</code></td><td><p>Determines whether a script has been added to the queue.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_register_script/">wp_register_script()</a><code>wp-includes/functions.wp-scripts.php</code></td><td><p>Registers a new script.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_normalize_path/">wp_normalize_path()</a><code>wp-includes/functions.php</code></td><td><p>Normalizes a filesystem path.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/register_block_type_from_metadata/">register_block_type_from_metadata()</a><code>wp-includes/blocks.php</code></td><td><p>Registers a block type from the metadata stored in the <code>block.json</code> file.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td><span class="since-description">The asset file is optional. Added script handle support in the asset file.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td><span class="since-description">Added <code>$index</code> parameter.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.5.0/">5.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-cr0ybot even thread-odd thread-alt depth-1" data-comment-id="5303" id="comment-5303">
+<article class="comment-body" id="div-comment-5303">
+<a class="screen-reader-text" href="#comment-content-5303">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5303">
+<p>Note that, because this function uses `plugins_url` internally, registering a script via the block.json metadata file only works for plugins, not themes.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-5303">
+<ul class="children">
+<li class="comment byuser comment-author-cr0ybot odd alt depth-2" data-comment-id="6383" id="comment-6383">
+<article class="comment-body" id="div-comment-6383">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6383">
+<div>Three years later my comment here is no longer accurate, but if you’re developing locally with a symlinked theme folder you still need to jump through some hoops.</div>
+<div><a class="url" href="https://profiles.wordpress.org/cr0ybot/" rel="external nofollow">Cory Hughart</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/register_block_script_handle/#comment-6383"><time datetime="2023-03-03T19:18:24+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

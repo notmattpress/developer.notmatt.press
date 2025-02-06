@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/react-native/">React Native mobile editor</a></span><span class="is-current-page">Getting Started for the React Native based Mobile Gutenberg</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Getting Started for the React Native based Mobile Gutenberg</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Welcome! This is the Getting Started guide for the native mobile port of the block editor, targeting Android and iOS devices. Overall, it’s a React Native library to be used in parent greenfield or brownfield apps. Continue reading for information on how to build, test, and run it.</p>
+<h2 class="is-toc-heading" id="prerequisites" tabindex="-1"><a href="#prerequisites">Prerequisites</a></h2>
+<p>For a developer experience closer to the one the project maintainers current have, make sure you have the following tools installed:</p>
+<ul>
+<li>git</li>
+<li><a href="https://github.com/nvm-sh/nvm">nvm</a></li>
+<li>Node.js and npm (use nvm to install them)</li>
+<li><a href="https://developer.android.com/studio/">Android Studio</a> to be able to compile the Android version of the app</li>
+<li><a href="https://developer.apple.com/xcode/">Xcode</a> to be able to compile the iOS app</li>
+<li>CocoaPods (<code>sudo gem install cocoapods</code>) needed to fetch React and third-party dependencies.</li>
+</ul>
+<p>Note that the OS platform used by the maintainers is macOS but the tools and setup should be usable in other platforms too.</p>
+<h2 class="is-toc-heading" id="clone-the-project" tabindex="-1"><a href="#clone-the-project">Clone the project</a></h2>
+<pre><code class="language-sh">git clone https://github.com/WordPress/gutenberg.git
+</code></pre>
+<h2 class="is-toc-heading" id="set-up" tabindex="-1"><a href="#set-up">Set up</a></h2>
+<p>Note that the commands described here should be run in the top-level directory of the cloned project. Before running the demo app, you need to download and install the project dependencies. This is done via the following command:</p>
+<pre><code class="language-sh">nvm install
+npm ci
+npm run native preios
+</code></pre>
+<h2 class="is-toc-heading" id="run" tabindex="-1"><a href="#run">Run</a></h2>
+<pre><code class="language-sh">npm run native start:reset
+</code></pre>
+<p>Runs the packager (Metro) in development mode. The packager stays running to serve the app bundle to the clients that request it.</p>
+<p>With the packager running, open another terminal window and use the following command to compile and run the Android app:</p>
+<pre><code class="language-sh">npm run native android
+</code></pre>
+<p>The app should now open in a connected device or a running emulator and fetch the JavaScript code from the running packager.</p>
+<p>To compile and run the iOS variant of the app using the <em>default</em> simulator device, use:</p>
+<pre><code class="language-sh">npm run native ios
+</code></pre>
+<p>which will attempt to open your app in the iOS Simulator if you’re on a Mac and have it installed.</p>
+<h3 class="is-toc-heading" id="running-on-other-ios-device-simulators" tabindex="-1"><a href="#running-on-other-ios-device-simulators">Running on other iOS device simulators</a></h3>
+<p>To compile and run the app using a different device simulator, use the following, noting the double sets of <code>--</code> to pass the simulator option down to the <code>react-native</code> CLI.</p>
+<pre><code class="language-sh">npm run native ios -- -- --simulator="DEVICE_NAME"
+</code></pre>
+<p>For example, if you’d like to run in an iPhone Xs Max, try:</p>
+<pre><code class="language-sh">npm run native ios -- -- --simulator="iPhone Xs Max"
+</code></pre>
+<p>To see a list of all of your available iOS devices, use <code>xcrun simctl list devices</code>.</p>
+<h3 class="is-toc-heading" id="customizing-the-demo-editor" tabindex="-1"><a href="#customizing-the-demo-editor">Customizing the demo Editor</a></h3>
+<p>By default, the Demo editor renders most of the supported core blocks. This is helpful to showcase the editor’s capabilities, but can be distracting when focusing on a specific block or feature. One can customize the editor’s initial state by leveraging the <code>native.block_editor_props</code> hook in a <code>packages/react-native-editor/src/setup-local.js</code> file.</p>
+<details>
+<summary>Example setup-local.js</summary>
+<pre><code class="language-js">/**
+ * WordPress dependencies
+ */
+import { addFilter } from '@wordpress/hooks';
+
+export default () =&gt; {
+    addFilter(
+        'native.block_editor_props',
+        'core/react-native-editor',
+        ( props ) =&gt; {
+            return {
+                ...props,
+                initialHtml,
+            };
+        }
+    );
+};
+
+const initialHtml = `
+&lt;!-- wp:heading --&gt;
+&lt;h2 class="wp-block-heading"&gt;Just a Heading&lt;/h2&gt;
+&lt;!-- /wp:heading --&gt;
+`;
+</code></pre>
+</details>
+<h3 class="is-toc-heading" id="troubleshooting" tabindex="-1"><a href="#troubleshooting">Troubleshooting</a></h3>
+<p>If the Android emulator doesn’t start correctly, or compiling fails with <code>Could not initialize class org.codehaus.groovy.runtime.InvokerHelper</code> or similar, it may help to double check the set up of your development environment against the latest requirements in <a href="https://reactnative.dev/docs/environment-setup">React Native’s documentation</a>. With Android Studio, for example, you will need to configure the <code>ANDROID_HOME</code> environment variable and ensure that your version of JDK matches the latest requirements.</p>
+<p>Some times, and especially when tweaking anything in the <code>package.json</code>, Babel configuration (<code>.babelrc</code>) or the Jest configuration (<code>jest.config.js</code>), your changes might seem to not take effect as expected. On those times, you might need to stop the metro bunder process and restart it with <code>npm run native start:reset</code>. Other times, you might want to reinstall the NPM packages from scratch and the <code>npm run native clean:install</code> script can be handy.</p>
+<h2 class="is-toc-heading" id="developing-with-visual-studio-code" tabindex="-1"><a href="#developing-with-visual-studio-code">Developing with Visual Studio Code</a></h2>
+<p>Although you’re not required to use Visual Studio Code for developing gutenberg-mobile, it is the recommended IDE and we have some configuration for it.</p>
+<p>When you first open the project in Visual Studio, you will be prompted to install some recommended extensions. This will help with some things like type checking and debugging.</p>
+<p>One of the extensions we are using is the <a href="https://marketplace.visualstudio.com/items?itemName=vsmobile.vscode-react-native">React Native Tools</a>. This allows you to run the packager from VSCode or launch the application on iOS or Android. It also adds some debug configurations so you can set breakpoints and debug the application directly from VSCode. Take a look at the <a href="https://marketplace.visualstudio.com/items?itemName=vsmobile.vscode-react-native">extension documentation</a> for more details.</p>
+<h2 class="is-toc-heading" id="unit-tests" tabindex="-1"><a href="#unit-tests">Unit tests</a></h2>
+<p>Use the following command to run the test suite:</p>
+<pre><code class="language-sh">npm run test:native
+</code></pre>
+<p>It will run the <a href="https://github.com/facebook/jest">jest</a> test runner on your tests. The tests are running on the desktop against Node.js.</p>
+<p>To run the tests with debugger support, start it with the following CLI command:</p>
+<pre><code class="language-sh">npm run test:native:debug
+</code></pre>
+<p>Then, open <code>chrome://inspect</code> in Chrome to attach the debugger (look into the “Remote Target” section). While testing/developing, feel free to sprinkle <code>debugger</code> statements anywhere in the code that you’d like the debugger to break.</p>
+<h2 class="is-toc-heading" id="writing-and-running-unit-tests" tabindex="-1"><a href="#writing-and-running-unit-tests">Writing and running unit tests</a></h2>
+<p>This project is set up to use <a href="https://jestjs.io/">jest</a> for tests. You can configure whatever testing strategy you like, but jest works out of the box. Create test files in directories called <code>__tests__</code> or with the <code>.test.js</code> extension to have the files loaded by jest. See an example test <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/react-native-editor/src/test/api-fetch-setup.test.js">here</a>. The <a href="https://jestjs.io/docs/getting-started">jest documentation</a> is also a wonderful resource, as is the <a href="https://jestjs.io/docs/tutorial-react-native">React Native testing tutorial</a>.</p>
+<h2 class="is-toc-heading" id="end-to-end-tests" tabindex="-1"><a href="#end-to-end-tests">End-to-end tests</a></h2>
+<p>In addition to unit tests, the Mobile Gutenberg (MG) project relies upon end-to-end (E2E) tests to automate testing critical flows in an environment similar to that of an end user. We generally prefer unit tests due to their speed and ease of maintenance. However, assertions that require OS-level features (e.g. complex gestures, text selection) or visual regression testing (e.g. dark mode, contrast levels) we use E2E tests.</p>
+<p>The E2E tests are found in the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-react-native-editor/__device-tests__/"><code>packages/react-native-editor/__device-tests__</code></a> directory. Additional documentation on running and contributing to these tests can be found in the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-react-native-editor/__device-tests__/#readme">tests directory</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

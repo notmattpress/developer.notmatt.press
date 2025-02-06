@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/advanced-administration/">Advanced Administration Handbook</a></span><span><a href="https://developer.wordpress.org/advanced-administration/multisite/">WordPress Multisite / Network</a></span><span class="is-current-page">Multisite Network Administration</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Multisite Network Administration</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Once you’ve <a href="https://developer.notmatt.press/advanced-administration/multisite/create-network/">created a Multisite Network</a>, there are some additional things you might need to know about advanced administration, due to the additional complexity of a Multisite. Even if you’re familiar with WordPress, the structure and behavior of Multisite Network Administration might seem confusing at first.</p>
+<h2 class="is-toc-heading" id="user-access-capabilities" tabindex="-1"><a href="#user-access-capabilities">User Access &amp; Capabilities</a></h2>
+<p>By default, all users added to your network will have <em>subscriber</em> access to <strong>all sites</strong> of your network. To assign a different default role for users on individual sites, you need to use a plugin.</p>
+<p>The capabilities of the site administrator role are also reduced in a WordPress Network. Site admins cannot install new themes or plugins and cannot edit the profiles of users on their site. Only the Network Admin (aka Super Admin) has the ability to perform these tasks in a WordPress network.</p>
+<h2 class="is-toc-heading" id="permalinks-in-subfolder-installs" tabindex="-1"><a href="#permalinks-in-subfolder-installs">Permalinks in SubFolder Installs</a></h2>
+<p>While permalinks will continue to work, the main site (i.e. the first one created) will have an extra entry of <code>blog</code>, making your URLs appear like <code>domain.com/blog/YYYY/MM/POSTNAME</code>.</p>
+<p>This is by design, in order to prevent collisions with SubFolder installs. Currently there is no easy way to change it, as doing so prevents WordPress from auto-detecting collisions between your main site and any subsites. This will be addressed, and customizable, in a future version of WordPress.</p>
+<p>Also note that the <code>blog</code> prefix is not used for static pages which will be accessible directly under the base address, e.g. <code>domain.com/PAGENAME</code>. If you try to create a static page in the first site with the name of another existing site on the network, the page’s permalink will get a suffix (e.g. <code>domain.com/PAGENAME-2</code>). If you create a new site with the slug of an existing static page, the static page will not be reachable anymore. To prevent this, you can add the names of your static pages to the blacklist so that no site with that name can be created.</p>
+<h2 class="is-toc-heading" id="uploaded-file-path" tabindex="-1"><a href="#uploaded-file-path">Uploaded File Path</a></h2>
+<p>Your first site on a fresh install will put uploaded files in the traditional location of <code>/wp-content/uploads/</code>, however all <em>subsequent</em> sites on your network will be in the <code>/wp-content/uploads/sites/</code> folder, in their own subfolder based on the site number, designated by the database. These files will be accessible via that URL.</p>
+<p>This is a change from Multisite 3.0-3.4.2, where images of subsites were stored in <code>/wp-content/blogs.dir/</code> and were shown in https://example.com/files/ and https://example.com/sitename/files and so on. If you started with a Multisite install older than 3.5, it is <em>not</em> an error if your images show with the URL of <code>/files/</code>.</p>
+<p>Regardless of WP version, these locations cannot be changed by site admins. Only the network admin can make changes on the site settings page. It is not recommended that you change these without understanding how both the <code>ms-files.php</code> works in conjunction with your <code>.htaccess</code>, as it can easily become non-functional. If the <code>/files/</code> urls aren’t working, it’s indicative of a misconfigured .htaccess or httpd.conf file on your server.</p>
+<h2 class="is-toc-heading" id="plugins" tabindex="-1"><a href="#plugins">Plugins</a></h2>
+<p>Plugins now have additional flexibility, depending upon their implementation across the network. All plugins are installed on the network dashboard’s plugin page, and can be activated either per-site or for the entire network.</p>
+<ul>
+<li><strong>Site Specific Plugins:</strong> These plugins are activated from within the plugins page of a single specific site. Some plugins (contact forms, for example) work best when they are single-site activated, so that they can store data and settings in that single site’s database tables, instead of the tables for the whole network. WordPress Plugins to be single-site activated/deactivated are stored in the plugins directory.</li>
+<li><strong>Network Plugins:</strong> Network admins may ‘network activate’ plugins in the Network Admin dashboard for plugins. Once ‘network activated’, plugins will become active in all sites. ‘Network Activated’ plugins are indicated as “Network Active” in plugin lists in the dashboards of individual sites. Some plugins only function in a multisite environment when they are network activated. WordPress Plugins that are Network Activated are also stored in the plugins directory.</li>
+<li><strong>Must-Use Plugins:</strong> Plugins to be used by all sites on the entire network may also be installed in the mu-plugins directory as single files, or a file to include a subfolder. Any files within a folder will not be read. These files are not activated or deactivated; if they exist, they are used. These plugins are hidden entirely from per-site plugin lists.</li>
+</ul>
+<p>Not all plugins in the repository will work in a multisite environment. Consult the plugin’s repository page or contact the developer for information about whether a specific plugin will function in a multisite network.</p>
+<p>If you would like single site administrators to be able to activate/deactivate site-specific plugins for their site, you need to enable the Plugins page for single site administrators from the Network Admin’s Settings -&gt; Network Settings menu (“Menu Settings”). Network Admins will always have access to the plugins of every site. Administrators of a single site will be able to activate and deactivate plugins that are not Network Activated, but will see the Network Activated plugins as “Network Active” with no options for deactivation or settings.</p>
+<p>There are plugins that will assist with mass activating/deactivating plugins for single sites.</p>
+<h2 class="is-toc-heading" id="themes" tabindex="-1"><a href="#themes">Themes</a></h2>
+<p>All themes are installed for the entire network. If you edit the code of one theme, you edit it for all sites using that theme. You can install the plugin <a href="https://wordpress.org/plugins/wp-add-custom-css/">WP Add Custom CSS</a> to allow each site to tweak their own CSS without affecting anyone else. Also, individual sites may use the Theme Customizer, and their settings will be stored only in the tables for their site.</p>
+<p>“Network Activating” a theme does not make it the active theme on each site, but merely makes it available to be activated on all individual sites.  To be available for activation in the dashboard of a single site, a theme must be either network activated or enabled in Network Admin – Edit Site – Themes tab. After a theme has been activated in a single site, it may be network deactivated without affecting the single site where it remains activated.</p>
+<p>By default, WordPress assigns the most recent “Twenty …” as the theme for all new sites. This can be customized by adding a line like <code>define('WP_DEFAULT_THEME', 'classic');</code> to your <code>wp-config.php</code> file, where ‘classic’ is replaced with the folder name of your theme.</p>
+<h2 class="is-toc-heading" id="categories-and-tags" tabindex="-1"><a href="#categories-and-tags">Categories and Tags</a></h2>
+<p>Global terms (i.e. sharing tags and categories between sites on the network) is not available in WordPress 3.0. You can use plugin to incorporate global tags on the portal/front page of the site or on specific pages or sites within the network to increase navigation based upon micro-categorized content.</p>
+<h2 class="is-toc-heading" id="content-sharing-between-sites" tabindex="-1"><a href="#content-sharing-between-sites">Content Sharing Between Sites</a></h2>
+<p>The sites of a network are separate sites that don’t by default share content. Think of your network as a mini version of WordPress.com. There are several plugins which may help you share content between your sites, <a href="https://wordpress.org/plugins/network-posts-extended/">like this one</a>.</p>
+<h2 class="is-toc-heading" id="switching-network-types" tabindex="-1"><a href="#switching-network-types">Switching network types</a></h2>
+<p>It’s possible to switch between domain-based (sub-domain) and path-based (sub-directory) installations of Multisite. If you have had WordPress installed for longer than a month on a single site, and are attempting to activate that site into a network, you will be told to use <strong>Sub-domain</strong> sites. This is in order to ensure you don’t have conflicts between pages (i.e. example.com/pagename ) and sites (i.e. example.com/sitename ). If you are confident you will not have this issue, then you can change this after you finish the initial setup.</p>
+<p>In your <code>wp-config.php</code> file, you’ll want to change the define call for <code>SUBDOMAIN_INSTALL</code>: For a domain-based network (sub-domain install)</p>
+<pre><code>define( 'SUBDOMAIN_INSTALL', true );
+</code></pre>
+<p>For a path-based network (sub-directory install)</p>
+<pre><code>define( 'SUBDOMAIN_INSTALL', false );
+</code></pre>
+<p>You’ll also have to change your <code>.htaccess</code> to the new setup. You can go to Network Admin — Settings — Network Setup to find the new <code>.htaccess</code> rules, or see below.</p>
+<p>Note that per the <a href="https://developer.notmatt.press/advanced-administration/multisite/prepare-network/#WordPress_Settings_Requirements">Settings Requirements</a> you cannot switch from <strong>Sub-directory</strong> to <strong>Sub-domain</strong> when running on <code>127.0.0.1</code> or <code>localhost</code>. This can potentially cause an endless loop of reauth=1 on your root site due to cookie handling.</p>
+<h2 class="is-toc-heading" id="apache-virtual-hosts-and-mod-rewrite" tabindex="-1"><a href="#apache-virtual-hosts-and-mod-rewrite">Apache Virtual Hosts and Mod Rewrite</a></h2>
+<p>To enable mod_rewrite to work within an Apache Virtual host you may need to set some options on the DocumentRoot.</p>
+<pre><code>&lt;VirtualHost *:80&gt;
+    ...
+    DocumentRoot /var/www/vhosts/wordpress
+    &lt;Directory /var/www/vhosts/wordpress&gt;
+        AllowOverride Fileinfo Options
+    &lt;/Directory&gt;
+    ...
+&lt;/VirtualHost&gt;
+</code></pre>
+<p>In some instances, you will need to add All to your AllowOverride for all htaccess rules to be honored.</p>
+<h2 class="is-toc-heading" id="htaccess-and-mod-rewrite" tabindex="-1"><a href="#htaccess-and-mod-rewrite">.htaccess and Mod Rewrite</a></h2>
+<p>Unlike Single Site WordPress, which can work with “ugly” <a href="https://wordpress.org/documentation/article/customize-permalinks/">Permalinks</a> and thus does not need Mod Rewrite, MultiSite <em>requires</em> its use to format URLs for your subsites. This necessitates the use of an .htaccess file, the format of which will be slightly different if you’re using SubFolders or SubDomains. The examples below are the standard .htaccess entries for WordPress SubFolders and SubDomains, when WordPress is installed in the root folder of your website. If you have WordPress in its own folder, you will need to change the value for RewriteBase appropriately.</p>
+<p>As a reminder, these are <strong>EXAMPLES</strong> and work in most, but not all, installs.</p>
+<p><strong>SubFolder Example</strong></p>
+<p>WordPress 3.0 through 3.4+</p>
+<pre><code># BEGIN WordPress
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index.php$ - [L]
+
+# uploaded files
+RewriteRule ^([_0-9a-zA-Z-]+/)?files/(.+) wp-includes/ms-files.php?file=$2 [L]
+
+# add a trailing slash to /wp-admin
+RewriteRule ^([_0-9a-zA-Z-]+/)?wp-admin$ $1wp-admin/ [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^[_0-9a-zA-Z-]+/(wp-(content|admin|includes).*) $1 [L]
+RewriteRule ^[_0-9a-zA-Z-]+/(.*\.php)$ $1 [L]
+RewriteRule . index.php [L]
+# END WordPress
+</code></pre>
+<p>WordPress 3.5+ <em>ONLY use this if you STARTED Multisite on 3.5. If you upgraded from 3.4 to 3.5, use the old one!</em></p>
+<pre><code># BEGIN WordPress
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index.php$ - [L]
+
+# add a trailing slash to /wp-admin
+RewriteRule ^([_0-9a-zA-Z-]+/)?wp-admin$ $1wp-admin/ [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^([_0-9a-zA-Z-]+/)?(wp-(content|admin|includes).*) $2 [L]
+RewriteRule ^([_0-9a-zA-Z-]+/)?(.*\.php)$ $2 [L]
+RewriteRule . index.php [L]
+# END WordPress
+</code></pre>
+<p><strong>SubDomain Example</strong></p>
+<p>WordPress 3.0 through 3.4+</p>
+<pre><code># BEGIN WordPress
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index.php$ - [L]
+
+# uploaded files
+RewriteRule ^files/(.+) wp-includes/ms-files.php?file=$1 [L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule . index.php [L]
+# END WordPress
+</code></pre>
+<p>WordPress 3.5+</p>
+<pre><code># BEGIN WordPress
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index.php$ - [L]
+
+# add a trailing slash to /wp-admin
+RewriteRule ^wp-admin$ wp-admin/ [R=301,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^(wp-(content|admin|includes).*) $1 [L]
+RewriteRule ^(.*\.php)$ wp/$1 [L]
+RewriteRule . index.php [L]
+# END WordPress
+</code></pre>
+<p><strong>Issues with old WPMU installs</strong></p>
+<p>If you installed WordPress MU in subfolder/subdirectory (not in root folder on your server via ftp) and you have problem with image library, where thumbnails and images do not show, you may need to manually add in rewrite rules for your file directories as follows:</p>
+<pre><code>RewriteRule ^([_0-9a-zA-Z-]+/)?siteN/files/(.+) wp-content/blogs.dir/N/files/$2 [L]
+</code></pre>
+<p>Put those <em>below</em> the normal call for uploaded files.</p>
+<h2 class="is-toc-heading" id="network-admin-link-location" tabindex="-1"><a href="#network-admin-link-location">Network Admin Link Location</a></h2>
+<p>The Network Admin Link has moved with each major release of WordPress, as this is still a work in progress. Depending on which version of WordPress you are using, the link can be found in the following locations:</p>
+<ul>
+<li>3.0 – A menu called <em>Super Admin</em></li>
+<li>3.1 – On the admin header by “Howdy, YOURNAME.”</li>
+<li>3.2 – On the admin header, as a drop-down under “Howdy, YOURNAME.”</li>
+<li>3.3+ – On the admin bar, as a drop-down under your “My Sites”</li>
+</ul>
+<h2 class="is-toc-heading" id="domain-mapping" tabindex="-1"><a href="#domain-mapping">Domain Mapping</a></h2>
+<p>Before WordPress 4.5, domain mapping requires a domain mapping plugin. In WordPress 4.5+, domain mapping is a native feature in Multisites. Learn how to use this feature at <a href="https://developer.notmatt.press/advanced-administration/multisite/domain-mapping/">WordPress Multisite Domain Mapping</a></p>
+<h2 class="is-toc-heading" id="moving-multisite" tabindex="-1"><a href="#moving-multisite">Moving Multisite</a></h2>
+<p>Moving Multisite is more complicated than moving a single install. Please read <a href="https://developer.notmatt.press/advanced-administration/upgrade/migrating/#moving-wordpress-multisite">Moving WordPress Multisite</a> before continuing.</p>
+<h2 class="is-toc-heading" id="importing-into-a-network" tabindex="-1"><a href="#importing-into-a-network">Importing into a Network</a></h2>
+<p>When you’ve created your WordPress Network for importing other sites, you need to look at the <a href="https://wordpress.org/documentation/article/migrating-multiple-blogs-into-wordpress-multisite/">Migrating Multiple Blogs into WordPress Multisite</a> article.</p>
+<h2 class="is-toc-heading" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2>
+<ul>
+<li>2022-10-25: Original content from <a href="https://wordpress.org/documentation/article/multisite-network-administration/">Multisite Network Administration</a>.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/hooks</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/hooks</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>A lightweight &amp; efficient EventManager for JavaScript.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/hooks --save
+</code></pre>
+<p><em>This package assumes that your code will run in an <strong>ES2015+</strong> environment. If you’re using an environment that has limited or no support for such language features and APIs, you should include <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default#polyfill">the polyfill shipped in <code>@wordpress/babel-preset-default</code></a> in your code.</em></p>
+<h3 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h3>
+<p>In your JavaScript project, use hooks as follows:</p>
+<pre><code class="language-javascript">import { createHooks } from '@wordpress/hooks';
+
+myObject.hooks = createHooks();
+myObject.hooks.addAction(); //etc...
+</code></pre>
+<h4>The global instance</h4>
+<p>In the above example, we are creating a custom instance of the <code>Hooks</code> object and registering hooks there. The package also creates a default global instance that’s accessible through the <code>defaultHooks</code> named exports, and its methods are also separately exported one-by-one.</p>
+<p>In the WordPress context, that enables API functions to be called via the global <code>wp.hooks</code> object, like <code>wp.hooks.addAction()</code>, etc.</p>
+<p>One notable difference between the JS and PHP hooks API is that in the JS version, <code>addAction()</code> and <code>addFilter()</code> also need to include a namespace as the second argument. Namespace uniquely identifies a callback in the form <code>vendor/plugin/function</code>.</p>
+<h3 class="is-toc-heading" id="api-usage" tabindex="-1"><a href="#api-usage">API Usage</a></h3>
+<ul>
+<li><code>createHooks()</code></li>
+<li><code>addAction( 'hookName', 'namespace', callback, priority )</code></li>
+<li><code>addFilter( 'hookName', 'namespace', callback, priority )</code></li>
+<li><code>removeAction( 'hookName', 'namespace' )</code></li>
+<li><code>removeFilter( 'hookName', 'namespace' )</code></li>
+<li><code>removeAllActions( 'hookName' )</code></li>
+<li><code>removeAllFilters( 'hookName' )</code></li>
+<li><code>doAction( 'hookName', arg1, arg2, moreArgs, finalArg )</code></li>
+<li><code>doActionAsync( 'hookName', arg1, arg2, moreArgs, finalArg )</code></li>
+<li><code>applyFilters( 'hookName', content, arg1, arg2, moreArgs, finalArg )</code></li>
+<li><code>applyFiltersAsync( 'hookName', content, arg1, arg2, moreArgs, finalArg )</code></li>
+<li><code>doingAction( 'hookName' )</code></li>
+<li><code>doingFilter( 'hookName' )</code></li>
+<li><code>didAction( 'hookName' )</code></li>
+<li><code>didFilter( 'hookName' )</code></li>
+<li><code>hasAction( 'hookName', 'namespace' )</code></li>
+<li><code>hasFilter( 'hookName', 'namespace' )</code></li>
+<li><code>actions</code></li>
+<li><code>filters</code></li>
+<li><code>defaultHooks</code></li>
+</ul>
+<h3 class="is-toc-heading" id="events-on-action-filter-add-or-remove" tabindex="-1"><a href="#events-on-action-filter-add-or-remove">Events on action/filter add or remove</a></h3>
+<p>Whenever an action or filter is added or removed, a matching <code>hookAdded</code> or <code>hookRemoved</code> action is triggered.</p>
+<ul>
+<li><code>hookAdded</code> action is triggered when <code>addFilter()</code> or <code>addAction()</code> method is called, passing values for <code>hookName</code>, <code>functionName</code>, <code>callback</code> and <code>priority</code>.</li>
+<li><code>hookRemoved</code> action is triggered when <code>removeFilter()</code> or <code>removeAction()</code> method is called, passing values for <code>hookName</code> and <code>functionName</code>.</li>
+</ul>
+<h3 class="is-toc-heading" id="the-all-hook" tabindex="-1"><a href="#the-all-hook">The all hook</a></h3>
+<p>In non-minified builds developers can register a filter or action that will be called on <em>all</em> hooks, for example: <code>addAction( 'all', 'namespace', callbackFunction );</code>. Useful for debugging, the code supporting the <code>all</code> hook is stripped from the production code for performance reasons.</p>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

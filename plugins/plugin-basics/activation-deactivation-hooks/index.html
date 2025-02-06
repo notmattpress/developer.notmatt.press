@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/plugin-basics/">Plugin Basics</a></span><span class="is-current-page">Activation / Deactivation Hooks</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Activation / Deactivation Hooks</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Activation and deactivation hooks provide ways to perform actions when plugins are activated or deactivated.</p>
+<ul class="wp-block-list">
+<li>On <em>activation</em>, plugins can run a routine to add rewrite rules, add custom database tables, or set default option values.</li>
+<li>On <em>deactivation</em>, plugins can run a routine to remove temporary data such as cache and temp files and directories.</li>
+</ul>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+The deactivation hook is sometimes confused with the <a href="https://developer.notmatt.press/plugins/plugin-basics/uninstall-methods/">uninstall hook</a>. The uninstall hook is best suited to <strong>delete all data permanently</strong> such as deleting plugin options and custom tables, etc.<br/>
+</div></div>
+<h2 class="is-toc-heading wp-block-heading" id="activation" tabindex="-1"><a href="#activation">Activation</a></h2>
+<p>To set up an activation hook, use the <a href="https://developer.notmatt.press/reference/functions/register_activation_hook/" rel="function">register_activation_hook()</a>  function:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_activation_hook(
+	__FILE__,
+	'pluginprefix_function_to_run'
+);</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="deactivation" tabindex="-1"><a href="#deactivation">Deactivation</a></h2>
+<p>To set up a deactivation hook, use the <a href="https://developer.notmatt.press/reference/functions/register_deactivation_hook/" rel="function">register_deactivation_hook()</a>  function:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_deactivation_hook(
+	__FILE__,
+	'pluginprefix_function_to_run'
+);</code></pre>
+<p>The first parameter in each of these functions refers to your main plugin file, which is the file in which you have placed the <a href="https://developer.notmatt.press/plugins/the-basics/header-requirements/">plugin header comment</a>. Usually these two functions will be triggered from within the main plugin file; however, if the functions are placed in any other file, you must update the first parameter to correctly point to the main plugin file.</p>
+<h2 class="is-toc-heading wp-block-heading" id="example" tabindex="-1"><a href="#example">Example</a></h2>
+<p>One of the most common uses for an activation hook is to refresh WordPress permalinks when a plugin registers a custom post type. This gets rid of the nasty 404 errors.</p>
+<p>Let’s look at an example of how to do this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">/**
+ * Register the "book" custom post type
+ */
+function pluginprefix_setup_post_type() {
+	register_post_type( 'book', ['public' =&gt; true ] ); 
+} 
+add_action( 'init', 'pluginprefix_setup_post_type' );
+
+
+/**
+ * Activate the plugin.
+ */
+function pluginprefix_activate() { 
+	// Trigger our function that registers the custom post type plugin.
+	pluginprefix_setup_post_type(); 
+	// Clear the permalinks after the post type has been registered.
+	flush_rewrite_rules(); 
+}
+register_activation_hook( __FILE__, 'pluginprefix_activate' );</code></pre>
+<p>If you are unfamiliar with registering custom post types, don’t worry – this will be covered later. This example is used simply because it’s very common.</p>
+<p>Using the example from above, the following is how to reverse this process and deactivate a plugin:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">/**
+ * Deactivation hook.
+ */
+function pluginprefix_deactivate() {
+	// Unregister the post type, so the rules are no longer in memory.
+	unregister_post_type( 'book' );
+	// Clear the permalinks to remove our post type's rules from the database.
+	flush_rewrite_rules();
+}
+register_deactivation_hook( __FILE__, 'pluginprefix_deactivate' );</code></pre>
+<p>For further information regarding activation and deactivation hooks, here are some excellent resources:</p>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/reference/functions/register_activation_hook/">register_activation_hook()</a> in the WordPress function reference.</li>
+<li><a href="https://developer.notmatt.press/reference/functions/register_deactivation_hook/">register_deactivation_hook()</a> in the WordPress function reference.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/components/">Component Reference</a></span><span class="is-current-page">SlotFill</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>SlotFill</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p><code>Slot</code> and <code>Fill</code> are a pair of components which enable developers to render React UI elsewhere in a React element tree, a pattern often referred to as “portal” rendering. It is a pattern for component extensibility, where a single <code>Slot</code> may be occupied by multiple <code>Fill</code>s rendered in different parts of the application.</p>
+<p>Slot/Fill was originally inspired by the <a href="https://github.com/camwest/react-slot-fill"><code>react-slot-fill</code> library</a>.</p>
+<h2 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h2>
+<p>At the root of your application, you must render a <code>SlotFillProvider</code> which coordinates <code>Slot</code> and <code>Fill</code> rendering.</p>
+<p>Then, render a <code>Slot</code> component anywhere in your application, giving it a <code>name</code>. The <code>name</code> is either a <code>string</code> or a symbol. Symbol names are useful for slots that are supposed to be private, accessible only to clients that have access to the symbol value.</p>
+<p>Any <code>Fill</code> will render its UI in this <code>Slot</code> space, even if rendered elsewhere in the application.</p>
+<p>You can either use the <code>Fill</code> component directly, or create a wrapper component (as in the following example) to hide the slot name from the consumer.</p>
+<pre><code class="language-jsx">import {
+    SlotFillProvider,
+    Slot,
+    Fill,
+    Panel,
+    PanelBody,
+} from '@wordpress/components';
+
+const MySlotFillProvider = () =&gt; {
+    const MyPanelSlot = () =&gt; (
+        &lt;Panel header="Panel with slot"&gt;
+            &lt;PanelBody&gt;
+                &lt;Slot name="MyPanelSlot" /&gt;
+            &lt;/PanelBody&gt;
+        &lt;/Panel&gt;
+    );
+
+    MyPanelSlot.Content = () =&gt; &lt;Fill name="MyPanelSlot"&gt;Panel body&lt;/Fill&gt;;
+
+    return (
+        &lt;SlotFillProvider&gt;
+            &lt;MyPanelSlot /&gt;
+            &lt;MyPanelSlot.Content /&gt;
+        &lt;/SlotFillProvider&gt;
+    );
+};
+</code></pre>
+<p>There is also the <code>createSlotFill</code> helper method which was created to simplify the process of matching the corresponding <code>Slot</code> and <code>Fill</code> components:</p>
+<pre><code class="language-jsx">const { Fill, Slot } = createSlotFill( 'Toolbar' );
+
+const ToolbarItem = () =&gt; &lt;Fill&gt;My item&lt;/Fill&gt;;
+
+const Toolbar = () =&gt; (
+    &lt;div className="toolbar"&gt;
+        &lt;Slot /&gt;
+    &lt;/div&gt;
+);
+</code></pre>
+<h2 class="is-toc-heading" id="props" tabindex="-1"><a href="#props">Props</a></h2>
+<p>The <code>SlotFillProvider</code> component does not accept any props (except <code>children</code>).</p>
+<p>Both <code>Slot</code> and <code>Fill</code> accept a <code>name</code> string prop, where a <code>Slot</code> with a given <code>name</code> will render the <code>children</code> of any associated <code>Fill</code>s.</p>
+<p><code>Slot</code> accepts a <code>bubblesVirtually</code> prop which changes the method how the <code>Fill</code> children are rendered. With <code>bubblesVirtually</code>, the <code>Fill</code> is rendered using a React portal. That affects the event bubbling and React context propagation behaviour:</p>
+<h3 class="is-toc-heading" id="bubblesvirtuallyfalse" tabindex="-1"><a href="#bubblesvirtuallyfalse">bubblesVirtually=false</a></h3>
+<ul>
+<li>events will bubble to their parents on the DOM hierarchy (native event bubbling)</li>
+<li>the React elements inside the <code>Fill</code> will be rendered with React context of the <code>Slot</code></li>
+<li>renders the <code>Fill</code> elements directly, inside a <code>Fragment</code>, with no wrapper DOM element</li>
+</ul>
+<h3 class="is-toc-heading" id="bubblesvirtuallytrue" tabindex="-1"><a href="#bubblesvirtuallytrue">bubblesVirtually=true</a></h3>
+<ul>
+<li>events will bubble to their virtual (React) parent in the React elements hierarchy</li>
+<li>the React elements inside the <code>Fill</code> will keep the React context of the <code>Fill</code> and its parents</li>
+<li>renders a wrapper DOM element inside which the <code>Fill</code> elements are rendered (used as an argument for React <code>createPortal</code>)</li>
+</ul>
+<p><code>Slot</code> with <code>bubblesVirtually=true</code> renders a wrapper DOM element (a <code>div</code> by default) and accepts additional props that customize this element, like <code>className</code> or <code>style</code>. You can also replace the <code>div</code> with another element by passing an <code>as</code> prop.</p>
+<p><code>Slot</code> <strong>without</strong> <code>bubblesVirtually</code> accepts an optional <code>children</code> prop, which is a function that receives <code>fills</code> array as a param. It allows you to perform additional processing: render a placeholder when there are no fills, or render a wrapper only when there are fills.</p>
+<p><em>Example</em>:</p>
+<pre><code class="language-jsx">const Toolbar = ( { isMobile } ) =&gt; (
+    &lt;div className="toolbar"&gt;
+        &lt;Slot name="Toolbar"&gt;
+            { ( fills ) =&gt; {
+                return isMobile &amp;&amp; fills.length &gt; 3 ? (
+                    &lt;div className="toolbar__mobile-long"&gt;{ fills }&lt;/div&gt;
+                ) : (
+                    fills
+                );
+            } }
+        &lt;/Slot&gt;
+    &lt;/div&gt;
+);
+</code></pre>
+<p>Additional information (props) can also be passed from a <code>Slot</code> to a <code>Fill</code> by a combination of:<br/>
+1. Adding a <code>fillProps</code> prop to the <code>Slot</code>.<br/>
+2. Passing a function as <code>children</code> to the <code>Fill</code>. This function will receive the <code>fillProps</code> as an argument.</p>
+<pre><code class="language-jsx">const { Fill, Slot } = createSlotFill( 'Toolbar' );
+
+const ToolbarItem = () =&gt; (
+    &lt;Fill&gt;
+        { ( { hideToolbar } ) =&gt; {
+            &lt;Button onClick={ hideToolbar }&gt;Hide&lt;/Button&gt;;
+        } }
+    &lt;/Fill&gt;
+);
+
+const Toolbar = () =&gt; {
+    const hideToolbar = () =&gt; {
+        console.log( 'Hide toolbar' );
+    };
+    return (
+        &lt;div className="toolbar"&gt;
+            &lt;Slot fillProps={ { hideToolbar } } /&gt;
+        &lt;/div&gt;
+    );
+};
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

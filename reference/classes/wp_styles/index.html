@@ -1,0 +1,708 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Styles</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Styles</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Styles {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Core class used to register styles.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/classes/wp_dependencies">WP_Dependencies</a></li>
+</ul></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p><code>WP_Styles</code> is a class that helps developers interact with a theme. It ensures registered stylesheets are output in the proper order, with dependent stylesheets coming after their dependencies. While more than one instance can be created, typically the global <var>$wp_styles</var> is used to enqueue stylesheets, which are then output by <code>wp_print_styles</code> during the <tt><a href="https://developer.notmatt.press/reference/hooks/wp_head/" title="Plugin API/Action Reference/wp head">wp_head</a></tt> action. <code>WP_Styles</code> extends <code><a href="https://developer.notmatt.press/reference/classes/wp_dependencies/" title="Class Reference/WP Dependencies">WP_Dependencies</a></code>.</p>
+<p><code>WP_Styles</code> handles both external and embedded stylesheets (though the latter must be associated with one of the former), outputting a &lt;link&gt; or &lt;style&gt; element as appropriate.</p>
+<h3 class="is-toc-heading wp-block-heading" id="text-direction" tabindex="-1"><a href="#text-direction">Text direction</a></h3>
+<p>For any stylesheet, an additional stylesheet can be loaded for right-to-left text (triggered by setting <var>$wp_styles-&gt;text_direction</var> to ‘rtl’). The URL for this stylesheet is built by inserting ‘-rtl’ into the URL of the left-to-right stylesheet. Normally, ‘-rtl’ is inserted before the ‘.css’ extension. If ‘suffix’ is set in the stylesheet’s extra data (using <code>WP_Dependencies::add_data()</code> or <code>_WP_Dependency::add_data()</code>), ‘-rtl’ will be inserted before the suffix and ‘.css’ extension (<code>"${suffix}.css"</code>).</p>
+<h3 class="is-toc-heading wp-block-heading" id="concatenation-vs-printing" tabindex="-1"><a href="#concatenation-vs-printing">Concatenation vs Printing</a></h3>
+<p>When it comes time to output enqueued stylesheets, <code>WP_Styles</code> can print them, or accumulate them in instance variables (<var>$print_html</var> for external and <var>$print_code</var> for embedded). This behaviour is controlled by the boolean instance variable <var>$do_concat</var>. If true, output is concatenated to the appropriate instance variable; if false, it’s printed.</p>
+<p>Any <a class="external text" href="http://msdn.microsoft.com/en-us/library/ms537512.aspx" rel="nofollow">unconditional</a>, non-<a class="external text" href="http://www.w3.org/Style/Examples/007/alternatives.en.html" rel="nofollow">alternate</a> stylesheet in a default directory (as determined by <code>WP_Styles::in_default_dir()</code>) isn’t accumulated when <var>$do_concat</var> is true.</p>
+<h3 class="is-toc-heading wp-block-heading" id="media" tabindex="-1"><a href="#media">Media</a></h3>
+<p>The media for a stylesheet is passed via the <var>$args</var> argument to <code><a href="https://developer.notmatt.press/reference/classes/wp_dependencies/" title="Class Reference/WP Dependencies">WP_Dependencies</a>::add()</code>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="properties-and-hooks" tabindex="-1"><a href="#properties-and-hooks">Properties and Hooks</a></h2>
+<p>Note: Refer source code for the complete list of properties and hooks.</p>
+<h3 class="is-toc-heading wp-block-heading" id="properties" tabindex="-1"><a href="#properties">Properties</a></h3>
+<dl>
+<dt>$base_url</dt>
+<dd>The base URL for the site, it gets prepended to the URL for an enqueued sheet in most cases (see <var>$content_url</var> for an exception). Set to the site URL (as determined by <code><a href="https://developer.notmatt.press/reference/functions/site_url/" title="Function Reference/site url">site_url()</a></code> or <code>wp_guess_url()</code>) by default.</dd>
+<dt>$content_url</dt>
+<dd>The URL for the wp-content directory. Set to <code>WP_CONTENT_URL</code> by default. If a stylesheet URL begins with the content URL, the base URL isn’t prepended.</dd>
+<dt>$default_version</dt>
+<dd>Default value used when a version isn’t specified in a call to <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_style/" title="Function Reference/wp enqueue style">wp_enqueue_style()</a> or <a href="https://developer.notmatt.press/reference/functions/wp_register_style/" title="Function Reference/wp register style">wp_register_style()</a>.</dd>
+<dt>$text_direction = ‘ltr’</dt>
+<dd>If ‘rtl’, an addtional stylesheet will be loaded, allowing custom styling targeting right-to-left.</dd>
+<dt>$do_concat = false</dt>
+<dd>If true, concatenate output to <var>$print_html</var> and <var>$print_code</var> member variables rather than printing it.</dd>
+<dt>$print_html = “”</dt>
+<dd>holds accumulated HTML (&lt;link&gt; elements and conditional comments).</dd>
+<dt>$print_code = “”</dt>
+<dd>holds accumulated embedded style rules.</dd>
+<dt>$concat = “”</dt>
+<dd>list of item handles that were accumulated, separated by commas.</dd>
+<dt>$concat_version = “”</dt>
+<dd>list of item handles &amp; versions that were accumulated.</dd>
+<dt>$default_dirs</dt>
+<dd>Path or array of paths. Used by <code>WP_Styles::in_default_dir()</code>. Compared directly to <var>$src</var> property of a stylesheet.</dd>
+</dl>
+<dl>
+<dd></dd>
+</dl>
+<h2 class="is-toc-heading wp-block-heading" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2>
+<p>Note: Refer source code for the complete list of hooks.</p>
+<h3 class="is-toc-heading wp-block-heading" id="actions" tabindex="-1"><a href="#actions">Actions</a></h3>
+<ul class="wp-block-list">
+<li>wp_default_styles – Invoked when a <var><a href="https://developer.notmatt.press/reference/classes/wp_styles/" rel="class">WP_Styles</a></var> is created. The instance is passed to action hooks.</li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="filters" tabindex="-1"><a href="#filters">Filters</a></h3>
+<ul class="wp-block-list">
+<li>print_styles_array – Filters list of stylesheets to be output. Called from <code>WP_Styles::all_deps()</code>.</li>
+<li>style_loader_src – Filter a stylesheet URL in preparation for output. Happens after <var>$base_url</var> has been prepended (if warranted).</li>
+<li>style_loader_tag – Filter the &lt;link&gt; element for a stylesheet.</li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/__construct/">WP_Styles::__construct</a></td><td>Constructor.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/_css_href/">WP_Styles::_css_href</a></td><td>Generates an enqueued style’s fully-qualified URL.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/add_inline_style/">WP_Styles::add_inline_style</a></td><td>Adds extra CSS styles to a registered stylesheet.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/all_deps/">WP_Styles::all_deps</a></td><td>Determines style dependencies.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/do_footer_items/">WP_Styles::do_footer_items</a></td><td>Processes items and dependencies for the footer group.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/do_item/">WP_Styles::do_item</a></td><td>Processes a style dependency.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/in_default_dir/">WP_Styles::in_default_dir</a></td><td>Whether a handle’s source is in a default directory.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/print_inline_style/">WP_Styles::print_inline_style</a></td><td>Prints extra CSS styles of a registered stylesheet.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_styles/reset/">WP_Styles::reset</a></td><td>Resets class properties.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="18"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Styles extends WP_Dependencies {
+	/**
+	 * Base URL for styles.
+	 *
+	 * Full URL with trailing slash.
+	 *
+	 * @since 2.6.0
+	 * @var string
+	 */
+	public $base_url;
+
+	/**
+	 * URL of the content directory.
+	 *
+	 * @since 2.8.0
+	 * @var string
+	 */
+	public $content_url;
+
+	/**
+	 * Default version string for stylesheets.
+	 *
+	 * @since 2.6.0
+	 * @var string
+	 */
+	public $default_version;
+
+	/**
+	 * The current text direction.
+	 *
+	 * @since 2.6.0
+	 * @var string
+	 */
+	public $text_direction = 'ltr';
+
+	/**
+	 * Holds a list of style handles which will be concatenated.
+	 *
+	 * @since 2.8.0
+	 * @var string
+	 */
+	public $concat = '';
+
+	/**
+	 * Holds a string which contains style handles and their version.
+	 *
+	 * @since 2.8.0
+	 * @deprecated 3.4.0
+	 * @var string
+	 */
+	public $concat_version = '';
+
+	/**
+	 * Whether to perform concatenation.
+	 *
+	 * @since 2.8.0
+	 * @var bool
+	 */
+	public $do_concat = false;
+
+	/**
+	 * Holds HTML markup of styles and additional data if concatenation
+	 * is enabled.
+	 *
+	 * @since 2.8.0
+	 * @var string
+	 */
+	public $print_html = '';
+
+	/**
+	 * Holds inline styles if concatenation is enabled.
+	 *
+	 * @since 3.3.0
+	 * @var string
+	 */
+	public $print_code = '';
+
+	/**
+	 * List of default directories.
+	 *
+	 * @since 2.8.0
+	 * @var array
+	 */
+	public $default_dirs;
+
+	/**
+	 * Holds a string which contains the type attribute for style tag.
+	 *
+	 * If the active theme does not declare HTML5 support for 'style',
+	 * then it initializes as `type='text/css'`.
+	 *
+	 * @since 5.3.0
+	 * @var string
+	 */
+	private $type_attr = '';
+
+	/**
+	 * Constructor.
+	 *
+	 * @since 2.6.0
+	 */
+	public function __construct() {
+		if (
+			function_exists( 'is_admin' ) &amp;&amp; ! is_admin()
+		&amp;&amp;
+			function_exists( 'current_theme_supports' ) &amp;&amp; ! current_theme_supports( 'html5', 'style' )
+		) {
+			$this-&gt;type_attr = " type='text/css'";
+		}
+
+		/**
+		 * Fires when the WP_Styles instance is initialized.
+		 *
+		 * @since 2.6.0
+		 *
+		 * @param WP_Styles $wp_styles WP_Styles instance (passed by reference).
+		 */
+		do_action_ref_array( 'wp_default_styles', array( &amp;$this ) );
+	}
+
+	/**
+	 * Processes a style dependency.
+	 *
+	 * @since 2.6.0
+	 * @since 5.5.0 Added the `$group` parameter.
+	 *
+	 * @see WP_Dependencies::do_item()
+	 *
+	 * @param string    $handle The style's registered handle.
+	 * @param int|false $group  Optional. Group level: level (int), no groups (false).
+	 *                          Default false.
+	 * @return bool True on success, false on failure.
+	 */
+	public function do_item( $handle, $group = false ) {
+		if ( ! parent::do_item( $handle ) ) {
+			return false;
+		}
+
+		$obj = $this-&gt;registered[ $handle ];
+
+		if ( null === $obj-&gt;ver ) {
+			$ver = '';
+		} else {
+			$ver = $obj-&gt;ver ? $obj-&gt;ver : $this-&gt;default_version;
+		}
+
+		if ( isset( $this-&gt;args[ $handle ] ) ) {
+			$ver = $ver ? $ver . '&amp;amp;' . $this-&gt;args[ $handle ] : $this-&gt;args[ $handle ];
+		}
+
+		$src                   = $obj-&gt;src;
+		$ie_conditional_prefix = '';
+		$ie_conditional_suffix = '';
+		$conditional           = isset( $obj-&gt;extra['conditional'] ) ? $obj-&gt;extra['conditional'] : '';
+
+		if ( $conditional ) {
+			$ie_conditional_prefix = "&lt;!--[if {$conditional}]&gt;\n";
+			$ie_conditional_suffix = "&lt;![endif]--&gt;\n";
+		}
+
+		$inline_style = $this-&gt;print_inline_style( $handle, false );
+
+		if ( $inline_style ) {
+			$inline_style_tag = sprintf(
+				"&lt;style id='%s-inline-css'%s&gt;\n%s\n&lt;/style&gt;\n",
+				esc_attr( $handle ),
+				$this-&gt;type_attr,
+				$inline_style
+			);
+		} else {
+			$inline_style_tag = '';
+		}
+
+		if ( $this-&gt;do_concat ) {
+			if ( $this-&gt;in_default_dir( $src ) &amp;&amp; ! $conditional &amp;&amp; ! isset( $obj-&gt;extra['alt'] ) ) {
+				$this-&gt;concat         .= "$handle,";
+				$this-&gt;concat_version .= "$handle$ver";
+
+				$this-&gt;print_code .= $inline_style;
+
+				return true;
+			}
+		}
+
+		if ( isset( $obj-&gt;args ) ) {
+			$media = esc_attr( $obj-&gt;args );
+		} else {
+			$media = 'all';
+		}
+
+		// A single item may alias a set of items, by having dependencies, but no source.
+		if ( ! $src ) {
+			if ( $inline_style_tag ) {
+				if ( $this-&gt;do_concat ) {
+					$this-&gt;print_html .= $inline_style_tag;
+				} else {
+					echo $inline_style_tag;
+				}
+			}
+
+			return true;
+		}
+
+		$href = $this-&gt;_css_href( $src, $ver, $handle );
+		if ( ! $href ) {
+			return true;
+		}
+
+		$rel   = isset( $obj-&gt;extra['alt'] ) &amp;&amp; $obj-&gt;extra['alt'] ? 'alternate stylesheet' : 'stylesheet';
+		$title = isset( $obj-&gt;extra['title'] ) ? sprintf( " title='%s'", esc_attr( $obj-&gt;extra['title'] ) ) : '';
+
+		$tag = sprintf(
+			"&lt;link rel='%s' id='%s-css'%s href='%s'%s media='%s' /&gt;\n",
+			$rel,
+			$handle,
+			$title,
+			$href,
+			$this-&gt;type_attr,
+			$media
+		);
+
+		/**
+		 * Filters the HTML link tag of an enqueued style.
+		 *
+		 * @since 2.6.0
+		 * @since 4.3.0 Introduced the `$href` parameter.
+		 * @since 4.5.0 Introduced the `$media` parameter.
+		 *
+		 * @param string $tag    The link tag for the enqueued style.
+		 * @param string $handle The style's registered handle.
+		 * @param string $href   The stylesheet's source URL.
+		 * @param string $media  The stylesheet's media attribute.
+		 */
+		$tag = apply_filters( 'style_loader_tag', $tag, $handle, $href, $media );
+
+		if ( 'rtl' === $this-&gt;text_direction &amp;&amp; isset( $obj-&gt;extra['rtl'] ) &amp;&amp; $obj-&gt;extra['rtl'] ) {
+			if ( is_bool( $obj-&gt;extra['rtl'] ) || 'replace' === $obj-&gt;extra['rtl'] ) {
+				$suffix   = isset( $obj-&gt;extra['suffix'] ) ? $obj-&gt;extra['suffix'] : '';
+				$rtl_href = str_replace( "{$suffix}.css", "-rtl{$suffix}.css", $this-&gt;_css_href( $src, $ver, "$handle-rtl" ) );
+			} else {
+				$rtl_href = $this-&gt;_css_href( $obj-&gt;extra['rtl'], $ver, "$handle-rtl" );
+			}
+
+			$rtl_tag = sprintf(
+				"&lt;link rel='%s' id='%s-rtl-css'%s href='%s'%s media='%s' /&gt;\n",
+				$rel,
+				$handle,
+				$title,
+				$rtl_href,
+				$this-&gt;type_attr,
+				$media
+			);
+
+			/** This filter is documented in wp-includes/class-wp-styles.php */
+			$rtl_tag = apply_filters( 'style_loader_tag', $rtl_tag, $handle, $rtl_href, $media );
+
+			if ( 'replace' === $obj-&gt;extra['rtl'] ) {
+				$tag = $rtl_tag;
+			} else {
+				$tag .= $rtl_tag;
+			}
+		}
+
+		if ( $this-&gt;do_concat ) {
+			$this-&gt;print_html .= $ie_conditional_prefix;
+			$this-&gt;print_html .= $tag;
+			if ( $inline_style_tag ) {
+				$this-&gt;print_html .= $inline_style_tag;
+			}
+			$this-&gt;print_html .= $ie_conditional_suffix;
+		} else {
+			echo $ie_conditional_prefix;
+			echo $tag;
+			$this-&gt;print_inline_style( $handle );
+			echo $ie_conditional_suffix;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Adds extra CSS styles to a registered stylesheet.
+	 *
+	 * @since 3.3.0
+	 *
+	 * @param string $handle The style's registered handle.
+	 * @param string $code   String containing the CSS styles to be added.
+	 * @return bool True on success, false on failure.
+	 */
+	public function add_inline_style( $handle, $code ) {
+		if ( ! $code ) {
+			return false;
+		}
+
+		$after = $this-&gt;get_data( $handle, 'after' );
+		if ( ! $after ) {
+			$after = array();
+		}
+
+		$after[] = $code;
+
+		return $this-&gt;add_data( $handle, 'after', $after );
+	}
+
+	/**
+	 * Prints extra CSS styles of a registered stylesheet.
+	 *
+	 * @since 3.3.0
+	 *
+	 * @param string $handle  The style's registered handle.
+	 * @param bool   $display Optional. Whether to print the inline style
+	 *                        instead of just returning it. Default true.
+	 * @return string|bool False if no data exists, inline styles if `$display` is true,
+	 *                     true otherwise.
+	 */
+	public function print_inline_style( $handle, $display = true ) {
+		$output = $this-&gt;get_data( $handle, 'after' );
+
+		if ( empty( $output ) ) {
+			return false;
+		}
+
+		$output = implode( "\n", $output );
+
+		if ( ! $display ) {
+			return $output;
+		}
+
+		printf(
+			"&lt;style id='%s-inline-css'%s&gt;\n%s\n&lt;/style&gt;\n",
+			esc_attr( $handle ),
+			$this-&gt;type_attr,
+			$output
+		);
+
+		return true;
+	}
+
+	/**
+	 * Determines style dependencies.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @see WP_Dependencies::all_deps()
+	 *
+	 * @param string|string[] $handles   Item handle (string) or item handles (array of strings).
+	 * @param bool            $recursion Optional. Internal flag that function is calling itself.
+	 *                                   Default false.
+	 * @param int|false       $group     Optional. Group level: level (int), no groups (false).
+	 *                                   Default false.
+	 * @return bool True on success, false on failure.
+	 */
+	public function all_deps( $handles, $recursion = false, $group = false ) {
+		$result = parent::all_deps( $handles, $recursion, $group );
+		if ( ! $recursion ) {
+			/**
+			 * Filters the array of enqueued styles before processing for output.
+			 *
+			 * @since 2.6.0
+			 *
+			 * @param string[] $to_do The list of enqueued style handles about to be processed.
+			 */
+			$this-&gt;to_do = apply_filters( 'print_styles_array', $this-&gt;to_do );
+		}
+		return $result;
+	}
+
+	/**
+	 * Generates an enqueued style's fully-qualified URL.
+	 *
+	 * @since 2.6.0
+	 *
+	 * @param string $src    The source of the enqueued style.
+	 * @param string $ver    The version of the enqueued style.
+	 * @param string $handle The style's registered handle.
+	 * @return string Style's fully-qualified URL.
+	 */
+	public function _css_href( $src, $ver, $handle ) {
+		if ( ! is_bool( $src ) &amp;&amp; ! preg_match( '|^(https?:)?//|', $src ) &amp;&amp; ! ( $this-&gt;content_url &amp;&amp; str_starts_with( $src, $this-&gt;content_url ) ) ) {
+			$src = $this-&gt;base_url . $src;
+		}
+
+		if ( ! empty( $ver ) ) {
+			$src = add_query_arg( 'ver', $ver, $src );
+		}
+
+		/**
+		 * Filters an enqueued style's fully-qualified URL.
+		 *
+		 * @since 2.6.0
+		 *
+		 * @param string $src    The source URL of the enqueued style.
+		 * @param string $handle The style's registered handle.
+		 */
+		$src = apply_filters( 'style_loader_src', $src, $handle );
+		return esc_url( $src );
+	}
+
+	/**
+	 * Whether a handle's source is in a default directory.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $src The source of the enqueued style.
+	 * @return bool True if found, false if not.
+	 */
+	public function in_default_dir( $src ) {
+		if ( ! $this-&gt;default_dirs ) {
+			return true;
+		}
+
+		foreach ( (array) $this-&gt;default_dirs as $test ) {
+			if ( str_starts_with( $src, $test ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Processes items and dependencies for the footer group.
+	 *
+	 * HTML 5 allows styles in the body, grab late enqueued items and output them in the footer.
+	 *
+	 * @since 3.3.0
+	 *
+	 * @see WP_Dependencies::do_items()
+	 *
+	 * @return string[] Handles of items that have been processed.
+	 */
+	public function do_footer_items() {
+		$this-&gt;do_items( false, 1 );
+		return $this-&gt;done;
+	}
+
+	/**
+	 * Resets class properties.
+	 *
+	 * @since 3.3.0
+	 */
+	public function reset() {
+		$this-&gt;do_concat      = false;
+		$this-&gt;concat         = '';
+		$this-&gt;concat_version = '';
+		$this-&gt;print_html     = '';
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes_class-wp-styles-php-2/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-styles.php#L18">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-styles.php#L18-L464">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_dependencies/">WP_Dependencies</a><code>wp-includes/class-wp-dependencies.php</code></td><td><p>Core base class extended to register items.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.6.0/">2.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-kailanitish90 even thread-even depth-1" data-comment-id="1994" id="comment-1994">
+<article class="comment-body" id="div-comment-1994">
+<a class="screen-reader-text" href="#comment-content-1994">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1994">
+<p><strong>Adding a Right-to-Left Stylesheet</strong><br/>
+To specify a stylesheet to add, set ‘rtl’ to the URL:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+   global $wp_styles;
+   $wp_styles-&gt;add('example', '/themes/example/example.css');
+   $wp_styles-&gt;add_data('rtl', '/themes/example/rtl.css');
+   $wp_styles-&gt;enqueue(array('example'));
+?&gt;</code></pre>
+<p>To have WordPress create the URL for the rtl stylesheet, set ‘rtl’ to TRUE and (optionally) set a suffix for the stylesheet in the extra data:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+   global $wp_styles;
+   $wp_styles-&gt;add('example', '/themes/example/example-new.css');
+   $wp_styles-&gt;add_data('rtl', TRUE);
+   # URL for rtl stylesheet will be '/themes/example/example-rtl-new.css'
+   $wp_styles-&gt;add_data('suffix', '-new');
+   $wp_styles-&gt;enqueue(array('example'));
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1994">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-kailanitish90 odd alt thread-odd thread-alt depth-1" data-comment-id="1993" id="comment-1993">
+<article class="comment-body" id="div-comment-1993">
+<a class="screen-reader-text" href="#comment-content-1993">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1993">
+<p><strong>Examples</strong></p>
+<p><strong>Dependent Stylesheet</strong></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+   global $wp_styles;
+   $wp_styles-&gt;add('example', '/themes/example/example.css');
+   $wp_styles-&gt;add('example_ie7-', '/themes/example/ie7-.css', array('example'));
+   $wp_styles-&gt;enqueue(array('example', 'example_ie7-'));
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1993">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-kailanitish90 even thread-even depth-1" data-comment-id="1995" id="comment-1995">
+<article class="comment-body" id="div-comment-1995">
+<a class="screen-reader-text" href="#comment-content-1995">Skip to note 9 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1995">
+<p><strong>Embedded Style</strong><br/>
+An embedded stylesheet can be added to an external one, but sparingly:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+   global $wp_styles;
+   $wp_styles-&gt;add('example', '/themes/example/example.css');
+   $wp_styles-&gt;add_inline_style('example', '* {margin: 0}');
+   $wp_styles-&gt;enqueue(array('example'));
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1995">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-kailanitish90 odd alt thread-odd thread-alt depth-1" data-comment-id="1996" id="comment-1996">
+<article class="comment-body" id="div-comment-1996">
+<a class="screen-reader-text" href="#comment-content-1996">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1996">
+<p><strong>Conditional Styles</strong><br/>
+Conditional comments can be added around the  to a stylesheet by setting ‘conditional’ in a stylesheet’s extra data:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+   global $wp_styles;
+   $wp_styles-&gt;add('example_ie7-', '/themes/example/ie7-.css');
+   $wp_styles-&gt;add_data('example_ie7-', 'conditional', 'lte IE 7');
+   $wp_styles-&gt;enqueue(array('example_ie7-'));
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1996">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-kailanitish90 even thread-even depth-1" data-comment-id="1997" id="comment-1997">
+<article class="comment-body" id="div-comment-1997">
+<a class="screen-reader-text" href="#comment-content-1997">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1997">
+<p><strong>Other Attributes</strong><br/>
+Other attributes include the stylesheet title, and wether it’s an alternate stylesheet:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+   global $wp_styles;
+   $wp_styles-&gt;add('example-alt', '/themes/example/example-alt.css');
+   $wp_styles-&gt;add_data('example-alt', 'title', 'Example Alternate Stylesheet');
+   $wp_styles-&gt;add_data('example-alt', 'alt', TRUE);
+   $wp_styles-&gt;enqueue(array('example-alt'));
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1997">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-kailanitish90 odd alt thread-odd thread-alt depth-1" data-comment-id="1998" id="comment-1998">
+<article class="comment-body" id="div-comment-1998">
+<a class="screen-reader-text" href="#comment-content-1998">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1998">
+<p><strong>Accumulation</strong><br/>
+Instead of printing style sheet elements, they can be gathered for other purposes:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+   /* Create  */
+   $my_styles = new WP_Styles;
+   $my_styles-&gt;do_concat = TRUE;
+
+   /* Add styles */
+   $my_styles-&gt;add('example', '/themes/example/example.css');
+   $my_styles-&gt;add('example_ie7-', '/themes/example/ie7-.css', array('example'));
+   $my_styles-&gt;add_data('example_ie7-', 'conditional', 'lte IE 7');
+   #...
+   $wp_styles-&gt;enqueue(array('example', 'example_ie7-', ...));
+
+   /* Output styles */
+   $my_styles-&gt;do_items();
+
+   /* */
+   # 'example,example_ie7-,...'
+   $my_styles-&gt;concat;
+   # accumulated elements
+   $my_styles-&gt;print_html;
+   #...
+   /* Clear  */
+   $my_styles-&gt;reset();
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1998">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

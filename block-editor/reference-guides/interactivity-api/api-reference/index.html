@@ -1,0 +1,1096 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/interactivity-api/">Interactivity API Reference</a></span><span class="is-current-page">API Reference</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>API Reference</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><div class="callout callout-alert">
+Interactivity API is only available for WordPress 6.5 and above.
+</div>
+<p>To add interactions to blocks using the Interactivity API, developers can use:</p>
+<ul>
+<li><strong>Directives:</strong> Added to the markup to add specific behavior to the DOM elements of the block</li>
+<li><strong>Store:</strong> Contains the logic and data (state, actions, side effects, etc.) needed for the behavior</li>
+</ul>
+<p>DOM elements are connected to data stored in the state and context through directives. If data in the state or context change directives will react to those changes, updating the DOM accordingly (see <a href="https://excalidraw.com/#json=T4meh6lltJh6TCX51NTIu,DmIhxYSGFTL_ywZFbsmuSw">diagram</a>).</p>
+<p><img alt="State &amp; Directives" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/make.wordpress.org/core/files/2024/02/interactivity-state-directives.png?ssl=1"/></p>
+<h2 class="is-toc-heading" id="what-are-directives" tabindex="-1"><a href="#what-are-directives">What are directives?</a></h2>
+<p>Directives are custom attributes that are added to the markup of your block to add behavior to its DOM elements. This can be done in the <code>render.php</code> file (for dynamic blocks) or the <code>save.js</code> file (for static blocks).</p>
+<p>Interactivity API directives use the <code>data-</code> prefix. Here’s an example of directives used in HTML markup.</p>
+<pre><code class="language-html">&lt;div
+    data-wp-interactive="myPlugin"
+    data-wp-context='{ "isOpen": false }'
+    data-wp-watch="callbacks.logIsOpen"
+&gt;
+    &lt;button
+        data-wp-on--click="actions.toggle"
+        data-wp-bind--aria-expanded="context.isOpen"
+        aria-controls="p-1"
+    &gt;
+        Toggle
+    &lt;/button&gt;
+
+    &lt;p id="p-1" data-wp-bind--hidden="!context.isOpen"&gt;
+        This element is now visible!
+    &lt;/p&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Directives can also be injected dynamically using the <a href="https://make.wordpress.org/core/2023/03/07/introducing-the-html-api-in-wordpress-6-2">HTML Tag Processor</a>.</p>
+<p>With directives, you can directly manage interactions such as side effects, state, event handlers, attributes, or content.</p>
+<h2 class="is-toc-heading" id="list-of-directives" tabindex="-1"><a href="#list-of-directives">List of Directives</a></h2>
+<h3 class="is-toc-heading" id="wp-interactive" tabindex="-1"><a href="#wp-interactive">wp-interactive</a></h3>
+<p>The <code>wp-interactive</code> directive “activates” the interactivity for the DOM element and its children through the Interactivity API (directives and store). The directive includes a namespace to reference a specific store, that can be set as a <code>string</code> or an <code>object</code>.</p>
+<pre><code class="language-html">&lt;!-- Let's make this element and its children interactive and set the namespace --&gt;
+&lt;div
+    data-wp-interactive="myPlugin"
+    data-wp-context='{ "myColor" : "red", "myBgColor": "yellow" }'
+&gt;
+    &lt;p&gt;
+        I'm interactive now,
+        &lt;span data-wp-style--background-color="context.myBgColor"
+            &gt;and I can use directives!&lt;/span
+        &gt;
+    &lt;/p&gt;
+    &lt;div&gt;
+        &lt;p&gt;
+            I'm also interactive,
+            &lt;span data-wp-style--color="context.myColor"
+                &gt;and I can also use directives!&lt;/span
+            &gt;
+        &lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- This is also valid --&gt;
+&lt;div
+    data-wp-interactive='{ "namespace": "myPlugin" }'
+    data-wp-context='{ "myColor" : "red", "myBgColor": "yellow" }'
+&gt;
+    &lt;p&gt;
+        I'm interactive now,
+        &lt;span data-wp-style--background-color="context.myBgColor"
+            &gt;and I can use directives!&lt;/span
+        &gt;
+    &lt;/p&gt;
+    &lt;div&gt;
+        &lt;p&gt;
+            I'm also interactive,
+            &lt;span data-wp-style--color="context.myColor"
+                &gt;and I can also use directives!&lt;/span
+            &gt;
+        &lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<div class="callout callout-info">
+  The use of <code>data-wp-interactive</code> is a requirement for the Interactivity API “engine” to work. In the following examples the <code>data-wp-interactive</code> has not been added for the sake of simplicity. Also, the <code>data-wp-interactive</code> directive will be injected automatically in the future.
+</div>
+<h3 class="is-toc-heading" id="wp-context" tabindex="-1"><a href="#wp-context">wp-context</a></h3>
+<p>It provides a <strong>local</strong> state available to a specific HTML node and its children.</p>
+<p>The <code>wp-context</code> directive accepts a stringified JSON as a value.</p>
+<pre><code class="language-php">// render.php
+&lt;div data-wp-context='{ "post": { "id": &lt;?php echo $post-&gt;ID; ?&gt; } }' &gt;
+  &lt;button data-wp-on--click="actions.logId" &gt;
+    Click Me!
+  &lt;/button&gt;
+&lt;/div&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    actions: {
+        logId: () =&gt; {
+            const { post } = getContext();
+            console.log( post.id );
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>Different contexts can be defined at different levels, and deeper levels will merge their own context with any parent one:</p>
+<pre><code class="language-html">&lt;div data-wp-context='{ "foo": "bar" }'&gt;
+    &lt;span data-wp-text="context.foo"&gt;&lt;!-- Will output: "bar" --&gt;&lt;/span&gt;
+
+    &lt;div data-wp-context='{ "bar": "baz" }'&gt;
+        &lt;span data-wp-text="context.foo"&gt;&lt;!-- Will output: "bar" --&gt;&lt;/span&gt;
+
+        &lt;div data-wp-context='{ "foo": "bob" }'&gt;
+            &lt;span data-wp-text="context.foo"&gt;&lt;!-- Will output: "bob" --&gt;&lt;/span&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<h3 class="is-toc-heading" id="wp-bind" tabindex="-1"><a href="#wp-bind">wp-bind</a></h3>
+<p>This directive allows setting HTML attributes on elements based on a boolean or string value. It follows the syntax <code>data-wp-bind--attribute</code>.</p>
+<pre><code class="language-html">&lt;li data-wp-context='{ "isMenuOpen": false }'&gt;
+    &lt;button
+        data-wp-on--click="actions.toggleMenu"
+        data-wp-bind--aria-expanded="context.isMenuOpen"
+    &gt;
+        Toggle
+    &lt;/button&gt;
+    &lt;div data-wp-bind--hidden="!context.isMenuOpen"&gt;
+        &lt;span&gt;Title&lt;/span&gt;
+        &lt;ul&gt;
+            SUBMENU ITEMS
+        &lt;/ul&gt;
+    &lt;/div&gt;
+&lt;/li&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    actions: {
+        toggleMenu: () =&gt; {
+            const context = getContext();
+            context.isMenuOpen = ! context.isMenuOpen;
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>The <code>wp-bind</code> directive is executed:</p>
+<ul>
+<li>When the element is created</li>
+<li>Each time there’s a change on any of the properties of the <code>state</code> or <code>context</code> involved in getting the final value of the directive (inside the callback or the expression passed as reference)</li>
+</ul>
+<p>When <code>wp-bind</code> directive references a callback to get its final value:</p>
+<ul>
+<li>The <code>wp-bind</code> directive will be executed each time there’s a change on any of the properties of the <code>state</code> or <code>context</code> used inside this callback.</li>
+<li>The returned value in the callback function is used to change the value of the associated attribute.</li>
+</ul>
+<p>The <code>wp-bind</code> will do different things when the DOM element is applied, depending on its value:</p>
+<ul>
+<li>If the value is <code>true</code>, the attribute is added: <code>&lt;div attribute&gt;</code></li>
+<li>If the value is <code>false</code>, the attribute is removed: <code>&lt;div&gt;</code></li>
+<li>If the value is a string, the attribute is added with its value assigned: <code>&lt;div attribute="value"</code></li>
+<li>If the attribute name starts with <code>aria-</code> or <code>data-</code> and the value is boolean (either <code>true</code> or <code>false</code>), the attribute is added to the DOM with the boolean value assigned as a string: <code>&lt;div aria-attribute="true"&gt;</code></li>
+</ul>
+<h3 class="is-toc-heading" id="wp-class" tabindex="-1"><a href="#wp-class">wp-class</a></h3>
+<p>This directive adds or removes a class to an HTML element, depending on a boolean value. It follows the syntax <code>data-wp-class--classname</code>.</p>
+<pre><code class="language-html">&lt;div&gt;
+    &lt;li
+        data-wp-context='{ "isSelected": false }'
+        data-wp-on--click="actions.toggleSelection"
+        data-wp-class--selected="context.isSelected"
+    &gt;
+        Option 1
+    &lt;/li&gt;
+    &lt;li
+        data-wp-context='{ "isSelected": false }'
+        data-wp-on--click="actions.toggleSelection"
+        data-wp-class--selected="context.isSelected"
+    &gt;
+        Option 2
+    &lt;/li&gt;
+&lt;/div&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    actions: {
+        toggleSelection: () =&gt; {
+            const context = getContext();
+            context.isSelected = ! context.isSelected;
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>The <code>wp-class</code> directive is executed:</p>
+<ul>
+<li>When the element is created</li>
+<li>Each time there’s a change on any of the properties of the <code>state</code> or <code>context</code> involved in getting the final value of the directive (inside the callback or the expression passed as reference)</li>
+</ul>
+<p>The boolean value received by the directive is used to toggle (add when <code>true</code> or remove when <code>false</code>) the associated class name from the <code>class</code> attribute.</p>
+<p>It’s important to note that when using the <code>wp-class</code> directive, it’s recommended to use kebab-case for class names instead of camelCase. This is because HTML attributes are not case-sensitive, and HTML will treat <code>data-wp-class--isDark</code> the same as <code>data-wp-class--isdark</code> or <code>DATA-WP-CLASS--ISDARK</code>.</p>
+<p>So, for example, use the class name <code>is-dark</code> instead of <code>isDark</code> and <code>data-wp-class--is-dark</code> instead of <code>data-wp-class--isDark</code>:</p>
+<pre><code class="language-html">&lt;!-- Recommended --&gt;
+&lt;div data-wp-class--is-dark="context.isDarkMode"&gt;
+    &lt;!-- ... --&gt;
+&lt;/div&gt;
+
+&lt;!-- Not recommended --&gt;
+&lt;div data-wp-class--isDark="context.isDarkMode"&gt;
+    &lt;!-- ... --&gt;
+&lt;/div&gt;
+</code></pre>
+<pre><code class="language-css">/* Recommended */
+.is-dark {
+    /* ... */
+}
+
+/* Not recommended */
+.isDark {
+    /* ... */
+}
+</code></pre>
+<h3 class="is-toc-heading" id="wp-style" tabindex="-1"><a href="#wp-style">wp-style</a></h3>
+<p>This directive adds or removes inline style to an HTML element, depending on its value. It follows the syntax <code>data-wp-style--css-property</code>.</p>
+<pre><code class="language-html">&lt;div data-wp-context='{ "color": "red" }'&gt;
+    &lt;button data-wp-on--click="actions.toggleContextColor"&gt;
+        Toggle Color Text
+    &lt;/button&gt;
+    &lt;p data-wp-style--color="context.color"&gt;Hello World!&lt;/p&gt;
+&lt;/div&gt;
+&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    actions: {
+        toggleContextColor: () =&gt; {
+            const context = getContext();
+            context.color = context.color === 'red' ? 'blue' : 'red';
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>The <code>wp-style</code> directive is executed:</p>
+<ul>
+<li>When the element is created</li>
+<li>Each time there’s a change on any of the properties of the <code>state</code> or <code>context</code> involved in getting the final value of the directive (inside the callback or the expression passed as reference)</li>
+</ul>
+<p>The value received by the directive is used to add or remove the style attribute with the associated CSS property:</p>
+<ul>
+<li>If the value is <code>false</code>, the style attribute is removed: <code>&lt;div&gt;</code></li>
+<li>If the value is a string, the attribute is added with its value assigned: <code>&lt;div style="css-property: value;"&gt;</code></li>
+</ul>
+<h3 class="is-toc-heading" id="wp-text" tabindex="-1"><a href="#wp-text">wp-text</a></h3>
+<p>It sets the inner text of an HTML element.</p>
+<pre><code class="language-html">&lt;div data-wp-context='{ "text": "Text 1" }'&gt;
+    &lt;span data-wp-text="context.text"&gt;&lt;/span&gt;
+    &lt;button data-wp-on--click="actions.toggleContextText"&gt;
+        Toggle Context Text
+    &lt;/button&gt;
+&lt;/div&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    actions: {
+        toggleContextText: () =&gt; {
+            const context = getContext();
+            context.text = context.text === 'Text 1' ? 'Text 2' : 'Text 1';
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>The <code>wp-text</code> directive is executed:</p>
+<ul>
+<li>When the element is created</li>
+<li>Each time there’s a change on any of the properties of the <code>state</code> or <code>context</code> involved in getting the final value of the directive (inside the callback or the expression passed as reference)</li>
+</ul>
+<p>The returned value is used to change the inner content of the element: <code>&lt;div&gt;value&lt;/div&gt;</code>.</p>
+<h3 class="is-toc-heading" id="wp-on" tabindex="-1"><a href="#wp-on">wp-on</a></h3>
+<div class="callout callout-info">
+  Consider using the more performant <a href="#wp-on-async"><code>wp-on-async</code></a> instead if your directive code does not need synchronous access to the event object. If synchronous access is required, consider implementing an <a href="#async-actions"><code>async action</code></a> which yields to the main thread after calling the synchronous API.
+</div>
+<p>This directive runs code on dispatched DOM events like <code>click</code> or <code>keyup</code>. The syntax is <code>data-wp-on--[event]</code> (like <code>data-wp-on--click</code> or <code>data-wp-on--keyup</code>).</p>
+<pre><code class="language-php">&lt;button data-wp-on--click="actions.logTime" &gt;
+  Click Me!
+&lt;/button&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    actions: {
+        logTime: ( event ) =&gt; {
+            console.log( new Date() );
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>The <code>wp-on</code> directive is executed each time the associated event is triggered.</p>
+<p>The callback passed as the reference receives <a href="https://developer.mozilla.org/en-US/docs/Web/API/Event">the event</a> (<code>event</code>), and the returned value by this callback is ignored.</p>
+<h3 class="is-toc-heading" id="wp-on-async" tabindex="-1"><a href="#wp-on-async">wp-on-async</a></h3>
+<p>This directive is a more performant approach for <code>wp-on</code>. It immediately yields to main to avoid contributing to a long task, allowing other interactions that otherwise would be waiting on the main thread to run sooner. Use this async version whenever there is no need for synchronous access to the <code>event</code> object, in particular the methods <code>event.preventDefault()</code>, <code>event.stopPropagation()</code>, and <code>event.stopImmediatePropagation()</code>.</p>
+<h3 class="is-toc-heading" id="wp-on-window" tabindex="-1"><a href="#wp-on-window">wp-on-window</a></h3>
+<div class="callout callout-info">
+  Consider using the more performant <a href="#wp-on-async-window"><code>wp-on-async-window</code></a> instead if your directive code does not need synchronous access to the event object. If synchronous access is required, consider implementing an <a href="#async-actions"><code>async action</code></a> which yields to the main thread after calling the synchronous API.
+</div>
+<p>This directive allows you to attach global window events like <code>resize</code>, <code>copy</code>, and <code>focus</code> and then execute a defined callback when those happen.</p>
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window#events">List of supported window events.</a></p>
+<p>The syntax of this directive is <code>data-wp-on-window--[window-event]</code> (like <code>data-wp-on-window--resize</code> or <code>data-wp-on-window--languagechange</code>).</p>
+<pre><code class="language-php">&lt;div data-wp-on-window--resize="callbacks.logWidth"&gt;&lt;/div&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    callbacks: {
+        logWidth() {
+            console.log( 'Window width: ', window.innerWidth );
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>The callback passed as the reference receives <a href="https://developer.mozilla.org/en-US/docs/Web/API/Event">the event</a> (<code>event</code>), and the returned value by this callback is ignored. When the element is removed from the DOM, the event listener is also removed.</p>
+<h3 class="is-toc-heading" id="wp-on-async-window" tabindex="-1"><a href="#wp-on-async-window">wp-on-async-window</a></h3>
+<p>Similar to <code>wp-on-async</code>, this is an optimized version of <code>wp-on-window</code> that immediately yields to main to avoid contributing to a long task. Use this async version whenever there is no need for synchronous access to the <code>event</code> object, in particular the methods <code>event.preventDefault()</code>, <code>event.stopPropagation()</code>, and <code>event.stopImmediatePropagation()</code>. This event listener is also added as <a href="https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#passive"><code>passive</code></a>.</p>
+<h3 class="is-toc-heading" id="wp-on-document" tabindex="-1"><a href="#wp-on-document">wp-on-document</a></h3>
+<div class="callout callout-info">
+  Consider using the more performant <a href="#wp-on-async-document"><code>wp-on-async-document</code></a> instead if your directive code does not need synchronous access to the event object. If synchronous access is required, consider implementing an <a href="#async-actions"><code>async action</code></a> which yields to the main thread after calling the synchronous API.
+</div>
+<p>This directive allows you to attach global document events like <code>scroll</code>, <code>mousemove</code>, and <code>keydown</code> and then execute a defined callback when those happen.</p>
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/Document#events">List of supported document events.</a></p>
+<p>The syntax of this directive is <code>data-wp-on-document--[document-event]</code> (like <code>data-wp-on-document--keydown</code> or <code>data-wp-on-document--selectionchange</code>).</p>
+<pre><code class="language-php">&lt;div data-wp-on-document--keydown="callbacks.logKeydown"&gt;&lt;/div&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    callbacks: {
+        logKeydown( event ) {
+            console.log( 'Key pressed: ', event.key );
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>The callback passed as the reference receives <a href="https://developer.mozilla.org/en-US/docs/Web/API/Event">the event</a> (<code>event</code>), and the returned value by this callback is ignored. When the element is removed from the DOM, the event listener is also removed.</p>
+<h3 class="is-toc-heading" id="wp-on-async-document" tabindex="-1"><a href="#wp-on-async-document">wp-on-async-document</a></h3>
+<p>Similar to <code>wp-on-async</code>, this is an optimized version of <code>wp-on-document</code> that immediately yields to main to avoid contributing to a long task. Use this async version whenever there is no need for synchronous access to the <code>event</code> object, in particular the methods <code>event.preventDefault()</code>, <code>event.stopPropagation()</code>, and <code>event.stopImmediatePropagation()</code>. This event listener is also added as <a href="https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#passive"><code>passive</code></a>.</p>
+<h3 class="is-toc-heading" id="wp-watch" tabindex="-1"><a href="#wp-watch">wp-watch</a></h3>
+<p>It runs a callback <strong>when the node is created and runs it again when the state or context changes</strong>.</p>
+<p>You can attach several side effects to the same DOM element by using the syntax <code>data-wp-watch--[unique-id]</code>.</p>
+<p>The <code>unique-id</code> doesn’t need to be unique globally. It just needs to be different from the other unique IDs of the <code>wp-watch</code> directives of that DOM element.</p>
+<pre><code class="language-html">&lt;div data-wp-context='{ "counter": 0 }' data-wp-watch="callbacks.logCounter"&gt;
+    &lt;p&gt;Counter: &lt;span data-wp-text="context.counter"&gt;&lt;/span&gt;&lt;/p&gt;
+    &lt;button data-wp-on--click="actions.increaseCounter"&gt;+&lt;/button&gt;
+    &lt;button data-wp-on--click="actions.decreaseCounter"&gt;-&lt;/button&gt;
+&lt;/div&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">store( 'myPlugin', {
+    actions: {
+        increaseCounter: () =&gt; {
+            const context = getContext();
+            context.counter++;
+        },
+        decreaseCounter: () =&gt; {
+            const context = getContext();
+            context.counter--;
+        },
+    },
+    callbacks: {
+        logCounter: () =&gt; {
+            const { counter } = getContext();
+            console.log( 'Counter is ' + counter + ' at ' + new Date() );
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>The <code>wp-watch</code> directive is executed:</p>
+<ul>
+<li>When the element is created</li>
+<li>Each time that any of the properties of the <code>state</code> or <code>context</code> used inside the callback changes</li>
+</ul>
+<p>The <code>wp-watch</code> directive can return a function. If it does, the returned function is used as cleanup logic, i.e., it will run just before the callback runs again, and it will run again when the element is removed from the DOM.</p>
+<p>As a reference, some use cases for this directive may be:</p>
+<ul>
+<li>Logging</li>
+<li>Changing the title of the page</li>
+<li>Setting the focus on an element with <code>.focus()</code>.</li>
+<li>Changing the state or context when certain conditions are met</li>
+</ul>
+<h3 class="is-toc-heading" id="wp-init" tabindex="-1"><a href="#wp-init">wp-init</a></h3>
+<p>This directive runs a callback <strong>only when the node is created</strong>.</p>
+<p>You can attach several <code>wp-init</code> to the same DOM element by using the syntax <code>data-wp-init--[unique-id]</code>.</p>
+<p>The <code>unique-id</code> doesn’t need to be unique globally. It just needs to be different from the other unique IDs of the <code>wp-init</code> directives of that DOM element.</p>
+<pre><code class="language-html">&lt;div data-wp-init="callbacks.logTimeInit"&gt;
+    &lt;p&gt;Hi!&lt;/p&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Here’s another example with several <code>wp-init</code> directives on the same DOM element.</p>
+<pre><code class="language-html">&lt;form
+    data-wp-init--log="callbacks.logTimeInit"
+    data-wp-init--focus="callbacks.focusFirstElement"
+&gt;
+    &lt;input type="text" /&gt;
+&lt;/form&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">import { store, getElement } from '@wordpress/interactivity';
+
+store( "myPlugin", {
+  callbacks: {
+    logTimeInit: () =&gt; console.log( `Init at ` + new Date() ),
+    focusFirstElement: () =&gt; {
+      const { ref } = getElement();
+      ref.querySelector( 'input:first-child' ).focus(),
+    },
+  },
+} );
+</code></pre>
+</details>
+<p>The <code>wp-init</code> can return a function. If it does, the returned function will run when the element is removed from the DOM.</p>
+<h3 class="is-toc-heading" id="wp-run" tabindex="-1"><a href="#wp-run">wp-run</a></h3>
+<p>This directive runs the passed callback <strong>during the node’s render execution</strong>.</p>
+<p>You can use and compose hooks like <code>useState</code>, <code>useWatch</code>, or <code>useEffect</code> inside the passed callback and create your own logic, providing more flexibility than previous directives.</p>
+<p>You can attach several <code>wp-run</code> to the same DOM element by using the syntax <code>data-wp-run--[unique-id]</code>.</p>
+<p>The <code>unique-id</code> doesn’t need to be unique globally. It just needs to be different from the other unique IDs of the <code>wp-run</code> directives of that DOM element.</p>
+<pre><code class="language-html">&lt;div data-wp-run="callbacks.logInView"&gt;
+    &lt;p&gt;Hi!&lt;/p&gt;
+&lt;/div&gt;
+</code></pre>
+<details>
+<summary><em>See store used with the directive above</em></summary>
+<pre><code class="language-js">import {
+    getElement,
+    store,
+    useState,
+    useEffect,
+} from '@wordpress/interactivity';
+
+// Unlike `data-wp-init` and `data-wp-watch`, you can use any hooks inside
+// `data-wp-run` callbacks.
+const useInView = () =&gt; {
+    const [ inView, setInView ] = useState( false );
+    useEffect( () =&gt; {
+        const { ref } = getElement();
+        const observer = new IntersectionObserver( ( [ entry ] ) =&gt; {
+            setInView( entry.isIntersecting );
+        } );
+        observer.observe( ref );
+        return () =&gt; ref &amp;&amp; observer.unobserve( ref );
+    }, [] );
+    return inView;
+};
+
+store( 'myPlugin', {
+    callbacks: {
+        logInView: () =&gt; {
+            const isInView = useInView();
+            useEffect( () =&gt; {
+                if ( isInView ) {
+                    console.log( 'Inside' );
+                } else {
+                    console.log( 'Outside' );
+                }
+            } );
+        },
+    },
+} );
+</code></pre>
+</details>
+<p>It’s important to note that, similar to (P)React components, the <code>ref</code> from <code>getElement()</code> is <code>null</code> during the first render. To properly access the DOM element reference, you typically need to use an effect-like hook such as <code>useEffect</code>, <code>useInit</code>, or <code>useWatch</code>. This ensures that the <code>getElement()</code> runs after the component has been mounted and the <code>ref</code> is available.</p>
+<h3 class="is-toc-heading" id="wp-key" tabindex="-1"><a href="#wp-key">wp-key</a></h3>
+<p>The <code>wp-key</code> directive assigns a unique key to an element to help the Interactivity API identify it when iterating through arrays of elements. This becomes important if your array elements can move (e.g., due to sorting), get inserted, or get deleted. A well-chosen key value helps the Interactivity API infer what exactly has changed in the array, allowing it to make the correct updates to the DOM.</p>
+<p>The key should be a string that uniquely identifies the element among its siblings. Typically, it is used on repeated elements like list items. For example:</p>
+<pre><code class="language-html">&lt;ul&gt;
+    &lt;li data-wp-key="unique-id-1"&gt;Item 1&lt;/li&gt;
+    &lt;li data-wp-key="unique-id-2"&gt;Item 2&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>But it can also be used on other elements:</p>
+<pre><code class="language-html">&lt;div&gt;
+    &lt;a data-wp-key="previous-page" ...&gt;Previous page&lt;/a&gt;
+    &lt;a data-wp-key="next-page" ...&gt;Next page&lt;/a&gt;
+&lt;/div&gt;
+</code></pre>
+<p>When the list is re-rendered, the Interactivity API will match elements by their keys to determine if an item was added/removed/reordered. Elements without keys might be recreated unnecessarily.</p>
+<h3 class="is-toc-heading" id="wp-each" tabindex="-1"><a href="#wp-each">wp-each</a></h3>
+<p>The <code>wp-each</code> directive is intended to render a list of elements. The directive can be used in <code>&lt;template&gt;</code> tags, being the value a path to an array stored in the global state or the context. The content inside the <code>&lt;template&gt;</code> tag is the template used to render each of the items.</p>
+<p>Each item is included in the context under the <code>item</code> name by default, so directives inside the template can access the current item.</p>
+<p>For example, let’s consider the following HTML.</p>
+<pre><code class="language-html">&lt;ul data-wp-context='{ "list": [ "hello", "hola", "olá" ] }'&gt;
+    &lt;template data-wp-each="context.list"&gt;
+        &lt;li data-wp-text="context.item"&gt;&lt;/li&gt;
+    &lt;/template&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>It would generate the following output:</p>
+<pre><code class="language-html">&lt;ul data-wp-context='{ "list": [ "hello", "hola", "olá" ] }'&gt;
+    &lt;li data-wp-text="context.item"&gt;hello&lt;/li&gt;
+    &lt;li data-wp-text="context.item"&gt;hola&lt;/li&gt;
+    &lt;li data-wp-text="context.item"&gt;olá&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>The prop that holds the item in the context can be changed by passing a suffix to the directive name. In the following example, the default prop changes from <code>item</code> to <code>greeting</code>.</p>
+<pre><code class="language-html">&lt;ul data-wp-context='{ "list": [ "hello", "hola", "olá" ] }'&gt;
+    &lt;template data-wp-each--greeting="context.list"&gt;
+        &lt;li data-wp-text="context.greeting"&gt;&lt;/li&gt;
+    &lt;/template&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>By default, it uses each element as the key for the rendered nodes, but you can also specify a path to retrieve the key if necessary, e.g., when the list contains objects.</p>
+<p>For that, you must use <code>data-wp-each-key</code> in the <code>&lt;template&gt;</code> tag and not <code>data-wp-key</code> inside the template content. This is because <code>data-wp-each</code> creates a context provider wrapper around each rendered item, and those wrappers are the ones that need the <code>key</code> property.</p>
+<pre><code class="language-html">&lt;ul
+    data-wp-context='{
+  "list": [
+    { "id": "en", "value": "hello" },
+    { "id": "es", "value": "hola" },
+    { "id": "pt", "value": "olá" }
+  ]
+}'
+&gt;
+    &lt;template
+        data-wp-each--greeting="context.list"
+        data-wp-each-key="context.greeting.id"
+    &gt;
+        &lt;li data-wp-text="context.greeting.value"&gt;&lt;/li&gt;
+    &lt;/template&gt;
+&lt;/ul&gt;
+</code></pre>
+<h3 class="is-toc-heading" id="wp-each-child" tabindex="-1"><a href="#wp-each-child">wp-each-child</a></h3>
+<p>For server-side rendered lists, another directive called <code>data-wp-each-child</code> ensures hydration works as expected. This directive is added automatically when the directive is processed on the server.</p>
+<pre><code class="language-html">&lt;ul data-wp-context='{ "list": [ "hello", "hola", "olá" ] }'&gt;
+    &lt;template data-wp-each--greeting="context.list"&gt;
+        &lt;li data-wp-text="context.greeting"&gt;&lt;/li&gt;
+    &lt;/template&gt;
+    &lt;li data-wp-each-child&gt;hello&lt;/li&gt;
+    &lt;li data-wp-each-child&gt;hola&lt;/li&gt;
+    &lt;li data-wp-each-child&gt;olá&lt;/li&gt;
+&lt;/ul&gt;
+</code></pre>
+<h2 class="is-toc-heading" id="values-of-directives-are-references-to-store-properties" tabindex="-1"><a href="#values-of-directives-are-references-to-store-properties">Values of directives are references to store properties</a></h2>
+<p>The value assigned to a directive is a string pointing to a specific state, action, or side effect.</p>
+<p>In the following example, a getter is used to define the <code>state.isPlaying</code> derived value.</p>
+<pre><code class="language-js">const { state } = store( 'myPlugin', {
+    state: {
+        currentVideo: '',
+        get isPlaying() {
+            return state.currentVideo !== '';
+        },
+    },
+} );
+</code></pre>
+<p>And then, the string value <code>"state.isPlaying"</code> is used to assign the result of this selector to <code>data-wp-bind--hidden</code>.</p>
+<pre><code class="language-html">&lt;div data-wp-bind--hidden="!state.isPlaying" ...&gt;
+    &lt;iframe ...&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+</code></pre>
+<p>These values assigned to directives are <strong>references</strong> to a particular property in the store. They are wired to the directives automatically so that each directive “knows” what store element refers to, without any additional configuration.</p>
+<p>Note that, by default, references point to properties in the current namespace, which is the one specified by the closest ancestor with a <code>data-wp-interactive</code> attribute. If you need to access a property from a different namespace, you can explicitly set the namespace where the property accessed is defined. The syntax is <code>namespace::reference</code>, replacing <code>namespace</code> with the appropriate value.</p>
+<p>The example below is getting <code>state.isPlaying</code> from <code>otherPlugin</code> instead of <code>myPlugin</code>:</p>
+<pre><code class="language-html">&lt;div data-wp-interactive="myPlugin"&gt;
+    &lt;div data-wp-bind--hidden="otherPlugin::!state.isPlaying" ...&gt;
+        &lt;iframe ...&gt;&lt;/iframe&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+</code></pre>
+<h2 class="is-toc-heading" id="the-store" tabindex="-1"><a href="#the-store">The store</a></h2>
+<p>The store is used to create the logic (actions, side effects, etc.) linked to the directives and the data used inside that logic (state, derived state, etc.).</p>
+<p><strong>The store is usually created in the <code>view.js</code> file of each block</strong>, although the state can be initialized from the <code>render.php</code> of the block.</p>
+<h3 class="is-toc-heading" id="elements-of-the-store" tabindex="-1"><a href="#elements-of-the-store">Elements of the store</a></h3>
+<h4>State</h4>
+<p>It defines data available to the HTML nodes of the page. It is important to differentiate between two ways to define the data:</p>
+<ul>
+<li><strong>Global state</strong>: It is defined using the <code>store()</code> function with the <code>state</code> property, and the data is available to all the HTML nodes of the page.</li>
+<li><strong>Context/Local State</strong>: It is defined using the <code>data-wp-context</code> directive in an HTML node, and the data is available to that HTML node and its children. It can be accessed using the <code>getContext</code> function inside of an action, derived state or side effect.</li>
+</ul>
+<pre><code class="language-html">&lt;div data-wp-context='{ "someText": "Hello World!" }'&gt;
+    &lt;!-- Access global state --&gt;
+    &lt;span data-wp-text="state.someText"&gt;&lt;/span&gt;
+
+    &lt;!-- Access local state (context) --&gt;
+    &lt;span data-wp-text="context.someText"&gt;&lt;/span&gt;
+&lt;/div&gt;
+</code></pre>
+<pre><code class="language-js">const { state } = store( 'myPlugin', {
+    state: {
+        someText: 'Hello Universe!',
+    },
+    actions: {
+        someAction: () =&gt; {
+            state.someText; // Access or modify global state - "Hello Universe!"
+
+            const context = getContext();
+            context.someText; // Access or modify local state (context) - "Hello World!"
+        },
+    },
+} );
+</code></pre>
+<h4>Actions</h4>
+<p>Actions are just regular JavaScript functions. Usually triggered by the <code>data-wp-on</code> directive (using event listeners) or other actions.</p>
+<pre><code class="language-ts">const { state, actions } = store( 'myPlugin', {
+    actions: {
+        selectItem: ( id ) =&gt; {
+            const context = getContext();
+            // `id` is optional here, so this action can be used in a directive.
+            state.selected = id || context.id;
+        },
+        otherAction: () =&gt; {
+            // but it can also be called from other actions.
+            actions.selectItem( 123 ); // it works and type is correct
+        },
+    },
+} );
+</code></pre>
+<h5 id="async-actions">Async actions</h5>
+<p>Async actions should use generators instead of async/await.</p>
+<p>In async functions, the control is passed to the function itself. The caller of the function has no way to know if the function is awaiting, and more importantly, if the await is resolved and the function has resumed execution. We need that information to be able to restore the scope.</p>
+<p>Imagine a block that has two buttons. One lives inside a context that has <code>isOpen: true</code> and the other <code>isOpen: false</code>:</p>
+<pre><code class="language-html">&lt;div data-wp-context='{ "isOpen": true }'&gt;
+    &lt;button data-wp-on--click="actions.someAction"&gt;Click&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;div data-wp-context='{ "isOpen": false }'&gt;
+    &lt;button data-wp-on--click="actions.someAction"&gt;Click&lt;/button&gt;
+&lt;/div&gt;
+</code></pre>
+<p>If the action is async and needs to await a long delay.</p>
+<ul>
+<li>The user clicks the first button.</li>
+<li>The scope points to the first context, where <code>isOpen: true</code>.</li>
+<li>The first access to <code>state.isOpen</code> is correct because <code>getContext</code> returns the current scope.</li>
+<li>The action starts awaiting a long delay.</li>
+<li>Before the action resumes, the user clicks the second button.</li>
+<li>The scope is changed to the second context, where <code>isOpen: false</code>.</li>
+<li>The first access to <code>state.isOpen</code> is correct because <code>getContext</code> returns the current scope.</li>
+<li>The second action starts awaiting a long delay.</li>
+<li>The first action finishes awaiting and resumes its execution.</li>
+<li>The second access to <code>state.isOpen</code> of the first action is incorrect, because <code>getContext</code> now returns the wrong scope.</li>
+</ul>
+<p>We need to be able to know when async actions start awaiting and resume operations, so we can restore the proper scope, and that’s what generators do.</p>
+<p>The store will work fine if it is written like this:</p>
+<pre><code class="language-js">const { state } = store( 'myPlugin', {
+    state: {
+        get isOpen() {
+            return getContext().isOpen;
+        },
+    },
+    actions: {
+        someAction: function* () {
+            state.isOpen; // This context is correct because it's synchronous.
+            yield longDelay(); // With generators, the caller controls when to resume this function.
+            state.isOpen; // This context is correct because we restored the proper scope before we resumed the function.
+        },
+    },
+} );
+</code></pre>
+<p>As mentioned above with <a href="#wp-on"><code>wp-on</code></a>, <a href="#wp-on-window"><code>wp-on-window</code></a>, and <a href="#wp-on-document"><code>wp-on-document</code></a>, an async action should be used whenever the <code>async</code> versions of the aforementioned directives cannot be used due to the action requiring synchronous access to the <code>event</code> object. Synchronous access is required whenever the action needs to call <code>event.preventDefault()</code>, <code>event.stopPropagation()</code>, or <code>event.stopImmediatePropagation()</code>. To ensure that the action code does not contribute to a long task, you may manually yield to the main thread after calling the synchronous event API. For example:</p>
+<pre><code class="language-js">// Note: In WordPress 6.6 this splitTask function is exported by @wordpress/interactivity.
+function splitTask() {
+    return new Promise( ( resolve ) =&gt; {
+        setTimeout( resolve, 0 );
+    } );
+}
+
+store( 'myPlugin', {
+    actions: {
+        handleClick: function* ( event ) {
+            event.preventDefault();
+            yield splitTask();
+            doTheWork();
+        },
+    },
+} );
+</code></pre>
+<p>You may want to add multiple such <code>yield</code> points in your action if it is doing a lot of work.</p>
+<h4>Side Effects</h4>
+<p>Automatically react to state changes. Usually triggered by <code>data-wp-watch</code> or <code>data-wp-init</code> directives.</p>
+<h4>Derived state</h4>
+<p>They return a computed version of the state. They can access both <code>state</code> and <code>context</code>.</p>
+<pre><code class="language-js">// view.js
+const { state } = store( 'myPlugin', {
+    state: {
+        amount: 34,
+        defaultCurrency: 'EUR',
+        currencyExchange: {
+            USD: 1.1,
+            GBP: 0.85,
+        },
+        get amountInUSD() {
+            return state.currencyExchange[ 'USD' ] * state.amount;
+        },
+        get amountInGBP() {
+            return state.currencyExchange[ 'GBP' ] * state.amount;
+        },
+    },
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="accessing-data-in-callbacks" tabindex="-1"><a href="#accessing-data-in-callbacks">Accessing data in callbacks</a></h3>
+<p>The <strong><code>store</code></strong> contains all the store properties, like <code>state</code>, <code>actions</code> or <code>callbacks</code>. They are returned by the <code>store()</code> call, so you can access them by destructuring it:</p>
+<pre><code class="language-js">const { state, actions } = store( 'myPlugin', {
+    // ...
+} );
+</code></pre>
+<p>The <code>store()</code> function can be called multiple times and all the store parts will be merged together:</p>
+<pre><code class="language-js">store( 'myPlugin', {
+    state: {
+        someValue: 1,
+    },
+} );
+
+const { state } = store( 'myPlugin', {
+    actions: {
+        someAction() {
+            state.someValue; // = 1
+        },
+    },
+} );
+</code></pre>
+<div class="callout callout-info">
+  All <code>store()</code> calls with the same namespace return the same references, i.e., the same <code>state</code>, <code>actions</code>, etc., containing the result of merging all the store parts passed.
+</div>
+<ul>
+<li>To access the context inside an action, derived state, or side effect, you can use the <code>getContext</code> function.</li>
+<li>To access the reference, you can use the <code>getElement</code> function.</li>
+</ul>
+<pre><code class="language-js">const { state } = store( 'myPlugin', {
+    state: {
+        get someDerivedValue() {
+            const context = getContext();
+            const { ref } = getElement();
+            // ...
+        },
+    },
+    actions: {
+        someAction() {
+            const context = getContext();
+            const { ref } = getElement();
+            // ...
+        },
+    },
+    callbacks: {
+        someEffect() {
+            const context = getContext();
+            const { ref } = getElement();
+            // ...
+        },
+    },
+} );
+</code></pre>
+<p>This approach enables some functionalities that make directives flexible and powerful:</p>
+<ul>
+<li>Actions and side effects can read and modify the state and the context.</li>
+<li>Actions and state in blocks can be accessed by other blocks.</li>
+<li>Actions and side effects can do anything a regular JavaScript function can do, like access the DOM or make API requests.</li>
+<li>Side effects automatically react to state changes.</li>
+</ul>
+<h3 class="is-toc-heading" id="setting-the-store" tabindex="-1"><a href="#setting-the-store">Setting the store</a></h3>
+<h4>On the client side</h4>
+<p><em>In the <code>view.js</code> file of each block</em> the developer can define both the state and the elements of the store referencing functions like actions, side effects or derived state.</p>
+<p>The <code>store</code> method used to set the store in JavaScript can be imported from <code>@wordpress/interactivity</code>.</p>
+<pre><code class="language-js">// store
+import { store, getContext } from '@wordpress/interactivity';
+
+store( 'myPlugin', {
+    actions: {
+        toggle: () =&gt; {
+            const context = getContext();
+            context.isOpen = ! context.isOpen;
+        },
+    },
+    callbacks: {
+        logIsOpen: () =&gt; {
+            const { isOpen } = getContext();
+            // Log the value of `isOpen` each time it changes.
+            console.log( `Is open: ${ isOpen }` );
+        },
+    },
+} );
+</code></pre>
+<h4>On the server side</h4>
+<p>The state can also be initialized on the server using the <code>wp_interactivity_state()</code> function. You would typically do this in the <code>render.php</code> file of your block (the <code>render.php</code> templates were <a href="https://make.wordpress.org/core/2022/10/12/block-api-changes-in-wordpress-6-1/">introduced</a> in WordPress 6.1).</p>
+<p>The state defined on the server with <code>wp_interactivity_state()</code> gets merged with the stores defined in the view.js files.</p>
+<p>The <code>wp_interactivity_state</code> function receives two arguments, a <code>string</code> with the namespace that will be used as a reference and an <a href="https://www.php.net/manual/en/language.types.array.php">associative array</a> containing the values.</p>
+<p><em>Example of store initialized from the server with a <code>state</code> = <code>{ someValue: 123 }</code></em></p>
+<pre><code class="language-php">// render.php
+wp_interactivity_state( 'myPlugin', array (
+    'someValue' =&gt; get_some_value()
+));
+</code></pre>
+<p>Initializing the state in the server also allows you to use any WordPress API. For example, you could use the Core Translation API to translate part of your state:</p>
+<pre><code class="language-php">// render.php
+wp_interactivity_state( 'favoriteMovies', array(
+      "1" =&gt; array(
+        "id" =&gt; "123-abc",
+        "movieName" =&gt; __("someMovieName", "textdomain")
+      ),
+) );
+</code></pre>
+<h3 class="is-toc-heading" id="private-stores" tabindex="-1"><a href="#private-stores">Private stores</a></h3>
+<p>A given store namespace can be marked as private, thus preventing its content to be accessed from other namespaces. The mechanism to do so is by adding a <code>lock</code> option to the <code>store()</code> call, as shown in the example below. This way, further executions of <code>store()</code> with the same locked namespace will throw an error, meaning that the namespace can only be accessed where its reference was returned from the first <code>store()</code> call. This is especially useful for developers who want to hide part of their plugin stores so it doesn’t become accessible for extenders.</p>
+<pre><code class="language-js">const { state } = store(
+    'myPlugin/private',
+    { state: { messages: [ 'private message' ] } },
+    { lock: true }
+);
+
+// The following call throws an Error!
+store( 'myPlugin/private', {
+    /* store part */
+} );
+</code></pre>
+<p>There is also a way to unlock private stores: instead of passing a boolean, you can use a string as the <code>lock</code> value. Such a string can then be used in subsequent <code>store()</code> calls to the same namespace to unlock its content. Only the code knowing the string lock will be able to unlock the protected store namespaced. This is useful for complex stores defined in multiple JS modules.</p>
+<pre><code class="language-js">const { state } = store(
+    'myPlugin/private',
+    { state: { messages: [ 'private message' ] } },
+    { lock: PRIVATE_LOCK }
+);
+
+// The following call works as expected.
+store(
+    'myPlugin/private',
+    {
+        /* store part */
+    },
+    { lock: PRIVATE_LOCK }
+);
+</code></pre>
+<h3 class="is-toc-heading" id="store-client-methods" tabindex="-1"><a href="#store-client-methods">Store client methods</a></h3>
+<p>Apart from the store function, there are also some methods that allows the developer to access data on their store functions.</p>
+<ul>
+<li>getContext()
+<ul>
+<li>getServerContext()</li>
+<li>getServerState()</li>
+</ul>
+</li>
+<li>getElement()</li>
+</ul>
+<h4>getContext()</h4>
+<p>Retrieves the context inherited by the element evaluating a function from the store. The returned value depends on the element and the namespace where the function calling <code>getContext()</code> exists. It can also take an optional namespace argument to retrieve the context of a specific interactive region.</p>
+<pre><code class="language-js">const context = getContext( 'namespace' );
+</code></pre>
+<ul>
+<li><code>namespace</code> (optional): A string that matches the namespace of an interactive region. If not provided, it retrieves the context of the current interactive region.</li>
+</ul>
+<pre><code class="language-php">// render.php
+&lt;div data-wp-interactive="myPlugin" data-wp-context='{ "isOpen": false }'&gt;
+    &lt;button data-wp-on--click="actions.log"&gt;Log&lt;/button&gt;
+&lt;/div&gt;
+</code></pre>
+<pre><code class="language-js">// store
+import { store, getContext } from '@wordpress/interactivity';
+
+store( 'myPlugin', {
+    actions: {
+        log: () =&gt; {
+            const context = getContext();
+            // Logs "false"
+            console.log( 'context =&gt; ', context.isOpen );
+
+            // With namespace argument.
+            const myPluginContext = getContext( 'myPlugin' );
+            // Logs "false"
+            console.log( 'myPlugin isOpen =&gt; ', myPluginContext.isOpen );
+        },
+    },
+} );
+</code></pre>
+<h4>getServerContext()</h4>
+<p>This function is analogous to <code>getContext()</code>, but with 2 key differences:</p>
+<ol>
+<li>Whenever <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-interactivity-router/#actions"><code>actions.navigate()</code></a> from <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-interactivity-router/"><code>@wordpress/interactivity-router</code></a> is called, the object returned by <code>getServerContext()</code> is updated. This is useful when you want to update the context of a block based on <strong>new</strong> context coming from the page loaded via <code>actions.navigate()</code>. This new context is embedded in the HTML of the page loaded via <code>actions.navigate()</code>.</li>
+<li>The object returned by <code>getServerContext()</code> is read-only.</li>
+</ol>
+<p>The server context cannot be directly used in directives, but you can use callbacks to subscribe to its changes.</p>
+<pre><code class="language-js">const serverContext = getServerContext( 'namespace' );
+</code></pre>
+<ul>
+<li><code>namespace</code> (optional): A string that matches the namespace of an interactive region. If not provided, it retrieves the server context of the current interactive region.</li>
+</ul>
+<p>Example usage:</p>
+<pre><code class="language-js">store( 'myPlugin', {
+    callbacks: {
+        updateServerContext() {
+            const context = getContext();
+            const serverContext = getServerContext();
+            // Override some property with the new value that came from the server.
+            context.overridableProp = serverContext.overridableProp;
+        },
+    },
+} );
+</code></pre>
+<h4>getServerState()</h4>
+<p>Retrieves the server state an interactive region.</p>
+<p>This function is serves the same purpose as <code>getServerContext()</code>, but it returns the <strong>state</strong> instead of the <strong>context</strong>.</p>
+<p>The object returned is read-only, and includes the state defined in PHP with <code>wp_interactivity_state()</code>. When using <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-interactivity-router/#actions"><code>actions.navigate()</code></a> from <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-interactivity-router/"><code>@wordpress/interactivity-router</code></a>, the object returned by <code>getServerState()</code> is updated to reflect the changes in its properties, without affecting the state returned by <code>store()</code>. Directives can subscribe to those changes to update the state if needed.</p>
+<pre><code class="language-js">const serverState = getServerState( 'namespace' );
+</code></pre>
+<ul>
+<li><code>namespace</code> (optional): A string that matches the namespace of an interactive region. If not provided, it retrieves the server state of the current interactive region.</li>
+</ul>
+<p>Example usage:</p>
+<pre><code class="language-js">const { state } = store( 'myStore', {
+    callbacks: {
+        updateServerState() {
+            const serverState = getServerState();
+            // Override some property with the new value that came from the server.
+            state.overridableProp = serverState.overridableProp;
+        },
+    },
+} );
+</code></pre>
+<h4>getElement()</h4>
+<p>Retrieves a representation of the element that the action is bound to or called from. Such representation is read-only, and contains a reference to the DOM element, its props and a local reactive state.<br/>
+It returns an object with two keys:</p>
+<h5>ref</h5>
+<p><code>ref</code> is the reference to the DOM element as an <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement">HTMLElement</a>. It is equivalent to <code>useRef</code> in Preact or React, so it can be <code>null</code> when <code>ref</code> has not been attached to the actual DOM element yet, i.e., when it is being hydrated or mounted.</p>
+<h5>attributes</h5>
+<p><code>attributes</code> contains a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy">Proxy</a>, which adds a getter that allows to reference other store namespaces. Feel free to check the getter in the code. <a href="https://github.com/WordPress/gutenberg/blob/8cb23964d58f3ce5cf6ae1b6f967a4b8d4939a8e/packages/interactivity/src/store.ts#L70">Link</a></p>
+<p>Those attributes will contain the directives of that element. In the button example:</p>
+<pre><code class="language-js">// store
+import { store, getElement } from '@wordpress/interactivity';
+
+store( 'myPlugin', {
+    actions: {
+        log: () =&gt; {
+            const element = getElement();
+            // Logs attributes
+            console.log( 'element attributes =&gt; ', element.attributes );
+        },
+    },
+} );
+</code></pre>
+<p>The code will log:</p>
+<pre><code class="language-json">{
+    "data-wp-on--click": 'actions.log',
+    "children": ['Log'],
+    "onclick": event =&gt; { evaluate(entry, event); }
+}
+</code></pre>
+<h3 class="is-toc-heading" id="withscope" tabindex="-1"><a href="#withscope">withScope()</a></h3>
+<p>Actions can depend on the scope when they are called, e.g., when you call <code>getContext()</code> or <code>getElement()</code>.</p>
+<p>When the Interactivity API runtime execute callbacks, the scope is set automatically. However, if you call an action from a callback that is not executed by the runtime, like in a <code>setInterval()</code> callback, you need to ensure that the scope is properly set. Use the <code>withScope()</code> function to ensure the scope is properly set in these cases.</p>
+<p>An example, where <code>actions.nextImage</code> would trigger an undefined error without the wrapper:</p>
+<pre><code class="language-js">store( 'mySliderPlugin', {
+    callbacks: {
+        initSlideShow: () =&gt; {
+            setInterval(
+                withScope( () =&gt; {
+                    actions.nextImage();
+                } ),
+                3_000
+            );
+        },
+    },
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="server-functions" tabindex="-1"><a href="#server-functions">Server functions</a></h2>
+<p>The Interactivity API comes with handy functions that allow you to initialize and reference configuration options on the server. This is necessary to feed the initial data that the Server Directive Processing will use to modify the HTML markup before it’s send to the browser. It is also a great way to leverage many of WordPress’s APIs, like nonces, AJAX, and translations.</p>
+<h3 class="is-toc-heading" id="wp_interactivity_config" tabindex="-1"><a href="#wp_interactivity_config">wp_interactivity_config</a></h3>
+<p><code>wp_interactivity_config</code> allows to set or get a configuration array, referenced to a store namespace.<br/>
+The configuration is also available on the client, but it is static information.</p>
+<p>Consider it a global setting for interactions of a site, that won’t be updated on user interactions.</p>
+<p>An example of setting:</p>
+<pre><code class="language-php">    wp_interactivity_config( 'myPlugin', array( 'showLikeButton' =&gt; is_user_logged_in() ) );
+</code></pre>
+<p>An example of getting:</p>
+<pre><code class="language-php">  wp_interactivity_config( 'myPlugin' );
+</code></pre>
+<p>This config can be retrieved on the client:</p>
+<pre><code class="language-js">// view.js
+
+const { showLikeButton } = getConfig();
+</code></pre>
+<h3 class="is-toc-heading" id="wp_interactivity_state" tabindex="-1"><a href="#wp_interactivity_state">wp_interactivity_state</a></h3>
+<p><code>wp_interactivity_state</code> allows the initialization of the global state on the server, which will be used to process the directives on the server and then will be merged with any global state defined in the client.</p>
+<p>Initializing the global state on the server also allows you to use many critical WordPress APIs, including <a href="https://developer.notmatt.press/plugins/javascript/ajax/">AJAX</a>, or <a href="https://developer.notmatt.press/plugins/javascript/enqueuing/#nonce">nonces</a>.</p>
+<p>The <code>wp_interactivity_state</code> function receives two arguments, a string with the namespace that will be used as a reference and an associative array containing the values.</p>
+<p>Here is an example of passing the WP Admin AJAX endpoint with a nonce.</p>
+<pre><code class="language-php">// render.php
+
+wp_interactivity_state(
+    'myPlugin',
+    array(
+        'ajaxUrl' =&gt; admin_url( 'admin-ajax.php' ),
+        'nonce'   =&gt; wp_create_nonce( 'myPlugin_nonce' ),
+    ),
+);
+</code></pre>
+<pre><code class="language-js">// view.js
+
+const { state } = store( 'myPlugin', {
+    actions: {
+        *doSomething() {
+            try {
+                const formData = new FormData();
+                formData.append( 'action', 'do_something' );
+                formData.append( '_ajax_nonce', state.nonce );
+
+                const data = yield fetch( state.ajaxUrl, {
+                    method: 'POST',
+                    body: formData,
+                } ).then( ( response ) =&gt; response.json() );
+                console.log( 'Server data!', data );
+            } catch ( e ) {
+                // Something went wrong!
+            }
+        },
+    },
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="wp_interactivity_process_directives" tabindex="-1"><a href="#wp_interactivity_process_directives">wp_interactivity_process_directives</a></h3>
+<p><code>wp_interactivity_process_directives</code> returns the updated HTML after the directives have been processed.</p>
+<p>It is the Core function of the Interactivity API server side rendering part, and is public so any HTML can be processed, whether is a block or not.</p>
+<p>This code</p>
+<pre><code class="language-php">wp_interactivity_state( 'myPlugin', array( 'greeting' =&gt; 'Hello, World!' ) );
+$html_content = '&lt;div data-wp-text="myPlugin::state.greeting"&gt;&lt;/div&gt;';
+$processed_html = wp_interactivity_process_directives( $html_content );
+echo $processed_html;
+</code></pre>
+<p>will output:</p>
+<pre><code class="language-html">&lt;div data-wp-text="myPlugin::state.greeting"&gt;Hello, World!&lt;/div&gt;
+</code></pre>
+<h3 class="is-toc-heading" id="wp_interactivity_data_wp_context" tabindex="-1"><a href="#wp_interactivity_data_wp_context">wp_interactivity_data_wp_context</a></h3>
+<p><code>wp_interactivity_data_wp_context</code> returns a stringified JSON of a context directive.<br/>
+This function is the recommended way to print the <code>data-wp-context</code> attribute in the server side rendered markup.</p>
+<pre><code class="language-php"><br/>$my_context = array(
+    'counter' =&gt; 0,
+    'isOpen'  =&gt; true,
+);
+?&gt;
+&lt;div
+ &lt;?php echo wp_interactivity_data_wp_context( $my_context ); ?&gt;
+&gt;
+&lt;/div&gt;
+</code></pre>
+<p>will output:</p>
+<pre><code class="language-html">&lt;div data-wp-context='{"counter":0,"isOpen":true}'&gt;&lt;/div&gt;
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

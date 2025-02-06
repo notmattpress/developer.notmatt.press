@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">list_files()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>list_files()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">list_files( <span class="arg-type">string</span> <span class="arg-name">$folder</span> = <span class="arg-default">''</span>,  <span class="arg-type">int</span> <span class="arg-name">$levels</span> = <span class="arg-default">100</span>,  <span class="arg-type">string[]</span> <span class="arg-name">$exclusions</span> = <span class="arg-default">array()</span>,  <span class="arg-type">bool</span> <span class="arg-name">$include_hidden</span> = <span class="arg-default">false</span> ): <span class="return-type">string[]|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns a listing of all files in the specified folder and all subdirectories up to 100 levels deep.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The depth of the recursiveness can be controlled by the $levels param.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$folder</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Full path to folder. </span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$levels</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Levels of folders to follow, Default 100 (PHP Loop limit).</span></div><p class="default">Default:<code>100</code></p></dd><dt><code>$exclusions</code><span class="type"><span class="string[]">string[]</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">List of folders and files to skip.</span></div><p class="default">Default:<code>array()</code></p></dd><dt><code>$include_hidden</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to include details of hidden ("." prefixed) files.<br/>
+</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string[]|false</span> Array of files on success, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="139"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function list_files( $folder = '', $levels = 100, $exclusions = array(), $include_hidden = false ) {
+	if ( empty( $folder ) ) {
+		return false;
+	}
+
+	$folder = trailingslashit( $folder );
+
+	if ( ! $levels ) {
+		return false;
+	}
+
+	$files = array();
+
+	$dir = @opendir( $folder );
+
+	if ( $dir ) {
+		while ( ( $file = readdir( $dir ) ) !== false ) {
+			// Skip current and parent folder links.
+			if ( in_array( $file, array( '.', '..' ), true ) ) {
+				continue;
+			}
+
+			// Skip hidden and excluded files.
+			if ( ( ! $include_hidden &amp;&amp; '.' === $file[0] ) || in_array( $file, $exclusions, true ) ) {
+				continue;
+			}
+
+			if ( is_dir( $folder . $file ) ) {
+				$files2 = list_files( $folder . $file, $levels - 1, array(), $include_hidden );
+				if ( $files2 ) {
+					$files = array_merge( $files, $files2 );
+				} else {
+					$files[] = $folder . $file . '/';
+				}
+			} else {
+				$files[] = $folder . $file;
+			}
+		}
+
+		closedir( $dir );
+	}
+
+	return $files;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/file.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/file.php#L139">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/file.php#L139-L182">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/list_files/">list_files()</a><code>wp-admin/includes/file.php</code></td><td><p>Returns a listing of all files in the specified folder and all subdirectories up to 100 levels deep.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_delete_old_export_files/">wp_privacy_delete_old_export_files()</a><code>wp-includes/functions.php</code></td><td><p>Cleans up export files older than three days old.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_plugin_files/">get_plugin_files()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Gets a list of a plugin’s files.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/list_files/">list_files()</a><code>wp-admin/includes/file.php</code></td><td><p>Returns a listing of all files in the specified folder and all subdirectories up to 100 levels deep.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td><span class="since-description">Added the <code>$include_hidden</code> parameter.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.9.0/">4.9.0</a></td><td><span class="since-description">Added the <code>$exclusions</code> parameter.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.6.0/">2.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-sarankumar even thread-even depth-1" data-comment-id="5036" id="comment-5036">
+<article class="comment-body" id="div-comment-5036">
+<a class="screen-reader-text" href="#comment-content-5036">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5036">
+<p>Example for listing all files in the upload directory</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$upload_dir = wp_upload_dir();
+$folder = $upload_dir['basedir']
+$files = list_files( $folder, 2 );
+foreach ( $files as $file ) {
+	if ( is_file( $file ) ) {
+		$filesize = size_format( filesize( $file ) );
+		$filename = basename( $file ); 
+	}
+	echo esc_html( $filename . "-" . $filesize );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5036">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-strackerphil-1 odd alt thread-odd thread-alt depth-1" data-comment-id="6121" id="comment-6121">
+<article class="comment-body" id="div-comment-6121">
+<a class="screen-reader-text" href="#comment-content-6121">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6121">
+<p>This function returns a list of absolute paths (not file names!)</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">print_r( list_files( __DIR__ ) );
+
+/*
+Output:
+
+Array (
+    [0] =&gt; /Users/philipp/Sites/public/dev-site/wp-content/plugins/test/test.php
+    [1] =&gt; /Users/philipp/Sites/public/dev-site/wp-content/plugins/test/readme.txt
+    [2] =&gt; /Users/philipp/Sites/public/dev-site/wp-content/plugins/test/license.txt
+)
+*/</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6121">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

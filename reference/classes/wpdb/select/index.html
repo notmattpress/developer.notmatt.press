@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wpdb/">wpdb</a></span><span class="is-current-page">wpdb::select()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wpdb::select()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wpdb::select( <span class="arg-type">string</span> <span class="arg-name">$db</span>,  <span class="arg-type">mysqli</span> <span class="arg-name">$dbh</span> = <span class="arg-default">null</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Selects a database using the current or provided database connection.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The database name will be changed based on the current database connection.<br/>On failure, the execution will bail and display a DB error.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$db</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Database name.</span></div></dd><dt><code>$dbh</code><span class="type"><span class="mysqli">mysqli</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Database connection.<br/>
+Defaults to the current database handle.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1193"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function select( $db, $dbh = null ) {
+	if ( is_null( $dbh ) ) {
+		$dbh = $this-&gt;dbh;
+	}
+
+	$success = mysqli_select_db( $dbh, $db );
+
+	if ( ! $success ) {
+		$this-&gt;ready = false;
+		if ( ! did_action( 'template_redirect' ) ) {
+			wp_load_translations_early();
+
+			$message = '&lt;h1&gt;' . __( 'Cannot select database' ) . "&lt;/h1&gt;\n";
+
+			$message .= '&lt;p&gt;' . sprintf(
+				/* translators: %s: Database name. */
+				__( 'The database server could be connected to (which means your username and password is okay) but the %s database could not be selected.' ),
+				'&lt;code&gt;' . htmlspecialchars( $db, ENT_QUOTES ) . '&lt;/code&gt;'
+			) . "&lt;/p&gt;\n";
+
+			$message .= "&lt;ul&gt;\n";
+			$message .= '&lt;li&gt;' . __( 'Are you sure it exists?' ) . "&lt;/li&gt;\n";
+
+			$message .= '&lt;li&gt;' . sprintf(
+				/* translators: 1: Database user, 2: Database name. */
+				__( 'Does the user %1$s have permission to use the %2$s database?' ),
+				'&lt;code&gt;' . htmlspecialchars( $this-&gt;dbuser, ENT_QUOTES ) . '&lt;/code&gt;',
+				'&lt;code&gt;' . htmlspecialchars( $db, ENT_QUOTES ) . '&lt;/code&gt;'
+			) . "&lt;/li&gt;\n";
+
+			$message .= '&lt;li&gt;' . sprintf(
+				/* translators: %s: Database name. */
+				__( 'On some systems the name of your database is prefixed with your username, so it would be like &lt;code&gt;username_%1$s&lt;/code&gt;. Could that be the problem?' ),
+				htmlspecialchars( $db, ENT_QUOTES )
+			) . "&lt;/li&gt;\n";
+
+			$message .= "&lt;/ul&gt;\n";
+
+			$message .= '&lt;p&gt;' . sprintf(
+				/* translators: %s: Support forums URL. */
+				__( 'If you do not know how to set up a database you should &lt;strong&gt;contact your host&lt;/strong&gt;. If all else fails you may find help at the &lt;a href="%s"&gt;WordPress support forums&lt;/a&gt;.' ),
+				__( 'https://wordpress.org/support/forums/' )
+			) . "&lt;/p&gt;\n";
+
+			$this-&gt;bail( $message, 'db_select_fail' );
+		}
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wpdb.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wpdb.php#L1193">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wpdb.php#L1193-L1240">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_load_translations_early/">wp_load_translations_early()</a><code>wp-includes/load.php</code></td><td><p>Attempts an early load of translations.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/did_action/">did_action()</a><code>wp-includes/plugin.php</code></td><td><p>Retrieves the number of times an action has been fired during the current request.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/bail/">wpdb::bail()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Wraps errors in a nice header and footer and dies.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/db_connect/">wpdb::db_connect()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Connects to and selects database.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/0.71/">0.71</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

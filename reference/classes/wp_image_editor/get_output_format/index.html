@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_image_editor/">WP_Image_Editor</a></span><span class="is-current-page">WP_Image_Editor::get_output_format()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Image_Editor::get_output_format()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Image_Editor::get_output_format( <span class="arg-type">string</span> <span class="arg-name">$filename</span> = <span class="arg-default">null</span>,  <span class="arg-type">string</span> <span class="arg-name">$mime_type</span> = <span class="arg-default">null</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns preferred mime-type and extension based on provided file’s extension and mime, or current file’s extension and mime.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Will default to $this-&gt;default_mime_type if requested is not supported.</p>
+<p>Provides corrected filename only if filename is provided.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$filename</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"></div><p class="default">Default:<code>null</code></p></dd><dt><code>$mime_type</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> <code>filename|null</code>, extension, mime-type</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="342"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function get_output_format( $filename = null, $mime_type = null ) {
+	$new_ext = null;
+
+	// By default, assume specified type takes priority.
+	if ( $mime_type ) {
+		$new_ext = $this-&gt;get_extension( $mime_type );
+	}
+
+	if ( $filename ) {
+		$file_ext  = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+		$file_mime = $this-&gt;get_mime_type( $file_ext );
+	} else {
+		// If no file specified, grab editor's current extension and mime-type.
+		$file_ext  = strtolower( pathinfo( $this-&gt;file, PATHINFO_EXTENSION ) );
+		$file_mime = $this-&gt;mime_type;
+	}
+
+	/*
+	 * Check to see if specified mime-type is the same as type implied by
+	 * file extension. If so, prefer extension from file.
+	 */
+	if ( ! $mime_type || ( $file_mime === $mime_type ) ) {
+		$mime_type = $file_mime;
+		$new_ext   = $file_ext;
+	}
+
+	$output_format = wp_get_image_editor_output_format( $filename, $mime_type );
+
+	if ( isset( $output_format[ $mime_type ] )
+		&amp;&amp; $this-&gt;supports_mime_type( $output_format[ $mime_type ] )
+	) {
+		$mime_type = $output_format[ $mime_type ];
+		$new_ext   = $this-&gt;get_extension( $mime_type );
+	}
+
+	/*
+	 * Double-check that the mime-type selected is supported by the editor.
+	 * If not, choose a default instead.
+	 */
+	if ( ! $this-&gt;supports_mime_type( $mime_type ) ) {
+		/**
+		 * Filters default mime type prior to getting the file extension.
+		 *
+		 * @see wp_get_mime_types()
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param string $mime_type Mime type string.
+		 */
+		$mime_type = apply_filters( 'image_editor_default_mime_type', $this-&gt;default_mime_type );
+		$new_ext   = $this-&gt;get_extension( $mime_type );
+	}
+
+	/*
+	 * Ensure both $filename and $new_ext are not empty.
+	 * $this-&gt;get_extension() returns false on error which would effectively remove the extension
+	 * from $filename. That shouldn't happen, files without extensions are not supported.
+	 */
+	if ( $filename &amp;&amp; $new_ext ) {
+		$dir = pathinfo( $filename, PATHINFO_DIRNAME );
+		$ext = pathinfo( $filename, PATHINFO_EXTENSION );
+
+		$filename = trailingslashit( $dir ) . wp_basename( $filename, ".$ext" ) . ".{$new_ext}";
+	}
+
+	if ( $mime_type &amp;&amp; ( $mime_type !== $this-&gt;mime_type ) ) {
+		// The image will be converted when saving. Set the quality for the new mime-type if not already set.
+		if ( $mime_type !== $this-&gt;output_mime_type ) {
+			$this-&gt;output_mime_type = $mime_type;
+		}
+		$this-&gt;set_quality();
+	} elseif ( ! empty( $this-&gt;output_mime_type ) ) {
+		// Reset output_mime_type and quality.
+		$this-&gt;output_mime_type = null;
+		$this-&gt;set_quality();
+	}
+
+	return array( $filename, $new_ext, $mime_type );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-image-editor.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-image-editor.php#L342">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-image-editor.php#L342-L420">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/image_editor_default_mime_type/"><span class="hook-func">apply_filters</span>( ‘image_editor_default_mime_type’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$mime_type</span></nobr> )</a></dt><dd><p>Filters default mime type prior to getting the file extension.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_basename/">wp_basename()</a><code>wp-includes/formatting.php</code></td><td><p>i18n-friendly version of basename().</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor/get_extension/">WP_Image_Editor::get_extension()</a><code>wp-includes/class-wp-image-editor.php</code></td><td><p>Returns first matched extension from Mime-type, as mapped from <a href="https://developer.notmatt.press/reference/functions/wp_get_mime_types/" rel="function">wp_get_mime_types()</a> </p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor/get_mime_type/">WP_Image_Editor::get_mime_type()</a><code>wp-includes/class-wp-image-editor.php</code></td><td><p>Returns first matched mime-type from extension, as mapped from <a href="https://developer.notmatt.press/reference/functions/wp_get_mime_types/" rel="function">wp_get_mime_types()</a> </p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor/set_quality/">WP_Image_Editor::set_quality()</a><code>wp-includes/class-wp-image-editor.php</code></td><td><p>Sets Image Compression quality on a 1-100% scale.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor/supports_mime_type/">WP_Image_Editor::supports_mime_type()</a><code>wp-includes/class-wp-image-editor.php</code></td><td><p>Checks to see if editor supports the mime-type specified.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.5.0/">3.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-darshitrajyaguru97 odd alt thread-odd thread-alt depth-1" data-comment-id="6572" id="comment-6572">
+<article class="comment-body" id="div-comment-6572">
+<a class="screen-reader-text" href="#comment-content-6572">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6572">
+<p>Get the output format of the edited image.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$editor = wp_get_image_editor( 'path/to/your/image.jpg' );
+if ( ! is_wp_error( $editor ) ) {
+    $output_format = $editor-&gt;get_output_format();
+    echo $output_format; // e.g., "image/jpeg"
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6572">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

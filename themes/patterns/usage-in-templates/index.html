@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/patterns/">Patterns</a></span><span class="is-current-page">Usage in Templates</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Usage in Templates</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>When building themes, patterns are not merely reusable sections of blocks that users can add to their content. That is a nice feature, but the true power of patterns is using them directly in your theme’s front-end output.</p>
+<p>In this article, you will learn both why and how to include patterns in your theme’s templates and template parts.</p>
+<h2 class="is-toc-heading wp-block-heading" id="why-use-patterns-in-templates" tabindex="-1"><a href="#why-use-patterns-in-templates">Why use patterns in templates?</a></h2>
+<p>There are two primary reasons to use patterns in your templates:</p>
+<ul class="wp-block-list">
+<li><strong>PHP access:</strong> Block templates and template parts are HTML files and you need access to various PHP functions for dynamic functionality. You can learn more about this in the <a href="https://developer.notmatt.press/themes/patterns/using-php-in-patterns/">Using PHP in Patterns</a> documentation.</li>
+<li><strong>The DRY (Don’t Repeat Yourself) principle:</strong> When building any type of software (themes included) you should always reuse code when possible, which means less work for you and fewer potential bugs. Because patterns are reusable groups of blocks, it makes sense to use the pattern instead of rewriting the code in your templates and parts.</li>
+</ul>
+<p>This article will primarily focus on the last point. You will learn how to reuse your patterns within your theme’s block templates and template parts.</p>
+<p>One of the best use cases is to create patterns of common elements across multiple templates. For example, if your Home, Archive, and Search templates all include the same Query Loop layout, create a pattern for that design and include it in each template.</p>
+<h2 class="is-toc-heading wp-block-heading" id="the-pattern-block" tabindex="-1"><a href="#the-pattern-block">The Pattern block</a></h2>
+<p>As described in <a href="https://developer.notmatt.press/themes/patterns/introduction-to-patterns/">Introduction to Patterns</a>, a block pattern is merely one or more blocks that you have registered as a pattern. However, there is also a block named Pattern available in WordPress. You won’t find the Pattern block anywhere in the UI (such as the block inserter). It’s primarily meant to be used in WordPress themes.</p>
+<p>Here is what the Pattern block markup looks like:</p>
+<pre class="wp-block-code"><code class="language-markup" lang="markup">&lt;!-- wp:pattern {"slug":"namespace/pattern-slug"} /--&gt;</code></pre>
+<p>As you can see, it looks just like any other block markup. The big difference is that you must set the <code>slug</code> parameter to include a specific pattern. The value must include both the pattern namespace and slug.</p>
+<p>Whenever you want to include a pattern within a template or template part, you only need to call the Pattern block.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>You can also include patterns registered by WordPress or plugins in templates, not just those from your theme. All you need to do is reference the correct <code>slug</code> value when calling the Pattern block.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="adding-a-pattern-to-a-template" tabindex="-1"><a href="#adding-a-pattern-to-a-template">Adding a pattern to a template</a></h2>
+<p>In this section, you will walk through a practical example of including a pattern within a template.</p>
+<p>Assume you had a “hero” pattern that you have registered for your theme because you want users to be able to insert it anywhere they need to. But you also want to include this in your Home template by default.</p>
+<p>First, register a custom pattern with the <code>themeslug/hero</code>, as described in the <a href="https://developer.notmatt.press/themes/patterns/registering-patterns/">Registering Patterns</a> documentation. Create a new file named <code>hero.php</code> and place it into your theme’s <code>/patterns</code> folder with this code:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * Title: Hero
+ * Slug: themeslug/hero
+ * Categories: featured
+ */
+?&gt;
+&lt;!-- wp:cover {"overlayColor":"contrast","isUserOverlayColor":true,"align":"full"} --&gt;
+&lt;div class="wp-block-cover alignfull"&gt;
+	&lt;span aria-hidden="true" class="wp-block-cover__background has-contrast-background-color has-background-dim-100 has-background-dim"&gt;&lt;/span&gt;
+	&lt;div class="wp-block-cover__inner-container"&gt;
+		
+		&lt;!-- wp:heading {"textAlign":"center"} --&gt;
+		&lt;h2 class="wp-block-heading has-text-align-center"&gt;&lt;?php esc_html_e( 'Welcome to My Site', 'themeslug' ); ?&gt;&lt;/h2&gt;
+		&lt;!-- /wp:heading --&gt;
+
+		&lt;!-- wp:paragraph {"align":"center"} --&gt;
+		&lt;p class="has-text-align-center"&gt;&lt;?php esc_html_e( 'This is my little home away from home.', 'themeslug' ); ?&gt;&lt;/p&gt;
+		&lt;!-- /wp:paragraph --&gt;
+
+		&lt;!-- wp:buttons {"layout":{"type":"flex","justifyContent":"center"}} --&gt;
+		&lt;div class="wp-block-buttons"&gt;
+			&lt;!-- wp:button {"className":"wp-block-button is-style-outline"} --&gt;
+			&lt;div class="wp-block-button is-style-outline"&gt;&lt;a class="wp-block-button__link wp-element-button"&gt;&lt;?php esc_html_e( 'Button A', 'themeslug' ); ?&gt;&lt;/a&gt;&lt;/div&gt;
+			&lt;!-- /wp:button --&gt;
+		&lt;/div&gt;
+		&lt;!-- /wp:buttons --&gt;
+
+	&lt;/div&gt;
+&lt;/div&gt;
+&lt;!-- /wp:cover --&gt;</code></pre>
+<p>This will make the pattern both available to users via the UI and to your theme templates for inclusion.</p>
+<p>To include this specific pattern in a template, you need to call it like so:</p>
+<pre class="wp-block-code"><code class="language-markup" lang="markup">&lt;!-- wp:pattern {"slug":"themeslug/hero"} /--&gt;</code></pre>
+<p>Now try adding it to one of your theme’s templates, such as <code>/templates/home.html</code> or <code>/templates/index.html</code> below the header. Your template with the pattern code should look similar to this:</p>
+<pre class="wp-block-code"><code class="language-markup" lang="markup">&lt;!-- wp:template-part {"slug":"header"} /--&gt;
+
+&lt;!-- wp:pattern {"slug":"themeslug/hero"} /--&gt;
+
+&lt;!-- Some other blocks. /--&gt;
+
+&lt;!-- wp:template-part {"slug":"footer"} /--&gt;</code></pre>
+<p>Now test the addition of the pattern in the Site Editor by going to <strong>Appearance &gt; Editor &gt; Templates</strong> and choosing the template you added it to:</p>
+<figure class="wp-block-image size-full has-custom-border"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/04/template-home-pattern.webp?ssl=1"><img alt='WordPress Site Editor with the Home/Blog template open. It shows a Header template part and a "welcome" message in a Cover block at the top of the template.' class="has-border-color has-light-grey-2-border-color wp-image-153654" data-recalc-dims="1" decoding="async" fetchpriority="high" height="1061" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2024/04/template-home-pattern.webp?resize=2048%2C1061&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/04/template-home-pattern.webp?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2024/04/template-home-pattern.webp?resize=300%2C155&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2024/04/template-home-pattern.webp?resize=1024%2C531&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2024/04/template-home-pattern.webp?resize=768%2C398&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2024/04/template-home-pattern.webp?resize=1536%2C796&amp;ssl=1 1536w" style="border-width:1px" width="2048"/></a></figure>
+<p>The pattern should also appear on the front end of your site when that template is in use.</p>
+<p>From this point, you can use this feature however you need. Whether you’re including a pattern in a template or template part, the process is the same.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

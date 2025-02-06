@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_upgrader/">WP_Upgrader</a></span><span class="is-current-page">WP_Upgrader::create_lock()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Upgrader::create_lock()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Upgrader::create_lock( <span class="arg-type">string</span> <span class="arg-name">$lock_name</span>,  <span class="arg-type">int</span> <span class="arg-name">$release_timeout</span> = <span class="arg-default">null</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Creates a lock using WordPress options.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$lock_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The name of this unique lock.</span></div></dd><dt><code>$release_timeout</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The duration in seconds to respect an existing lock.<br/>
+Default: 1 hour.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> False if a lock couldn’t be created or if the lock is still valid. True otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1040"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function create_lock( $lock_name, $release_timeout = null ) {
+	global $wpdb;
+	if ( ! $release_timeout ) {
+		$release_timeout = HOUR_IN_SECONDS;
+	}
+	$lock_option = $lock_name . '.lock';
+
+	// Try to lock.
+	$lock_result = $wpdb-&gt;query( $wpdb-&gt;prepare( "INSERT IGNORE INTO `$wpdb-&gt;options` ( `option_name`, `option_value`, `autoload` ) VALUES (%s, %s, 'off') /* LOCK */", $lock_option, time() ) );
+
+	if ( ! $lock_result ) {
+		$lock_result = get_option( $lock_option );
+
+		// If a lock couldn't be created, and there isn't a lock, bail.
+		if ( ! $lock_result ) {
+			return false;
+		}
+
+		// Check to see if the lock is still valid. If it is, bail.
+		if ( $lock_result &gt; ( time() - $release_timeout ) ) {
+			return false;
+		}
+
+		// There must exist an expired lock, clear it and re-gain it.
+		WP_Upgrader::release_lock( $lock_name );
+
+		return WP_Upgrader::create_lock( $lock_name, $release_timeout );
+	}
+
+	// Update the lock, as by this point we've definitely got a lock, just need to fire the actions.
+	update_option( $lock_option, time(), false );
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-upgrader.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-upgrader.php#L1040">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-upgrader.php#L1040-L1073">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/release_lock/">WP_Upgrader::release_lock()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Releases an upgrader lock.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/create_lock/">WP_Upgrader::create_lock()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Creates a lock using WordPress options.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/query/">wpdb::query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Performs a database query, using current database connection.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/create_lock/">WP_Upgrader::create_lock()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Creates a lock using WordPress options.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/run/">WP_Automatic_Updater::run()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Kicks off the background update process, looping through all pending updates.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/core_upgrader/upgrade/">Core_Upgrader::upgrade()</a><code>wp-admin/includes/class-core-upgrader.php</code></td><td><p>Upgrades WordPress core.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.5.0/">4.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

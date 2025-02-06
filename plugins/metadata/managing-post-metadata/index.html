@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/metadata/">Metadata</a></span><span class="is-current-page">Managing Post Metadata</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Managing Post Metadata</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="adding-metadata" tabindex="-1"><a href="#adding-metadata">Adding Metadata</a></h2>
+<p>Adding metadata can be done quite easily with <a href="https://developer.notmatt.press/reference/functions/add_post_meta/" rel="function">add_post_meta()</a> . The function accepts a <code>post_id</code>, a <code>meta_key</code>, a <code>meta_value</code>, and a <code>unique</code> flag.</p>
+<p>The <code>meta_key</code> is how your plugin will reference the meta value elsewhere in your code. Something like <code>mycrazymetakeyname</code> would work, however a prefix related to your plugin or theme followed by a description of the key would be more useful. <code>wporg_featured_menu</code> might be a good one. It should be noted that the same <code>meta_key</code> may be used multiple times to store variations of the metadata (see the unique flag below).</p>
+<p>The <code>meta_value</code> can be a string, integer, or an array. If it’s an array, it will be automatically serialized before being stored in the database.</p>
+<p>The <code>unique</code> flag allows you to declare whether this key should be unique. A <strong>non</strong> unique key is something a post can have multiple variations of, like price.<br/>If you only ever want <strong>one</strong> price for a post, you should flag it <code>unique</code> and the <code>meta_key</code> will have one value only.</p>
+<h2 class="is-toc-heading wp-block-heading" id="updating-metadata" tabindex="-1"><a href="#updating-metadata">Updating Metadata</a></h2>
+<p>If a key already exists and you want to update it, use <a href="https://developer.notmatt.press/reference/functions/update_post_meta/" rel="function">update_post_meta()</a> . If you use this function and the key does <strong>NOT</strong> exist, then it will create it, as if you’d used <a href="https://developer.notmatt.press/reference/functions/add_post_meta/" rel="function">add_post_meta()</a> .</p>
+<p>Similar to <a href="https://developer.notmatt.press/reference/functions/add_post_meta/" rel="function">add_post_meta()</a> , the function accepts a <code>post_id</code>, a <code>meta_key</code>, and <code>meta_value</code>. It also accepts an optional <code>prev_value</code> – which, if specified, will cause the function to only update existing metadata entries with this value. If it isn’t provided, the function defaults to updating all entries.</p>
+<h2 class="is-toc-heading wp-block-heading" id="deleting-metadata" tabindex="-1"><a href="#deleting-metadata">Deleting Metadata</a></h2>
+<p><a href="https://developer.notmatt.press/reference/functions/delete_post_meta/" rel="function">delete_post_meta()</a>  takes a <code>post_id</code>, a <code>meta_key</code>, and optionally <code>meta_value</code>. It does exactly what the name suggests.</p>
+<h2 class="is-toc-heading wp-block-heading" id="character-escaping" tabindex="-1"><a href="#character-escaping">Character Escaping</a></h2>
+<p>Post meta values are passed through the <a href="http://php.net/manual/en/function.stripslashes.php">stripslashes()</a> function upon being stored, so you will need to be careful when passing in values (such as JSON) that might include escaped characters.</p>
+<p>Consider the JSON value <code>{"key":"value with \"escaped quotes\""}</code>:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$escaped_json = '{"key":"value with \"escaped quotes\""}';
+update_post_meta( $id, 'escaped_json', $escaped_json );
+$broken = get_post_meta( $id, 'escaped_json', true );
+/*
+$broken, after stripslashes(), ends up unparsable:
+{"key":"value with "escaped quotes""}
+*/</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="workaround" tabindex="-1"><a href="#workaround">Workaround</a></h3>
+<p>By adding one more level of  escaping using the function <a href="https://developer.notmatt.press/reference/functions/wp_slash/" rel="function">wp_slash()</a>  (introduced in WP 3.6), you can compensate for the call to <a href="http://php.net/manual/en/function.stripslashes.php">stripslashes()</a>:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$escaped_json = '{"key":"value with \"escaped quotes\""}';
+update_post_meta( $id, 'double_escaped_json', wp_slash( $escaped_json ) );
+$fixed = get_post_meta( $id, 'double_escaped_json', true );
+/*
+$fixed, after stripslashes(), ends up as desired:
+{"key":"value with \"escaped quotes\""}
+*/</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="hidden-custom-fields" tabindex="-1"><a href="#hidden-custom-fields">Hidden Custom Fields</a></h2>
+<p>If you are a plugin or theme developer and you are planning to use custom fields to store parameters, it is important to note that WordPress will not show custom fields which have <code>meta_key</code> starting with an “_” (underscore) in the custom fields list on the post edit screen or when using the <a href="https://developer.notmatt.press/reference/functions/the_meta/" rel="function">the_meta()</a>  template function.</p>
+<p>This can be useful in order to show these custom fields in an unusual way by using the <a href="https://developer.notmatt.press/reference/functions/add_meta_box/" rel="function">add_meta_box()</a>  function.</p>
+<p>The example below will add a unique custom field with the <code>meta_key</code> name ‘_color’ and the <code>meta_value</code> of ‘red’ but this custom field will not display in the post edit screen:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_post_meta( 68, '_color', 'red', true );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="hidden-arrays" tabindex="-1"><a href="#hidden-arrays">Hidden Arrays</a></h3>
+<p>In addition, if the <code>meta_value</code> is an array, it will not be displayed on the page edit screen, even if you don’t prefix the <code>meta_key</code> name with an underscore.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

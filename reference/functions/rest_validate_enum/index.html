@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">rest_validate_enum()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>rest_validate_enum()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">rest_validate_enum( <span class="arg-type">mixed</span> <span class="arg-name">$value</span>,  <span class="arg-type">array</span> <span class="arg-name">$args</span>,  <span class="arg-type">string</span> <span class="arg-name">$param</span> ): <span class="return-type">true|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Validates that the given value is a member of the JSON Schema “enum”.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$value</code><span class="type"><span class="mixed">mixed</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The value to validate.</span></div></dd><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The schema array to use.</span></div></dd><dt><code>$param</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The parameter name, used in error messages.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">true|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> True if the "enum" contains the value or a <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> instance otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2073"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function rest_validate_enum( $value, $args, $param ) {
+	$sanitized_value = rest_sanitize_value_from_schema( $value, $args, $param );
+	if ( is_wp_error( $sanitized_value ) ) {
+		return $sanitized_value;
+	}
+
+	foreach ( $args['enum'] as $enum_value ) {
+		if ( rest_are_values_equal( $sanitized_value, $enum_value ) ) {
+			return true;
+		}
+	}
+
+	$encoded_enum_values = array();
+	foreach ( $args['enum'] as $enum_value ) {
+		$encoded_enum_values[] = is_scalar( $enum_value ) ? $enum_value : wp_json_encode( $enum_value );
+	}
+
+	if ( count( $encoded_enum_values ) === 1 ) {
+		/* translators: 1: Parameter, 2: Valid values. */
+		return new WP_Error( 'rest_not_in_enum', wp_sprintf( __( '%1$s is not %2$s.' ), $param, $encoded_enum_values[0] ) );
+	}
+
+	/* translators: 1: Parameter, 2: List of valid values. */
+	return new WP_Error( 'rest_not_in_enum', wp_sprintf( __( '%1$s is not one of %2$l.' ), $param, $encoded_enum_values ) );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api.php#L2073">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api.php#L2073-L2097">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_are_values_equal/">rest_are_values_equal()</a><code>wp-includes/rest-api.php</code></td><td><p>Checks the equality of two values, following JSON Schema semantics.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_sanitize_value_from_schema/">rest_sanitize_value_from_schema()</a><code>wp-includes/rest-api.php</code></td><td><p>Sanitize a value based on a schema.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_sprintf/">wp_sprintf()</a><code>wp-includes/formatting.php</code></td><td><p>WordPress’ implementation of PHP sprintf() with filters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_json_encode/">wp_json_encode()</a><code>wp-includes/functions.php</code></td><td><p>Encodes a variable into JSON, with some confidence checks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_validate_value_from_schema/">rest_validate_value_from_schema()</a><code>wp-includes/rest-api.php</code></td><td><p>Validate a value based on a schema.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.7.0/">5.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-picocodes odd alt thread-odd thread-alt depth-1" data-comment-id="6481" id="comment-6481">
+<article class="comment-body" id="div-comment-6481">
+<a class="screen-reader-text" href="#comment-content-6481">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6481">
+<p>NOTE: Do not provide enums if the property accepts array values. The example below will fail.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">array(
+	'description' =&gt; 'Testing',
+	'context'     =&gt; array( 'view', 'edit' ),
+	'enum'        =&gt; array( 'first', 'second', 'third' ),
+	'type'        =&gt; 'array',
+	'items'       =&gt; array(
+		'type' =&gt; 'string',
+	),
+	'default'     =&gt; array( 'first', 'second' ),
+	'required'    =&gt; false,
+)</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6481">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

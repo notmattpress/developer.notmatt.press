@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Role</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Role</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Role {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Core class used to extend the user roles API.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_role/__construct/">WP_Role::__construct</a></td><td>Constructor – Set up object properties.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_role/add_cap/">WP_Role::add_cap</a></td><td>Assign role a capability.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_role/has_cap/">WP_Role::has_cap</a></td><td>Determines whether the role has the given capability.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_role/remove_cap/">WP_Role::remove_cap</a></td><td>Removes a capability from a role.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="16"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Role {
+	/**
+	 * Role name.
+	 *
+	 * @since 2.0.0
+	 * @var string
+	 */
+	public $name;
+
+	/**
+	 * List of capabilities the role contains.
+	 *
+	 * @since 2.0.0
+	 * @var bool[] Array of key/value pairs where keys represent a capability name and boolean values
+	 *             represent whether the role has that capability.
+	 */
+	public $capabilities;
+
+	/**
+	 * Constructor - Set up object properties.
+	 *
+	 * The list of capabilities must have the key as the name of the capability
+	 * and the value a boolean of whether it is granted to the role.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $role         Role name.
+	 * @param bool[] $capabilities Array of key/value pairs where keys represent a capability name and boolean values
+	 *                             represent whether the role has that capability.
+	 */
+	public function __construct( $role, $capabilities ) {
+		$this-&gt;name         = $role;
+		$this-&gt;capabilities = $capabilities;
+	}
+
+	/**
+	 * Assign role a capability.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $cap   Capability name.
+	 * @param bool   $grant Whether role has capability privilege.
+	 */
+	public function add_cap( $cap, $grant = true ) {
+		$this-&gt;capabilities[ $cap ] = $grant;
+		wp_roles()-&gt;add_cap( $this-&gt;name, $cap, $grant );
+	}
+
+	/**
+	 * Removes a capability from a role.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $cap Capability name.
+	 */
+	public function remove_cap( $cap ) {
+		unset( $this-&gt;capabilities[ $cap ] );
+		wp_roles()-&gt;remove_cap( $this-&gt;name, $cap );
+	}
+
+	/**
+	 * Determines whether the role has the given capability.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string $cap Capability name.
+	 * @return bool Whether the role has the given capability.
+	 */
+	public function has_cap( $cap ) {
+		/**
+		 * Filters which capabilities a role has.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param bool[] $capabilities Array of key/value pairs where keys represent a capability name and boolean values
+		 *                             represent whether the role has that capability.
+		 * @param string $cap          Capability name.
+		 * @param string $name         Role name.
+		 */
+		$capabilities = apply_filters( 'role_has_cap', $this-&gt;capabilities, $cap, $this-&gt;name );
+
+		if ( ! empty( $capabilities[ $cap ] ) ) {
+			return $capabilities[ $cap ];
+		} else {
+			return false;
+		}
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-role.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-role.php#L16">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-role.php#L16-L103">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.0/">2.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-tejas5989 odd alt thread-odd thread-alt depth-1" data-comment-id="2002" id="comment-2002">
+<article class="comment-body" id="div-comment-2002">
+<a class="screen-reader-text" href="#comment-content-2002">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2002">
+<p>Creating the New Role </p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$result = add_role(
+    'Role Slug', // Ex. customer_role
+    __( 'Role Label' ), // Customer Role
+    array(
+        'read'         =&amp;gt; true,  // true allows this capability
+        'edit_posts'   =&amp;gt; true,
+        'delete_posts' =&amp;gt; false, // Use false to explicitly deny
+    )
+);
+
+if ( null !== $result ) {
+    echo 'New Role Created!';
+}
+else {
+    echo 'Opps!! the Role already exists.';
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2002">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

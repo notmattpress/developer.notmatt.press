@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">load_plugin_textdomain()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>load_plugin_textdomain()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">load_plugin_textdomain( <span class="arg-type">string</span> <span class="arg-name">$domain</span>,  <span class="arg-type">string|false</span> <span class="arg-name">$deprecated</span> = <span class="arg-default">false</span>,  <span class="arg-type">string|false</span> <span class="arg-name">$plugin_rel_path</span> = <span class="arg-default">false</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Loads a plugin’s translated strings.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If the path is not given then it will be the root of the plugin directory.</p>
+<p>The .mo file should be named based on the text domain with a dash, and then the locale exactly.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$domain</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Unique identifier for retrieving translated strings</span></div></dd><dt><code>$deprecated</code><span class="type"><span class="string">string</span>|<span class="false">false</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Deprecated. Use the $plugin_rel_path parameter instead.<br/>
+</span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$plugin_rel_path</code><span class="type"><span class="string">string</span>|<span class="false">false</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Relative path to WP_PLUGIN_DIR where the .mo file resides.<br/>
+</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True when textdomain is successfully loaded, false otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="994"><code class="language-php line-numbers" id="wporg-source-code" lang="php"> */
+function load_plugin_textdomain( $domain, $deprecated = false, $plugin_rel_path = false ) {
+	/** @var WP_Textdomain_Registry $wp_textdomain_registry */
+	global $wp_textdomain_registry;
+
+	if ( ! is_string( $domain ) ) {
+		return false;
+	}
+
+	if ( false !== $plugin_rel_path ) {
+		$path = WP_PLUGIN_DIR . '/' . trim( $plugin_rel_path, '/' );
+	} elseif ( false !== $deprecated ) {
+		_deprecated_argument( __FUNCTION__, '2.7.0' );
+		$path = ABSPATH . trim( $deprecated, '/' );
+	} else {
+		$path = WP_PLUGIN_DIR;
+	}
+
+	$wp_textdomain_registry-&gt;set_custom_path( $domain, $path );
+
+	return true;
+}
+
+/**
+ * Loads the translated strings for a plugin residing in the mu-plugins directory.
+ *
+ * @since 3.0.0
+ * @since 4.6.0 The function now tries to load the .mo file from the languages directory first.
+ * @since 6.7.0 Translations are no longer immediately loaded, but handed off to the just-in-time loading mechanism.
+ *
+ * @global WP_Textdomain_Registry $wp_textdomain_registry WordPress Textdomain Registry.
+ *
+ * @param string $domain             Text domain. Unique identifier for retrieving translated strings.
+ * @param string $mu_plugin_rel_path Optional. Relative to `WPMU_PLUGIN_DIR` directory in which the .mo
+ *                                   file resides. Default empty string.
+ * @return bool True when textdomain is successfully loaded, false otherwise.
+ */
+function load_muplugin_textdomain( $domain, $mu_plugin_rel_path = '' ) {
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/l10n.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/l10n.php#L994">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/l10n.php#L994-L1031">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.6.0/">4.6.0</a></td><td><span class="since-description">The function now tries to load the .mo file from the languages directory first.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-fduraibi odd alt thread-odd thread-alt depth-1" data-comment-id="1568" id="comment-1568">
+<article class="comment-body" id="div-comment-1568">
+<a class="screen-reader-text" href="#comment-content-1568">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1568">
+<p>Loading the plugin translations should not be done during <code>plugins_loaded</code> action since that is too early and prevent other language related plugins from correctly hooking up with <code>load_textdomain()</code> function and doing whatever they want to do.<br>
+Calling <code>load_plugin_textdomain()</code> should be delayed until <code>init</code> action.</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'init', 'wpdocs_load_textdomain' );
+ 
+/**
+ * Load plugin textdomain.
+ */
+function wpdocs_load_textdomain() {
+  load_plugin_textdomain( 'wpdocs_textdomain', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' ); 
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="4" id="feedback-1568">
+<ul class="children">
+<li class="comment byuser comment-author-joostdekeijzer even depth-2" data-comment-id="5284" id="comment-5284">
+<article class="comment-body" id="div-comment-5284">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5284">
+<div>I’ve found the <code>after_setup_theme</code> can work better. The default WordPress themes use this hook to load the theme textdomains and some plugin <code>init</code> actions require the translations to be in place and load before the default priority 10.</div>
+<div><a class="url" href="https://profiles.wordpress.org/joostdekeijzer/" rel="external nofollow">joost de keijzer</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/load_plugin_textdomain/#comment-5284"><time datetime="2021-08-31T08:50:45+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-viknov odd alt depth-2" data-comment-id="6392" id="comment-6392">
+<article class="comment-body" id="div-comment-6392">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6392">
+<div>Loading plugin textdomain on <code>init</code> hook doesn’t work for all the strings. For example, translations for admin menu items will not be loaded, while later strings will be translated.</div>
+<div><a class="url" href="https://profiles.wordpress.org/viknov/" rel="external nofollow">Viktor</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/load_plugin_textdomain/#comment-6392"><time datetime="2023-03-07T15:04:23+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-gabriel-reguly even depth-2" data-comment-id="6684" id="comment-6684">
+<article class="comment-body" id="div-comment-6684">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6684">
+<div>“The text domain name must use dashes and not underscores, be lower case, and have no spaces.”</div>
+<div><a class="url" href="https://profiles.wordpress.org/gabriel-reguly/" rel="external nofollow">Gabriel Reguly</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/load_plugin_textdomain/#comment-6684"><time datetime="2023-09-14T19:19:56+00:00">1 year ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-farazfrank odd alt depth-2" data-comment-id="7146" id="comment-7146">
+<article class="comment-body" id="div-comment-7146">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7146">
+<div>I think, The <code>plugins_loaded</code> hook is more appropriate than the <code>init</code> hook for loading translations because it ensures that all plugins are fully loaded before your plugin’s text domain is registered.</div>
+<div><a class="url" href="https://profiles.wordpress.org/farazfrank/" rel="external nofollow">FARAZFRANK</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/load_plugin_textdomain/#comment-7146"><time datetime="2024-08-23T11:09:22+00:00">6 months ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-karzin even thread-even depth-1" data-comment-id="3521" id="comment-3521">
+<article class="comment-body" id="div-comment-3521">
+<a class="screen-reader-text" href="#comment-content-3521">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3521">
+<p>Just a note,</p>
+<p><code><strong>load_plugin_textdomain()</strong></code> will try to load the <strong>mo</strong> file firstly from:<br>
+<strong>WP_LANG_DIR . ‘/plugins/’ . $mofile</strong></br></p>
+<p>Only if it is not able to it will load it from <strong>WP_PLUGIN_DIR</strong> folder</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3521">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-gabriel-reguly odd alt thread-odd thread-alt depth-1" data-comment-id="6685" id="comment-6685">
+<article class="comment-body" id="div-comment-6685">
+<a class="screen-reader-text" href="#comment-content-6685">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6685">
+<p>“<em>The text domain name must use dashes and not underscores, be lower case, and have no spaces.</em>” </p>
+<p>Source: <a href="https://developer.notmatt.press/plugins/internationalization/how-to-internationalize-your-plugin/" rel="ugc">https://developer.notmatt.press/plugins/internationalization/how-to-internationalize-your-plugin/</a> </p>
+<p>So use ‘<strong>wpdocs-textdomain</strong>’ instead of ‘wpdocs_textdomain’, e.g.<br/>
+<code><br/>
+load_plugin_textdomain( 'wpdocs-textdomain', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );<br/>
+</code></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6685">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-binsaifullah even thread-even depth-1 bad-note" data-comment-id="4349" id="comment-4349">
+<article class="comment-body" id="div-comment-4349">
+<a class="screen-reader-text" href="#comment-content-4349">Skip to note 9 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4349">
+<p><strong>Plugin Text domain load</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function my_plugin_init() {
+    load_plugin_textdomain( 'my-textdomain', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' ); 
+}
+add_action( 'plugins_loaded', 'my_plugin_init' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-4349">
+<ul class="children">
+<li class="comment byuser comment-author-strackerphil-1 odd alt depth-2" data-comment-id="4523" id="comment-4523">
+<article class="comment-body" id="div-comment-4523">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4523">
+<div>See note by Fahad Alduraibi above: You should load plugin textdomains during the <code>init</code> action (and not <code>plugins_loaded</code>).</div>
+<div><a class="url" href="https://profiles.wordpress.org/strackerphil-1/" rel="external nofollow">Philipp Stracker</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/load_plugin_textdomain/#comment-4523"><time datetime="2020-11-09T11:43:24+00:00">4 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-farazfrank even thread-odd thread-alt depth-1 bad-note" data-comment-id="7147" id="comment-7147">
+<article class="comment-body" id="div-comment-7147">
+<a class="screen-reader-text" href="#comment-content-7147">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7147">
+<p><code><br/>
+/**<br/>
+ * Load plugin textdomain.<br/>
+ */<br/>
+function load_translation() {<br/>
+    load_plugin_textdomain( 'your-plugin-textdomain', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );<br/>
+}<br/>
+add_action( 'plugins_loaded', 'load_translation' );<br/>
+</code></p>
+<p>The <code>plugins_loaded</code> hook is more appropriate than the <code>init</code> hook for loading translations because it ensures that all plugins are fully loaded before your plugin’s text domain is registered. This avoids potential issues with translation files being loaded too early.</p>
+<p><code>plugins_loaded</code> hook: This hook fires after all active plugins have been loaded. It’s the recommended place for loading the text domain since all necessary plugin files will be available by then.</p>
+<p><code>init</code> hook: While it can work, it’s fired earlier than plugins_loaded, and loading the text domain here may result in translations not being fully registered, especially if your plugin depends on other plugins being loaded.</p>
+<p>Therefore, using plugins_loaded is the best practice for ensuring reliable translation loading.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-7147">
+<ul class="children">
+<li class="comment byuser comment-author-swissspidy odd alt depth-2" data-comment-id="7183" id="comment-7183">
+<article class="comment-body" id="div-comment-7183">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7183">
+<div>It’s exactly the <strong>opposite</strong>. <code>plugins_loaded</code> is before <code>init</code> and is <strong>too early</strong> for loading translations.</div>
+<div><a class="url" href="https://profiles.wordpress.org/swissspidy/" rel="external nofollow">Pascal Birchler</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/load_plugin_textdomain/#comment-7183"><time datetime="2024-10-17T14:17:21+00:00">4 months ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

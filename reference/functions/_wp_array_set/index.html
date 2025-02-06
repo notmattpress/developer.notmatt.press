@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_wp_array_set()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_wp_array_set()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_wp_array_set( <span class="arg-type">array</span> <span class="arg-name">$input_array</span>,  <span class="arg-type">array</span> <span class="arg-name">$path</span>,  <span class="arg-type">mixed</span> <span class="arg-name">$value</span> = <span class="arg-default">null</span> )</h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sets an array in depth based on a path of keys.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>It is the PHP equivalent of JavaScript’s <code>lodash.set()</code> and mirroring it may help other components retain some symmetry between client and server implementations.</p> <p>Example usage:</p> <pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$input_array = array();
+_wp_array_set( $input_array, array( 'a', 'b', 'c', 1 ) );
+
+$input_array becomes:
+array(
+    'a' =&gt; array(
+        'b' =&gt; array(
+            'c' =&gt; 1,
+        ),
+    ),
+);</code></pre></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$input_array</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">An array that we want to mutate to include a specific value in a path.</span></div></dd><dt><code>$path</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">An array of keys describing the path that we want to mutate.</span></div></dd><dt><code>$value</code><span class="type"><span class="mixed">mixed</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The value that will be set.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="5139"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _wp_array_set( &amp;$input_array, $path, $value = null ) {
+	// Confirm $input_array is valid.
+	if ( ! is_array( $input_array ) ) {
+		return;
+	}
+
+	// Confirm $path is valid.
+	if ( ! is_array( $path ) ) {
+		return;
+	}
+
+	$path_length = count( $path );
+
+	if ( 0 === $path_length ) {
+		return;
+	}
+
+	foreach ( $path as $path_element ) {
+		if (
+			! is_string( $path_element ) &amp;&amp; ! is_integer( $path_element ) &amp;&amp;
+			! is_null( $path_element )
+		) {
+			return;
+		}
+	}
+
+	for ( $i = 0; $i &lt; $path_length - 1; ++$i ) {
+		$path_element = $path[ $i ];
+		if (
+			! array_key_exists( $path_element, $input_array ) ||
+			! is_array( $input_array[ $path_element ] )
+		) {
+			$input_array[ $path_element ] = array();
+		}
+		$input_array = &amp;$input_array[ $path_element ];
+	}
+
+	$input_array[ $path[ $i ] ] = $value;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L5139">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L5139-L5177">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/inject_variations_from_block_style_variation_files/">WP_Theme_JSON_Resolver::inject_variations_from_block_style_variation_files()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Adds variations sourced from block style variations files to the supplied theme.json data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/inject_variations_from_block_styles_registry/">WP_Theme_JSON_Resolver::inject_variations_from_block_styles_registry()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Adds variations sourced from the block styles registry to the supplied theme.json data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/resolve_theme_file_uris/">WP_Theme_JSON_Resolver::resolve_theme_file_uris()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Resolves relative paths in theme.json styles to theme absolute paths and merges them with incoming theme JSON.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/migrate_experimental_duotone_support_flag/">WP_Duotone::migrate_experimental_duotone_support_flag()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Migrates the experimental duotone support flag to the stabilized location.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_schema/rename_settings/">WP_Theme_JSON_Schema::rename_settings()</a><code>wp-includes/class-wp-theme-json-schema.php</code></td><td><p>Processes a settings array, renaming or moving properties.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_migrate_old_typography_shape/">wp_migrate_old_typography_shape()</a><code>wp-includes/blocks.php</code></td><td><p>Converts typography keys declared under <code>supports.*</code> to <code>supports.typography.*</code>.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_debug_backtrace_summary()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_debug_backtrace_summary()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_debug_backtrace_summary( <span class="arg-type">string</span> <span class="arg-name">$ignore_class</span> = <span class="arg-default">null</span>,  <span class="arg-type">int</span> <span class="arg-name">$skip_frames</span>,  <span class="arg-type">bool</span> <span class="arg-name">$pretty</span> = <span class="arg-default">true</span> ): <span class="return-type">string|array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns a comma-separated string or array of functions that have been called to get to the current point in code.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://core.trac.wordpress.org/ticket/19589">https://core.trac.wordpress.org/ticket/19589</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$ignore_class</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A class to ignore all function calls within – useful                             when you want to just give info about the callee. </span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$skip_frames</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A number of stack frames to skip – useful for unwinding                             back to the source of the issue. Default 0.</span></div></dd><dt><code>$pretty</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether you want a comma separated string instead of                             the raw array returned. </span></div><p class="default">Default:<code>true</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|array</span> Either a string containing a reversed comma separated trace or an array                      of individual calls.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="7196"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_debug_backtrace_summary( $ignore_class = null, $skip_frames = 0, $pretty = true ) {
+	static $truncate_paths;
+
+	$trace       = debug_backtrace( false );
+	$caller      = array();
+	$check_class = ! is_null( $ignore_class );
+	++$skip_frames; // Skip this function.
+
+	if ( ! isset( $truncate_paths ) ) {
+		$truncate_paths = array(
+			wp_normalize_path( WP_CONTENT_DIR ),
+			wp_normalize_path( ABSPATH ),
+		);
+	}
+
+	foreach ( $trace as $call ) {
+		if ( $skip_frames &gt; 0 ) {
+			--$skip_frames;
+		} elseif ( isset( $call['class'] ) ) {
+			if ( $check_class &amp;&amp; $ignore_class === $call['class'] ) {
+				continue; // Filter out calls.
+			}
+
+			$caller[] = "{$call['class']}{$call['type']}{$call['function']}";
+		} else {
+			if ( in_array( $call['function'], array( 'do_action', 'apply_filters', 'do_action_ref_array', 'apply_filters_ref_array' ), true ) ) {
+				$caller[] = "{$call['function']}('{$call['args'][0]}')";
+			} elseif ( in_array( $call['function'], array( 'include', 'include_once', 'require', 'require_once' ), true ) ) {
+				$filename = isset( $call['args'][0] ) ? $call['args'][0] : '';
+				$caller[] = $call['function'] . "('" . str_replace( $truncate_paths, '', wp_normalize_path( $filename ) ) . "')";
+			} else {
+				$caller[] = $call['function'];
+			}
+		}
+	}
+	if ( $pretty ) {
+		return implode( ', ', array_reverse( $caller ) );
+	} else {
+		return $caller;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L7196">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L7196-L7236">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_normalize_path/">wp_normalize_path()</a><code>wp-includes/functions.php</code></td><td><p>Normalizes a filesystem path.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_caller/">wpdb::get_caller()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves a comma-separated list of the names of the functions that called <a href="https://developer.notmatt.press/reference/classes/wpdb/" rel="class">wpdb</a>.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.4.0/">3.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-grapplerulrich odd alt thread-odd thread-alt depth-1" data-comment-id="2551" id="comment-2551">
+<article class="comment-body" id="div-comment-2551">
+<a class="screen-reader-text" href="#comment-content-2551">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2551">
+<pre class="wp-block-code"><code class="language-php" lang="php">error_log( wp_debug_backtrace_summary() ); </code></pre>
+<p><a href="https://westi.wordpress.com/2012/01/28/tracing-things-back-to-where-they-came-from/" rel="nofollow">Source</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2551">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

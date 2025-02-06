@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/basics/">Theme Basics</a></span><span class="is-current-page">Including CSS &amp; JavaScript (Archived)</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Including CSS & JavaScript (Archived)</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<div class="wp-block-wporg-notice is-alert-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>This is an old page that has been archived in favor of the newer <a href="https://developer.notmatt.press/themes/core-concepts/including-assets/">Including Assets documentation</a> in the Core Concepts chapter. This page will eventually be removed and redirect to the newer doc.</p></div></div>
+<p>When you’re creating your theme, you may want to create additional stylesheets or JavaScript files. However, remember that a WordPress website will not just have your theme active, it will also be using many different plugins. So that everything works harmoniously, it’s important that theme and plugins load scripts and stylesheets using the standard WordPress method. This will ensure the site remains efficient and that there are no incompatibility issues.</p>
+<p>Adding scripts and styles to WordPress is a fairly simple process.   Essentially, you will create a function that will enqueue all of your scripts and styles. When enqueuing a script or stylesheet, WordPress creates a handle and path to find your file and any dependencies it may have (like jQuery) and then you will use a hook that will insert your scripts and stylesheets.</p>
+<h2 class="is-toc-heading wp-block-heading" id="enqueuing-scripts-and-styles" tabindex="-1"><a href="#enqueuing-scripts-and-styles">Enqueuing Scripts and Styles</a></h2>
+<p>The proper way to add scripts and styles to your theme is to enqueue them in the <code>functions.php</code> files. The <code>style.css</code> file is required in all themes, but it may be necessary to add other files to extend the functionality of your theme.</p>
+<p>Tip: WordPress includes a number of JavaScript files as part of the software package, including commonly used libraries such as jQuery. Before adding your own JavaScript, <a href="https://developer.notmatt.press/themes/basics/including-css-javascript/#default-scripts-included-and-registered-by-wordpress">check to see if you can make use of an included library</a>.</p>
+<p>The basics are:</p>
+<ol class="wp-block-list">
+<li>Enqueue the script or style using <code>wp_enqueue_script()</code>, <code>wp_enqueue_style()</code>, or <code>wp_enqueue_block_style</code>.</li>
+</ol>
+<h3 class="is-toc-heading wp-block-heading" id="stylesheets" tabindex="-1"><a href="#stylesheets">Stylesheets</a></h3>
+<p>Your CSS stylesheets are used to customize the presentation of your theme. A stylesheet is also the file where information about your theme is stored. For this reason, the <code>style.css</code> file is <strong>required in every theme.</strong></p>
+<p>Rather then loading the stylesheet in your <code>header.php</code> file, you should load it in using <code>wp_enqueue_style</code>. In order to load your main stylesheet, you can enqueue it in <code>functions.php</code></p>
+<p>To enqueue <code>style.css</code>:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_style( 'style', get_stylesheet_uri() );</code></pre>
+<p>This will look for a stylesheet named “style” and load it.</p>
+<p>The basic function for enqueuing a style is:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_style( $handle, $src, $deps, $ver, $media );</code></pre>
+<p>You can include these parameters:</p>
+<ul class="wp-block-list">
+<li><strong>$handle</strong> is simply the name of the stylesheet.</li>
+<li><strong>$src</strong> is where it is located. The rest of the parameters are optional.</li>
+<li><strong>$deps</strong> refers to whether or not this stylesheet is dependent on another stylesheet. If this is set, this stylesheet will not be loaded unless its dependent stylesheet is loaded first.</li>
+<li><strong>$ver</strong> sets the version number.</li>
+<li><strong>$media</strong> can specify which type of media to load this stylesheet in, such as ‘all’, ‘screen’, ‘print’ or ‘handheld.’</li>
+</ul>
+<p>So if you wanted to load a stylesheet named “slider.css” in a folder named “CSS” in you theme’s root directory, you would use:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_style( 'slider', get_template_directory_uri() . '/css/slider.css', false, '1.1', 'all');</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="including-css-for-block-styles" tabindex="-1"><a href="#including-css-for-block-styles">Including CSS for block styles</a></h2>
+<p>In addition to <code>wp_enqueue_style()</code>, you can use <code>wp_enqueue_block_style()</code> to enqueue styles for blocks. <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_block_style/" rel="function">wp_enqueue_block_style()</a>  requires WordPress version 5.9 or later.</p>
+<p>A key part of creating block themes is performance. With, <code>wp_enqueue_block_style()</code>, the theme only loads the CSS for the selected block when the block is used on the page.</p>
+<p>The additional style is loaded in the editor and the front, after the block style provided by WordPress and the Gutenberg plugin. You can use this method to add block styles that you can not add via <code>theme.json</code>. For example, media queries.</p>
+<p>This code example changes the size and text color of the date in the latest comments block. Because this is a <code>time</code> HTML element that is nested inside other HTML elements, can not be styled using <code>theme.json</code>.</p>
+<p>First, create a new CSS file with the name of the block: <code>latest-comments.css</code>.<br/>Where you place the file depends on how you organize your theme files. In the example, the file is placed inside the folders <code>assets/CSS/blocks</code>.</p>
+<p>The CSS class for the time element is <code>wp-block-latest-comments__comment-date</code>. The prefix and the block name are followed by the partial, separated by two underscores.</p>
+<p>You can read more about the naming convention for the block editor in the <a data-id="https://developer.notmatt.press/block-editor/contributors/code/coding-guidelines/#naming" data-type="URL" href="https://developer.notmatt.press/block-editor/contributors/code/coding-guidelines/#naming">coding guidelines</a>.</p>
+<p>The text color and font size are added with CSS custom properties that are generated from <code>theme.json</code>:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">.wp-block-latest-comments__comment-date {
+	color: var(--wp--preset--color--primary);
+	font-size: var(--wp--preset--font-size--small);
+}</code></pre>
+<p>Next, enqueue the block style inside the themes setup function.</p>
+<p>The block name is placed inside an array to load more than one block style.<br/>A <code>foreach</code> loop walks through each block in the array and creates a handle, src (source), and path argument.<br/><code>wp_enqueue_block_style()</code> then enqueues the file using the block name and argument:<br/><code>wp_enqueue_block_style( "prefix/blockname", $args );</code></p>
+<p>In the code example, the prefix is “core” since the style is for a core block. When you style blocks from plugins, you need to adjust the prefix.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function myfirsttheme_setup() {
+	/*
+	 * Load additional block styles.
+	 */
+	$styled_blocks = ['latest-comments'];
+	foreach ( $styled_blocks as $block_name ) {
+		$args = array(
+			'handle' =&gt; "myfirsttheme-$block_name",
+			'src'    =&gt; get_theme_file_uri( "assets/css/blocks/$block_name.css" ),
+			$args['path'] = get_theme_file_path( "assets/css/blocks/$block_name.css" ),
+		);
+		wp_enqueue_block_style( "core/$block_name", $args );
+	}
+}
+add_action( 'after_setup_theme', 'myfirsttheme_setup' );
+</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="scripts" tabindex="-1"><a href="#scripts">Scripts</a></h3>
+<p>Any additional JavaScript files required by a theme should be loaded using <code>wp_enqueue_script</code>. This ensures proper loading and caching, and allows the use conditional tags to target specific pages. These are <strong>optional</strong>.</p>
+<p><code>wp_enqueue_script</code> uses a similar syntax to <code>wp_enqueue_style</code>.</p>
+<p>Enqueue your script:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_script( $handle, $src, $deps, $ver, $args );</code></pre>
+<ul class="wp-block-list">
+<li><strong>$handle</strong> is the name for the script.</li>
+<li><strong>$src</strong> defines where the script is located.</li>
+<li><strong>$deps</strong> is an array that can handle any script that your new script depends on, such as jQuery.</li>
+<li><strong>$ver</strong> lets you list a version number.</li>
+<li><strong>$args</strong> an array of arguments that define footer printing (via an <code>in_footer</code> key) and script loading strategies (via a <code>strategy</code> key) such as <code>defer</code> or <code>async</code>. This replaces/overloads the <code>$in_footer</code> parameter as of WordPress version 6.3.</li>
+</ul>
+<p>Your enqueue function may look like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_enqueue_script( 'script', get_template_directory_uri() . '/js/script.js', array( 'jquery' ), 1.1, true);</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="delayed-script-loading" tabindex="-1"><a href="#delayed-script-loading">Delayed Script Loading</a></h3>
+<p>WordPress provides support for specifying a script loading strategy via the <code>wp_register_script()</code> and <code>wp_enqueue_script()</code> functions, by way of the <code>strategy</code> key within the new <code>$args</code> array parameter introduced in WordPress 6.3.</p>
+<p>Supported strategies are as follows:</p>
+<ul class="wp-block-list">
+<li><strong>defer</strong>
+<ul class="wp-block-list">
+<li>Added by specifying an array key value pair of <code>'strategy' =&gt; 'defer'</code> to the $args parameter.</li>
+<li>Scripts marked for deferred execution — via the <code>defer</code> script attribute — are only executed once the DOM tree has fully loaded (but before the <code>DOMContentLoaded</code> and window load events). Deferred scripts are executed in the same order they were printed/added in the DOM, unlike asynchronous scripts.</li>
+</ul>
+</li>
+<li><strong>async</strong>
+<ul class="wp-block-list">
+<li>Added by specifying an array key value pair of <code>'strategy' =&gt; 'async'</code> to the <code>$args</code> parameter.</li>
+<li>Scripts marked for asynchronous execution — via the <code>async</code> script attribute — are executed as soon as they are loaded by the browser. Asynchronous scripts do not have a guaranteed execution order, as script B (although added to the DOM after script A) may execute first given that it may complete loading prior to script A. Such scripts may execute either before the DOM has been fully constructed or after the <code>DOMContentLoaded</code> event.</li>
+</ul>
+</li>
+</ul>
+<p>Following is an example of specifying a loading strategy during script registration:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_register_script( 
+    'foo', 
+    '/path/to/foo.js', 
+    array(), 
+    '1.0.0', 
+    array( 
+        'strategy'  =&gt; 'defer',
+    )
+);</code></pre>
+<p>The same approach applies when using <code>wp_enqueue_script()</code>.</p>
+<p>When specifying a delayed script loading strategy, consideration of the script’s dependency tree (its dependencies and/or dependents) is taken into account when deciding on an “eligible strategy” so as not to result in application of a strategy that is valid for one script but detrimental to others in the tree by causing an unintended out of order of execution. As a result of such logic, the intended loading strategy that you pass via the <code>$args</code> parameter may not be the final (chosen) strategy, but it will never be detrimental to (or stricter than) the intended strategy.</p>
+<h3 class="is-toc-heading wp-block-heading" id="the-comment-reply-script" tabindex="-1"><a href="#the-comment-reply-script">The Comment Reply Script</a></h3>
+<p>WordPress comments have quite a bit of functionality in them right out of the box, including threaded comments and enhanced comment forms. In order for comments to work properly, they require some JavaScript. However, since there are certain options that need to be defined within this JavaScript, the comment-reply script should be added to every classic theme that uses comments.</p>
+<p><strong>In block themes, the script is included when you place a comment block. You do not need to add it manually.</strong></p>
+<p>The proper way to include comment reply in classic themes is to use conditional tags to check if certain conditions exist, so that the script isn’t being loaded unnecessarily. For instance, you can only load scripts on single post pages using <code><a data-id="https://developer.notmatt.press/reference/functions/is_singular/" data-type="URL" href="https://developer.notmatt.press/reference/functions/is_singular/">is_singular</a></code>, and check to make sure that “Enable threaded comments” is selected by the user. So you can set up a function like:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( is_singular() &amp;&amp; comments_open() &amp;&amp; get_option( 'thread_comments' ) ) {
+	wp_enqueue_script( 'comment-reply' );
+}</code></pre>
+<p>If comments are enabled by the user, and we are on a post page, then the comment reply script will be loaded. Otherwise, it will not.</p>
+<h3 class="is-toc-heading wp-block-heading" id="combining-enqueue-functions" tabindex="-1"><a href="#combining-enqueue-functions">Combining Enqueue Functions</a></h3>
+<p>It is best to combine all enqueued scripts and styles into a single function, and then call them using the <code>wp_enqueue_scripts</code> action. This function and action should be located somewhere below the initial setup (performed above):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function add_theme_scripts() {
+	wp_enqueue_style( 'style', get_stylesheet_uri() );
+
+	wp_enqueue_style( 'slider', get_template_directory_uri() . '/css/slider.css', array(), '1.1', 'all' );
+
+	wp_enqueue_script( 'script', get_template_directory_uri() . '/js/script.js', array( 'jquery' ), 1.1, true );
+
+	if ( is_singular() &amp;&amp; comments_open() &amp;&amp; get_option( 'thread_comments' ) ) {
+		wp_enqueue_script( 'comment-reply' );
+	}
+}
+add_action( 'wp_enqueue_scripts', 'add_theme_scripts' );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="default-scripts-included-and-registered-by-wordpress" tabindex="-1"><a href="#default-scripts-included-and-registered-by-wordpress">Default Scripts Included and Registered by WordPress</a></h2>
+<p>By default, WordPress includes many popular scripts commonly used by web developers, as well as the scripts used by WordPress itself. Some of them are listed on this reference page:</p>
+<figure class="wp-block-embed is-type-wp-embed is-provider-wordpress-developer-resources wp-block-embed-wordpress-developer-resources"><div class="wp-block-embed__wrapper">
+<blockquote class="wp-embedded-content" data-secret="rGWmYP7EKQ"><a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/">wp_enqueue_script()</a></blockquote><iframe class="wp-embedded-content" data-secret="rGWmYP7EKQ" frameborder="0" height="282" marginheight="0" marginwidth="0" sandbox="allow-scripts" scrolling="no" security="restricted" src="https://developer.notmatt.press/reference/functions/wp_enqueue_script/embed/#?secret=MXCbMggtye#?secret=rGWmYP7EKQ" style="position: absolute; visibility: hidden;" title="“wp_enqueue_script()” — WordPress Developer Resources" width="500"></iframe>
+</div></figure>
+<p><strong>The list is far from complete.</strong> You can find a full list of included files in <a href="https://core.trac.wordpress.org/browser/trunk/src/wp-includes/script-loader.php">wp-includes/script-loader.php</a>.</p>
+<p>/</p>
+<div class="wp-block-group changelog has-background is-layout-flow wp-block-group-is-layout-flow" id="changelog" style="background-color:#dce5ec">
+<p class="has-medium-font-size">Changelog:</p>
+<ul class="wp-block-list">
+<li>Updated 2023-02-24: Added information about <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_block_style/" rel="function">wp_enqueue_block_style()</a> .</li>
+<li>Updated 2024-06-06: Added alert to point readers to new doc.</li>
+</ul>
+</div>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

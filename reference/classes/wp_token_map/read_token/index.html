@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_token_map/">WP_Token_Map</a></span><span class="is-current-page">WP_Token_Map::read_token()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Token_Map::read_token()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Token_Map::read_token( <span class="arg-type">string</span> <span class="arg-name">$text</span>,  <span class="arg-type">int</span> <span class="arg-name">$offset</span>,  <span class="arg-name">$matched_token_byte_length</span> = <span class="arg-default">null</span>,  <span class="arg-type">string</span> <span class="arg-name">$case_sensitivity</span> = <span class="arg-default">'case-sensitive'</span> ): <span class="return-type">string|null</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>If the text starting at a given offset is a lookup key in the map, return the corresponding transformation from the map, else <code>false</code>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This function returns the translated string, but accepts an optional parameter <code>$matched_token_byte_length</code>, which communicates how many bytes long the lookup key was, if it found one. This can be used to advance a cursor in calling code if a lookup key was found.</p> <p>Example:</p> <pre class="wp-block-code"><code class="language-php" lang="php">false === $smilies-&gt;read_token( 'Not sure :?.', 0, $token_byte_length );
+'😕'  === $smilies-&gt;read_token( 'Not sure :?.', 9, $token_byte_length );
+2     === $token_byte_length;</code></pre> <p>Example:</p> <pre class="wp-block-code"><code class="language-php line-numbers" lang="php">while ( $at &lt; strlen( $input ) ) {
+    $next_at = strpos( $input, ':', $at );
+    if ( false === $next_at ) {
+        break;
+    }
+
+    $smily = $smilies-&gt;read_token( $input, $next_at, $token_byte_length );
+    if ( false === $next_at ) {
+        ++$at;
+        continue;
+    }
+
+    $prefix  = substr( $input, $at, $next_at - $at );
+    $at     += $token_byte_length;
+    $output .= "{$prefix}{$smily}";
+}</code></pre></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$text</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">String in which to search for a lookup key.</span></div></dd><dt><code>$offset</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">How many bytes into the string where the lookup key ought to start. Default 0.</span></div></dd><dd><div class="desc"><span class="description">&amp;$matched_token_byte_length Optional. Holds byte-length of found token matched, otherwise not set. Default null.</span></div></dd><dt><code>$case_sensitivity</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Pass <code>'ascii-case-insensitive'</code> to ignore ASCII case when matching. Default <code>'case-sensitive'</code>.</span></div><p class="default">Default:<code>'case-sensitive'</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|null</span> Mapped value of lookup key if found, otherwise <code>null</code>.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="529"><code class="language-php line-numbers" id="wporg-source-code" lang="php"> */
+public function read_token( string $text, int $offset = 0, &amp;$matched_token_byte_length = null, $case_sensitivity = 'case-sensitive' ): ?string {
+	$ignore_case = 'ascii-case-insensitive' === $case_sensitivity;
+	$text_length = strlen( $text );
+
+	// Search for a long word first, if the text is long enough, and if that fails, a short one.
+	if ( $text_length &gt; $this-&gt;key_length ) {
+		$group_key = substr( $text, $offset, $this-&gt;key_length );
+
+		$group_at = $ignore_case ? stripos( $this-&gt;groups, $group_key ) : strpos( $this-&gt;groups, $group_key );
+		if ( false === $group_at ) {
+			// Perhaps a short word then.
+			return strlen( $this-&gt;small_words ) &gt; 0
+				? $this-&gt;read_small_token( $text, $offset, $matched_token_byte_length, $case_sensitivity )
+				: null;
+		}
+
+		$group        = $this-&gt;large_words[ $group_at / ( $this-&gt;key_length + 1 ) ];
+		$group_length = strlen( $group );
+		$at           = 0;
+		while ( $at &lt; $group_length ) {
+			$token_length   = unpack( 'C', $group[ $at++ ] )[1];
+			$token          = substr( $group, $at, $token_length );
+			$at            += $token_length;
+			$mapping_length = unpack( 'C', $group[ $at++ ] )[1];
+			$mapping_at     = $at;
+
+			if ( 0 === substr_compare( $text, $token, $offset + $this-&gt;key_length, $token_length, $ignore_case ) ) {
+				$matched_token_byte_length = $this-&gt;key_length + $token_length;
+				return substr( $group, $mapping_at, $mapping_length );
+			}
+
+			$at = $mapping_at + $mapping_length;
+		}
+	}
+
+	// Perhaps a short word then.
+	return strlen( $this-&gt;small_words ) &gt; 0
+		? $this-&gt;read_small_token( $text, $offset, $matched_token_byte_length, $case_sensitivity )
+		: null;
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-token-map.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-token-map.php#L529">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-token-map.php#L529-L568">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.6.0/">6.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

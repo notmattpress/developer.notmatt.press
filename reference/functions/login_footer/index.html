@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">login_footer()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>login_footer()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">login_footer( <span class="arg-type">string</span> <span class="arg-name">$input_id</span> = <span class="arg-default">''</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Outputs the footer for the login page.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$input_id</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Which input to auto-focus.</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="325"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function login_footer( $input_id = '' ) {
+	global $interim_login;
+
+	// Don't allow interim logins to navigate away from the page.
+	if ( ! $interim_login ) {
+		?&gt;
+		&lt;p id="backtoblog"&gt;
+			&lt;?php
+			$html_link = sprintf(
+				'&lt;a href="%s"&gt;%s&lt;/a&gt;',
+				esc_url( home_url( '/' ) ),
+				sprintf(
+					/* translators: %s: Site title. */
+					_x( '&amp;larr; Go to %s', 'site' ),
+					get_bloginfo( 'title', 'display' )
+				)
+			);
+			/**
+			 * Filters the "Go to site" link displayed in the login page footer.
+			 *
+			 * @since 5.7.0
+			 *
+			 * @param string $link HTML link to the home URL of the current site.
+			 */
+			echo apply_filters( 'login_site_html_link', $html_link );
+			?&gt;
+		&lt;/p&gt;
+		&lt;?php
+
+		the_privacy_policy_link( '&lt;div class="privacy-policy-page-link"&gt;', '&lt;/div&gt;' );
+	}
+
+	?&gt;
+	&lt;/div&gt;&lt;?php // End of &lt;div id="login"&gt;. ?&gt;
+
+	&lt;?php
+	if (
+		! $interim_login &amp;&amp;
+		/**
+		 * Filters whether to display the Language selector on the login screen.
+		 *
+		 * @since 5.9.0
+		 *
+		 * @param bool $display Whether to display the Language selector on the login screen.
+		 */
+		apply_filters( 'login_display_language_dropdown', true )
+	) {
+		$languages = get_available_languages();
+
+		if ( ! empty( $languages ) ) {
+			?&gt;
+			&lt;div class="language-switcher"&gt;
+				&lt;form id="language-switcher" method="get"&gt;
+
+					&lt;label for="language-switcher-locales"&gt;
+						&lt;span class="dashicons dashicons-translation" aria-hidden="true"&gt;&lt;/span&gt;
+						&lt;span class="screen-reader-text"&gt;
+							&lt;?php
+							/* translators: Hidden accessibility text. */
+							_e( 'Language' );
+							?&gt;
+						&lt;/span&gt;
+					&lt;/label&gt;
+
+					&lt;?php
+					$args = array(
+						'id'                          =&gt; 'language-switcher-locales',
+						'name'                        =&gt; 'wp_lang',
+						'selected'                    =&gt; determine_locale(),
+						'show_available_translations' =&gt; false,
+						'explicit_option_en_us'       =&gt; true,
+						'languages'                   =&gt; $languages,
+					);
+
+					/**
+					 * Filters default arguments for the Languages select input on the login screen.
+					 *
+					 * The arguments get passed to the wp_dropdown_languages() function.
+					 *
+					 * @since 5.9.0
+					 *
+					 * @param array $args Arguments for the Languages select input on the login screen.
+					 */
+					wp_dropdown_languages( apply_filters( 'login_language_dropdown_args', $args ) );
+					?&gt;
+
+					&lt;?php if ( $interim_login ) { ?&gt;
+						&lt;input type="hidden" name="interim-login" value="1" /&gt;
+					&lt;?php } ?&gt;
+
+					&lt;?php if ( isset( $_GET['redirect_to'] ) &amp;&amp; '' !== $_GET['redirect_to'] ) { ?&gt;
+						&lt;input type="hidden" name="redirect_to" value="&lt;?php echo sanitize_url( $_GET['redirect_to'] ); ?&gt;" /&gt;
+					&lt;?php } ?&gt;
+
+					&lt;?php if ( isset( $_GET['action'] ) &amp;&amp; '' !== $_GET['action'] ) { ?&gt;
+						&lt;input type="hidden" name="action" value="&lt;?php echo esc_attr( $_GET['action'] ); ?&gt;" /&gt;
+					&lt;?php } ?&gt;
+
+						&lt;input type="submit" class="button" value="&lt;?php esc_attr_e( 'Change' ); ?&gt;"&gt;
+
+					&lt;/form&gt;
+				&lt;/div&gt;
+		&lt;?php } ?&gt;
+	&lt;?php } ?&gt;
+
+	&lt;?php
+
+	if ( ! empty( $input_id ) ) {
+		ob_start();
+		?&gt;
+		&lt;script&gt;
+		try{document.getElementById('&lt;?php echo $input_id; ?&gt;').focus();}catch(e){}
+		if(typeof wpOnload==='function')wpOnload();
+		&lt;/script&gt;
+		&lt;?php
+		wp_print_inline_script_tag( wp_remove_surrounding_empty_script_tags( ob_get_clean() ) );
+	}
+
+	/**
+	 * Fires in the login page footer.
+	 *
+	 * @since 3.1.0
+	 */
+	do_action( 'login_footer' );
+
+	?&gt;
+	&lt;/body&gt;
+	&lt;/html&gt;
+	&lt;?php
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-login.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-login.php#L325">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-login.php#L325-L454">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_display_language_dropdown/"><span class="hook-func">apply_filters</span>( ‘login_display_language_dropdown’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$display</span></nobr> )</a></dt><dd><p>Filters whether to display the Language selector on the login screen.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_footer/"><span class="hook-func">do_action</span>( ‘login_footer’ )</a></dt><dd><p>Fires in the login page footer.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_language_dropdown_args/"><span class="hook-func">apply_filters</span>( ‘login_language_dropdown_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters default arguments for the Languages select input on the login screen.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_site_html_link/"><span class="hook-func">apply_filters</span>( ‘login_site_html_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$link</span></nobr> )</a></dt><dd><p>Filters the “Go to site” link displayed in the login page footer.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_remove_surrounding_empty_script_tags/">wp_remove_surrounding_empty_script_tags()</a><code>wp-includes/script-loader.php</code></td><td><p>Removes leading and trailing _empty_ script tags.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_print_inline_script_tag/">wp_print_inline_script_tag()</a><code>wp-includes/script-loader.php</code></td><td><p>Prints an inline script tag.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/the_privacy_policy_link/">the_privacy_policy_link()</a><code>wp-includes/link-template.php</code></td><td><p>Displays the privacy policy link with formatting, when applicable.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_url/">sanitize_url()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a URL for database or redirect usage.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bloginfo/">get_bloginfo()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves information about the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.0/">3.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

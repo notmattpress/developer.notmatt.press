@@ -1,0 +1,1095 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/core-data</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/core-data</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Core Data is a <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/data/README.md">data module</a> intended to simplify access to and manipulation of core WordPress entities. It registers its own store and provides a number of selectors which resolve data from the WordPress REST API automatically, along with dispatching action creators to manipulate data. Core data is shipped with <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/core-data/src/entity-types/README.md"><code>TypeScript definitions for WordPress data types</code></a>.</p>
+<p>Used in combination with features of the data module such as <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/data/README.md#subscribe-function"><code>subscribe</code></a> or <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/data/README.md#higher-order-components">higher-order components</a>, it enables a developer to easily add data into the logic and display of their plugin.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/core-data --save
+</code></pre>
+<p><em>This package assumes that your code will run in an <strong>ES2015+</strong> environment. If you’re using an environment that has limited or no support for such language features and APIs, you should include <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default#polyfill">the polyfill shipped in <code>@wordpress/babel-preset-default</code></a> in your code.</em></p>
+<h2 class="is-toc-heading" id="example" tabindex="-1"><a href="#example">Example</a></h2>
+<p>Below is an example of a component which simply renders a list of authors:</p>
+<pre><code class="language-jsx">const { useSelect } = wp.data;
+
+function MyAuthorsListBase() {
+    const authors = useSelect( ( select ) =&gt; {
+        return select( 'core' ).getUsers( { who: 'authors' } );
+    }, [] );
+
+    if ( ! authors ) {
+        return null;
+    }
+
+    return (
+        &lt;ul&gt;
+            { authors.map( ( author ) =&gt; (
+                &lt;li key={ author.id }&gt;{ author.name }&lt;/li&gt;
+            ) ) }
+        &lt;/ul&gt;
+    );
+}
+</code></pre>
+<h2 class="is-toc-heading" id="whats-an-entity" tabindex="-1"><a href="#whats-an-entity">What’s an entity?</a></h2>
+<p>An entity represents a data source. Each item within the entity is called an entity record. Available entities are defined in <code>rootEntitiesConfig</code> at ./src/entities.js.</p>
+<p>As of right now, the default entities defined by this package map to the <a href="https://developer.notmatt.press/rest-api/reference/">REST API handbook</a>, though there is nothing in the design that prevents it from being used to interact with any other API.</p>
+<p>What follows is a description of some of the properties of <code>rootEntitiesConfig</code>.</p>
+<h3 class="is-toc-heading" id="connecting-the-entity-with-the-data-source" tabindex="-1"><a href="#connecting-the-entity-with-the-data-source">Connecting the entity with the data source</a></h3>
+<h4>baseURL</h4>
+<ul>
+<li>Type: string.</li>
+<li>Example: <code>'/wp/v2/users'</code>.</li>
+</ul>
+<p>This property maps the entity to a given endpoint, taking its relative URL as value.</p>
+<h4>baseURLParams</h4>
+<ul>
+<li>Type: <code>object</code>.</li>
+<li>Example: <code>{ context: 'edit' }</code>.</li>
+</ul>
+<p>Additional parameters to the request, added as a query string. Each property will be converted into a field/value pair. For example, given the <code>baseURL: '/wp/v2/users'</code> and the <code>baseURLParams: { context: 'edit' }</code> the URL would be <code>/wp/v2/users?context=edit</code>.</p>
+<h4>key</h4>
+<ul>
+<li>Type: <code>string</code>.</li>
+<li>Example: <code>'slug'</code>.</li>
+</ul>
+<p>The entity engine aims to convert the API response into a number of entity records. Responses can come in different shapes, which are processed differently.</p>
+<p>Responses that represent a single object map to a single entity record. For example:</p>
+<pre><code class="language-json">{
+    "title": "...",
+    "description": "...",
+    "...": "..."
+}
+</code></pre>
+<p>Responses that represent a collection shaped as an array, map to as many entity records as elements of the array. For example:</p>
+<pre><code class="language-json">[
+    { "id": 1, "name": "...", "...": "..." },
+    { "id": 2, "name": "...", "...": "..." },
+    { "id": 3, "name": "...", "...": "..." }
+]
+</code></pre>
+<p>There are also cases in which a response represents a collection shaped as an object, whose key is one of the property’s values. Each of the nested objects should be its own entity record. For this case not to be confused with single object/entities, the entity configuration must provide the property key that holds the value acting as the object key. In the following example, the <code>slug</code> property’s value is acting as the object key, hence the entity config must declare <code>key: 'slug'</code> for each nested object to be processed as an individual entity record:</p>
+<pre><code class="language-json">{
+    "publish": { "slug": "publish", "name": "Published", "...": "..." },
+    "draft": { "slug": "draft", "name": "Draft", "...": "..." },
+    "future": { "slug": "future", "name": "Future", "...": "..." }
+}
+</code></pre>
+<h3 class="is-toc-heading" id="interacting-with-entity-records" tabindex="-1"><a href="#interacting-with-entity-records">Interacting with entity records</a></h3>
+<p>Entity records are unique. For entities that are collections, it’s assumed that each record has an <code>id</code> property which serves as an identifier to manage it. If the entity defines a <code>key</code>, that property would be used as its identifier instead of the assumed <code>id</code>.</p>
+<h4>name</h4>
+<ul>
+<li>Type: <code>string</code>.</li>
+<li>Example: <code>user</code>.</li>
+</ul>
+<p>The name of the entity. To be used in the utilities that interact with it (selectors, actions, hooks).</p>
+<h4>kind</h4>
+<ul>
+<li>Type: <code>string</code>.</li>
+<li>Example: <code>root</code>.</li>
+</ul>
+<p>Entities can be grouped by <code>kind</code>. To be used in the utilities that interact with them (selectors, actions, hooks).</p>
+<p>The package provides general methods to interact with the entities (<code>getEntityRecords</code>, <code>getEntityRecord</code>, etc.) by leveraging the <code>kind</code> and <code>name</code> properties:</p>
+<pre><code class="language-js">// Get the record collection for the user entity.
+wp.data.select( 'core' ).getEntityRecords( 'root', 'user' );
+
+// Get a single record for the user entity.
+wp.data.select( 'core' ).getEntityRecord( 'root', 'user', recordId );
+</code></pre>
+<h4>plural</h4>
+<ul>
+<li>Type: <code>string</code>.</li>
+<li>Example: <code>statuses</code>.</li>
+</ul>
+<p>In addition to the general utilities (<code>getEntityRecords</code>, <code>getEntityRecord</code>, etc.), the package dynamically creates nicer-looking methods to interact with the entity records of the <code>root</code> kind, both the collection and single records. Compare the general and nicer-looking methods as follows:</p>
+<pre><code class="language-js">// Collection
+wp.data.select( 'core' ).getEntityRecords( 'root', 'user' );
+wp.data.select( 'core' ).getUsers();
+
+// Single record
+wp.data.select( 'core' ).getEntityRecord( 'root', 'user', recordId );
+wp.data.select( 'core' ).getUser( recordId );
+</code></pre>
+<p>Sometimes, the pluralized form of an entity is not regular (it is not formed by adding a <code>-s</code> suffix). The <code>plural</code> property of the entity config allows to declare an alternative pluralized form for the dynamic methods created for the entity. For example, given the <code>status</code> entity that declares the <code>statuses</code> plural, there are the following methods created for it:</p>
+<pre><code class="language-js">// Collection
+wp.data.select( 'core' ).getStatuses();
+
+// Single record
+wp.data.select( 'core' ).getStatus( recordId );
+</code></pre>
+<h2 class="is-toc-heading" id="actions" tabindex="-1"><a href="#actions">Actions</a></h2>
+<p>The following set of dispatching action creators are available on the object returned by <code>wp.data.dispatch( 'core' )</code>:</p>
+<p><!-- START TOKEN(Autogenerated actions|src/actions.js) --></p>
+<h3 class="is-toc-heading" id="addentities" tabindex="-1"><a href="#addentities">addEntities</a></h3>
+<p>Returns an action object used in adding new entities.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>entities</em> <code>Array</code>: Entities received.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h3 class="is-toc-heading" id="deleteentityrecord" tabindex="-1"><a href="#deleteentityrecord">deleteEntityRecord</a></h3>
+<p>Action triggered to delete an entity record.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: Kind of the deleted entity.</li>
+<li><em>name</em> <code>string</code>: Name of the deleted entity.</li>
+<li><em>recordId</em> <code>number|string</code>: Record ID of the deleted entity.</li>
+<li><em>query</em> <code>?Object</code>: Special query parameters for the DELETE API call.</li>
+<li><em>options</em> <code>[Object]</code>: Delete options.</li>
+<li><em>options.__unstableFetch</em> <code>[Function]</code>: Internal use only. Function to call instead of <code>apiFetch()</code>. Must return a promise.</li>
+<li><em>options.throwOnError</em> <code>[boolean]</code>: If false, this action suppresses all the exceptions. Defaults to false.</li>
+</ul>
+<h3 class="is-toc-heading" id="editentityrecord" tabindex="-1"><a href="#editentityrecord">editEntityRecord</a></h3>
+<p>Returns an action object that triggers an edit to an entity record.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: Kind of the edited entity record.</li>
+<li><em>name</em> <code>string</code>: Name of the edited entity record.</li>
+<li><em>recordId</em> <code>number|string</code>: Record ID of the edited entity record.</li>
+<li><em>edits</em> <code>Object</code>: The edits.</li>
+<li><em>options</em> <code>Object</code>: Options for the edit.</li>
+<li><em>options.undoIgnore</em> <code>[boolean]</code>: Whether to ignore the edit in undo history or not.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h3 class="is-toc-heading" id="receivedefaulttemplateid" tabindex="-1"><a href="#receivedefaulttemplateid">receiveDefaultTemplateId</a></h3>
+<p>Returns an action object used to set the template for a given query.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>query</em> <code>Object</code>: The lookup query.</li>
+<li><em>templateId</em> <code>string</code>: The resolved template id.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h3 class="is-toc-heading" id="receiveentityrecords" tabindex="-1"><a href="#receiveentityrecords">receiveEntityRecords</a></h3>
+<p>Returns an action object used in signalling that entity records have been received.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: Kind of the received entity record.</li>
+<li><em>name</em> <code>string</code>: Name of the received entity record.</li>
+<li><em>records</em> <code>Array|Object</code>: Records received.</li>
+<li><em>query</em> <code>?Object</code>: Query Object.</li>
+<li><em>invalidateCache</em> <code>?boolean</code>: Should invalidate query caches.</li>
+<li><em>edits</em> <code>?Object</code>: Edits to reset.</li>
+<li><em>meta</em> <code>?Object</code>: Meta information about pagination.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h3 class="is-toc-heading" id="receivenavigationfallbackid" tabindex="-1"><a href="#receivenavigationfallbackid">receiveNavigationFallbackId</a></h3>
+<p>Returns an action object signalling that the fallback Navigation Menu id has been received.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>fallbackId</em> <code>integer</code>: the id of the fallback Navigation Menu</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h3 class="is-toc-heading" id="receiverevisions" tabindex="-1"><a href="#receiverevisions">receiveRevisions</a></h3>
+<p>Action triggered to receive revision items.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: Kind of the received entity record revisions.</li>
+<li><em>name</em> <code>string</code>: Name of the received entity record revisions.</li>
+<li><em>recordKey</em> <code>number|string</code>: The key of the entity record whose revisions you want to fetch.</li>
+<li><em>records</em> <code>Array|Object</code>: Revisions received.</li>
+<li><em>query</em> <code>?Object</code>: Query Object.</li>
+<li><em>invalidateCache</em> <code>?boolean</code>: Should invalidate query caches.</li>
+<li><em>meta</em> <code>?Object</code>: Meta information about pagination.</li>
+</ul>
+<h3 class="is-toc-heading" id="receivethemesupports" tabindex="-1"><a href="#receivethemesupports">receiveThemeSupports</a></h3>
+<blockquote><p>
+<strong>Deprecated</strong> since WP 5.9, this is not useful anymore, use the selector directly.
+</p></blockquote>
+<p>Returns an action object used in signalling that the index has been received.</p>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h3 class="is-toc-heading" id="receiveuploadpermissions" tabindex="-1"><a href="#receiveuploadpermissions">receiveUploadPermissions</a></h3>
+<blockquote><p>
+<strong>Deprecated</strong> since WP 5.9, use receiveUserPermission instead.
+</p></blockquote>
+<p>Returns an action object used in signalling that Upload permissions have been received.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>hasUploadPermissions</em> <code>boolean</code>: Does the user have permission to upload files?</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Object</code>: Action object.</li>
+</ul>
+<h3 class="is-toc-heading" id="redo" tabindex="-1"><a href="#redo">redo</a></h3>
+<p>Action triggered to redo the last undone edit to an entity record, if any.</p>
+<h3 class="is-toc-heading" id="saveeditedentityrecord" tabindex="-1"><a href="#saveeditedentityrecord">saveEditedEntityRecord</a></h3>
+<p>Action triggered to save an entity record’s edits.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: Kind of the entity.</li>
+<li><em>name</em> <code>string</code>: Name of the entity.</li>
+<li><em>recordId</em> <code>Object</code>: ID of the record.</li>
+<li><em>options</em> <code>Object=</code>: Saving options.</li>
+</ul>
+<h3 class="is-toc-heading" id="saveentityrecord" tabindex="-1"><a href="#saveentityrecord">saveEntityRecord</a></h3>
+<p>Action triggered to save an entity record.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: Kind of the received entity.</li>
+<li><em>name</em> <code>string</code>: Name of the received entity.</li>
+<li><em>record</em> <code>Object</code>: Record to be saved.</li>
+<li><em>options</em> <code>Object</code>: Saving options.</li>
+<li><em>options.isAutosave</em> <code>[boolean]</code>: Whether this is an autosave.</li>
+<li><em>options.__unstableFetch</em> <code>[Function]</code>: Internal use only. Function to call instead of <code>apiFetch()</code>. Must return a promise.</li>
+<li><em>options.throwOnError</em> <code>[boolean]</code>: If false, this action suppresses all the exceptions. Defaults to false.</li>
+</ul>
+<h3 class="is-toc-heading" id="undo" tabindex="-1"><a href="#undo">undo</a></h3>
+<p>Action triggered to undo the last edit to an entity record, if any.</p>
+<p><!-- END TOKEN(Autogenerated actions|src/actions.js) --></p>
+<h2 class="is-toc-heading" id="selectors" tabindex="-1"><a href="#selectors">Selectors</a></h2>
+<p>The following selectors are available on the object returned by <code>wp.data.select( 'core' )</code>:</p>
+<p><!-- START TOKEN(Autogenerated selectors|src/selectors.ts) --></p>
+<h3 class="is-toc-heading" id="canuser" tabindex="-1"><a href="#canuser">canUser</a></h3>
+<p>Returns whether the current user can perform the given action on the given REST resource.</p>
+<p>Calling this may trigger an OPTIONS request to the REST API via the <code>canUser()</code> resolver.</p>
+<p><a href="https://developer.notmatt.press/rest-api/reference/">https://developer.notmatt.press/rest-api/reference/</a></p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>action</em> <code>string</code>: Action to check. One of: ‘create’, ‘read’, ‘update’, ‘delete’.</li>
+<li><em>resource</em> <code>string | EntityResource</code>: Entity resource to check. Accepts entity object <code>{ kind: 'root', name: 'media', id: 1 }</code> or REST base as a string – <code>media</code>.</li>
+<li><em>id</em> <code>EntityRecordKey</code>: Optional ID of the rest resource to check.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean | undefined</code>: Whether or not the user can perform the action, or <code>undefined</code> if the OPTIONS request is still being made.</li>
+</ul>
+<h3 class="is-toc-heading" id="canusereditentityrecord" tabindex="-1"><a href="#canusereditentityrecord">canUserEditEntityRecord</a></h3>
+<p>Returns whether the current user can edit the given entity.</p>
+<p>Calling this may trigger an OPTIONS request to the REST API via the <code>canUser()</code> resolver.</p>
+<p><a href="https://developer.notmatt.press/rest-api/reference/">https://developer.notmatt.press/rest-api/reference/</a></p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record’s id.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean | undefined</code>: Whether or not the user can edit, or <code>undefined</code> if the OPTIONS request is still being made.</li>
+</ul>
+<h3 class="is-toc-heading" id="getauthors" tabindex="-1"><a href="#getauthors">getAuthors</a></h3>
+<blockquote><p>
+<strong>Deprecated</strong> since 11.3. Callers should use <code>select( 'core' ).getUsers({ who: 'authors' })</code> instead.
+</p></blockquote>
+<p>Returns all available authors.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>query</em> <code>GetRecordsHttpQuery</code>: Optional object of query parameters to include with request. For valid query parameters see the <a href="https://developer.notmatt.press/rest-api/reference/users/">Users page</a> in the REST API Handbook and see the arguments for <a href="https://developer.notmatt.press/rest-api/reference/users/#list-users">List Users</a> and <a href="https://developer.notmatt.press/rest-api/reference/users/#retrieve-a-user">Retrieve a User</a>.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>ET.User[]</code>: Authors list.</li>
+</ul>
+<h3 class="is-toc-heading" id="getautosave" tabindex="-1"><a href="#getautosave">getAutosave</a></h3>
+<p>Returns the autosave for the post and author.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>postType</em> <code>string</code>: The type of the parent post.</li>
+<li><em>postId</em> <code>EntityRecordKey</code>: The id of the parent post.</li>
+<li><em>authorId</em> <code>EntityRecordKey</code>: The id of the author.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>EntityRecord | undefined</code>: The autosave for the post and author.</li>
+</ul>
+<h3 class="is-toc-heading" id="getautosaves" tabindex="-1"><a href="#getautosaves">getAutosaves</a></h3>
+<p>Returns the latest autosaves for the post.</p>
+<p>May return multiple autosaves since the backend stores one autosave per author for each post.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>postType</em> <code>string</code>: The type of the parent post.</li>
+<li><em>postId</em> <code>EntityRecordKey</code>: The id of the parent post.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Array&lt; any &gt; | undefined</code>: An array of autosaves for the post, or undefined if there is none.</li>
+</ul>
+<h3 class="is-toc-heading" id="getblockpatterncategories" tabindex="-1"><a href="#getblockpatterncategories">getBlockPatternCategories</a></h3>
+<p>Retrieve the list of registered block pattern categories.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Array&lt; any &gt;</code>: Block pattern category list.</li>
+</ul>
+<h3 class="is-toc-heading" id="getblockpatterns" tabindex="-1"><a href="#getblockpatterns">getBlockPatterns</a></h3>
+<p>Retrieve the list of registered block patterns.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Array&lt; any &gt;</code>: Block pattern list.</li>
+</ul>
+<h3 class="is-toc-heading" id="getcurrenttheme" tabindex="-1"><a href="#getcurrenttheme">getCurrentTheme</a></h3>
+<p>Return the current theme.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>any</code>: The current theme.</li>
+</ul>
+<h3 class="is-toc-heading" id="getcurrentthemeglobalstylesrevisions" tabindex="-1"><a href="#getcurrentthemeglobalstylesrevisions">getCurrentThemeGlobalStylesRevisions</a></h3>
+<blockquote><p>
+<strong>Deprecated</strong> since WordPress 6.5.0. Callers should use <code>select( 'core' ).getRevisions( 'root', 'globalStyles', ${ recordKey } )</code> instead, where <code>recordKey</code> is the id of the global styles parent post.
+</p></blockquote>
+<p>Returns the revisions of the current global styles theme.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Array&lt; object &gt; | null</code>: The current global styles.</li>
+</ul>
+<h3 class="is-toc-heading" id="getcurrentuser" tabindex="-1"><a href="#getcurrentuser">getCurrentUser</a></h3>
+<p>Returns the current user.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>ET.User&lt; 'edit' &gt;</code>: Current user object.</li>
+</ul>
+<h3 class="is-toc-heading" id="getdefaulttemplateid" tabindex="-1"><a href="#getdefaulttemplateid">getDefaultTemplateId</a></h3>
+<p>Returns the default template use to render a given query.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>query</em> <code>TemplateQuery</code>: Query.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>string</code>: The default template id for the given query.</li>
+</ul>
+<h3 class="is-toc-heading" id="geteditedentityrecord" tabindex="-1"><a href="#geteditedentityrecord">getEditedEntityRecord</a></h3>
+<p>Returns the specified entity record, merged with its edits.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>ET.Updatable&lt; EntityRecord &gt; | false</code>: The entity record, merged with its edits.</li>
+</ul>
+<h3 class="is-toc-heading" id="getembedpreview" tabindex="-1"><a href="#getembedpreview">getEmbedPreview</a></h3>
+<p>Returns the embed preview for the given URL.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>url</em> <code>string</code>: Embedded URL.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>any</code>: Undefined if the preview has not been fetched, otherwise, the preview fetched from the embed preview API.</li>
+</ul>
+<h3 class="is-toc-heading" id="getentitiesbykind" tabindex="-1"><a href="#getentitiesbykind">getEntitiesByKind</a></h3>
+<blockquote><p>
+<strong>Deprecated</strong> since WordPress 6.0. Use getEntitiesConfig instead
+</p></blockquote>
+<p>Returns the loaded entities for the given kind.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Array&lt; any &gt;</code>: Array of entities with config matching kind.</li>
+</ul>
+<h3 class="is-toc-heading" id="getentitiesconfig" tabindex="-1"><a href="#getentitiesconfig">getEntitiesConfig</a></h3>
+<p>Returns the loaded entities for the given kind.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Array&lt; any &gt;</code>: Array of entities with config matching kind.</li>
+</ul>
+<h3 class="is-toc-heading" id="getentity" tabindex="-1"><a href="#getentity">getEntity</a></h3>
+<blockquote><p>
+<strong>Deprecated</strong> since WordPress 6.0. Use getEntityConfig instead
+</p></blockquote>
+<p>Returns the entity config given its kind and name.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>any</code>: Entity config</li>
+</ul>
+<h3 class="is-toc-heading" id="getentityconfig" tabindex="-1"><a href="#getentityconfig">getEntityConfig</a></h3>
+<p>Returns the entity config given its kind and name.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>any</code>: Entity config</li>
+</ul>
+<h3 class="is-toc-heading" id="getentityrecord" tabindex="-1"><a href="#getentityrecord">getEntityRecord</a></h3>
+<p>Returns the Entity’s record object by key. Returns <code>null</code> if the value is not yet received, undefined if the value entity is known to not exist, or the entity object if it exists and is received.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>key</em> <code>EntityRecordKey</code>: Optional record’s key. If requesting a global record (e.g. site settings), the key can be omitted. If requesting a specific item, the key must always be included.</li>
+<li><em>query</em> <code>GetRecordsHttpQuery</code>: Optional query. If requesting specific fields, fields must always include the ID. For valid query parameters see the <a href="https://developer.notmatt.press/rest-api/reference/">Reference</a> in the REST API Handbook and select the entity kind. Then see the arguments available “Retrieve a [Entity kind]”.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>EntityRecord | undefined</code>: Record.</li>
+</ul>
+<h3 class="is-toc-heading" id="getentityrecordedits" tabindex="-1"><a href="#getentityrecordedits">getEntityRecordEdits</a></h3>
+<p>Returns the specified entity record’s edits.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Optional&lt; any &gt;</code>: The entity record’s edits.</li>
+</ul>
+<h3 class="is-toc-heading" id="getentityrecordnontransientedits" tabindex="-1"><a href="#getentityrecordnontransientedits">getEntityRecordNonTransientEdits</a></h3>
+<p>Returns the specified entity record’s non transient edits.</p>
+<p>Transient edits don’t create an undo level, and are not considered for change detection. They are defined in the entity’s config.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Optional&lt; any &gt;</code>: The entity record’s non transient edits.</li>
+</ul>
+<h3 class="is-toc-heading" id="getentityrecords" tabindex="-1"><a href="#getentityrecords">getEntityRecords</a></h3>
+<p>Returns the Entity’s records.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>query</em> <code>GetRecordsHttpQuery</code>: Optional terms query. If requesting specific fields, fields must always include the ID. For valid query parameters see the <a href="https://developer.notmatt.press/rest-api/reference/">Reference</a> in the REST API Handbook and select the entity kind. Then see the arguments available for “List [Entity kind]s”.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>EntityRecord[] | null</code>: Records.</li>
+</ul>
+<h3 class="is-toc-heading" id="getentityrecordstotalitems" tabindex="-1"><a href="#getentityrecordstotalitems">getEntityRecordsTotalItems</a></h3>
+<p>Returns the Entity’s total available records for a given query (ignoring pagination).</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>query</em> <code>GetRecordsHttpQuery</code>: Optional terms query. If requesting specific fields, fields must always include the ID. For valid query parameters see the <a href="https://developer.notmatt.press/rest-api/reference/">Reference</a> in the REST API Handbook and select the entity kind. Then see the arguments available for “List [Entity kind]s”.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>number | null</code>: number | null.</li>
+</ul>
+<h3 class="is-toc-heading" id="getentityrecordstotalpages" tabindex="-1"><a href="#getentityrecordstotalpages">getEntityRecordsTotalPages</a></h3>
+<p>Returns the number of available pages for the given query.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>query</em> <code>GetRecordsHttpQuery</code>: Optional terms query. If requesting specific fields, fields must always include the ID. For valid query parameters see the <a href="https://developer.notmatt.press/rest-api/reference/">Reference</a> in the REST API Handbook and select the entity kind. Then see the arguments available for “List [Entity kind]s”.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>number | null</code>: number | null.</li>
+</ul>
+<h3 class="is-toc-heading" id="getlastentitydeleteerror" tabindex="-1"><a href="#getlastentitydeleteerror">getLastEntityDeleteError</a></h3>
+<p>Returns the specified entity record’s last delete error.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>any</code>: The entity record’s save error.</li>
+</ul>
+<h3 class="is-toc-heading" id="getlastentitysaveerror" tabindex="-1"><a href="#getlastentitysaveerror">getLastEntitySaveError</a></h3>
+<p>Returns the specified entity record’s last save error.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>any</code>: The entity record’s save error.</li>
+</ul>
+<h3 class="is-toc-heading" id="getrawentityrecord" tabindex="-1"><a href="#getrawentityrecord">getRawEntityRecord</a></h3>
+<p>Returns the entity’s record object by key, with its attributes mapped to their raw values.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>key</em> <code>EntityRecordKey</code>: Record’s key.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>EntityRecord | undefined</code>: Object with the entity’s raw attributes.</li>
+</ul>
+<h3 class="is-toc-heading" id="getredoedit" tabindex="-1"><a href="#getredoedit">getRedoEdit</a></h3>
+<blockquote><p>
+<strong>Deprecated</strong> since 6.3
+</p></blockquote>
+<p>Returns the next edit from the current undo offset for the entity records edits history, if any.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Optional&lt; any &gt;</code>: The edit.</li>
+</ul>
+<h3 class="is-toc-heading" id="getreferencebydistinctedits" tabindex="-1"><a href="#getreferencebydistinctedits">getReferenceByDistinctEdits</a></h3>
+<p>Returns a new reference when edited values have changed. This is useful in inferring where an edit has been made between states by comparison of the return values using strict equality.</p>
+<p><em>Usage</em></p>
+<pre><code>const hasEditOccurred = (
+   getReferenceByDistinctEdits( beforeState ) !==
+   getReferenceByDistinctEdits( afterState )
+);
+</code></pre>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> Editor state.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li>A value whose reference will change only when an edit occurs.</li>
+</ul>
+<h3 class="is-toc-heading" id="getrevision" tabindex="-1"><a href="#getrevision">getRevision</a></h3>
+<p>Returns a single, specific revision of a parent entity.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordKey</em> <code>EntityRecordKey</code>: The key of the entity record whose revisions you want to fetch.</li>
+<li><em>revisionKey</em> <code>EntityRecordKey</code>: The revision’s key.</li>
+<li><em>query</em> <code>GetRecordsHttpQuery</code>: Optional query. If requesting specific fields, fields must always include the ID. For valid query parameters see revisions schema in <a href="https://developer.notmatt.press/rest-api/reference/">the REST API Handbook</a>. Then see the arguments available “Retrieve a [entity kind]”.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>RevisionRecord | Record&lt; PropertyKey, never &gt; | undefined</code>: Record.</li>
+</ul>
+<h3 class="is-toc-heading" id="getrevisions" tabindex="-1"><a href="#getrevisions">getRevisions</a></h3>
+<p>Returns an entity’s revisions.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordKey</em> <code>EntityRecordKey</code>: The key of the entity record whose revisions you want to fetch.</li>
+<li><em>query</em> <code>GetRecordsHttpQuery</code>: Optional query. If requesting specific fields, fields must always include the ID. For valid query parameters see revisions schema in <a href="https://developer.notmatt.press/rest-api/reference/">the REST API Handbook</a>. Then see the arguments available “Retrieve a [Entity kind]”.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>RevisionRecord[] | null</code>: Record.</li>
+</ul>
+<h3 class="is-toc-heading" id="getthemesupports" tabindex="-1"><a href="#getthemesupports">getThemeSupports</a></h3>
+<p>Return theme supports data in the index.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>any</code>: Index data.</li>
+</ul>
+<h3 class="is-toc-heading" id="getundoedit" tabindex="-1"><a href="#getundoedit">getUndoEdit</a></h3>
+<blockquote><p>
+<strong>Deprecated</strong> since 6.3
+</p></blockquote>
+<p>Returns the previous edit from the current undo offset for the entity records edits history, if any.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Optional&lt; any &gt;</code>: The edit.</li>
+</ul>
+<h3 class="is-toc-heading" id="getuserpatterncategories" tabindex="-1"><a href="#getuserpatterncategories">getUserPatternCategories</a></h3>
+<p>Retrieve the registered user pattern categories.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>Array&lt; UserPatternCategory &gt;</code>: User patterns category array.</li>
+</ul>
+<h3 class="is-toc-heading" id="getuserqueryresults" tabindex="-1"><a href="#getuserqueryresults">getUserQueryResults</a></h3>
+<p>Returns all the users returned by a query ID.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>queryID</em> <code>string</code>: Query ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>ET.User&lt; 'edit' &gt;[]</code>: Users list.</li>
+</ul>
+<h3 class="is-toc-heading" id="haseditsforentityrecord" tabindex="-1"><a href="#haseditsforentityrecord">hasEditsForEntityRecord</a></h3>
+<p>Returns true if the specified entity record has edits, and false otherwise.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Whether the entity record has edits or not.</li>
+</ul>
+<h3 class="is-toc-heading" id="hasentityrecords" tabindex="-1"><a href="#hasentityrecords">hasEntityRecords</a></h3>
+<p>Returns true if records have been received for the given set of parameters, or false otherwise.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>query</em> <code>GetRecordsHttpQuery</code>: Optional terms query. For valid query parameters see the <a href="https://developer.notmatt.press/rest-api/reference/">Reference</a> in the REST API Handbook and select the entity kind. Then see the arguments available for “List [Entity kind]s”.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Whether entity records have been received.</li>
+</ul>
+<h3 class="is-toc-heading" id="hasfetchedautosaves" tabindex="-1"><a href="#hasfetchedautosaves">hasFetchedAutosaves</a></h3>
+<p>Returns true if the REST request for autosaves has completed.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>postType</em> <code>string</code>: The type of the parent post.</li>
+<li><em>postId</em> <code>EntityRecordKey</code>: The id of the parent post.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: True if the REST request was completed. False otherwise.</li>
+</ul>
+<h3 class="is-toc-heading" id="hasredo" tabindex="-1"><a href="#hasredo">hasRedo</a></h3>
+<p>Returns true if there is a next edit from the current undo offset for the entity records edits history, and false otherwise.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Whether there is a next edit or not.</li>
+</ul>
+<h3 class="is-toc-heading" id="hasundo" tabindex="-1"><a href="#hasundo">hasUndo</a></h3>
+<p>Returns true if there is a previous edit from the current undo offset for the entity records edits history, and false otherwise.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Whether there is a previous edit or not.</li>
+</ul>
+<h3 class="is-toc-heading" id="isautosavingentityrecord" tabindex="-1"><a href="#isautosavingentityrecord">isAutosavingEntityRecord</a></h3>
+<p>Returns true if the specified entity record is autosaving, and false otherwise.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Whether the entity record is autosaving or not.</li>
+</ul>
+<h3 class="is-toc-heading" id="isdeletingentityrecord" tabindex="-1"><a href="#isdeletingentityrecord">isDeletingEntityRecord</a></h3>
+<p>Returns true if the specified entity record is deleting, and false otherwise.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Whether the entity record is deleting or not.</li>
+</ul>
+<h3 class="is-toc-heading" id="ispreviewembedfallback" tabindex="-1"><a href="#ispreviewembedfallback">isPreviewEmbedFallback</a></h3>
+<p>Determines if the returned preview is an oEmbed link fallback.</p>
+<p>WordPress can be configured to return a simple link to a URL if it is not embeddable. We need to be able to determine if a URL is embeddable or not, based on what we get back from the oEmbed preview API.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>url</em> <code>string</code>: Embedded URL.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Is the preview for the URL an oEmbed link fallback.</li>
+</ul>
+<h3 class="is-toc-heading" id="isrequestingembedpreview" tabindex="-1"><a href="#isrequestingembedpreview">isRequestingEmbedPreview</a></h3>
+<p>Returns true if a request is in progress for embed preview data, or false otherwise.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: Data state.</li>
+<li><em>url</em> <code>string</code>: URL the preview would be for.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Whether a request is in progress for an embed preview.</li>
+</ul>
+<h3 class="is-toc-heading" id="issavingentityrecord" tabindex="-1"><a href="#issavingentityrecord">isSavingEntityRecord</a></h3>
+<p>Returns true if the specified entity record is saving, and false otherwise.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>state</em> <code>State</code>: State tree.</li>
+<li><em>kind</em> <code>string</code>: Entity kind.</li>
+<li><em>name</em> <code>string</code>: Entity name.</li>
+<li><em>recordId</em> <code>EntityRecordKey</code>: Record ID.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>boolean</code>: Whether the entity record is saving or not.</li>
+</ul>
+<p><!-- END TOKEN(Autogenerated selectors|src/selectors.ts) --></p>
+<h2 class="is-toc-heading" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2>
+<p>The following set of react hooks available to import from the <code>@wordpress/core-data</code> package:</p>
+<p><!-- START TOKEN(Autogenerated hooks|src/hooks/index.ts) --></p>
+<h3 class="is-toc-heading" id="useentityblockeditor" tabindex="-1"><a href="#useentityblockeditor">useEntityBlockEditor</a></h3>
+<p>Hook that returns block content getters and setters for the nearest provided entity of the specified type.</p>
+<p>The return value has the shape <code>[ blocks, onInput, onChange ]</code>. <code>onInput</code> is for block changes that don’t create undo levels or dirty the post, non-persistent changes, and <code>onChange</code> is for persistent changes. They map directly to the props of a <code>BlockEditorProvider</code> and are intended to be used with it, or similar components or hooks.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: The entity kind.</li>
+<li><em>name</em> <code>string</code>: The entity name.</li>
+<li><em>options</em> <code>Object</code>:</li>
+<li><em>options.id</em> <code>[string]</code>: An entity ID to use instead of the context-provided one.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>[unknown[], Function, Function]</code>: The block array and setters.</li>
+</ul>
+<h3 class="is-toc-heading" id="useentityid" tabindex="-1"><a href="#useentityid">useEntityId</a></h3>
+<p>Hook that returns the ID for the nearest provided entity of the specified type.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: The entity kind.</li>
+<li><em>name</em> <code>string</code>: The entity name.</li>
+</ul>
+<h3 class="is-toc-heading" id="useentityprop" tabindex="-1"><a href="#useentityprop">useEntityProp</a></h3>
+<p>Hook that returns the value and a setter for the specified property of the nearest provided entity of the specified type.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: The entity kind.</li>
+<li><em>name</em> <code>string</code>: The entity name.</li>
+<li><em>prop</em> <code>string</code>: The property name.</li>
+<li><em>_id</em> <code>[number|string]</code>: An entity ID to use instead of the context-provided one.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>[*, Function, *]</code>: An array where the first item is the property value, the second is the setter and the third is the full value object from REST API containing more information like <code>raw</code>, <code>rendered</code> and <code>protected</code> props.</li>
+</ul>
+<h3 class="is-toc-heading" id="useentityrecord" tabindex="-1"><a href="#useentityrecord">useEntityRecord</a></h3>
+<p>Resolves the specified entity record.</p>
+<p><em>Usage</em></p>
+<pre><code class="language-js">import { useEntityRecord } from '@wordpress/core-data';
+
+function PageTitleDisplay( { id } ) {
+    const { record, isResolving } = useEntityRecord( 'postType', 'page', id );
+
+    if ( isResolving ) {
+        return 'Loading...';
+    }
+
+    return record.title;
+}
+
+// Rendered in the application:
+// &lt;PageTitleDisplay id={ 1 } /&gt;
+</code></pre>
+<p>In the above example, when <code>PageTitleDisplay</code> is rendered into an<br/>
+application, the page and the resolution details will be retrieved from<br/>
+the store state using <code>getEntityRecord()</code>, or resolved if missing.</p>
+<pre><code class="language-js">import { useCallback } from 'react';
+import { useDispatch } from '@wordpress/data';
+import { __ } from '@wordpress/i18n';
+import { TextControl } from '@wordpress/components';
+import { store as noticeStore } from '@wordpress/notices';
+import { useEntityRecord } from '@wordpress/core-data';
+
+function PageRenameForm( { id } ) {
+    const page = useEntityRecord( 'postType', 'page', id );
+    const { createSuccessNotice, createErrorNotice } =
+        useDispatch( noticeStore );
+
+    const setTitle = useCallback(
+        ( title ) =&gt; {
+            page.edit( { title } );
+        },
+        [ page.edit ]
+    );
+
+    if ( page.isResolving ) {
+        return 'Loading...';
+    }
+
+    async function onRename( event ) {
+        event.preventDefault();
+        try {
+            await page.save();
+            createSuccessNotice( __( 'Page renamed.' ), {
+                type: 'snackbar',
+            } );
+        } catch ( error ) {
+            createErrorNotice( error.message, { type: 'snackbar' } );
+        }
+    }
+
+    return (
+        &lt;form onSubmit={ onRename }&gt;
+            &lt;TextControl
+                __nextHasNoMarginBottom
+                __next40pxDefaultSize
+                label={ __( 'Name' ) }
+                value={ page.editedRecord.title }
+                onChange={ setTitle }
+            /&gt;
+            &lt;button type="submit"&gt;{ __( 'Save' ) }&lt;/button&gt;
+        &lt;/form&gt;
+    );
+}
+
+// Rendered in the application:
+// &lt;PageRenameForm id={ 1 } /&gt;
+</code></pre>
+<p>In the above example, updating and saving the page title is handled<br/>
+via the <code>edit()</code> and <code>save()</code> mutation helpers provided by<br/>
+<code>useEntityRecord()</code>;</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: Kind of the entity, e.g. <code>root</code> or a <code>postType</code>. See rootEntitiesConfig in ../entities.ts for a list of available kinds.</li>
+<li><em>name</em> <code>string</code>: Name of the entity, e.g. <code>plugin</code> or a <code>post</code>. See rootEntitiesConfig in ../entities.ts for a list of available names.</li>
+<li><em>recordId</em> <code>string | number</code>: ID of the requested entity record.</li>
+<li><em>options</em> <code>Options</code>: Optional hook options.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>EntityRecordResolution&lt; RecordType &gt;</code>: Entity record data.</li>
+</ul>
+<p><em>Changelog</em></p>
+<p><code>6.1.0</code> Introduced in WordPress core.</p>
+<h3 class="is-toc-heading" id="useentityrecords" tabindex="-1"><a href="#useentityrecords">useEntityRecords</a></h3>
+<p>Resolves the specified entity records.</p>
+<p><em>Usage</em></p>
+<pre><code class="language-js">import { useEntityRecords } from '@wordpress/core-data';
+
+function PageTitlesList() {
+    const { records, isResolving } = useEntityRecords( 'postType', 'page' );
+
+    if ( isResolving ) {
+        return 'Loading...';
+    }
+
+    return (
+        &lt;ul&gt;
+            { records.map( ( page ) =&gt; (
+                &lt;li&gt;{ page.title }&lt;/li&gt;
+            ) ) }
+        &lt;/ul&gt;
+    );
+}
+
+// Rendered in the application:
+// &lt;PageTitlesList /&gt;
+</code></pre>
+<p>In the above example, when <code>PageTitlesList</code> is rendered into an<br/>
+application, the list of records and the resolution details will be retrieved from<br/>
+the store state using <code>getEntityRecords()</code>, or resolved if missing.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>kind</em> <code>string</code>: Kind of the entity, e.g. <code>root</code> or a <code>postType</code>. See rootEntitiesConfig in ../entities.ts for a list of available kinds.</li>
+<li><em>name</em> <code>string</code>: Name of the entity, e.g. <code>plugin</code> or a <code>post</code>. See rootEntitiesConfig in ../entities.ts for a list of available names.</li>
+<li><em>queryArgs</em> <code>Record&lt; string, unknown &gt;</code>: Optional HTTP query description for how to fetch the data, passed to the requested API endpoint.</li>
+<li><em>options</em> <code>Options</code>: Optional hook options.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>EntityRecordsResolution&lt; RecordType &gt;</code>: Entity records data.</li>
+</ul>
+<p><em>Changelog</em></p>
+<p><code>6.1.0</code> Introduced in WordPress core.</p>
+<h3 class="is-toc-heading" id="useresourcepermissions" tabindex="-1"><a href="#useresourcepermissions">useResourcePermissions</a></h3>
+<p>Resolves resource permissions.</p>
+<p><em>Usage</em></p>
+<pre><code class="language-js">import { useResourcePermissions } from '@wordpress/core-data';
+
+function PagesList() {
+    const { canCreate, isResolving } = useResourcePermissions( {
+        kind: 'postType',
+        name: 'page',
+    } );
+
+    if ( isResolving ) {
+        return 'Loading ...';
+    }
+
+    return (
+        &lt;div&gt;
+            { canCreate ? &lt;button&gt;+ Create a new page&lt;/button&gt; : false }
+            // ...
+        &lt;/div&gt;
+    );
+}
+
+// Rendered in the application:
+// &lt;PagesList /&gt;
+</code></pre>
+<pre><code class="language-js">import { useResourcePermissions } from '@wordpress/core-data';
+
+function Page( { pageId } ) {
+    const { canCreate, canUpdate, canDelete, isResolving } =
+        useResourcePermissions( {
+            kind: 'postType',
+            name: 'page',
+            id: pageId,
+        } );
+
+    if ( isResolving ) {
+        return 'Loading ...';
+    }
+
+    return (
+        &lt;div&gt;
+            { canCreate ? &lt;button&gt;+ Create a new page&lt;/button&gt; : false }
+            { canUpdate ? &lt;button&gt;Edit page&lt;/button&gt; : false }
+            { canDelete ? &lt;button&gt;Delete page&lt;/button&gt; : false }
+            // ...
+        &lt;/div&gt;
+    );
+}
+
+// Rendered in the application:
+// &lt;Page pageId={ 15 } /&gt;
+</code></pre>
+<p>In the above example, when <code>PagesList</code> is rendered into an<br/>
+application, the appropriate permissions and the resolution details will be retrieved from<br/>
+the store state using <code>canUser()</code>, or resolved if missing.</p>
+<p><em>Parameters</em></p>
+<ul>
+<li><em>resource</em> <code>string | EntityResource</code>: Entity resource to check. Accepts entity object <code>{ kind: 'root', name: 'media', id: 1 }</code> or REST base as a string – <code>media</code>.</li>
+<li><em>id</em> <code>IdType</code>: Optional ID of the resource to check, e.g. 10. Note: This argument is discouraged when using an entity object as a resource to check permissions and will be ignored.</li>
+</ul>
+<p><em>Returns</em></p>
+<ul>
+<li><code>ResourcePermissionsResolution&lt; IdType &gt;</code>: Entity records data.</li>
+</ul>
+<p><em>Changelog</em></p>
+<p><code>6.1.0</code> Introduced in WordPress core.</p>
+<p><!-- END TOKEN(Autogenerated hooks|src/hooks/index.ts) --></p>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_site_health/">WP_Site_Health</a></span><span class="is-current-page">WP_Site_Health::get_test_scheduled_events()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Site_Health::get_test_scheduled_events()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Site_Health::get_test_scheduled_events(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Tests if scheduled events run as intended.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If scheduled events are not running, this may indicate something with WP_Cron is not working as intended, or that there are orphaned events hanging around from older code.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The test results.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1632"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_test_scheduled_events() {
+	$result = array(
+		'label'       =&gt; __( 'Scheduled events are running' ),
+		'status'      =&gt; 'good',
+		'badge'       =&gt; array(
+			'label' =&gt; __( 'Performance' ),
+			'color' =&gt; 'blue',
+		),
+		'description' =&gt; sprintf(
+			'&lt;p&gt;%s&lt;/p&gt;',
+			__( 'Scheduled events are what periodically looks for updates to plugins, themes and WordPress itself. It is also what makes sure scheduled posts are published on time. It may also be used by various plugins to make sure that planned actions are executed.' )
+		),
+		'actions'     =&gt; '',
+		'test'        =&gt; 'scheduled_events',
+	);
+
+	$this-&gt;wp_schedule_test_init();
+
+	if ( is_wp_error( $this-&gt;has_missed_cron() ) ) {
+		$result['status'] = 'critical';
+
+		$result['label'] = __( 'It was not possible to check your scheduled events' );
+
+		$result['description'] = sprintf(
+			'&lt;p&gt;%s&lt;/p&gt;',
+			sprintf(
+				/* translators: %s: The error message returned while from the cron scheduler. */
+				__( 'While trying to test your site&amp;#8217;s scheduled events, the following error was returned: %s' ),
+				$this-&gt;has_missed_cron()-&gt;get_error_message()
+			)
+		);
+	} elseif ( $this-&gt;has_missed_cron() ) {
+		$result['status'] = 'recommended';
+
+		$result['label'] = __( 'A scheduled event has failed' );
+
+		$result['description'] = sprintf(
+			'&lt;p&gt;%s&lt;/p&gt;',
+			sprintf(
+				/* translators: %s: The name of the failed cron event. */
+				__( 'The scheduled event, %s, failed to run. Your site still works, but this may indicate that scheduling posts or automated updates may not work as intended.' ),
+				$this-&gt;last_missed_cron
+			)
+		);
+	} elseif ( $this-&gt;has_late_cron() ) {
+		$result['status'] = 'recommended';
+
+		$result['label'] = __( 'A scheduled event is late' );
+
+		$result['description'] = sprintf(
+			'&lt;p&gt;%s&lt;/p&gt;',
+			sprintf(
+				/* translators: %s: The name of the late cron event. */
+				__( 'The scheduled event, %s, is late to run. Your site still works, but this may indicate that scheduling posts or automated updates may not work as intended.' ),
+				$this-&gt;last_late_cron
+			)
+		);
+	}
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-site-health.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-site-health.php#L1632">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-site-health.php#L1632-L1692">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/has_late_cron/">WP_Site_Health::has_late_cron()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Checks if any scheduled tasks are late.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/wp_schedule_test_init/">WP_Site_Health::wp_schedule_test_init()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Initiates the WP_Cron schedule test cases.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/has_missed_cron/">WP_Site_Health::has_missed_cron()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Checks if any scheduled tasks have been missed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

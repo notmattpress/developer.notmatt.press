@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/users/">Users</a></span><span class="is-current-page">Roles and Capabilities</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Roles and Capabilities</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Roles and capabilities are two important aspects of WordPress that allow you to control user privileges.</p>
+<p>WordPress stores the Roles and their Capabilities in the <code>options</code> table under the <code>user_roles</code> key.</p>
+<h2 class="is-toc-heading wp-block-heading" id="roles" tabindex="-1"><a href="#roles">Roles</a></h2>
+<p>A role defines a set of capabilities for a user. For example, what the user may see and do in his dashboard.</p>
+<p><strong>By default, WordPress have six roles:</strong></p>
+<ul class="wp-block-list"><li>Super Admin</li><li>Administrator</li><li>Editor</li><li>Author</li><li>Contributor</li><li>Subscriber</li></ul>
+<p>More roles can be added and the default roles can be removed.</p>
+<figure class="wp-block-image"><img alt="" class="wp-image-26187" data-recalc-dims="1" decoding="async" fetchpriority="high" height="142" sizes="(max-width: 405px) 100vw, 405px" src="https://i0.wp.com/developer.wordpress.org/files/2014/09/wp-roles.png?resize=405%2C142&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2014/09/wp-roles.png?w=405&amp;ssl=1 405w, https://i0.wp.com/developer.wordpress.org/files/2014/09/wp-roles.png?resize=300%2C105&amp;ssl=1 300w" width="405"/></figure>
+<h3 class="is-toc-heading wp-block-heading" id="adding-roles" tabindex="-1"><a href="#adding-roles">Adding Roles</a></h3>
+<p>Add new roles and assign capabilities to them with <a href="https://developer.notmatt.press/reference/functions/add_role/" rel="function">add_role()</a> .</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function wporg_simple_role() {
+	add_role(
+		'simple_role',
+		'Simple Role',
+		array(
+			'read'         =&gt; true,
+			'edit_posts'   =&gt; true,
+			'upload_files' =&gt; true,
+		),
+	);
+}
+
+// Add the simple_role.
+add_action( 'init', 'wporg_simple_role' );</code></pre>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+After the first call to <a href="https://developer.notmatt.press/reference/functions/add_role/" rel="function">add_role()</a> , the Role and it’s Capabilities will be stored in the database!
+<p>Sequential calls will do nothing: including altering the capabilities list, which might not be the behavior that you’re expecting.<br/>
+</p></div></div>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+To alter the capabilities list in bulk: remove the role using <a href="https://developer.notmatt.press/reference/functions/remove_role/" rel="function">remove_role()</a>  and add it again using <a href="https://developer.notmatt.press/reference/functions/add_role/" rel="function">add_role()</a>  with the new capabilities.
+<p>Make sure to do it only if the capabilities differ from what you’re expecting (i.e. condition this) or you’ll degrade performance considerably!<br/>
+</p></div></div>
+<h3 class="is-toc-heading wp-block-heading" id="removing-roles" tabindex="-1"><a href="#removing-roles">Removing Roles</a></h3>
+<p>Remove roles with <a href="https://developer.notmatt.press/reference/functions/remove_role/" rel="function">remove_role()</a> .</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function wporg_simple_role_remove() {
+	remove_role( 'simple_role' );
+}
+
+// Remove the simple_role.
+add_action( 'init', 'wporg_simple_role_remove' );</code></pre>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+After the first call to <a href="https://developer.notmatt.press/reference/functions/remove_role/" rel="function">remove_role()</a> , the Role and it’s Capabilities will be removed from the database!
+<p>Sequential calls will do nothing.<br/>
+</p></div></div>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+If you’re removing the default roles:
+<ul>
+<li>We advise <strong>against</strong> removing the Administrator and Super Admin roles!</li>
+<li>Make sure to keep the code in your plugin/theme as future WordPress updates may add these roles again.</li>
+<li>Run<br/>
+<code>update_option('default_role', YOUR_NEW_DEFAULT_ROLE)</code><br/>
+since you’ll be deleting <code>subscriber</code> which is WP’s default role.</li>
+</ul>
+<p></p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="capabilities" tabindex="-1"><a href="#capabilities">Capabilities</a></h2>
+<p>Capabilities define what a <strong>role</strong> can and can not do: edit posts, publish posts, etc.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+Custom post types can require a certain set of Capabilities.<br/>
+</div></div>
+<h3 class="is-toc-heading wp-block-heading" id="adding-capabilities" tabindex="-1"><a href="#adding-capabilities">Adding Capabilities</a></h3>
+<p>You may define new capabilities for a role.</p>
+<p>Use <a href="https://developer.notmatt.press/reference/functions/get_role/" rel="function">get_role()</a>  to get the role object, then use the <code>add_cap()</code> method of that object to add a new capability.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function wporg_simple_role_caps() {
+	// Gets the simple_role role object.
+	$role = get_role( 'simple_role' );
+
+	// Add a new capability.
+	$role-&gt;add_cap( 'edit_others_posts', true );
+}
+
+// Add simple_role capabilities, priority must be after the initial role definition.
+add_action( 'init', 'wporg_simple_role_caps', 11 );</code></pre>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+It’s possible to add custom capabilities to any role.
+<p>Under the default WordPress admin, they would have no effect, but they can be used for custom admin screen and front-end areas.<br/>
+</p></div></div>
+<h3 class="is-toc-heading wp-block-heading" id="removing-capabilities" tabindex="-1"><a href="#removing-capabilities">Removing Capabilities</a></h3>
+<p>You may remove capabilities from a role.</p>
+<p>The implementation is similar to Adding Capabilities with the difference being the use of <code>remove_cap()</code> method for the role object.</p>
+<h2 class="is-toc-heading wp-block-heading" id="using-roles-and-capabilities" tabindex="-1"><a href="#using-roles-and-capabilities">Using Roles and Capabilities</a></h2>
+<h3 class="is-toc-heading wp-block-heading" id="get-role" tabindex="-1"><a href="#get-role">Get Role</a></h3>
+<p>Get the role object including all of it’s capabilities with <a href="https://developer.notmatt.press/reference/functions/get_role/" rel="function">get_role()</a> .</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">get_role( $role );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="user-can" tabindex="-1"><a href="#user-can">User Can</a></h3>
+<p>Check if a user have a specified <strong>role</strong> or <strong>capability</strong> with <a href="https://developer.notmatt.press/reference/functions/user_can/" rel="function">user_can()</a> .</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">user_can( $user, $capability );</code></pre>
+<div class="wp-block-wporg-notice is-warning-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+There is an undocumented, third argument, $args, that may include the object against which the test should be performed.
+<p>E.g. Pass a post ID to test for the capability of that specific post.<br/>
+</p></div></div>
+<h3 class="is-toc-heading wp-block-heading" id="current-user-can" tabindex="-1"><a href="#current-user-can">Current User Can</a></h3>
+<p><a href="https://developer.notmatt.press/reference/functions/current_user_can/" rel="function">current_user_can()</a>  is a wrapper function for <a href="https://developer.notmatt.press/reference/functions/user_can/" rel="function">user_can()</a>  using the current user object as the <code>$user</code> parameter.</p>
+<p>Use this in scenarios where back-end and front-end areas should require a certain level of privileges to access and/or modify.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">current_user_can( $capability );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="example" tabindex="-1"><a href="#example">Example</a></h3>
+<p>Here’s a practical example of adding an Edit link on the in a template file if the user has the proper capability:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( current_user_can( 'edit_posts' ) ) {
+	edit_post_link( esc_html__( 'Edit', 'wporg' ), '&lt;p&gt;', '&lt;/p&gt;' );
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="multisite" tabindex="-1"><a href="#multisite">Multisite</a></h2>
+<p>The <a href="https://developer.notmatt.press/reference/functions/current_user_can_for_blog/" rel="function">current_user_can_for_blog()</a>  function is used to test if the current user has a certain <strong>role</strong> or <strong>capability</strong> on a specific blog.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">current_user_can_for_blog( $blog_id, $capability );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="reference" tabindex="-1"><a href="#reference">Reference</a></h2>
+<p>Codex Reference for <a href="https://wordpress.org/support/article/roles-and-capabilities/" rel="noopener noreferrer" target="_blank">User Roles and Capabilities</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

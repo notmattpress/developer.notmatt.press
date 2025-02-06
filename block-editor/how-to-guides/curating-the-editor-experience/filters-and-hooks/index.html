@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/curating-the-editor-experience/">Curating the Editor Experience</a></span><span class="is-current-page">Filters and hooks</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Filters and hooks</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The Editor provides numerous filters and hooks that allow you to modify the editing experience. Here are a few.</p>
+<h2 class="is-toc-heading" id="editor-settings" tabindex="-1"><a href="#editor-settings">Editor settings</a></h2>
+<p>One of the most common ways to modify the Editor is through the <a href="https://developer.notmatt.press/reference/hooks/block_editor_settings_all/"><code>block_editor_settings_all</code></a> PHP filter, which is applied before settings are sent to the initialized Editor.</p>
+<p>The <code>block_editor_settings_all</code> hook passes two parameters to the callback function:</p>
+<ul>
+<li><code>$settings</code> – An array of <a href="https://developer.notmatt.press/block-editor/reference-guides/filters/editor-filters/#editor-settings">configurable settings</a> for the Editor.</li>
+<li><code>$context</code> – An instance of <a href="https://developer.notmatt.press/reference/classes/wp_block_editor_context/"><code>WP_Block_Editor_Context</code></a>, an object that contains information about the current Editor.</li>
+</ul>
+<p>The following example disables the Code Editor for users who cannot activate plugins (Administrators). Add this to a plugin or your theme’s <code>functions.php</code> file to test it.</p>
+<pre><code class="language-php">add_filter( 'block_editor_settings_all', 'example_restrict_code_editor' );
+
+function example_restrict_code_editor( $settings ) {
+    $can_active_plugins = current_user_can( 'activate_plugins' );
+
+    // Disable the Code Editor for users that cannot activate plugins (Administrators).
+    if ( ! $can_active_plugins ) {
+        $settings[ 'codeEditingEnabled' ] = false;
+    }
+
+    return $settings;
+}
+</code></pre>
+<p>For more examples, check out the <a href="https://developer.notmatt.press/block-editor/reference-guides/filters/editor-filters/">Editor Hooks</a> documentation that includes the following use cases:</p>
+<ul>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/filters/editor-filters/#set-a-default-image-size">Set a default image size</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/filters/editor-filters/#disable-openverse">Disable Openverse</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/filters/editor-filters/#disable-the-font-library">Disable the Font Library</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/filters/editor-filters/#disable-block-inspector-tabs">Disable block inspector tabs</a></li>
+</ul>
+<h2 class="is-toc-heading" id="server-side-theme-json-filters" tabindex="-1"><a href="#server-side-theme-json-filters">Server-side theme.json filters</a></h2>
+<p>The theme.json file is a great way to control interface options, but it only allows for global or block-level modifications, which can be limiting in some scenarios.</p>
+<p>For instance, in the previous section, color and typography controls were disabled globally using theme.json. But let’s say you want to enable color settings for users who are Administrators.</p>
+<p>To provide more flexibility, WordPress 6.1 introduced server-side filters allowing you to customize theme.json data at four different data layers.</p>
+<ul>
+<li><a href="https://developer.notmatt.press/reference/hooks/wp_theme_json_data_default/"><code>wp_theme_json_data_default</code></a> – Hooks into the default data provided by WordPress</li>
+<li><a href="https://developer.notmatt.press/reference/hooks/wp_theme_json_data_blocks/"><code>wp_theme_json_data_blocks</code></a> – Hooks into the data provided by blocks.</li>
+<li><a href="https://developer.notmatt.press/reference/hooks/wp_theme_json_data_theme/"><code>wp_theme_json_data_theme</code></a> – Hooks into the data provided by the current theme.</li>
+<li><a href="https://developer.notmatt.press/reference/hooks/wp_theme_json_data_user/"><code>wp_theme_json_data_user</code></a> – Hooks into the data provided by the user.</li>
+</ul>
+<p>In the following example, the data from the current theme’s theme.json file is updated using the <code>wp_theme_json_data_theme</code> filter. Color controls are restored if the current user is an Administrator.</p>
+<pre><code class="language-php">// Disable color controls for all users except Administrators.
+function example_filter_theme_json_data_theme( $theme_json ){
+    $is_administrator = current_user_can( 'edit_theme_options' );
+
+    if ( $is_administrator ) {
+        $new_data = array(
+            'version'  =&gt; 2,
+            'settings' =&gt; array(
+                'color' =&gt; array(
+                    'background'       =&gt; true,
+                    'custom'           =&gt; true,
+                    'customDuotone'    =&gt; true,
+                    'customGradient'   =&gt; true,
+                    'defaultGradients' =&gt; true,
+                    'defaultPalette'   =&gt; true,
+                    'text'             =&gt; true,
+                ),
+            ),
+        );
+    }
+
+    return $theme_json-&gt;update_with( $new_data );
+}
+add_filter( 'wp_theme_json_data_theme', 'example_filter_theme_json_data_theme' );
+</code></pre>
+<p>The filter receives an instance of the <code>WP_Theme_JSON_Data class</code> with the data for the respective layer. Then, you pass new data in a valid theme.json-like structure to the <code>update_with( $new_data )</code> method. A theme.json version number is required in <code>$new_data</code>.</p>
+<h2 class="is-toc-heading" id="client-side-editor-filters" tabindex="-1"><a href="#client-side-editor-filters">Client-side (Editor) filters</a></h2>
+<p>WordPress 6.2 introduced a new client-side filter allowing you to modify block-level <a href="https://developer.notmatt.press/block-editor/reference-guides/theme-json-reference/theme-json-living/#settings">theme.json settings</a> before the Editor is rendered.</p>
+<p>The filter is called <code>blockEditor.useSetting.before</code> and can be used in the JavaScript code as follows:</p>
+<pre><code class="language-js">import { addFilter } from '@wordpress/hooks';
+
+/**
+ * Limit the Column block's spacing options to pixels.
+ */
+addFilter(
+    'blockEditor.useSetting.before',
+    'example/useSetting.before',
+    ( settingValue, settingName, clientId, blockName ) =&gt; {
+        if ( blockName === 'core/column' &amp;&amp; settingName === 'spacing.units' ) {
+            return [ 'px' ];
+        }
+        return settingValue;
+    }
+);
+</code></pre>
+<p>This example will restrict the available spacing units for the Column block to just pixels. As discussed above, a similar restriction could be applied using theme.json filters or directly in a theme’s theme.json file using block-level settings.</p>
+<p>However, the <code>blockEditor.useSetting.before</code> filter is unique because it allows you to modify settings according to the block’s location, neighboring blocks, the current user’s role, and more. The possibilities for customization are extensive.</p>
+<p>In the following example, text color controls are disabled for the Heading block whenever the block is placed inside of a Media &amp; Text block.</p>
+<pre><code class="language-js">import { select } from  '@wordpress/data';
+import { addFilter } from '@wordpress/hooks';
+
+/**
+ * Disable text color controls on Heading blocks when placed inside of Media &amp; Text blocks.
+ */
+addFilter(
+    'blockEditor.useSetting.before',
+    'example/useSetting.before',
+    ( settingValue, settingName, clientId, blockName ) =&gt; {
+        if ( blockName === 'core/heading' ) {
+            const { getBlockParents, getBlockName } = select( 'core/block-editor' );
+            const blockParents = getBlockParents( clientId, true );
+            const inMediaText = blockParents.some( ( ancestorId ) =&gt; getBlockName( ancestorId ) === 'core/media-text' );
+
+            if ( inMediaText &amp;&amp; settingName === 'color.text' ) {
+                return false;
+            }
+        }
+
+        return settingValue;
+    }
+);
+</code></pre>
+<h2 class="is-toc-heading" id="block-filters" tabindex="-1"><a href="#block-filters">Block Filters</a></h2>
+<p>Beyond curating the Editor itself, there are many ways that you can modify individual blocks. Perhaps you want to disable particular block supports like background color or define which settings should be displayed by default on specific blocks.</p>
+<p>One of the most commonly used filters is <a href="https://developer.notmatt.press/reference/hooks/block_type_metadata/"><code>block_type_metadata</code></a>. It allows you to filter the raw metadata loaded from a block’s <code>block.json</code> file when a block type is registered on the server with PHP.</p>
+<p>The filter takes one parameter:</p>
+<ul>
+<li><code>$metadata</code> (<code>array</code>) – metadata loaded from <code>block.json</code> for registering a block type.</li>
+</ul>
+<p>The <code>$metadata</code> array contains everything you might want to know about a block, from its description and <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-attributes/">attributes</a> to block <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-supports/">supports</a>.</p>
+<p>In the following example, background color and gradient support are disabled for Heading blocks.</p>
+<pre><code class="language-php">function example_disable_heading_background_color_and_gradients( $metadata ) {
+
+    // Only apply the filter to Heading blocks.
+    if ( ! isset( $metadata['name'] ) || 'core/heading' !== $metadata['name'] ) {
+        return $metadata;
+    }
+
+    // Check if 'supports' key exists.
+    if ( isset( $metadata['supports'] ) &amp;&amp; isset( $metadata['supports']['color'] ) ) {
+
+        // Remove Background color and Gradients support.
+        $metadata['supports']['color']['background'] = false;
+        $metadata['supports']['color']['gradients']  = false;
+    }
+
+    return $metadata;
+}
+add_filter( 'block_type_metadata', 'example_disable_heading_background_color_and_gradients' );
+</code></pre>
+<p>You can learn more about the available block filters in the <a href="https://developer.notmatt.press/block-editor/reference-guides/filters/block-filters/">Block Filters</a> documentation.</p>
+<h2 class="is-toc-heading" id="additional-resources" tabindex="-1"><a href="#additional-resources">Additional resources</a></h2>
+<ul>
+<li><a href="https://developer.notmatt.press/news/2023/07/05/how-to-modify-theme-json-data-using-server-side-filters/">How to modify theme.json data using server-side filters</a> (WordPress Developer Blog)</li>
+<li><a href="https://developer.notmatt.press/news/2023/05/24/curating-the-editor-experience-with-client-side-filters/">Curating the Editor experience with client-side filters</a> (WordPress Developer Blog)</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

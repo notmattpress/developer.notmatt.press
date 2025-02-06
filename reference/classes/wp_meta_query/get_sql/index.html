@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_meta_query/">WP_Meta_Query</a></span><span class="is-current-page">WP_Meta_Query::get_sql()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Meta_Query::get_sql()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Meta_Query::get_sql( <span class="arg-type">string</span> <span class="arg-name">$type</span>,  <span class="arg-type">string</span> <span class="arg-name">$primary_table</span>,  <span class="arg-type">string</span> <span class="arg-name">$primary_id_column</span>,  <span class="arg-type">object</span> <span class="arg-name">$context</span> = <span class="arg-default">null</span> ): <span class="return-type">string[]|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Generates SQL clauses to be appended to a main query.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$type</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Type of meta. Possible values include but are not limited                                  to <code>'post'</code>, <code>'comment'</code>, <code>'blog'</code>, <code>'term'</code>, and <code>'user'</code>.</span></div></dd><dt><code>$primary_table</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Database table where the object being filtered is stored (eg wp_users).</span></div></dd><dt><code>$primary_id_column</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">ID column for the filtered object in $primary_table.</span></div></dd><dt><code>$context</code><span class="type"><span class="object">object</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The main query object that corresponds to the type, for                                  example a <code>WP_Query</code>, <code>WP_User_Query</code>, or <code>WP_Site_Query</code>.<br/>
+</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string[]|false</span> Array containing JOIN and WHERE SQL clauses to append to the main query, or false if no table exists for the requested meta type.<br/>
+<ul class="param-hash"><li><code>join</code> <span class="type">string</span><div class="desc">SQL fragment to append to the main JOIN clause.</div></li>
+<li><code>where</code> <span class="type">string</span><div class="desc">SQL fragment to append to the main WHERE clause.</div></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="357"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_sql( $type, $primary_table, $primary_id_column, $context = null ) {
+	$meta_table = _get_meta_table( $type );
+	if ( ! $meta_table ) {
+		return false;
+	}
+
+	$this-&gt;table_aliases = array();
+
+	$this-&gt;meta_table     = $meta_table;
+	$this-&gt;meta_id_column = sanitize_key( $type . '_id' );
+
+	$this-&gt;primary_table     = $primary_table;
+	$this-&gt;primary_id_column = $primary_id_column;
+
+	$sql = $this-&gt;get_sql_clauses();
+
+	/*
+	 * If any JOINs are LEFT JOINs (as in the case of NOT EXISTS), then all JOINs should
+	 * be LEFT. Otherwise posts with no metadata will be excluded from results.
+	 */
+	if ( str_contains( $sql['join'], 'LEFT JOIN' ) ) {
+		$sql['join'] = str_replace( 'INNER JOIN', 'LEFT JOIN', $sql['join'] );
+	}
+
+	/**
+	 * Filters the meta query's generated SQL.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string[] $sql               Array containing the query's JOIN and WHERE clauses.
+	 * @param array    $queries           Array of meta queries.
+	 * @param string   $type              Type of meta. Possible values include but are not limited
+	 *                                    to 'post', 'comment', 'blog', 'term', and 'user'.
+	 * @param string   $primary_table     Primary table.
+	 * @param string   $primary_id_column Primary column ID.
+	 * @param object   $context           The main query object that corresponds to the type, for
+	 *                                    example a `WP_Query`, `WP_User_Query`, or `WP_Site_Query`.
+	 */
+	return apply_filters_ref_array( 'get_meta_sql', array( $sql, $this-&gt;queries, $type, $primary_table, $primary_id_column, $context ) );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-meta-query.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-meta-query.php#L357">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-meta-query.php#L357-L396">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_meta_sql/"><span class="hook-func">apply_filters_ref_array</span>( ‘get_meta_sql’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$sql</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$queries</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$type</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$primary_table</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$primary_id_column</span></nobr>,  <nobr><span class="arg-type">object</span> <span class="arg-name">$context</span></nobr> )</a></dt><dd><p>Filters the meta query’s generated SQL.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_meta_query/get_sql_clauses/">WP_Meta_Query::get_sql_clauses()</a><code>wp-includes/class-wp-meta-query.php</code></td><td><p>Generates SQL clauses to be appended to a main query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters_ref_array/">apply_filters_ref_array()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook, specifying arguments in an array.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_get_meta_table/">_get_meta_table()</a><code>wp-includes/meta.php</code></td><td><p>Retrieves the name of the metadata table for the specified object type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_key/">sanitize_key()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string key.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.2.0/">3.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

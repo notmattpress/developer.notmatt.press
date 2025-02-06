@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_privacy_process_personal_data_export_page()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_privacy_process_personal_data_export_page()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_privacy_process_personal_data_export_page( <span class="arg-type">array</span> <span class="arg-name">$response</span>,  <span class="arg-type">int</span> <span class="arg-name">$exporter_index</span>,  <span class="arg-type">string</span> <span class="arg-name">$email_address</span>,  <span class="arg-type">int</span> <span class="arg-name">$page</span>,  <span class="arg-type">int</span> <span class="arg-name">$request_id</span>,  <span class="arg-type">bool</span> <span class="arg-name">$send_as_email</span>,  <span class="arg-type">string</span> <span class="arg-name">$exporter_key</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Intercept personal data exporter page Ajax responses in order to assemble the personal data export file.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_export_page/">‘wp_privacy_personal_data_export_page’</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$response</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The response from the personal data exporter for the given page.</span></div></dd><dt><code>$exporter_index</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The index of the personal data exporter. Begins at 1.</span></div></dd><dt><code>$email_address</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The email address of the user whose personal data this is.</span></div></dd><dt><code>$page</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The page of personal data for this exporter. Begins at 1.</span></div></dd><dt><code>$request_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The request ID for this personal data export.</span></div></dd><dt><code>$send_as_email</code><span class="type"><span class="bool">bool</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Whether the final results of the export should be emailed to the user.</span></div></dd><dt><code>$exporter_key</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The slug (key) of the exporter.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The filtered response.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="768"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_privacy_process_personal_data_export_page( $response, $exporter_index, $email_address, $page, $request_id, $send_as_email, $exporter_key ) {
+	/* Do some simple checks on the shape of the response from the exporter.
+	 * If the exporter response is malformed, don't attempt to consume it - let it
+	 * pass through to generate a warning to the user by default Ajax processing.
+	 */
+	if ( ! is_array( $response ) ) {
+		return $response;
+	}
+
+	if ( ! array_key_exists( 'done', $response ) ) {
+		return $response;
+	}
+
+	if ( ! array_key_exists( 'data', $response ) ) {
+		return $response;
+	}
+
+	if ( ! is_array( $response['data'] ) ) {
+		return $response;
+	}
+
+	// Get the request.
+	$request = wp_get_user_request( $request_id );
+
+	if ( ! $request || 'export_personal_data' !== $request-&gt;action_name ) {
+		wp_send_json_error( __( 'Invalid request ID when merging personal data to export.' ) );
+	}
+
+	$export_data = array();
+
+	// First exporter, first page? Reset the report data accumulation array.
+	if ( 1 === $exporter_index &amp;&amp; 1 === $page ) {
+		update_post_meta( $request_id, '_export_data_raw', $export_data );
+	} else {
+		$accumulated_data = get_post_meta( $request_id, '_export_data_raw', true );
+
+		if ( $accumulated_data ) {
+			$export_data = $accumulated_data;
+		}
+	}
+
+	// Now, merge the data from the exporter response into the data we have accumulated already.
+	$export_data = array_merge( $export_data, $response['data'] );
+	update_post_meta( $request_id, '_export_data_raw', $export_data );
+
+	// If we are not yet on the last page of the last exporter, return now.
+	/** This filter is documented in wp-admin/includes/ajax-actions.php */
+	$exporters        = apply_filters( 'wp_privacy_personal_data_exporters', array() );
+	$is_last_exporter = count( $exporters ) === $exporter_index;
+	$exporter_done    = $response['done'];
+	if ( ! $is_last_exporter || ! $exporter_done ) {
+		return $response;
+	}
+
+	// Last exporter, last page - let's prepare the export file.
+
+	// First we need to re-organize the raw data hierarchically in groups and items.
+	$groups = array();
+	foreach ( (array) $export_data as $export_datum ) {
+		$group_id    = $export_datum['group_id'];
+		$group_label = $export_datum['group_label'];
+
+		$group_description = '';
+		if ( ! empty( $export_datum['group_description'] ) ) {
+			$group_description = $export_datum['group_description'];
+		}
+
+		if ( ! array_key_exists( $group_id, $groups ) ) {
+			$groups[ $group_id ] = array(
+				'group_label'       =&gt; $group_label,
+				'group_description' =&gt; $group_description,
+				'items'             =&gt; array(),
+			);
+		}
+
+		$item_id = $export_datum['item_id'];
+		if ( ! array_key_exists( $item_id, $groups[ $group_id ]['items'] ) ) {
+			$groups[ $group_id ]['items'][ $item_id ] = array();
+		}
+
+		$old_item_data                            = $groups[ $group_id ]['items'][ $item_id ];
+		$merged_item_data                         = array_merge( $export_datum['data'], $old_item_data );
+		$groups[ $group_id ]['items'][ $item_id ] = $merged_item_data;
+	}
+
+	// Then save the grouped data into the request.
+	delete_post_meta( $request_id, '_export_data_raw' );
+	update_post_meta( $request_id, '_export_data_grouped', $groups );
+
+	/**
+	 * Generate the export file from the collected, grouped personal data.
+	 *
+	 * @since 4.9.6
+	 *
+	 * @param int $request_id The export request ID.
+	 */
+	do_action( 'wp_privacy_personal_data_export_file', $request_id );
+
+	// Clear the grouped data now that it is no longer needed.
+	delete_post_meta( $request_id, '_export_data_grouped' );
+
+	// If the destination is email, send it now.
+	if ( $send_as_email ) {
+		$mail_success = wp_privacy_send_personal_data_export_email( $request_id );
+		if ( is_wp_error( $mail_success ) ) {
+			wp_send_json_error( $mail_success-&gt;get_error_message() );
+		}
+
+		// Update the request to completed state when the export email is sent.
+		_wp_privacy_completed_request( $request_id );
+	} else {
+		// Modify the response to include the URL of the export file so the browser can fetch it.
+		$exports_url      = wp_privacy_exports_url();
+		$export_file_name = get_post_meta( $request_id, '_export_file_name', true );
+		$export_file_url  = $exports_url . $export_file_name;
+
+		if ( ! empty( $export_file_url ) ) {
+			$response['url'] = $export_file_url;
+		}
+	}
+
+	return $response;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/privacy-tools.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/privacy-tools.php#L768">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/privacy-tools.php#L768-L890">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_exporters/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_personal_data_exporters’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the array of exporter callbacks.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_export_file/"><span class="hook-func">do_action</span>( ‘wp_privacy_personal_data_export_file’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$request_id</span></nobr> )</a></dt><dd><p>Generate the export file from the collected, grouped personal data.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_user_request/">wp_get_user_request()</a><code>wp-includes/user.php</code></td><td><p>Returns the user request object for the specified request ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_exports_url/">wp_privacy_exports_url()</a><code>wp-includes/functions.php</code></td><td><p>Returns the URL of the directory used to store personal data export files.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_send_personal_data_export_email/">wp_privacy_send_personal_data_export_email()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Send an email to the user with a link to the personal data export file</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_privacy_completed_request/">_wp_privacy_completed_request()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Marks a request as completed by the admin and logs the current timestamp.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/update_post_meta/">update_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Updates a post meta field based on the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_post_meta/">delete_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Deletes a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_error/">wp_send_json_error()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating failure.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_meta/">get_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.9.6/">4.9.6</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

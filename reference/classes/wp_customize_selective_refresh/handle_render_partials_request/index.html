@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_customize_selective_refresh/">WP_Customize_Selective_Refresh</a></span><span class="is-current-page">WP_Customize_Selective_Refresh::handle_render_partials_request()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Customize_Selective_Refresh::handle_render_partials_request()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Customize_Selective_Refresh::handle_render_partials_request()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Handles the Ajax request to return the rendered partials for the requested placements.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="304"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function handle_render_partials_request() {
+	if ( ! $this-&gt;is_render_partials_request() ) {
+		return;
+	}
+
+	/*
+	 * Note that is_customize_preview() returning true will entail that the
+	 * user passed the 'customize' capability check and the nonce check, since
+	 * WP_Customize_Manager::setup_theme() is where the previewing flag is set.
+	 */
+	if ( ! is_customize_preview() ) {
+		wp_send_json_error( 'expected_customize_preview', 403 );
+	} elseif ( ! isset( $_POST['partials'] ) ) {
+		wp_send_json_error( 'missing_partials', 400 );
+	}
+
+	// Ensure that doing selective refresh on 404 template doesn't result in fallback rendering behavior (full refreshes).
+	status_header( 200 );
+
+	$partials = json_decode( wp_unslash( $_POST['partials'] ), true );
+
+	if ( ! is_array( $partials ) ) {
+		wp_send_json_error( 'malformed_partials' );
+	}
+
+	$this-&gt;add_dynamic_partials( array_keys( $partials ) );
+
+	/**
+	 * Fires immediately before partials are rendered.
+	 *
+	 * Plugins may do things like call wp_enqueue_scripts() and gather a list of the scripts
+	 * and styles which may get enqueued in the response.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param WP_Customize_Selective_Refresh $refresh  Selective refresh component.
+	 * @param array                          $partials Placements' context data for the partials rendered in the request.
+	 *                                                 The array is keyed by partial ID, with each item being an array of
+	 *                                                 the placements' context data.
+	 */
+	do_action( 'customize_render_partials_before', $this, $partials );
+
+	set_error_handler( array( $this, 'handle_error' ), error_reporting() );
+
+	$contents = array();
+
+	foreach ( $partials as $partial_id =&gt; $container_contexts ) {
+		$this-&gt;current_partial_id = $partial_id;
+
+		if ( ! is_array( $container_contexts ) ) {
+			wp_send_json_error( 'malformed_container_contexts' );
+		}
+
+		$partial = $this-&gt;get_partial( $partial_id );
+
+		if ( ! $partial || ! $partial-&gt;check_capabilities() ) {
+			$contents[ $partial_id ] = null;
+			continue;
+		}
+
+		$contents[ $partial_id ] = array();
+
+		// @todo The array should include not only the contents, but also whether the container is included?
+		if ( empty( $container_contexts ) ) {
+			// Since there are no container contexts, render just once.
+			$contents[ $partial_id ][] = $partial-&gt;render( null );
+		} else {
+			foreach ( $container_contexts as $container_context ) {
+				$contents[ $partial_id ][] = $partial-&gt;render( $container_context );
+			}
+		}
+	}
+	$this-&gt;current_partial_id = null;
+
+	restore_error_handler();
+
+	/**
+	 * Fires immediately after partials are rendered.
+	 *
+	 * Plugins may do things like call wp_footer() to scrape scripts output and return them
+	 * via the <a href="https://developer.notmatt.press/reference/functions/customize_render_partials_response">'customize_render_partials_response'</a> filter.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param WP_Customize_Selective_Refresh $refresh  Selective refresh component.
+	 * @param array                          $partials Placements' context data for the partials rendered in the request.
+	 *                                                 The array is keyed by partial ID, with each item being an array of
+	 *                                                 the placements' context data.
+	 */
+	do_action( 'customize_render_partials_after', $this, $partials );
+
+	$response = array(
+		'contents' =&gt; $contents,
+	);
+
+	if ( defined( 'WP_DEBUG_DISPLAY' ) &amp;&amp; WP_DEBUG_DISPLAY ) {
+		$response['errors'] = $this-&gt;triggered_errors;
+	}
+
+	$setting_validities             = $this-&gt;manager-&gt;validate_setting_values( $this-&gt;manager-&gt;unsanitized_post_values() );
+	$exported_setting_validities    = array_map( array( $this-&gt;manager, 'prepare_setting_validity_for_js' ), $setting_validities );
+	$response['setting_validities'] = $exported_setting_validities;
+
+	/**
+	 * Filters the response from rendering the partials.
+	 *
+	 * Plugins may use this filter to inject `$scripts` and `$styles`, which are dependencies
+	 * for the partials being rendered. The response data will be available to the client via
+	 * the `render-partials-response` JS event, so the client can then inject the scripts and
+	 * styles into the DOM if they have not already been enqueued there.
+	 *
+	 * If plugins do this, they'll need to take care for any scripts that do `document.write()`
+	 * and make sure that these are not injected, or else to override the function to no-op,
+	 * or else the page will be destroyed.
+	 *
+	 * Plugins should be aware that `$scripts` and `$styles` may eventually be included by
+	 * default in the response.
+	 *
+	 * @since 4.5.0
+	 *
+	 * @param array $response {
+	 *     Response.
+	 *
+	 *     @type array $contents Associative array mapping a partial ID its corresponding array of contents
+	 *                           for the containers requested.
+	 *     @type array $errors   List of errors triggered during rendering of partials, if `WP_DEBUG_DISPLAY`
+	 *                           is enabled.
+	 * }
+	 * @param WP_Customize_Selective_Refresh $refresh  Selective refresh component.
+	 * @param array                          $partials Placements' context data for the partials rendered in the request.
+	 *                                                 The array is keyed by partial ID, with each item being an array of
+	 *                                                 the placements' context data.
+	 */
+	$response = apply_filters( 'customize_render_partials_response', $response, $this, $partials );
+
+	wp_send_json_success( $response );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/customize/class-wp-customize-selective-refresh.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/customize/class-wp-customize-selective-refresh.php#L304">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/customize/class-wp-customize-selective-refresh.php#L304-L440">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/customize_render_partials_after/"><span class="hook-func">do_action</span>( ‘customize_render_partials_after’,  <nobr><span class="arg-type">WP_Customize_Selective_Refresh</span> <span class="arg-name">$refresh</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$partials</span></nobr> )</a></dt><dd><p>Fires immediately after partials are rendered.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/customize_render_partials_before/"><span class="hook-func">do_action</span>( ‘customize_render_partials_before’,  <nobr><span class="arg-type">WP_Customize_Selective_Refresh</span> <span class="arg-name">$refresh</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$partials</span></nobr> )</a></dt><dd><p>Fires immediately before partials are rendered.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/customize_render_partials_response/"><span class="hook-func">apply_filters</span>( ‘customize_render_partials_response’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$response</span></nobr>,  <nobr><span class="arg-type">WP_Customize_Selective_Refresh</span> <span class="arg-name">$refresh</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$partials</span></nobr> )</a></dt><dd><p>Filters the response from rendering the partials.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_selective_refresh/is_render_partials_request/">WP_Customize_Selective_Refresh::is_render_partials_request()</a><code>wp-includes/customize/class-wp-customize-selective-refresh.php</code></td><td><p>Checks whether the request is for rendering partials.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_selective_refresh/add_dynamic_partials/">WP_Customize_Selective_Refresh::add_dynamic_partials()</a><code>wp-includes/customize/class-wp-customize-selective-refresh.php</code></td><td><p>Registers dynamically-created partials.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_selective_refresh/get_partial/">WP_Customize_Selective_Refresh::get_partial()</a><code>wp-includes/customize/class-wp-customize-selective-refresh.php</code></td><td><p>Retrieves a partial.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_customize_preview/">is_customize_preview()</a><code>wp-includes/theme.php</code></td><td><p>Whether the site is being previewed in the Customizer.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/status_header/">status_header()</a><code>wp-includes/functions.php</code></td><td><p>Sets HTTP status header.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_error/">wp_send_json_error()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating failure.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_success/">wp_send_json_success()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating success.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.5.0/">4.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

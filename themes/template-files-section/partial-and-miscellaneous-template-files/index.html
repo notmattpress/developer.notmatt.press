@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/template-files-section/">Template Files Section</a></span><span class="is-current-page">Partial and Miscellaneous Template Files</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Partial and Miscellaneous Template Files</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="introduction" tabindex="-1"><a href="#introduction">Introduction</a></h2>
+<p>Not all template files generate the entire content that will be rendered by the browser. Some template files are pulled in by other template files such as <code>comments.php</code>, <code>header.php</code>, <code>footer.php</code>, <code>sidebar.php</code> and <code>content-{$slug}.php</code>. You’ll walk through each of these template files to get an understanding of the purpose and how to build them.</p>
+<h2 class="is-toc-heading wp-block-heading" id="header-php" tabindex="-1"><a href="#header-php">Header.php</a></h2>
+<p>The <code>header.php</code> file does exactly what you would expect.  It contains all the code that the browser will render for the header. This is a partial template file because unless a different template file calls the <a href="https://developer.notmatt.press/themes/basics/template-tags/">template tag</a>, <code>get_header()</code>, the browser will not render the contents of this file.</p>
+<p>Often sites have the same header regardless of the page or post you’re on.  However, some sites have slight variations such as a secondary navigation or different banner image depending on the page. Your <code>header.php</code> file can handle all these variations if you use <a href="https://developer.notmatt.press/themes/basics/conditional-tags/">conditional tags</a>.</p>
+<p>Almost all themes have a <code>header.php</code> file as the functionality and maintainability of this file pretty much demands its creation.</p>
+<p>Below is an example of a header.php found in the twenty fifteen theme.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;!DOCTYPE html&gt;
+&lt;html &lt;?php language_attributes(); ?&gt; class="no-js"&gt;
+&lt;head&gt;
+    &lt;meta charset="&lt;?php bloginfo( 'charset' ); ?&gt;"&gt;
+    &lt;meta name="viewport" content="width=device-width"&gt;
+    &lt;link rel="profile" href="http://gmpg.org/xfn/11"&gt;
+    &lt;link rel="pingback" href="&lt;?php bloginfo( 'pingback_url' ); ?&gt;"&gt;
+    &lt;!--[if lt IE 9]&gt;
+    &lt;script src="&lt;?php echo esc_url( get_template_directory_uri() ); ?&gt;/js/html5.js"&gt;&lt;/script&gt;
+    &lt;![endif]--&gt;
+    &lt;?php wp_head(); ?&gt;
+&lt;/head&gt;
+ 
+&lt;body &lt;?php body_class(); ?&gt;&gt;
+    &lt;div id="page" class="hfeed site"&gt;
+        &lt;a class="skip-link screen-reader-text" href="#content"&gt;&lt;?php _e( 'Skip to content', 'twentyfifteen' ); ?&gt;&lt;/a&gt;
+        &lt;div id="sidebar" class="sidebar"&gt;
+            &lt;header id="masthead" class="site-header" role="banner"&gt;
+                &lt;div class="site-branding"&gt;
+                    &lt;?php if ( is_front_page() &amp;&amp; is_home() ) : ?&gt;
+                    &lt;h1 class="site-title"&gt;
+                        &lt;a href="&lt;?php echo esc_url( home_url( '/' ) ); ?&gt;" rel="home"&gt;&lt;?php bloginfo( 'name' ); ?&gt;&lt;/a&gt;
+                    &lt;/h1&gt;
+                    &lt;?php else : ?&gt;
+                    &lt;a href="&lt;?php echo esc_url( home_url( '/' ) ); ?&gt;" rel="home"&gt;&lt;?php bloginfo( 'name' ); ?&gt;&lt;/a&gt;
+                    &lt;?php endif;
+                    $description = get_bloginfo( 'description', 'display' );
+                    if ( $description || is_customize_preview() ) :
+                        echo $description;
+                    endif; ?&gt;
+                    &lt;button class="secondary-toggle"&gt;&lt;?php _e( 'Menu and widgets', 'twentyfifteen' ); ?&gt;&lt;/button&gt;
+                &lt;/div&gt;&lt;!-- .site-branding --&gt;
+            &lt;/header&gt;&lt;!-- .site-header --&gt;
+            &lt;?php get_sidebar(); ?&gt;
+        &lt;/div&gt;&lt;!-- .sidebar --&gt;
+        &lt;div id="content" class="site-content"&gt;</code></pre>
+<p>Some of the code may look a little daunting at first, but if we break it down, it becomes simple enough. After the opening commment, the <code>head</code> is created. The template tag <code>wp_head()</code> pulls in all of our styles and any scripts that would appear in the head rather than the footer that we enqueued in our <code>functions.php</code> file.</p>
+<p>Next, the <code>body</code> is opened and a mix of HTML and PHP are present. You can see some conditional tags in the site branding div that tweak a little bit of what is shown based on the page the user is on. Then the site navigation is pulled in. Lastly, the main site-content div is opened which will be closed most likely in the <code>footer.php</code> file.</p>
+<p>One important template tag to note is <code>body_class()</code> found in the opening <code>body</code> tag. This is a super handy tag that makes styling your theme a lot easier by giving your body classes depending on the template file and other settings being used.</p>
+<h2 class="is-toc-heading wp-block-heading" id="footer-php" tabindex="-1"><a href="#footer-php">Footer.php</a></h2>
+<p>Much like the <code>header.php</code> file the <code>footer.php</code> is a very common template file that most themes utilize. The code in the <code>footer.php</code> file will not be rendered unless another template file pulls in the <code>footer.php</code> with <code>get_footer()</code> <a href="https://developer.notmatt.press/themes/basics/template-tags/">template tag</a>.  Similarly to headers, you can make variations of footers using <a href="https://developer.notmatt.press/themes/basics/conditional-tags/">conditional tags</a>.</p>
+<p>Often developers will put <a href="https://developer.notmatt.press/themes/functionality/widgets/">widgetized areas</a> in the footer so that the end user can easily drop and drag different content types into the footer.</p>
+<p>Here is an example of a <code>footer.php</code> file from the Twenty Fifteen theme.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;/div&gt;&lt;!-- .site-content --&gt;
+
+&lt;footer id="colophon" class="site-footer" role="contentinfo"&gt;
+
+	&lt;div class="site-info"&gt;
+
+		&lt;?php
+		/**
+		 * Fires before the Twenty Fifteen footer text for footer customization.
+		 *
+		 * @since Twenty Fifteen 1.0
+		 */
+		do_action( 'twentyfifteen_credits' );
+		?&gt;
+		&lt;a href="&lt;?php echo esc_url( __( 'https://wordpress.org/', 'twentyfifteen' ) ); ?&gt;"&gt;&lt;?php printf( __( 'Proudly powered by %s', 'twentyfifteen' ), 'WordPress' ); ?&gt;&lt;/a&gt;
+
+	&lt;/div&gt;&lt;!-- .site-info --&gt;
+
+&lt;/footer&gt;&lt;!-- .site-footer --&gt;
+
+&lt;/div&gt;&lt;!-- .site --&gt;
+
+&lt;?php wp_footer(); ?&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="404-php" tabindex="-1"><a href="#404-php">404.php</a></h2>
+<p>When users try to visit a page on your website that doesn’t exist they’ll be directed to your <code>index.php</code> page unless you’ve created a 404.php template.  It’s a good idea to have some sort of message that the explains the page is missing or no longer available.  Creating this template helps keep the visual aspects of your theme consistent and provides your end users with helpful information.</p>
+<p>Here is an example of a 404.php template file from the twenty fifteen theme.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php get_header(); ?&gt;
+
+&lt;div id="primary" class="content-area"&gt;
+
+	&lt;main id="main" class="site-main" role="main"&gt;
+
+		&lt;section class="error-404 not-found"&gt;
+
+			&lt;header class="page-header"&gt;
+				&lt;h1 class="page-title"&gt;&lt;?php _e( 'Oops! That page can’t be found.', 'twentyfifteen' ); ?&gt;&lt;/h1&gt;
+			&lt;/header&gt;&lt;!-- .page-header --&gt;
+
+			&lt;div class="page-content"&gt;
+				&lt;?php _e( 'It looks like nothing was found at this location. Maybe try a search?', 'twentyfifteen' ); ?&gt;
+				&lt;?php get_search_form(); ?&gt;
+			&lt;/div&gt;&lt;!-- .page-content --&gt;
+
+		&lt;/section&gt;&lt;!-- .error-404 --&gt;
+
+	&lt;/main&gt;&lt;!-- .site-main --&gt;
+
+&lt;/div&gt;&lt;!-- .content-area --&gt;
+
+&lt;?php get_footer(); ?&gt;
+</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="comments-php" tabindex="-1"><a href="#comments-php">Comments.php</a></h2>
+<p>The <code>comments.php</code> file handles exactly what you would expect, comments. This is a partial template that is pulled into other template files to display comments that users leave on a page or post. Several different pages and posts show comments so it makes sense to have one file that can be pulled in when needed.</p>
+<p>The code involved in creating comments is expanded upon on the <a href="https://developer.notmatt.press/themes/template-files-section/partial-and-miscellaneous-template-files/comments/">comment template page</a>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="sidebar-php" tabindex="-1"><a href="#sidebar-php">Sidebar.php</a></h2>
+<p>A lot of themes utilize sidebars to display widgets.  For a sidebar to work in a theme it must be registered and then a template file for the sidebar must be created.  You’ll learn more about <a href="https://developer.notmatt.press/themes/functionality/sidebars/">registering sidebars</a> in a later chapter. Sidebar files often have conditional statements and the <code>is_active_sidebar( 'sidebar-name' )</code> function in them to ensure a widget is in use within the sidebar so that empty HTML isn’t added to a page unnecessarily.</p>
+<p>Here is an example of a sidebar template file from the twenty fifteen theme. Notice at the bottom the sidebar is pulled in using <code>&lt;?php dynamic_sidebar( 'sidebar-1' ); &gt;</code>. Now whatever, widgets are put into that sidebar will display on the page that is using this pulling in this template.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php if ( has_nav_menu( 'primary' ) || has_nav_menu( 'social' ) || is_active_sidebar( 'sidebar-1' ) ) : ?&gt;
+
+	&lt;div id="secondary" class="secondary"&gt;
+
+		&lt;?php if ( is_active_sidebar( 'sidebar-1' ) ) : ?&gt;
+			&lt;div id="widget-area" class="widget-area" role="complementary"&gt;
+				&lt;?php dynamic_sidebar( 'sidebar-1' ); ?&gt;
+			&lt;/div&gt;&lt;!-- .widget-area --&gt;
+		&lt;?php endif; ?&gt;
+
+	&lt;/div&gt;&lt;!-- .secondary --&gt;
+
+&lt;?php endif; ?&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="content-slug-php" tabindex="-1"><a href="#content-slug-php">Content-{$slug}.php</a></h2>
+<p>Many theme developers break their template files into small bite sized pieces.  They’ll often put wrappers and page architecture elements in template files like <code>page.php, home.php, comments.php</code> etc but then they put the code displaying the content of those pages in another template file. Enter <code>content-{$slug}.php</code>: common examples would be <code>content-page.php, content-post.php, content-portfolio.php, content-none.php</code>.  These are not file names that WordPress recognizes and will interpret a certain way, rather they are a common approach to display specific types of content.</p>
+<p>For example, often on blog posts you want to display the author’s name, the date of the post, and possibly the category of the post.  You’d also likely have links to previous and next posts. That information wouldn’t be appropriate on a regular page. Similarly on a portfolio page you would likely have a featured image or gallery you would want to display in a way differently than say a blog post’s or page’s featured images.</p>
+<p>You’ll want to use the <code>get_template_part()</code> <a href="https://developer.notmatt.press/themes/basics/template-tags/">template tag</a> to pull in the <code>content-{$slug}.php</code> file. To pull in your <code>content-page.php</code> file you would call <code>get_template_part( 'content', 'page' );</code></p>
+<p>Here is twenty fifteen’s example of a <code>content-page.php</code> template file.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;article id="post-&lt;?php the_ID(); ?&gt;" &lt;?php post_class(); ?&gt;&gt;
+
+	&lt;header class="entry-header"&gt;
+		&lt;?php the_title( '&lt;h1 class="entry-title"&gt;', '&lt;/h1&gt;' ); ?&gt;
+	&lt;/header&gt;&lt;!-- .entry-header --&gt;
+
+	&lt;div class="entry-content"&gt;
+		&lt;?php the_content(); ?&gt;
+		&lt;?php
+		wp_link_pages( array(
+			'before'      =&gt; '&lt;div class="page-links"&gt;&lt;span class="page-links-title"&gt;' . __( 'Pages:', 'twentyfifteen' ) . '&lt;/span&gt;',
+			'after'       =&gt; '&lt;/div&gt;',
+			'link_before' =&gt; '&lt;span&gt;',
+			'link_after'  =&gt; '&lt;/span&gt;',
+			'pagelink'    =&gt; '&lt;span class="screen-reader-text"&gt;' . __( 'Page', 'twentyfifteen' ) . ' &lt;/span&gt;%',
+			'separator'   =&gt; '&lt;span class="screen-reader-text"&gt;, &lt;/span&gt;',
+		) );
+		?&gt;
+	&lt;/div&gt;&lt;!-- .entry-content --&gt;
+
+	&lt;?php edit_post_link( __( 'Edit', 'twentyfifteen' ), '&lt;footer class="entry-footer"&gt;&lt;span class="edit-link"&gt;', '&lt;/span&gt;&lt;/footer&gt;&lt;!-- .entry-footer --&gt;' ); ?&gt;
+
+&lt;/article&gt;&lt;!-- #post-## --&gt;</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

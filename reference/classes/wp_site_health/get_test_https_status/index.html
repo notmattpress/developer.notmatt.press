@@ -1,0 +1,213 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_site_health/">WP_Site_Health</a></span><span class="is-current-page">WP_Site_Health::get_test_https_status()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Site_Health::get_test_https_status()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Site_Health::get_test_https_status(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Tests if the site is serving content over HTTPS.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Many sites have varying degrees of HTTPS support, the most common of which is sites that have it enabled, but only if you visit the right site address.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The test results.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1438"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_test_https_status() {
+	/*
+	 * Check HTTPS detection results.
+	 */
+	$errors = wp_get_https_detection_errors();
+
+	$default_update_url = wp_get_default_update_https_url();
+
+	$result = array(
+		'label'       =&gt; __( 'Your website is using an active HTTPS connection' ),
+		'status'      =&gt; 'good',
+		'badge'       =&gt; array(
+			'label' =&gt; __( 'Security' ),
+			'color' =&gt; 'blue',
+		),
+		'description' =&gt; sprintf(
+			'&lt;p&gt;%s&lt;/p&gt;',
+			__( 'An HTTPS connection is a more secure way of browsing the web. Many services now have HTTPS as a requirement. HTTPS allows you to take advantage of new features that can increase site speed, improve search rankings, and gain the trust of your visitors by helping to protect their online privacy.' )
+		),
+		'actions'     =&gt; sprintf(
+			'&lt;p&gt;&lt;a href="%s" target="_blank"&gt;%s&lt;span class="screen-reader-text"&gt; %s&lt;/span&gt;&lt;span aria-hidden="true" class="dashicons dashicons-external"&gt;&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;',
+			esc_url( $default_update_url ),
+			__( 'Learn more about why you should use HTTPS' ),
+			/* translators: Hidden accessibility text. */
+			__( '(opens in a new tab)' )
+		),
+		'test'        =&gt; 'https_status',
+	);
+
+	if ( ! wp_is_using_https() ) {
+		/*
+		 * If the website is not using HTTPS, provide more information
+		 * about whether it is supported and how it can be enabled.
+		 */
+		$result['status'] = 'recommended';
+		$result['label']  = __( 'Your website does not use HTTPS' );
+
+		if ( wp_is_site_url_using_https() ) {
+			if ( is_ssl() ) {
+				$result['description'] = sprintf(
+					'&lt;p&gt;%s&lt;/p&gt;',
+					sprintf(
+						/* translators: %s: URL to Settings &gt; General &gt; Site Address. */
+						__( 'You are accessing this website using HTTPS, but your &lt;a href="%s"&gt;Site Address&lt;/a&gt; is not set up to use HTTPS by default.' ),
+						esc_url( admin_url( 'options-general.php' ) . '#home' )
+					)
+				);
+			} else {
+				$result['description'] = sprintf(
+					'&lt;p&gt;%s&lt;/p&gt;',
+					sprintf(
+						/* translators: %s: URL to Settings &gt; General &gt; Site Address. */
+						__( 'Your &lt;a href="%s"&gt;Site Address&lt;/a&gt; is not set up to use HTTPS.' ),
+						esc_url( admin_url( 'options-general.php' ) . '#home' )
+					)
+				);
+			}
+		} else {
+			if ( is_ssl() ) {
+				$result['description'] = sprintf(
+					'&lt;p&gt;%s&lt;/p&gt;',
+					sprintf(
+						/* translators: 1: URL to Settings &gt; General &gt; WordPress Address, 2: URL to Settings &gt; General &gt; Site Address. */
+						__( 'You are accessing this website using HTTPS, but your &lt;a href="%1$s"&gt;WordPress Address&lt;/a&gt; and &lt;a href="%2$s"&gt;Site Address&lt;/a&gt; are not set up to use HTTPS by default.' ),
+						esc_url( admin_url( 'options-general.php' ) . '#siteurl' ),
+						esc_url( admin_url( 'options-general.php' ) . '#home' )
+					)
+				);
+			} else {
+				$result['description'] = sprintf(
+					'&lt;p&gt;%s&lt;/p&gt;',
+					sprintf(
+						/* translators: 1: URL to Settings &gt; General &gt; WordPress Address, 2: URL to Settings &gt; General &gt; Site Address. */
+						__( 'Your &lt;a href="%1$s"&gt;WordPress Address&lt;/a&gt; and &lt;a href="%2$s"&gt;Site Address&lt;/a&gt; are not set up to use HTTPS.' ),
+						esc_url( admin_url( 'options-general.php' ) . '#siteurl' ),
+						esc_url( admin_url( 'options-general.php' ) . '#home' )
+					)
+				);
+			}
+		}
+
+		if ( wp_is_https_supported() ) {
+			$result['description'] .= sprintf(
+				'&lt;p&gt;%s&lt;/p&gt;',
+				__( 'HTTPS is already supported for your website.' )
+			);
+
+			if ( defined( 'WP_HOME' ) || defined( 'WP_SITEURL' ) ) {
+				$result['description'] .= sprintf(
+					'&lt;p&gt;%s&lt;/p&gt;',
+					sprintf(
+						/* translators: 1: wp-config.php, 2: WP_HOME, 3: WP_SITEURL */
+						__( 'However, your WordPress Address is currently controlled by a PHP constant and therefore cannot be updated. You need to edit your %1$s and remove or update the definitions of %2$s and %3$s.' ),
+						'&lt;code&gt;wp-config.php&lt;/code&gt;',
+						'&lt;code&gt;WP_HOME&lt;/code&gt;',
+						'&lt;code&gt;WP_SITEURL&lt;/code&gt;'
+					)
+				);
+			} elseif ( current_user_can( 'update_https' ) ) {
+				$default_direct_update_url = add_query_arg( 'action', 'update_https', wp_nonce_url( admin_url( 'site-health.php' ), 'wp_update_https' ) );
+				$direct_update_url         = wp_get_direct_update_https_url();
+
+				if ( ! empty( $direct_update_url ) ) {
+					$result['actions'] = sprintf(
+						'&lt;p class="button-container"&gt;&lt;a class="button button-primary" href="%1$s" target="_blank"&gt;%2$s&lt;span class="screen-reader-text"&gt; %3$s&lt;/span&gt;&lt;span aria-hidden="true" class="dashicons dashicons-external"&gt;&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;',
+						esc_url( $direct_update_url ),
+						__( 'Update your site to use HTTPS' ),
+						/* translators: Hidden accessibility text. */
+						__( '(opens in a new tab)' )
+					);
+				} else {
+					$result['actions'] = sprintf(
+						'&lt;p class="button-container"&gt;&lt;a class="button button-primary" href="%1$s"&gt;%2$s&lt;/a&gt;&lt;/p&gt;',
+						esc_url( $default_direct_update_url ),
+						__( 'Update your site to use HTTPS' )
+					);
+				}
+			}
+		} else {
+			// If host-specific "Update HTTPS" URL is provided, include a link.
+			$update_url = wp_get_update_https_url();
+			if ( $update_url !== $default_update_url ) {
+				$result['description'] .= sprintf(
+					'&lt;p&gt;&lt;a href="%s" target="_blank"&gt;%s&lt;span class="screen-reader-text"&gt; %s&lt;/span&gt;&lt;span aria-hidden="true" class="dashicons dashicons-external"&gt;&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;',
+					esc_url( $update_url ),
+					__( 'Talk to your web host about supporting HTTPS for your website.' ),
+					/* translators: Hidden accessibility text. */
+					__( '(opens in a new tab)' )
+				);
+			} else {
+				$result['description'] .= sprintf(
+					'&lt;p&gt;%s&lt;/p&gt;',
+					__( 'Talk to your web host about supporting HTTPS for your website.' )
+				);
+			}
+		}
+	}
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-site-health.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-site-health.php#L1438">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-site-health.php#L1438-L1577">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_https_detection_errors/">wp_get_https_detection_errors()</a><code>wp-includes/https-detection.php</code></td><td><p>Runs a remote HTTPS request to detect whether HTTPS supported, and stores potential errors.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_default_update_https_url/">wp_get_default_update_https_url()</a><code>wp-includes/functions.php</code></td><td><p>Gets the default URL to learn more about updating the site to use HTTPS.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_direct_update_https_url/">wp_get_direct_update_https_url()</a><code>wp-includes/functions.php</code></td><td><p>Gets the URL for directly updating the site to use HTTPS.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_update_https_url/">wp_get_update_https_url()</a><code>wp-includes/functions.php</code></td><td><p>Gets the URL to learn more about updating the site to use HTTPS.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_using_https/">wp_is_using_https()</a><code>wp-includes/https-detection.php</code></td><td><p>Checks whether the website is using HTTPS.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_is_site_url_using_https/">wp_is_site_url_using_https()</a><code>wp-includes/https-detection.php</code></td><td><p>Checks whether the current site’s URL where WordPress is stored is using HTTPS.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_is_https_supported/">wp_is_https_supported()</a><code>wp-includes/https-detection.php</code></td><td><p>Checks whether HTTPS is supported for the server and domain.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_ssl/">is_ssl()</a><code>wp-includes/load.php</code></td><td><p>Determines if SSL is used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_url/">wp_nonce_url()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves URL with nonce added to URL query.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_query_arg/">add_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves a modified URL query string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_url/">admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the current site.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 8 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.7.0/">5.7.0</a></td><td><span class="since-description">Updated to rely on <a href="https://developer.notmatt.press/reference/functions/wp_is_using_https">wp_is_using_https()</a> and <a href="https://developer.notmatt.press/reference/functions/wp_is_https_supported">wp_is_https_supported()</a>.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

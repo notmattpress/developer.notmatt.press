@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/explanations/">Explanations</a></span><span><a href="https://developer.wordpress.org/block-editor/explanations/architecture/">Architecture</a></span><span class="is-current-page">Site Editing Templates</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Site Editing Templates</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="template-and-template-part-flows" tabindex="-1"><a href="#template-and-template-part-flows">Template and template part flows</a></h2>
+<p>This document will explain the internals of how templates and templates parts are rendered in the frontend and edited in the backend.</p>
+<h2 class="is-toc-heading" id="storage" tabindex="-1"><a href="#storage">Storage</a></h2>
+<p>Just like the regular templates, the block templates live initially as files in the theme folder but the main difference is that the user can edit these templates in the UI in the Site Editor.</p>
+<p>When a user edits a template (or template-part), the initial theme template file is kept as is but a forked version of the template is saved to the <code>wp_template</code> custom post type (or <code>wp_template_part</code> for template parts).</p>
+<p>These capabilities mean that at any point in time, a mix of template files (from the theme) and CPT templates (the edited templates) are used to render the frontend of the site.</p>
+<h2 class="is-toc-heading" id="synchronization" tabindex="-1"><a href="#synchronization">Synchronization</a></h2>
+<p>In order to simplify the algorithm used to edit and render the templates from two different places, we performed an operation called “template synchronization”.</p>
+<p>The synchronization consists of duplicating the theme templates in the <code>wp_template</code> (and <code>wp_template_part</code>) custom templates with an <code>auto-draft</code> status. When a user edits these templates, the status is updated to <code>publish</code>.</p>
+<p>This means:</p>
+<ul>
+<li>The rendering/fetching of templates only need to consider the custom post type templates. It is not necessary to fetch the template files from the theme folder directly. The synchronization will ensure these are duplicated in the CPT.</li>
+<li>Untouched theme templates have the <code>auto-draft</code> status.</li>
+<li>Edited theme templates have the <code>publish</code> status.</li>
+</ul>
+<p>The synchronization is important for two different flows:</p>
+<ul>
+<li>When editing the template and template parts, the site editor frontend fetches the edited and available templates through the REST API. This means that for all <code>GET</code> API requests performed to the <code>wp-templates</code> and <code>wp-template-parts</code> endpoint synchronization is required.</li>
+<li>When rendering a template (sometimes referred to as “resolving a template”): this is the algorithm that WordPress follows to traverse the template hierarchy and find the right template to render for the current page being loaded.</li>
+<li>When exporting a block theme, we need to export all its templates back as files. The synchronization is required to simplify the operation and only export the CPT templates.</li>
+</ul>
+<h2 class="is-toc-heading" id="switching-themes" tabindex="-1"><a href="#switching-themes">Switching themes</a></h2>
+<p>Since block themes make use of templates that can refer to each other and that can be saved to a custom post type, it becomes possible to mix templates and template parts from different themes. For example:</p>
+<ul>
+<li>A user might like the “header” template part of theme A and would like to use it in theme B.</li>
+<li>A user might like the “contact” template from theme A and would like to use it in theme B.</li>
+</ul>
+<p>Enabling these flows will require well thought UIs and experience. For the current phase of Full-site editing, we’re starting by forbidding these possibilities and making template and template-parts theme specific.</p>
+<p>That said, it is still important to keep track of where the template and template part come from initially. From which theme, it’s based. We do so by saving a <code>theme</code> post meta containing the theme identifier for each template and template part CPT entry.</p>
+<p>In the future, we might consider allowing the user to mix template and template parts with different <code>theme</code> post meta values.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

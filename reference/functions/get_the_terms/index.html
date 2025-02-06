@@ -1,0 +1,423 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_the_terms()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_the_terms()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_the_terms( <span class="arg-type">int|WP_Post</span> <span class="arg-name">$post</span>,  <span class="arg-type">string</span> <span class="arg-name">$taxonomy</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_term/" rel="class">WP_Term</a>[]|false|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the terms of the taxonomy that are attached to the post.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Post ID or object.</span></div></dd><dt><code>$taxonomy</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Taxonomy name.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_term/" rel="class">WP_Term</a>[]|false|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> Array of <a href="https://developer.notmatt.press/reference/classes/wp_term/" rel="class">WP_Term</a> objects on success, false if there are no terms                                  or the post does not exist, <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1288"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_the_terms( $post, $taxonomy ) {
+	$post = get_post( $post );
+
+	if ( ! $post ) {
+		return false;
+	}
+
+	$terms = get_object_term_cache( $post-&gt;ID, $taxonomy );
+
+	if ( false === $terms ) {
+		$terms = wp_get_object_terms( $post-&gt;ID, $taxonomy );
+		if ( ! is_wp_error( $terms ) ) {
+			$term_ids = wp_list_pluck( $terms, 'term_id' );
+			wp_cache_add( $post-&gt;ID, $term_ids, $taxonomy . '_relationships' );
+		}
+	}
+
+	/**
+	 * Filters the list of terms attached to the given post.
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param WP_Term[]|WP_Error $terms    Array of attached terms, or WP_Error on failure.
+	 * @param int                $post_id  Post ID.
+	 * @param string             $taxonomy Name of the taxonomy.
+	 */
+	$terms = apply_filters( 'get_the_terms', $terms, $post-&gt;ID, $taxonomy );
+
+	if ( empty( $terms ) ) {
+		return false;
+	}
+
+	return $terms;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/category-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/category-template.php#L1288">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/category-template.php#L1288-L1321">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_the_terms/"><span class="hook-func">apply_filters</span>( ‘get_the_terms’,  <nobr><span class="arg-type">WP_Term[]|WP_Error</span> <span class="arg-name">$terms</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr> )</a></dt><dd><p>Filters the list of terms attached to the given post.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_add/">wp_cache_add()</a><code>wp-includes/cache.php</code></td><td><p>Adds data to the cache, if the cache key doesn’t already exist.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_list_pluck/">wp_list_pluck()</a><code>wp-includes/functions.php</code></td><td><p>Plucks a certain field out of each object or array in an array.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_object_term_cache/">get_object_term_cache()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the cached term objects for the given object ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_object_terms/">wp_get_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the terms associated with the given object(s), in the supplied taxonomies.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/inject_ignored_hooked_blocks_metadata_attributes/">inject_ignored_hooked_blocks_metadata_attributes()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Inject ignoredHookedBlocks metadata attributes into a template or template part.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/prepare_item_for_response/">WP_REST_Menu_Items_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Prepares a single nav menu item output for response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_set_unique_slug_on_create_template_part/">wp_set_unique_slug_on_create_template_part()</a><code>wp-includes/theme-templates.php</code></td><td><p>Sets a custom slug when creating auto-draft template parts.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_build_block_template_result_from_post/">_build_block_template_result_from_post()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Builds a unified template object based a post Object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_filter_wp_template_unique_post_slug/">wp_filter_wp_template_unique_post_slug()</a><code>wp-includes/theme-templates.php</code></td><td><p>Generates a unique slug for templates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_posts_controller/prepare_item_for_response/">WP_REST_Posts_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php</code></td><td><p>Prepares a single post output for response.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/column_default/">WP_Posts_List_Table::column_default()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td><p>Handles the default column output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_media_list_table/column_default/">WP_Media_List_Table::column_default()</a><code>wp-admin/includes/class-wp-media-list-table.php</code></td><td><p>Handles output for the default column.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_term_list/">get_the_term_list()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves a post’s terms as a list with specified format.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_tags/">get_the_tags()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves the tags for a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_category/">get_the_category()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves post categories.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_class/">get_post_class()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves an array of the class names for the post container element.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_post/__get/">WP_Post::__get()</a><code>wp-includes/class-wp-post.php</code></td><td><p>Getter.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_publish_post/">wp_publish_post()</a><code>wp-includes/post.php</code></td><td><p>Publishes a post by transitioning the post status.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_post/">wp_update_post()</a><code>wp-includes/post.php</code></td><td><p>Updates a post with new post data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_format/">get_post_format()</a><code>wp-includes/post-formats.php</code></td><td><p>Retrieve the format slug for a post</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 11 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-mklusak odd alt thread-odd thread-alt depth-1" data-comment-id="1932" id="comment-1932">
+<article class="comment-body" id="div-comment-1932">
+<a class="screen-reader-text" href="#comment-content-1932">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1932">
+<p><a href="https://developer.notmatt.press/reference/classes/wp_term/" rel="class">WP_Term</a> object properties: (because I am always looking for them)</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">WP_Term Object
+(
+	[term_id] =&amp;gt; 
+	[name] =&amp;gt; 
+	[slug] =&amp;gt; 
+	[term_group] =&amp;gt; 
+	[term_taxonomy_id] =&amp;gt; 
+	[taxonomy] =&amp;gt; 
+	[description] =&amp;gt; 
+	[parent] =&amp;gt; 
+	[count] =&amp;gt; 
+	[filter] =&amp;gt; 
+)</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1932">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-benklocek even thread-even depth-1" data-comment-id="2587" id="comment-2587">
+<article class="comment-body" id="div-comment-2587">
+<a class="screen-reader-text" href="#comment-content-2587">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2587">
+<p>Optimized way to get a comma separated list of terms.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$term_obj_list = get_the_terms( $post-&gt;ID, 'taxonomy' );
+$terms_string = join(', ', wp_list_pluck($term_obj_list, 'name'));</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2587">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-lots0logs odd alt thread-odd thread-alt depth-1" data-comment-id="2423" id="comment-2423">
+<article class="comment-body" id="div-comment-2423">
+<a class="screen-reader-text" href="#comment-content-2423">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2423">
+<p>The difference between this function and <code>wp_get_post_terms()</code> is that this function’s results are cached (thus, it won’t hit the database every time its called).</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2423">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="405" id="comment-405">
+<article class="comment-body" id="div-comment-405">
+<a class="screen-reader-text" href="#comment-content-405">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-405">
+<p><strong>Get terms for all custom taxonomies</strong></p>
+<p>Place this function in your theme’s <code>functions.php</code>.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Get taxonomies terms links.
+ *
+ * @see get_object_taxonomies()
+ */
+function wpdocs_custom_taxonomies_terms_links() {
+	// Get post by post ID.
+	if ( ! $post = get_post() ) {
+		return '';
+	}
+
+	// Get post type by post.
+	$post_type = $post-&gt;post_type;
+
+	// Get post type taxonomies.
+	$taxonomies = get_object_taxonomies( $post_type, 'objects' );
+
+	$out = array();
+
+	foreach ( $taxonomies as $taxonomy_slug =&gt; $taxonomy ){
+
+		// Get the terms related to post.
+		$terms = get_the_terms( $post-&gt;ID, $taxonomy_slug );
+
+		if ( ! empty( $terms ) ) {
+			$out[] = "&lt;h2&gt;" . $taxonomy-&gt;label . "&lt;/h2&gt;\n&lt;ul&gt;";
+			foreach ( $terms as $term ) {
+				$out[] = sprintf( '&lt;li&gt;&lt;a href="%1$s"&gt;%2$s&lt;/a&gt;&lt;/li&gt;',
+					esc_url( get_term_link( $term-&gt;slug, $taxonomy_slug ) ),
+					esc_html( $term-&gt;name )
+				);
+			}
+			$out[] = "\n&lt;/ul&gt;\n";
+		}
+	}
+	return implode( '', $out );
+}
+?&gt;</code></pre>
+<p>Now you can use this function in your theme:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo wpdocs_custom_taxonomies_terms_links(); ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-405">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="404" id="comment-404">
+<article class="comment-body" id="div-comment-404">
+<a class="screen-reader-text" href="#comment-content-404">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-404">
+<p><strong>A Basic Example</strong></p>
+<p>Echoing the list of terms (for a taxonomy called <code>on-draught</code>). This is similar to the output from <code>get_the_term_list</code>, but without the terms being hyperlinked:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$terms = get_the_terms( get_the_ID(), 'on-draught' );
+						
+if ( $terms &amp;&amp; ! is_wp_error( $terms ) ) : 
+
+	$draught_links = array();
+
+	foreach ( $terms as $term ) {
+		$draught_links[] = $term-&gt;name;
+	}
+						
+	$on_draught = join( ", ", $draught_links );
+	?&gt;
+
+	&lt;p class="beers draught"&gt;
+		&lt;?php printf( esc_html__( 'On draught: &lt;span&gt;%s&lt;/span&gt;', 'textdomain' ), esc_html( $on_draught ) ); ?&gt;
+	&lt;/p&gt;
+&lt;?php endif; ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-404">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-brianlayman even thread-even depth-1" data-comment-id="2343" id="comment-2343">
+<article class="comment-body" id="div-comment-2343">
+<a class="screen-reader-text" href="#comment-content-2343">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2343">
+<p>Another example of how to process the results of this call.</p>
+<p>This example retrieves the categories and tags for a post and uses <a href="https://developer.notmatt.press/reference/functions/wp_list_pluck/" rel="function">wp_list_pluck()</a>  to efficiently creates a list of their names, without duplicates, and turns it into a string of keys suitable for an NITF feed.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Get a list of categories and extract their names
+		$post_categories = get_the_terms( $post-&gt;ID, 'category' );
+		if ( ! empty( $post_categories ) &amp;&amp; ! is_wp_error( $post_categories ) ) {
+			$categories = wp_list_pluck( $post_categories, 'name' );
+		}
+
+		// Get a list of tags and extract their names
+		$post_tags = get_the_terms( $post-&gt;ID, 'post_tag' );
+		if ( ! empty( $post_tags ) &amp;&amp; ! is_wp_error( $post_tags ) ) {
+			$tags = wp_list_pluck( $post_tags, 'name' );
+		}
+
+		// Combine Categories and tags, with category first
+		$tagCats = array_merge( $categories, $tags );
+
+		// Process to desired format
+		$keyList = '&lt;key-list&gt;' . PHP_EOL .
+			'	&lt;keyword key="' . 
+					implode( $tagCats, '"/&gt;' . PHP_EOL .	'	&lt;keyword key="') . 
+				'"/&gt;' . PHP_EOL .
+			'&lt;/key-list&gt;' . PHP_EOL;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2343">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-everaldomatias odd alt thread-odd thread-alt depth-1" data-comment-id="3874" id="comment-3874">
+<article class="comment-body" id="div-comment-3874">
+<a class="screen-reader-text" href="#comment-content-3874">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3874">
+<p><strong>Example of a wrap function for <a href="https://developer.notmatt.press/reference/functions/get_the_terms/" rel="function">get_the_terms()</a>  with a return list of terms added to the post.</strong><br/>
+<em>Exemplo de função wrap para <a href="https://developer.notmatt.press/reference/functions/get_the_terms/" rel="function">get_the_terms()</a> , que retorna a lista de termos adicionadas ao post.</em></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">if ( ! function_exists( 'wpdocs_example_get_the_terms' ) ) {
+
+    /**
+     * Function to return list of the terms.
+     * 
+     * @param string 'taxonomy'
+     * 
+     * @return html Returns the list of elements.
+     */
+
+    function wpdocs_example_get_the_terms( $taxonomy ) {
+        
+        $terms = get_the_terms( get_the_ID(), $taxonomy );
+                         
+        if ( $terms &amp;&amp; ! is_wp_error( $terms ) ) : 
+        
+            $term_links = array();
+        
+            foreach ( $terms as $term ) {
+                $term_links[] = '&lt;a href="' . esc_attr( get_term_link( $term-&gt;slug, $taxonomy ) ) . '"&gt;' . __( $term-&gt;name ) . '&lt;/a&gt;';
+            }
+                                
+            $all_terms = join( ', ', $term_links );
+
+            echo '&lt;span class="terms-' . esc_attr( $term-&gt;slug ) . '"&gt;' . __( $all_terms ) . '&lt;/span&gt;';
+
+        endif;
+
+    }
+
+}</code></pre>
+<p><strong>How to use:</strong><br/>
+<em>Como usar:</em></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wpdocs_example_get_the_terms( 'taxonomy' )</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3874">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-pedroghandi even thread-even depth-1" data-comment-id="1032" id="comment-1032">
+<article class="comment-body" id="div-comment-1032">
+<a class="screen-reader-text" href="#comment-content-1032">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1032">
+<p>The function returns <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> if the $taxonomy doesn’t exist.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1032">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-soullighter odd alt thread-odd thread-alt depth-1" data-comment-id="2436" id="comment-2436">
+<article class="comment-body" id="div-comment-2436">
+<a class="screen-reader-text" href="#comment-content-2436">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2436">
+<p>Another example how to get <strong>custom post type</strong> taxonomies and separate them with commas.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$terms = get_the_terms( $post-&gt;ID , array( 'teams_positions') );
+// init counter
+$i = 1;
+foreach ( $terms as $term ) {
+ $term_link = get_term_link( $term, array( 'teams_positions') );
+ if( is_wp_error( $term_link ) )
+ continue;
+ echo $term-&gt;name;
+ //  Add comma (except after the last theme)
+ echo ($i &lt; count($terms))? " / " : "";
+ // Increment counter
+ $i++;
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2436">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tomaaszq even thread-even depth-1" data-comment-id="4206" id="comment-4206">
+<article class="comment-body" id="div-comment-4206">
+<a class="screen-reader-text" href="#comment-content-4206">Skip to note 21 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4206">
+<p>if you want to use this inside WP Query, just to list your taxonomy names, then you can use:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;ul&gt;
+foreach ( get_the_terms( get_the_ID(), 'taxonomy_name' ) as $tax ) {
+    echo '&lt;li&gt;' . __( $tax-&gt;name ) . '&lt;/li&gt;';
+}
+&lt;/ul&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4206">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-narenin odd alt thread-odd thread-alt depth-1" data-comment-id="6975" id="comment-6975">
+<article class="comment-body" id="div-comment-6975">
+<a class="screen-reader-text" href="#comment-content-6975">Skip to note 22 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6975">
+<p>A basic example of getting parent categories only.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$section_slug_array = get_the_terms( get_the_ID(),'section' );
+$parent_menu_list   = array();
+
+if ( ! is_wp_error( $section_slug_array ) &amp;&amp; is_array( $section_slug_array ) ) {
+	foreach ( $section_slug_array as $term ) {
+		if ( 0 === $term-&gt;parent ) {
+			$parent_menu_list[] = $term-&gt;slug;
+		}
+	}
+}
+
+print_r( $parent_menu_list );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6975">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

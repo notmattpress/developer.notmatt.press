@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/getting-started/">Getting Started</a></span><span><a href="https://developer.wordpress.org/block-editor/getting-started/fundamentals/">Fundamentals of Block Development</a></span><span class="is-current-page">Working with JavaScript for the Block Editor</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Working with JavaScript for the Block Editor</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Developing blocks for the Block Editor often involves using modern JavaScript (ESNext and JSX), and most examples here in the Block Editor Handbook are written in these syntaxes.</p>
+<p>However, this form of JavaScript must be transformed into a browser-compatible format, necessitating a build step. This process transforms, bundles, and optimizes JavaScript source code and related assets into a format suitable for production environments.</p>
+<h2 class="is-toc-heading" id="javascript-with-a-build-process" tabindex="-1"><a href="#javascript-with-a-build-process">JavaScript with a build process</a></h2>
+<p>Using a build process for block development unlocks the full potential of modern JavaScript, facilitating the use of ESNext and JSX.</p>
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/JavaScript_technologies_overview#standardization_process">ESNext</a> refers to JavaScript’s most recent syntax and features. <a href="https://react.dev/learn/writing-markup-with-jsx">JSX</a> is a syntax extension developed by the React project that enables you to write JavaScript that resembles HTML.</p>
+<p>Since browsers cannot directly execute ESNext and JSX, these syntaxes must be transformed into browser-compatible JavaScript.</p>
+<p><a href="https://webpack.js.org/concepts/why-webpack/">webpack</a> is a pluggable tool that processes and bundles JavaScript for browser compatibility. <a href="https://babeljs.io/">Babel</a>, a plugin for webpack, converts ESNext and JSX into standard JavaScript.</p>
+<p>Configuring webpack and Babel can be challenging, so it’s recommended that you use the <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-scripts/"><code>@wordpress/scripts</code></a> package. This tool simplifies development by preconfiguring both, so you rarely need to write custom webpack or Babel configurations.</p>
+<p>For an introduction, refer to the <a href="https://developer.notmatt.press/block-editor/getting-started/devenv/get-started-with-wp-scripts/">Get started with wp-scripts</a> guide.</p>
+<h3 class="is-toc-heading" id="an-overview-of-wp-scripts" tabindex="-1"><a href="#an-overview-of-wp-scripts">An overview of wp-scripts</a></h3>
+<p>The diagram below provides an overview of the build process when using the <code>wp-scripts</code> package. It’s designed to work out of the box with <a href="https://developer.notmatt.press/block-editor/getting-started/devenv/get-started-with-wp-scripts/#basic-usage">standard configurations</a> for development and production environments.</p>
+<p><a href="https://i0.wp.com/developer.wordpress.org/files/2023/11/build-process.png?ssl=1" title="Open Build Process diagram image"><img alt="Open Build Process diagram image" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/developer.wordpress.org/files/2023/11/build-process.png?ssl=1"/></a></p>
+<ul>
+<li><strong>Production Mode (<code>npm run build</code>):</strong> In this mode, <code>wp-scripts</code> compiles your JavaScript, minifying the output to reduce file size and improve loading times in the browser. This is ideal for deploying your code to a live site.
+</li>
+<li>
+<p><strong>Development Mode (<code>npm start</code>):</strong> This mode is tailored for active development. It skips minification for easier debugging, generates source maps for better error tracking, and watches your source files for changes. When a change is detected, it automatically rebuilds the affected files, allowing you to see updates in real-time.</p>
+</li>
+</ul>
+<p>The <code>wp-scripts</code> package also facilitates the use of JavaScript modules, allowing code distribution across multiple files and resulting in a streamlined bundle after the build process. The <a href="https://github.com/WordPress/block-development-examples/tree/trunk/plugins/data-basics-59c8f8">block-development-example</a> GitHub repository provides some good examples.</p>
+<div class="callout callout-tip">
+    In most situations, no customization will be needed, but you can provide a <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-scripts/#provide-your-own-webpack-config"><code>webpack.config.js</code></a> when using <code>wp-scripts</code> to modify the build process to suit your needs.
+</div>
+<h2 class="is-toc-heading" id="javascript-without-a-build-process" tabindex="-1"><a href="#javascript-without-a-build-process">JavaScript without a build process</a></h2>
+<p>Integrating JavaScript into your WordPress projects without a build process can be the most straightforward approach in specific scenarios. This is particularly true for projects that don’t leverage JSX or other advanced JavaScript features requiring compilation.</p>
+<p>When you opt out of a build process, you interact directly with WordPress’s <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/">JavaScript APIs</a> through the global <code>wp</code> object. This means that all the methods and packages provided by WordPress are readily available, but with one caveat: you must manually manage script dependencies. This is done by adding <a href="https://developer.notmatt.press/block-editor/contributors/code/scripts/">the handle</a> of each corresponding package to the dependency array of your enqueued JavaScript file.</p>
+<p>For example, suppose you’re creating a script that registers a new block <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-variations/">variation</a> using the <code>registerBlockVariation</code> function from the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-blocks/"><code>blocks</code></a> package. You must include <code>wp-blocks</code> in your script’s dependency array. This guarantees that the <code>wp.blocks.registerBlockVariation</code> method is available and defined by the time your script executes.</p>
+<p>In the following example, the <code>wp-blocks</code> dependency is defined when enqueuing the <code>variations.js</code> file.</p>
+<pre><code class="language-php">function example_enqueue_block_variations() {
+    wp_enqueue_script(
+        'example-enqueue-block-variations',
+        get_template_directory_uri() . '/assets/js/variations.js',
+        array( 'wp-blocks' ),
+        wp_get_theme()-&gt;get( 'Version' ),
+        false
+    );
+}
+add_action( 'enqueue_block_editor_assets', 'example_enqueue_block_variations' );
+</code></pre>
+<p>Then in the <code>variations.js</code> file, you can register a new variation for the Media &amp; Text block like so:</p>
+<pre><code class="language-js">wp.blocks.registerBlockVariation(
+    'core/media-text',
+    {
+        name: 'media-text-custom',
+        title: 'Media &amp; Text Custom',
+        attributes: {
+            align: 'wide',
+            backgroundColor: 'tertiary'
+        },
+    }
+);
+</code></pre>
+<p>For scripts that need to run in the Block Editor, make sure you use the <a href="https://developer.notmatt.press/reference/hooks/enqueue_block_editor_assets/"><code>enqueue_block_editor_assets</code></a> hook coupled with the standard <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/"><code>wp_enqueue_script</code></a> function.</p>
+<p>Refer to <a href="https://developer.notmatt.press/block-editor/how-to-guides/enqueueing-assets-in-the-editor/">Enqueueing assets in the Editor</a> for more information. You can also visit the <a href="https://github.com/wptrainingteam/block-theme-examples/blob/master/example-block-variation/functions.php">block-development-example</a> GitHub repository for more practical examples.</p>
+<div class="callout callout-tip">
+    Open your browser’s dev tools and try running <code>wp.data.select('core/editor').getBlocks()</code> in the console when editing a post or when using the Site Editor. This command will return all available blocks.
+</div>
+<h2 class="is-toc-heading" id="additional-resources" tabindex="-1"><a href="#additional-resources">Additional resources</a></h2>
+<ul>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/packages/">Package reference</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/getting-started/devenv/get-started-with-wp-scripts/">Get started with wp-scripts</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/how-to-guides/enqueueing-assets-in-the-editor/">Enqueueing assets in the Editor</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/contributors/code/scripts/">WordPress package handles</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">JavaScript reference</a> | MDN Web Docs</li>
+<li><a href="https://github.com/WordPress/block-development-examples">block-development-examples</a> | GitHub repository</li>
+<li><a href="https://github.com/wptrainingteam/block-theme-examples">block-theme-examples</a> | GitHub repository</li>
+<li><a href="https://developer.notmatt.press/news/2023/04/how-webpack-and-wordpress-packages-interact/">How webpack and WordPress packages interact</a> | Developer Blog</li>
+<li><a href="https://excalidraw.com/#json=4aNG9JUti3pMnsfoga35b,ihEAI8p5dwkpjWr6gQmjuw">Build process diagram</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

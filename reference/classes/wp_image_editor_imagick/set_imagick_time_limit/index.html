@@ -1,0 +1,96 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_image_editor_imagick/">WP_Image_Editor_Imagick</a></span><span class="is-current-page">WP_Image_Editor_Imagick::set_imagick_time_limit()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Image_Editor_Imagick::set_imagick_time_limit()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Image_Editor_Imagick::set_imagick_time_limit(): <span class="return-type">int|null</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sets Imagick time limit.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Depending on configuration, Imagick processing may take time.</p>
+<p>Multiple problems exist if PHP times out before ImageMagick completed:</p>
+<ol>
+<li>Temporary files aren’t cleaned by ImageMagick garbage collection.</li>
+<li>No clear error is provided.</li>
+<li>The cause of such timeout can be hard to pinpoint.</li>
+</ol>
+<p>This function, which is expected to be run before heavy image routines, resolves point 1 above by aligning Imagick’s timeout with PHP’s timeout, assuming it is set.</p>
+<p>However seems it introduces more problems than it fixes, see <a href="https://core.trac.wordpress.org/ticket/58202">https://core.trac.wordpress.org/ticket/58202</a>.</p>
+<p>Note:</p>
+<ul>
+<li>Imagick resource exhaustion does not issue catchable exceptions (yet).<br/>See <a href="https://github.com/Imagick/imagick/issues/333">https://github.com/Imagick/imagick/issues/333</a>.</li>
+<li>The resource limit is not saved/restored. It applies to subsequent image operations within the time of the HTTP request.</li>
+</ul>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">int|null</span> The new limit on success, null on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="310"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function set_imagick_time_limit() {
+	_deprecated_function( __METHOD__, '6.3.0' );
+
+	if ( ! defined( 'Imagick::RESOURCETYPE_TIME' ) ) {
+		return null;
+	}
+
+	// Returns PHP_FLOAT_MAX if unset.
+	$imagick_timeout = Imagick::getResourceLimit( Imagick::RESOURCETYPE_TIME );
+
+	// Convert to an integer, keeping in mind that: 0 === (int) PHP_FLOAT_MAX.
+	$imagick_timeout = $imagick_timeout &gt; PHP_INT_MAX ? PHP_INT_MAX : (int) $imagick_timeout;
+
+	$php_timeout = (int) ini_get( 'max_execution_time' );
+
+	if ( $php_timeout &gt; 1 &amp;&amp; $php_timeout &lt; $imagick_timeout ) {
+		$limit = (float) 0.8 * $php_timeout;
+		Imagick::setResourceLimit( Imagick::RESOURCETYPE_TIME, $limit );
+
+		return $limit;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-image-editor-imagick.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-image-editor-imagick.php#L310">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-image-editor-imagick.php#L310-L331">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_function/">_deprecated_function()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function as deprecated and inform when it has been used.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td><span class="since-description">This method was deprecated.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.2.0/">6.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

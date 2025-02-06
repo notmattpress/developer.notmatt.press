@@ -1,0 +1,182 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_customize_nav_menu_setting/">WP_Customize_Nav_Menu_Setting</a></span><span class="is-current-page">WP_Customize_Nav_Menu_Setting::update()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Customize_Nav_Menu_Setting::update()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Customize_Nav_Menu_Setting::update( <span class="arg-type">array|false</span> <span class="arg-name">$value</span> ): <span class="return-type">null|void</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Create/update the nav_menu term for this setting.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Any created menus will have their assigned term IDs exported to the client via the <a href="https://developer.notmatt.press/reference/hooks/customize_save_response/">‘customize_save_response’</a> filter. Likewise, any errors will be exported to the client via the customize_save_response() filter.</p>
+<p>To delete a menu, the client can send false as the value.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/wp_update_nav_menu_object">wp_update_nav_menu_object()</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$value</code><span class="type"><span class="array">array</span>|<span class="false">false</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The value to update. Note that slug cannot be updated via <a href="https://developer.notmatt.press/reference/functions/wp_update_nav_menu_object/" rel="function">wp_update_nav_menu_object()</a> .<br/>
+If false, then the menu will be deleted entirely.<br/>
+<ul class="param-hash"><li><code>name</code> <span class="type">string</span><div class="desc">The name of the menu to save.</div></li>
+<li><code>description</code> <span class="type">string</span><div class="desc">The term description. Default empty string.</div></li>
+<li><code>parent</code> <span class="type">int</span><div class="desc">The id of the parent term. Default 0.</div></li>
+<li><code>auto_add</code> <span class="type">bool</span><div class="desc">Whether pages will auto_add to this menu. Default false.</div></li>
+</ul>
+</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">null|void</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="483"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function update( $value ) {
+	if ( $this-&gt;is_updated ) {
+		return;
+	}
+
+	$this-&gt;is_updated = true;
+	$is_placeholder   = ( $this-&gt;term_id &lt; 0 );
+	$is_delete        = ( false === $value );
+
+	add_filter( 'customize_save_response', array( $this, 'amend_customize_save_response' ) );
+
+	$auto_add = null;
+	if ( $is_delete ) {
+		// If the current setting term is a placeholder, a delete request is a no-op.
+		if ( $is_placeholder ) {
+			$this-&gt;update_status = 'deleted';
+		} else {
+			$r = wp_delete_nav_menu( $this-&gt;term_id );
+
+			if ( is_wp_error( $r ) ) {
+				$this-&gt;update_status = 'error';
+				$this-&gt;update_error  = $r;
+			} else {
+				$this-&gt;update_status = 'deleted';
+				$auto_add            = false;
+			}
+		}
+	} else {
+		// Insert or update menu.
+		$menu_data              = wp_array_slice_assoc( $value, array( 'description', 'parent' ) );
+		$menu_data['menu-name'] = $value['name'];
+
+		$menu_id              = $is_placeholder ? 0 : $this-&gt;term_id;
+		$r                    = wp_update_nav_menu_object( $menu_id, wp_slash( $menu_data ) );
+		$original_name        = $menu_data['menu-name'];
+		$name_conflict_suffix = 1;
+		while ( is_wp_error( $r ) &amp;&amp; 'menu_exists' === $r-&gt;get_error_code() ) {
+			$name_conflict_suffix += 1;
+			/* translators: 1: Original menu name, 2: Duplicate count. */
+			$menu_data['menu-name'] = sprintf( __( '%1$s (%2$d)' ), $original_name, $name_conflict_suffix );
+			$r                      = wp_update_nav_menu_object( $menu_id, wp_slash( $menu_data ) );
+		}
+
+		if ( is_wp_error( $r ) ) {
+			$this-&gt;update_status = 'error';
+			$this-&gt;update_error  = $r;
+		} else {
+			if ( $is_placeholder ) {
+				$this-&gt;previous_term_id = $this-&gt;term_id;
+				$this-&gt;term_id          = $r;
+				$this-&gt;update_status    = 'inserted';
+			} else {
+				$this-&gt;update_status = 'updated';
+			}
+
+			$auto_add = $value['auto_add'];
+		}
+	}
+
+	if ( null !== $auto_add ) {
+		$nav_menu_options = $this-&gt;filter_nav_menu_options_value(
+			(array) get_option( 'nav_menu_options', array() ),
+			$this-&gt;term_id,
+			$auto_add
+		);
+		update_option( 'nav_menu_options', $nav_menu_options );
+	}
+
+	if ( 'inserted' === $this-&gt;update_status ) {
+		// Make sure that new menus assigned to nav menu locations use their new IDs.
+		foreach ( $this-&gt;manager-&gt;settings() as $setting ) {
+			if ( ! preg_match( '/^nav_menu_locations\[/', $setting-&gt;id ) ) {
+				continue;
+			}
+
+			$post_value = $setting-&gt;post_value( null );
+			if ( ! is_null( $post_value ) &amp;&amp; (int) $post_value === $this-&gt;previous_term_id ) {
+				$this-&gt;manager-&gt;set_post_value( $setting-&gt;id, $this-&gt;term_id );
+				$setting-&gt;save();
+			}
+		}
+
+		// Make sure that any nav_menu widgets referencing the placeholder nav menu get updated and sent back to client.
+		foreach ( array_keys( $this-&gt;manager-&gt;unsanitized_post_values() ) as $setting_id ) {
+			$nav_menu_widget_setting = $this-&gt;manager-&gt;get_setting( $setting_id );
+			if ( ! $nav_menu_widget_setting || ! preg_match( '/^widget_nav_menu\[/', $nav_menu_widget_setting-&gt;id ) ) {
+				continue;
+			}
+
+			$widget_instance = $nav_menu_widget_setting-&gt;post_value(); // Note that this calls WP_Customize_Widgets::sanitize_widget_instance().
+			if ( empty( $widget_instance['nav_menu'] ) || (int) $widget_instance['nav_menu'] !== $this-&gt;previous_term_id ) {
+				continue;
+			}
+
+			$widget_instance['nav_menu'] = $this-&gt;term_id;
+			$updated_widget_instance     = $this-&gt;manager-&gt;widgets-&gt;sanitize_widget_js_instance( $widget_instance );
+			$this-&gt;manager-&gt;set_post_value( $nav_menu_widget_setting-&gt;id, $updated_widget_instance );
+			$nav_menu_widget_setting-&gt;save();
+
+			$this-&gt;_widget_nav_menu_updates[ $nav_menu_widget_setting-&gt;id ] = $updated_widget_instance;
+		}
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/customize/class-wp-customize-nav-menu-setting.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/customize/class-wp-customize-nav-menu-setting.php#L483">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/customize/class-wp-customize-nav-menu-setting.php#L483-L585">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menu_setting/filter_nav_menu_options_value/">WP_Customize_Nav_Menu_Setting::filter_nav_menu_options_value()</a><code>wp-includes/customize/class-wp-customize-nav-menu-setting.php</code></td><td><p>Updates a nav_menu_options array.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_array_slice_assoc/">wp_array_slice_assoc()</a><code>wp-includes/functions.php</code></td><td><p>Extracts a slice of an array, given a list of keys.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_nav_menu/">wp_delete_nav_menu()</a><code>wp-includes/nav-menu.php</code></td><td><p>Deletes a navigation menu.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_nav_menu_object/">wp_update_nav_menu_object()</a><code>wp-includes/nav-menu.php</code></td><td><p>Saves the properties of a menu or create a new menu with those properties.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_slash/">wp_slash()</a><code>wp-includes/formatting.php</code></td><td><p>Adds slashes to a string or recursively adds slashes to strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.3.0/">4.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

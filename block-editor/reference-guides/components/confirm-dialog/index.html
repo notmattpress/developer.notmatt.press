@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/components/">Component Reference</a></span><span class="is-current-page">ConfirmDialog</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>ConfirmDialog</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><div class="callout callout-alert">
+This feature is still experimental. “Experimental” means this is an early implementation subject to drastic and breaking changes.
+</div>
+<p><code>ConfirmDialog</code> is built of top of <a href="https://developer.notmatt.press/block-editor/reference-guide/components/modal/"><code>Modal</code></a> and displays a confirmation dialog, with <em>confirm</em> and <em>cancel</em> buttons.</p>
+<p>The dialog is confirmed by clicking the <em>confirm</em> button or by pressing the <code>Enter</code> key. It is cancelled (closed) by clicking the <em>cancel</em> button, by pressing the <code>ESC</code> key, or by clicking outside the dialog focus (i.e, the overlay).</p>
+<h2 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h2>
+<p><code>ConfirmDialog</code> has two main implicit modes: controlled and uncontrolled.</p>
+<h3 class="is-toc-heading" id="uncontrolled-mode" tabindex="-1"><a href="#uncontrolled-mode">Uncontrolled mode</a></h3>
+<p>Allows the component to be used standalone, just by declaring it as part of another React’s component render method:</p>
+<ul>
+<li>It will be automatically open (displayed) upon mounting;</li>
+<li>It will be automatically closed when clicking the <em>cancel</em> button, by pressing the <code>ESC</code> key, or by clicking outside the dialog focus (i.e, the overlay);</li>
+<li><code>onCancel</code> is not mandatory but can be passed. Even if passed, the dialog will still be able to close itself.</li>
+</ul>
+<p>Activating this mode is as simple as omitting the <code>isOpen</code> prop. The only mandatory prop, in this case, is the <code>onConfirm</code> callback. The message is passed as the <code>children</code>. You can pass any JSX you’d like, which allows to further format the message or include sub-component if you’d like:</p>
+<pre><code class="language-jsx">import { __experimentalConfirmDialog as ConfirmDialog } from '@wordpress/components';
+
+function Example() {
+    return (
+        &lt;ConfirmDialog onConfirm={ () =&gt; console.debug( ' Confirmed! ' ) }&gt;
+            Are you sure? &lt;strong&gt;This action cannot be undone!&lt;/strong&gt;
+        &lt;/ConfirmDialog&gt;
+    );
+}
+</code></pre>
+<h3 class="is-toc-heading" id="controlled-mode" tabindex="-1"><a href="#controlled-mode">Controlled mode</a></h3>
+<p>Let the parent component control when the dialog is open/closed. It’s activated when a boolean value is passed to <code>isOpen</code>:</p>
+<ul>
+<li>It will not be automatically closed. You need to let it know when to open/close by updating the value of the <code>isOpen</code> prop;</li>
+<li>Both <code>onConfirm</code> and the <code>onCancel</code> callbacks are mandatory props in this mode;</li>
+<li>You’ll want to update the state that controls <code>isOpen</code> by updating it from the <code>onCancel</code> and <code>onConfirm</code> callbacks.</li>
+</ul>
+<pre><code class="language-jsx">import { useState } from 'react';
+import { __experimentalConfirmDialog as ConfirmDialog } from '@wordpress/components';
+
+function Example() {
+    const [ isOpen, setIsOpen ] = useState( true );
+
+    const handleConfirm = () =&gt; {
+        console.debug( 'Confirmed!' );
+        setIsOpen( false );
+    };
+
+    const handleCancel = () =&gt; {
+        console.debug( 'Cancelled!' );
+        setIsOpen( false );
+    };
+
+    return (
+        &lt;ConfirmDialog
+            isOpen={ isOpen }
+            onConfirm={ handleConfirm }
+            onCancel={ handleCancel }
+        &gt;
+            Are you sure? &lt;strong&gt;This action cannot be undone!&lt;/strong&gt;
+        &lt;/ConfirmDialog&gt;
+    );
+}
+</code></pre>
+<h3 class="is-toc-heading" id="unsupported-multiple-instances" tabindex="-1"><a href="#unsupported-multiple-instances">Unsupported: Multiple instances</a></h3>
+<p>Multiple <code>ConfirmDialog</code>s is an edge case that’s currently not officially supported by this component. At the moment, new instances will end up closing the last instance due to the way the <code>Modal</code> is implemented.</p>
+<h2 class="is-toc-heading" id="custom-types" tabindex="-1"><a href="#custom-types">Custom Types</a></h2>
+<pre><code class="language-ts">type DialogInputEvent =
+    | KeyboardEvent&lt; HTMLDivElement &gt;
+    | MouseEvent&lt; HTMLButtonElement &gt;;
+</code></pre>
+<h2 class="is-toc-heading" id="props" tabindex="-1"><a href="#props">Props</a></h2>
+<h3 class="is-toc-heading" id="title-string" tabindex="-1"><a href="#title-string">title: string</a></h3>
+<ul>
+<li>Required: No</li>
+</ul>
+<p>An optional <code>title</code> for the dialog. Setting a title will render it in a title bar at the top of the dialog, making it a bit taller. The bar will also include an <code>x</code> close button at the top-right corner.</p>
+<h3 class="is-toc-heading" id="children-react-reactnode" tabindex="-1"><a href="#children-react-reactnode">children: React.ReactNode</a></h3>
+<ul>
+<li>Required: Yes</li>
+</ul>
+<p>The actual message for the dialog. It’s passed as children and any valid <code>ReactNode</code> is accepted:</p>
+<pre><code class="language-jsx">&lt;ConfirmDialog&gt;
+    Are you sure? &lt;strong&gt;This action cannot be undone!&lt;/strong&gt;
+&lt;/ConfirmDialog&gt;
+</code></pre>
+<h3 class="is-toc-heading" id="isopen-boolean" tabindex="-1"><a href="#isopen-boolean">isOpen: boolean</a></h3>
+<ul>
+<li>Required: No</li>
+</ul>
+<p>Defines if the dialog is open (displayed) or closed (not rendered/displayed). It also implicitly toggles the controlled mode if set or the uncontrolled mode if it’s not set.</p>
+<h3 class="is-toc-heading" id="onconfirm-event-dialoginputevent-void" tabindex="-1"><a href="#onconfirm-event-dialoginputevent-void">onConfirm: ( event: DialogInputEvent ) =&gt; void</a></h3>
+<ul>
+<li>Required: Yes</li>
+</ul>
+<p>The callback that’s called when the user confirms. A confirmation can happen when the <code>OK</code> button is clicked or when <code>Enter</code> is pressed.</p>
+<h3 class="is-toc-heading" id="oncancel-event-dialoginputevent-void" tabindex="-1"><a href="#oncancel-event-dialoginputevent-void">onCancel: ( event: DialogInputEvent ) =&gt; void</a></h3>
+<ul>
+<li>Required: Only if <code>isOpen</code> is not set</li>
+</ul>
+<p>The callback that’s called when the user cancels. A cancellation can happen when the <code>Cancel</code> button is clicked, when the <code>ESC</code> key is pressed, or when a click outside of the dialog focus is detected (i.e. in the overlay).</p>
+<p>It’s not required if <code>isOpen</code> is not set (uncontrolled mode), as the component will take care of closing itself, but you can still pass a callback if something must be done upon cancelling (the component will still close itself in this case).</p>
+<p>If <code>isOpen</code> is set (controlled mode), then it’s required, and you need to set the state that defines <code>isOpen</code> to <code>false</code> as part of this callback if you want the dialog to close when the user cancels.</p>
+<h3 class="is-toc-heading" id="confirmbuttontext-string" tabindex="-1"><a href="#confirmbuttontext-string">confirmButtonText: string</a></h3>
+<ul>
+<li>Required: No</li>
+<li>Default: “OK”</li>
+</ul>
+<p>The optional custom text to display as the confirmation button’s label</p>
+<h3 class="is-toc-heading" id="cancelbuttontext-string" tabindex="-1"><a href="#cancelbuttontext-string">cancelButtonText: string</a></h3>
+<ul>
+<li>Required: No</li>
+<li>Default: “Cancel”</li>
+</ul>
+<p>The optional custom text to display as the cancellation button’s label</p>
+<h2 class="is-toc-heading" id="best-practices" tabindex="-1"><a href="#best-practices">Best practices</a></h2>
+<p>The ConfirmDialog component should:</p>
+<ul>
+<li>Be used only for short confirmation messages where a cancel and confirm actions are provided.</li>
+<li>Use a descriptive text for the <em>confirm</em> button. Default is “OK”.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

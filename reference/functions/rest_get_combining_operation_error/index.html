@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">rest_get_combining_operation_error()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>rest_get_combining_operation_error()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">rest_get_combining_operation_error( <span class="arg-type">array</span> <span class="arg-name">$value</span>,  <span class="arg-type">string</span> <span class="arg-name">$param</span>,  <span class="arg-type">array</span> <span class="arg-name">$errors</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Gets the error of combining operation.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$value</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The value to validate.</span></div></dd><dt><code>$param</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The parameter name, used in error messages.</span></div></dd><dt><code>$errors</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The errors array, to search for possible error.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> The combining operation error.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1858"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function rest_get_combining_operation_error( $value, $param, $errors ) {
+	// If there is only one error, simply return it.
+	if ( 1 === count( $errors ) ) {
+		return rest_format_combining_operation_error( $param, $errors[0] );
+	}
+
+	// Filter out all errors related to type validation.
+	$filtered_errors = array();
+	foreach ( $errors as $error ) {
+		$error_code = $error['error_object']-&gt;get_error_code();
+		$error_data = $error['error_object']-&gt;get_error_data();
+
+		if ( 'rest_invalid_type' !== $error_code || ( isset( $error_data['param'] ) &amp;&amp; $param !== $error_data['param'] ) ) {
+			$filtered_errors[] = $error;
+		}
+	}
+
+	// If there is only one error left, simply return it.
+	if ( 1 === count( $filtered_errors ) ) {
+		return rest_format_combining_operation_error( $param, $filtered_errors[0] );
+	}
+
+	// If there are only errors related to object validation, try choosing the most appropriate one.
+	if ( count( $filtered_errors ) &gt; 1 &amp;&amp; 'object' === $filtered_errors[0]['schema']['type'] ) {
+		$result = null;
+		$number = 0;
+
+		foreach ( $filtered_errors as $error ) {
+			if ( isset( $error['schema']['properties'] ) ) {
+				$n = count( array_intersect_key( $error['schema']['properties'], $value ) );
+				if ( $n &gt; $number ) {
+					$result = $error;
+					$number = $n;
+				}
+			}
+		}
+
+		if ( null !== $result ) {
+			return rest_format_combining_operation_error( $param, $result );
+		}
+	}
+
+	// If each schema has a title, include those titles in the error message.
+	$schema_titles = array();
+	foreach ( $errors as $error ) {
+		if ( isset( $error['schema']['title'] ) ) {
+			$schema_titles[] = $error['schema']['title'];
+		}
+	}
+
+	if ( count( $schema_titles ) === count( $errors ) ) {
+		/* translators: 1: Parameter, 2: Schema titles. */
+		return new WP_Error( 'rest_no_matching_schema', wp_sprintf( __( '%1$s is not a valid %2$l.' ), $param, $schema_titles ) );
+	}
+
+	/* translators: %s: Parameter. */
+	return new WP_Error( 'rest_no_matching_schema', sprintf( __( '%s does not match any of the expected formats.' ), $param ) );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api.php#L1858">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api.php#L1858-L1915">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_format_combining_operation_error/">rest_format_combining_operation_error()</a><code>wp-includes/rest-api.php</code></td><td><p>Formats a combining operation error into a <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_sprintf/">wp_sprintf()</a><code>wp-includes/formatting.php</code></td><td><p>WordPress’ implementation of PHP sprintf() with filters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_find_any_matching_schema/">rest_find_any_matching_schema()</a><code>wp-includes/rest-api.php</code></td><td><p>Finds the matching schema among the “anyOf” schemas.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_find_one_matching_schema/">rest_find_one_matching_schema()</a><code>wp-includes/rest-api.php</code></td><td><p>Finds the matching schema among the “oneOf” schemas.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.6.0/">5.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

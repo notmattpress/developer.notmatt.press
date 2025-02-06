@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">rest_preload_api_request()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>rest_preload_api_request()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">rest_preload_api_request( <span class="arg-type">array</span> <span class="arg-name">$memo</span>,  <span class="arg-type">string</span> <span class="arg-name">$path</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Append result of internal request to REST API for purpose of preloading data to be attached to a page.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Expected to be called in the context of <code>array_reduce</code>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$memo</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Reduce accumulator.</span></div></dd><dt><code>$path</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">REST API path to preload.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Modified reduce accumulator.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2918"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function rest_preload_api_request( $memo, $path ) {
+	/*
+	 * array_reduce() doesn't support passing an array in PHP 5.2,
+	 * so we need to make sure we start with one.
+	 */
+	if ( ! is_array( $memo ) ) {
+		$memo = array();
+	}
+
+	if ( empty( $path ) ) {
+		return $memo;
+	}
+
+	$method = 'GET';
+	if ( is_array( $path ) &amp;&amp; 2 === count( $path ) ) {
+		$method = end( $path );
+		$path   = reset( $path );
+
+		if ( ! in_array( $method, array( 'GET', 'OPTIONS' ), true ) ) {
+			$method = 'GET';
+		}
+	}
+
+	$path = untrailingslashit( $path );
+	if ( empty( $path ) ) {
+		$path = '/';
+	}
+
+	$path_parts = parse_url( $path );
+	if ( false === $path_parts ) {
+		return $memo;
+	}
+
+	$request = new WP_REST_Request( $method, $path_parts['path'] );
+	if ( ! empty( $path_parts['query'] ) ) {
+		parse_str( $path_parts['query'], $query_params );
+		$request-&gt;set_query_params( $query_params );
+	}
+
+	$response = rest_do_request( $request );
+	if ( 200 === $response-&gt;status ) {
+		$server = rest_get_server();
+		/** This filter is documented in wp-includes/rest-api/class-wp-rest-server.php */
+		$response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $server, $request );
+		$embed    = $request-&gt;has_param( '_embed' ) ? rest_parse_embed_param( $request['_embed'] ) : false;
+		$data     = (array) $server-&gt;response_to_data( $response, $embed );
+
+		if ( 'OPTIONS' === $method ) {
+			$memo[ $method ][ $path ] = array(
+				'body'    =&gt; $data,
+				'headers' =&gt; $response-&gt;headers,
+			);
+		} else {
+			$memo[ $path ] = array(
+				'body'    =&gt; $data,
+				'headers' =&gt; $response-&gt;headers,
+			);
+		}
+	}
+
+	return $memo;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api.php#L2918">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api.php#L2918-L2979">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/rest_post_dispatch/"><span class="hook-func">apply_filters</span>( ‘rest_post_dispatch’,  <nobr><span class="arg-type">WP_HTTP_Response</span> <span class="arg-name">$result</span></nobr>,  <nobr><span class="arg-type">WP_REST_Server</span> <span class="arg-name">$server</span></nobr>,  <nobr><span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span></nobr> )</a></dt><dd><p>Filters the REST API response.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_parse_embed_param/">rest_parse_embed_param()</a><code>wp-includes/rest-api.php</code></td><td><p>Parses the “_embed” parameter into the list of resources to embed.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_get_server/">rest_get_server()</a><code>wp-includes/rest-api.php</code></td><td><p>Retrieves the current REST server instance.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_do_request/">rest_do_request()</a><code>wp-includes/rest-api.php</code></td><td><p>Do a REST request.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/__construct/">WP_REST_Request::__construct()</a><code>wp-includes/rest-api/class-wp-rest-request.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/untrailingslashit/">untrailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Removes trailing forward slashes and backslashes if they exist.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/rest_ensure_response/">rest_ensure_response()</a><code>wp-includes/rest-api.php</code></td><td><p>Ensures a REST response is a response object (for consistency).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.0.0/">5.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

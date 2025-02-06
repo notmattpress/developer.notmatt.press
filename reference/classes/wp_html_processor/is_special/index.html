@@ -1,0 +1,162 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_html_processor/">WP_HTML_Processor</a></span><span class="is-current-page">WP_HTML_Processor::is_special()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_HTML_Processor::is_special()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_HTML_Processor::is_special( <span class="arg-type">string</span> <span class="arg-name">$tag_name</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns whether an element of a given name is in the HTML special category.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://html.spec.whatwg.org/#special">https://html.spec.whatwg.org/#special</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$tag_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Name of element to check.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> Whether the element of the given name is in the special category.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2270"><code class="language-php line-numbers" id="wporg-source-code" lang="php">
+	return true;
+
+/*
+ * &gt; A start tag whose tag name is "li"
+ * &gt; A start tag whose tag name is one of: "dd", "dt"
+ */
+case '+DD':
+case '+DT':
+case '+LI':
+	$this-&gt;state-&gt;frameset_ok = false;
+	$node                     = $this-&gt;state-&gt;stack_of_open_elements-&gt;current_node();
+	$is_li                    = 'LI' === $token_name;
+
+	in_body_list_loop:
+	/*
+	 * The logic for LI and DT/DD is the same except for one point: LI elements _only_
+	 * close other LI elements, but a DT or DD element closes _any_ open DT or DD element.
+	 */
+	if ( $is_li ? 'LI' === $node-&gt;node_name : ( 'DD' === $node-&gt;node_name || 'DT' === $node-&gt;node_name ) ) {
+		$node_name = $is_li ? 'LI' : $node-&gt;node_name;
+		$this-&gt;generate_implied_end_tags( $node_name );
+		if ( ! $this-&gt;state-&gt;stack_of_open_elements-&gt;current_node_is( $node_name ) ) {
+			// @todo Indicate a parse error once it's possible. This error does not impact the logic here.
+		}
+
+		$this-&gt;state-&gt;stack_of_open_elements-&gt;pop_until( $node_name );
+		goto in_body_list_done;
+	}
+
+	if (
+		'ADDRESS' !== $node-&gt;node_name &amp;&amp;
+		'DIV' !== $node-&gt;node_name &amp;&amp;
+		'P' !== $node-&gt;node_name &amp;&amp;
+		self::is_special( $node )
+	) {
+		/*
+		 * &gt; If node is in the special category, but is not an address, div,
+		 * &gt; or p element, then jump to the step labeled done below.
+		 */
+		goto in_body_list_done;
+	} else {
+		/*
+		 * &gt; Otherwise, set node to the previous entry in the stack of open elements
+		 * &gt; and return to the step labeled loop.
+		 */
+		foreach ( $this-&gt;state-&gt;stack_of_open_elements-&gt;walk_up( $node ) as $item ) {
+			$node = $item;
+			break;
+		}
+		goto in_body_list_loop;
+	}
+
+	in_body_list_done:
+	if ( $this-&gt;state-&gt;stack_of_open_elements-&gt;has_p_in_button_scope() ) {
+		$this-&gt;close_a_p_element();
+	}
+
+	$this-&gt;insert_html_element( $this-&gt;state-&gt;current_token );
+	return true;
+
+case '+PLAINTEXT':
+	if ( $this-&gt;state-&gt;stack_of_open_elements-&gt;has_p_in_button_scope() ) {
+		$this-&gt;close_a_p_element();
+	}
+
+	/*
+	 * @todo This may need to be handled in the Tag Processor and turn into
+	 *       a single self-contained tag like TEXTAREA, whose modifiable text
+	 *       is the rest of the input document as plaintext.
+	 */
+	$this-&gt;bail( 'Cannot process PLAINTEXT elements.' );
+	break;
+
+/*
+ * &gt; A start tag whose tag name is "button"
+ */
+case '+BUTTON':
+	if ( $this-&gt;state-&gt;stack_of_open_elements-&gt;has_element_in_scope( 'BUTTON' ) ) {
+		// @todo Indicate a parse error once it's possible. This error does not impact the logic here.
+		$this-&gt;generate_implied_end_tags();
+		$this-&gt;state-&gt;stack_of_open_elements-&gt;pop_until( 'BUTTON' );
+	}
+
+	$this-&gt;reconstruct_active_formatting_elements();
+	$this-&gt;insert_html_element( $this-&gt;state-&gt;current_token );
+	$this-&gt;state-&gt;frameset_ok = false;
+
+	return true;
+
+/*
+ * &gt; An end tag whose tag name is one of: "address", "article", "aside", "blockquote",
+ * &gt; "button", "center", "details", "dialog", "dir", "div", "dl", "fieldset",
+ * &gt; "figcaption", "figure", "footer", "header", "hgroup", "listing", "main",
+ * &gt; "menu", "nav", "ol", "pre", "search", "section", "summary", "ul"
+ */
+case '-ADDRESS':
+case '-ARTICLE':
+case '-ASIDE':
+case '-BLOCKQUOTE':
+case '-BUTTON':
+case '-CENTER':
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/html-api/class-wp-html-processor.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/html-api/class-wp-html-processor.php#L2270">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/html-api/class-wp-html-processor.php#L2270-L2371">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.4.0/">6.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

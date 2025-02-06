@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_load_translations_early()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_load_translations_early()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_load_translations_early()</h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Attempts an early load of translations.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Used for errors encountered during the initial loading process, before the locale has been properly detected and loaded.</p>
+<p>Designed for unusual load sequences (like setup-config.php) or for when the script will then terminate with an error, otherwise there is a risk that a file can be double-included.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1495"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_load_translations_early() {
+	global $wp_textdomain_registry, $wp_locale;
+	static $loaded = false;
+
+	if ( $loaded ) {
+		return;
+	}
+
+	$loaded = true;
+
+	if ( function_exists( 'did_action' ) &amp;&amp; did_action( 'init' ) ) {
+		return;
+	}
+
+	// We need $wp_local_package.
+	require ABSPATH . WPINC . '/version.php';
+
+	// Translation and localization.
+	require_once ABSPATH . WPINC . '/pomo/mo.php';
+	require_once ABSPATH . WPINC . '/l10n/class-wp-translation-controller.php';
+	require_once ABSPATH . WPINC . '/l10n/class-wp-translations.php';
+	require_once ABSPATH . WPINC . '/l10n/class-wp-translation-file.php';
+	require_once ABSPATH . WPINC . '/l10n/class-wp-translation-file-mo.php';
+	require_once ABSPATH . WPINC . '/l10n/class-wp-translation-file-php.php';
+	require_once ABSPATH . WPINC . '/l10n.php';
+	require_once ABSPATH . WPINC . '/class-wp-textdomain-registry.php';
+	require_once ABSPATH . WPINC . '/class-wp-locale.php';
+	require_once ABSPATH . WPINC . '/class-wp-locale-switcher.php';
+
+	// General libraries.
+	require_once ABSPATH . WPINC . '/plugin.php';
+
+	$locales   = array();
+	$locations = array();
+
+	if ( ! $wp_textdomain_registry instanceof WP_Textdomain_Registry ) {
+		$wp_textdomain_registry = new WP_Textdomain_Registry();
+	}
+
+	while ( true ) {
+		if ( defined( 'WPLANG' ) ) {
+			if ( '' === WPLANG ) {
+				break;
+			}
+			$locales[] = WPLANG;
+		}
+
+		if ( isset( $wp_local_package ) ) {
+			$locales[] = $wp_local_package;
+		}
+
+		if ( ! $locales ) {
+			break;
+		}
+
+		if ( defined( 'WP_LANG_DIR' ) &amp;&amp; @is_dir( WP_LANG_DIR ) ) {
+			$locations[] = WP_LANG_DIR;
+		}
+
+		if ( defined( 'WP_CONTENT_DIR' ) &amp;&amp; @is_dir( WP_CONTENT_DIR . '/languages' ) ) {
+			$locations[] = WP_CONTENT_DIR . '/languages';
+		}
+
+		if ( @is_dir( ABSPATH . 'wp-content/languages' ) ) {
+			$locations[] = ABSPATH . 'wp-content/languages';
+		}
+
+		if ( @is_dir( ABSPATH . WPINC . '/languages' ) ) {
+			$locations[] = ABSPATH . WPINC . '/languages';
+		}
+
+		if ( ! $locations ) {
+			break;
+		}
+
+		$locations = array_unique( $locations );
+
+		foreach ( $locales as $locale ) {
+			foreach ( $locations as $location ) {
+				if ( file_exists( $location . '/' . $locale . '.mo' ) ) {
+					load_textdomain( 'default', $location . '/' . $locale . '.mo', $locale );
+
+					if ( defined( 'WP_SETUP_CONFIG' ) &amp;&amp; file_exists( $location . '/admin-' . $locale . '.mo' ) ) {
+						load_textdomain( 'default', $location . '/admin-' . $locale . '.mo', $locale );
+					}
+
+					break 2;
+				}
+			}
+		}
+
+		break;
+	}
+
+	$wp_locale = new WP_Locale();
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/load.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/load.php#L1495">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/load.php#L1495-L1590">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_locale/__construct/">WP_Locale::__construct()</a><code>wp-includes/class-wp-locale.php</code></td><td><p>Constructor which calls helper methods to set up object variables.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/did_action/">did_action()</a><code>wp-includes/plugin.php</code></td><td><p>Retrieves the number of times an action has been fired during the current request.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_object_cache/is_valid_key/">WP_Object_Cache::is_valid_key()</a><code>wp-includes/class-wp-object-cache.php</code></td><td><p>Serves as a utility function to determine whether a key is valid.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_fatal_error_handler/display_default_error_template/">WP_Fatal_Error_Handler::display_default_error_template()</a><code>wp-includes/class-wp-fatal-error-handler.php</code></td><td><p>Displays the default PHP error template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/process_fields/">wpdb::process_fields()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Processes arrays of field/value pairs and field formats.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_check_php_mysql_versions/">wp_check_php_mysql_versions()</a><code>wp-includes/load.php</code></td><td><p>Checks for the required PHP version, and the mysqli extension or a database drop-in.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_maintenance/">wp_maintenance()</a><code>wp-includes/load.php</code></td><td><p>Dies with a maintenance message when conditions are met.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_wpdb_vars/">wp_set_wpdb_vars()</a><code>wp-includes/load.php</code></td><td><p>Sets the database table prefix and the format specifiers for database table columns.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/dead_db/">dead_db()</a><code>wp-includes/functions.php</code></td><td><p>Loads custom DB error or display WordPress DB error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_blog_installed/">is_blog_installed()</a><code>wp-includes/functions.php</code></td><td><p>Determines whether WordPress is already installed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/ms_not_installed/">ms_not_installed()</a><code>wp-includes/ms-load.php</code></td><td><p>Displays a failure message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/check_connection/">wpdb::check_connection()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Checks that the connection to the database is still up. If not, try to reconnect.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/query/">wpdb::query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Performs a database query, using current database connection.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/select/">wpdb::select()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Selects a database using the current or provided database connection.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/_real_escape/">wpdb::_real_escape()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Real escape using mysqli_real_escape_string().</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/print_error/">wpdb::print_error()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prints SQL/DB error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/db_connect/">wpdb::db_connect()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Connects to and selects database.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 11 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.4.0/">3.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

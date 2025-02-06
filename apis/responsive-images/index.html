@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/apis/">Common APIs Handbook</a></span><span class="is-current-page">Responsive Images</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Responsive Images</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Since WordPress 4.4, native responsive images is supported by including <code>srcset</code> and <code>sizes</code> attributes to the image markup it generates. For background on this feature, read the <a href="https://make.wordpress.org/core/2015/09/30/responsive-images-merge-proposal/">merge proposal</a>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="some-history" tabindex="-1"><a href="#some-history">Some History</a></h2>
+<p>When users upload images in WordPress, it automatically crops new images to smaller sizes. For example, if you upload an image that’s 1500 x 706, the image sizes might look like this:</p>
+<ul class="wp-block-list">
+<li>Full Size – 1500 x 706</li>
+<li>Large – 500 x 235</li>
+<li>Medium – 300 x 141</li>
+<li>Thumbnail – 150 x 150</li>
+</ul>
+<p>So WordPress automatically creates several sizes of each image uploaded to the media library. Additional sizes are created depending on the theme. If the full size image is attached to a post, users on desktop and mobile devices will see the full size image. However, it doesn’t make sense to use the full size image on mobile devices because of its display and file size.</p>
+<p>Before responsive design was popular, many sites attempted to dynamically serve different layouts (including images) to browsers based on the device type (e.g. phone, tablet, etc.). In these cases, all of the dynamic stuff happened at the server, before the page was rendered. This strategy is usually associated with the term <strong>adaptive design</strong>.</p>
+<p><strong>Responsive design</strong>, on the other hand, uses tools like media queries to allow a single page to be rendered that will <em>respond</em> in the browser based on things like viewport width and display density.</p>
+<p><strong>Responsive images</strong> follows the second strategy and sends all of the information to the browser up front and lets the browser take care of loading the appropriate image rather than making those decisions on the server before the page is loaded.</p>
+<h2 class="is-toc-heading wp-block-heading" id="how-it-works" tabindex="-1"><a href="#how-it-works">How it works</a></h2>
+<p>By including the available sizes of an image into a <code>srcset</code> attribute, it allows the software to automatically use and display the right image based on a device’s screen size. If you attach a full size 1500 x 706 image to a post in WordPress, mobile devices will see the large or medium-sized image instead—potentially saving bandwidth and speeding up page load times in the process.</p>
+<p>Note that for compatibility with existing markup, neither <code>srcset</code> nor <code>sizes</code> are added or modified if they already exist in content HTML. Responsive images don’t have any settings to configure as the magic happens behind the scenes.</p>
+<h3 class="is-toc-heading wp-block-heading" id="browser-side" tabindex="-1"><a href="#browser-side">Browser side</a></h3>
+<p>To help browsers select the best image from the source set list, WordPress also include a default <code>sizes</code> attribute that is equivalent to <code>(max-width: px) 100vw, px</code>. While this default will work out of the box for a majority of sites, themes should customize the default <code>sizes</code> attribute as needed using the <code>wp_calculate_image_sizes</code> filter.</p>
+<p>A normal browser request goes to server, server sends back response. This response includes links to other resources – fonts, css, JS, and images. The browser notices these resources, and sends additional requests to the server and fetches those resources.</p>
+<p>What this responsive image approach does is provide additional attributes to the image tag that alerts the browser to the different image files available for that particular image tag so that the browser can then intelligently request the right image file (source) for whatever window/viewport size or even resolution support the browser has. This means the browser can request the right “sized” image file for an image instead of being served an overly large image and resizing down to fit the space after the fact.</p>
+<p>For a full overview of how <code>srcset</code> and <code>sizes</code> works, read <em><a href="http://alistapart.com/article/responsive-images-in-practice">Responsive Images in Practice</a></em>, by <em>Eric Portis</em> over at A List Apart.</p>
+<h2 class="is-toc-heading wp-block-heading" id="new-functions-and-hooks" tabindex="-1"><a href="#new-functions-and-hooks">New functions and hooks</a></h2>
+<p>To implement this feature, the following new functions were added to WordPress:</p>
+<ul class="wp-block-list">
+<li><code><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_image_srcset/">wp_get_attachment_image_srcset</a>()</code> – Retrieves the value for an image attachment’s <code>srcset</code> attribute.</li>
+<li><code><a href="https://developer.notmatt.press/reference/functions/wp_calculate_image_srcset/">wp_calculate_image_srcset</a>()</code> – A helper function to calculate the image sources to include in a <code>srcset</code> attribute.</li>
+<li><code><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_image_sizes/">wp_get_attachment_image_sizes</a>()</code> – Creates a <code>sizes</code> attribute value for an image.</li>
+<li><code><a href="https://developer.notmatt.press/reference/functions/wp_calculate_image_sizes/">wp_calculate_image_sizes</a>()</code> – A helper function to create the <code>sizes</code> attribute for an image.</li>
+<li><code><a href="https://developer.notmatt.press/reference/functions/wp_image_add_srcset_and_sizes/">wp_image_add_srcset_and_sizes</a>()</code> – Adds <code>srcset</code> and <code>sizes</code> attributes to an existing <code>img</code> element.</li>
+</ul>
+<p>As a safeguard against adding very large images to <code>srcset</code> attributes, a <code><a href="https://developer.notmatt.press/reference/hooks/max_srcset_image_width/">max_srcset_image_width</a></code> filter has been added, which allows themes to set a maximum image width for images include in source set lists. The default value is <em>2048px</em>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="a-new-default-image-size" tabindex="-1"><a href="#a-new-default-image-size">A new default image size</a></h2>
+<p>A new default intermediate size, <code>medium_large</code> has been added to better take advantage of responsive image support. The new size is 768px wide by default, with no height limit, and can be used like any other size available in WordPress. As it is a standard size, it will only be generated when new images are uploaded or sizes are regenerated with third party plugins.</p>
+<p>The <code>medium_large</code> size is not included in the UI when selecting an image to insert in posts, nor are we including UI to change the image size from the media settings page. However, developers can modify the width of this new size using the <code>update_option()</code> function, similar to any other default image size.</p>
+<h2 class="is-toc-heading wp-block-heading" id="customizing-responsive-image-markup" tabindex="-1"><a href="#customizing-responsive-image-markup">Customizing responsive image markup</a></h2>
+<p>To modify the default <code>srcset</code> and <code>sizes</code> attributes,  you should use the <code>wp_calculate_image_srcset</code> and <code>wp_calculate_image_sizes</code> filters, respectively.</p>
+<p>Overriding the <code>srcset</code> or <code>sizes</code> attributes for images not embedded in post content (e.g. post thumbnails, galleries, etc.), can be accomplished using the <code><a href="https://developer.notmatt.press/reference/hooks/wp_get_attachment_image_attributes/">wp_get_attachment_image_attributes</a></code> filter, similar to how other image attributes are modified.</p>
+<p>Additionally, you can create your own custom markup patterns by using <code>wp_get_attachment_image_srcset()</code> directly in your templates. Here is an example of how you could use this function to build an <code>&lt;img&gt;</code> element with a custom <code>sizes</code> attribute:</p>
+<pre class="wp-block-preformatted">&lt;?php
+$img_src = wp_get_attachment_image_url( $attachment_id, 'medium' );
+$img_srcset = wp_get_attachment_image_srcset( $attachment_id, 'medium' );
+?&gt;
+&lt;img src="&lt;?php echo esc_url( $img_src ); ?&gt;"
+     srcset="&lt;?php echo esc_attr( $img_srcset ); ?&gt;"
+     sizes="(max-width: 50em) 87vw, 680px" alt="Foo Bar"&gt;</pre>
+<p><strong>Need more developer details?</strong><br/><a href="https://github.com/ResponsiveImagesCG/wp-tevko-responsive-images">Learn more about customizing responsive images markup on this GitHub repository</a>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="sources" tabindex="-1"><a href="#sources">Sources</a></h2>
+<ul class="wp-block-list">
+<li><a href="https://make.wordpress.org/core/2015/11/10/responsive-images-in-wordpress-4-4/">https://make.wordpress.org/core/2015/11/10/responsive-images-in-wordpress-4-4/</a></li>
+<li><a href="https://wptavern.com/joe-mcgill-explains-how-responsive-images-work-in-wordpress-4-4">https://wptavern.com/joe-mcgill-explains-how-responsive-images-work-in-wordpress-4-4</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

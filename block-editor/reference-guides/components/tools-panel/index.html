@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/components/">Component Reference</a></span><span class="is-current-page">ToolsPanel</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>ToolsPanel</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><div class="callout callout-alert">
+This feature is still experimental. “Experimental” means this is an early<br/>
+implementation subject to drastic and breaking changes.
+</div>
+<p>
+These panels provide progressive discovery options for their children. For<br/>
+example the controls provided via block supports.</p>
+<h2 class="is-toc-heading" id="development-guidelines" tabindex="-1"><a href="#development-guidelines">Development guidelines</a></h2>
+<p>The <code>ToolsPanel</code> creates a container with a header including a<br/>
+dropdown menu. The menu is generated automatically from the panel’s children<br/>
+matching the <code>ToolsPanelItem</code> component type.</p>
+<p>Each menu item allows for the display of the corresponding child to be<br/>
+toggled on or off. The control’s <code>onSelect</code> and <code>onDeselect</code> callbacks are fired<br/>
+allowing for greater control over the child e.g. resetting block attributes when<br/>
+a block support control is toggled off.</p>
+<p>Whether a child control is initially displayed or not is dependent upon<br/>
+if there has previously been a value set or the child has been flagged as<br/>
+displaying by default through the <code>isShownByDefault</code> prop. Determining whether a<br/>
+child has a value is done via the <code>hasValue</code> function provided through the<br/>
+child’s props.</p>
+<p>Components that are not wrapped within a <code>ToolsPanelItem</code> are still rendered<br/>
+however they will not be represented within, or controlled by, the <code>ToolsPanel</code><br/>
+menu. An example scenario that benefits from this could be displaying<br/>
+introduction or help text within a panel.</p>
+<h3 class="is-toc-heading" id="toolspanel-layout" tabindex="-1"><a href="#toolspanel-layout">ToolsPanel Layout</a></h3>
+<p>The <code>ToolsPanel</code> has a two-column grid layout. By default, <code>ToolsPanelItem</code><br/>
+components within the panel are styled to span both columns as this fits the<br/>
+majority of use-cases. Most non-control elements, such as help text, will be<br/>
+rendered as children of the related control’s <code>ToolsPanelItem</code> and not require<br/>
+additional styling.</p>
+<p>Suppose an element is related to multiple controls (e.g. a contrast checker), or<br/>
+the panel itself (e.g. a panel description). In that case, these will be<br/>
+rendered into the panel without a wrapping <code>ToolsPanelItem</code>. They’ll then only<br/>
+span a single column by default. If this is undesirable, those elements will<br/>
+likely need a small style tweak, e.g. <code>grid-column: 1 / -1;</code></p>
+<p>The usage example below will illustrate a non-<code>ToolsPanelItem</code> description<br/>
+paragraph, controls that should display in a single row, and others spanning<br/>
+both columns.</p>
+<h2 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h2>
+<pre><code class="language-jsx">/**
+ * External dependencies
+ */
+import styled from '@emotion/styled';
+
+/**
+ * WordPress dependencies
+ */
+import {
+    BoxControl,
+    __experimentalToolsPanel as ToolsPanel,
+    __experimentalToolsPanelItem as ToolsPanelItem,
+    __experimentalUnitControl as UnitControl,
+} from '@wordpress/components';
+import { __ } from '@wordpress/i18n';
+
+const PanelDescription = styled.div`
+    grid-column: span 2;
+`;
+
+const SingleColumnItem = styled( ToolsPanelItem )`
+    grid-column: span 1;
+`;
+
+export function DimensionPanel() {
+    const [ height, setHeight ] = useState();
+    const [ width, setWidth ] = useState();
+    const [ padding, setPadding ] = useState();
+    const [ margin, setMargin ] = useState();
+
+    const resetAll = () =&gt; {
+        setHeight( undefined );
+        setWidth( undefined );
+        setPadding( undefined );
+        setMargin( undefined );
+    };
+
+    return (
+        &lt;ToolsPanel label={ __( 'Dimensions' ) } resetAll={ resetAll }&gt;
+            &lt;PanelDescription&gt;
+                Select dimensions or spacing related settings from the menu for
+                additional controls.
+            &lt;/PanelDescription&gt;
+            &lt;SingleColumnItem
+                hasValue={ () =&gt; !! height }
+                label={ __( 'Height' ) }
+                onDeselect={ () =&gt; setHeight( undefined ) }
+                isShownByDefault
+            &gt;
+                &lt;UnitControl
+                    __next40pxDefaultSize
+                    label={ __( 'Height' ) }
+                    onChange={ setHeight }
+                    value={ height }
+                /&gt;
+            &lt;/SingleColumnItem&gt;
+            &lt;SingleColumnItem
+                hasValue={ () =&gt; !! width }
+                label={ __( 'Width' ) }
+                onDeselect={ () =&gt; setWidth( undefined ) }
+                isShownByDefault
+            &gt;
+                &lt;UnitControl
+                    __next40pxDefaultSize
+                    label={ __( 'Width' ) }
+                    onChange={ setWidth }
+                    value={ width }
+                /&gt;
+            &lt;/SingleColumnItem&gt;
+            &lt;ToolsPanelItem
+                hasValue={ () =&gt; !! padding }
+                label={ __( 'Padding' ) }
+                onDeselect={ () =&gt; setPadding( undefined ) }
+            &gt;
+                &lt;BoxControl
+                    __next40pxDefaultSize
+                    label={ __( 'Padding' ) }
+                    onChange={ setPadding }
+                    values={ padding }
+                    allowReset={ false }
+                /&gt;
+            &lt;/ToolsPanelItem&gt;
+            &lt;ToolsPanelItem
+                hasValue={ () =&gt; !! margin }
+                label={ __( 'Margin' ) }
+                onDeselect={ () =&gt; setMargin( undefined ) }
+            &gt;
+                &lt;BoxControl
+                    __next40pxDefaultSize
+                    label={ __( 'Margin' ) }
+                    onChange={ setMargin }
+                    values={ margin }
+                    allowReset={ false }
+                /&gt;
+            &lt;/ToolsPanelItem&gt;
+        &lt;/ToolsPanel&gt;
+    );
+}
+</code></pre>
+<h2 class="is-toc-heading" id="props" tabindex="-1"><a href="#props">Props</a></h2>
+<h3 class="is-toc-heading" id="hasinnerwrapper-boolean" tabindex="-1"><a href="#hasinnerwrapper-boolean">hasInnerWrapper: boolean</a></h3>
+<p>Flags that the items in this ToolsPanel will be contained within an inner<br/>
+wrapper element allowing the panel to lay them out accordingly.</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>false</code></li>
+</ul>
+<h3 class="is-toc-heading" id="dropdownmenuprops" tabindex="-1"><a href="#dropdownmenuprops">dropdownMenuProps: {}</a></h3>
+<p>The popover props to configure panel’s <code>DropdownMenu</code>.</p>
+<ul>
+<li>Type: <code>DropdownMenuProps</code></li>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="headinglevel-1-2-3-4-5-6-1-2-3-4-5-6" tabindex="-1"><a href="#headinglevel-1-2-3-4-5-6-1-2-3-4-5-6">headingLevel: 1 | 2 | 3 | 4 | 5 | 6 | ‘1’ | ‘2’ | ‘3’ | ‘4’ | ‘5’ | ‘6’</a></h3>
+<p>The heading level of the panel’s header.</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>2</code></li>
+</ul>
+<h3 class="is-toc-heading" id="label-string" tabindex="-1"><a href="#label-string">label: string</a></h3>
+<p>Text to be displayed within the panel’s header and as the <code>aria-label</code> for the<br/>
+panel’s dropdown menu.</p>
+<ul>
+<li>Required: Yes</li>
+</ul>
+<h3 class="is-toc-heading" id="panelid-string-null" tabindex="-1"><a href="#panelid-string-null">panelId: string | null</a></h3>
+<p>If a <code>panelId</code> is set, it is passed through the <code>ToolsPanelContext</code> and used<br/>
+to restrict panel items. When a <code>panelId</code> is set, items can only register<br/>
+themselves if the <code>panelId</code> is explicitly <code>null</code> or the item’s <code>panelId</code> matches<br/>
+exactly.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="resetall-filters-resetallfilter-void" tabindex="-1"><a href="#resetall-filters-resetallfilter-void">resetAll: ( filters?: ResetAllFilter[] ) =&gt; void</a></h3>
+<p>A function to call when the <code>Reset all</code> menu option is selected. As an argument, it receives an array containing the <code>resetAllFilter</code> callbacks of all the valid registered <code>ToolsPanelItems</code>.</p>
+<ul>
+<li>Required: Yes</li>
+</ul>
+<h3 class="is-toc-heading" id="shouldrenderplaceholderitems-boolean" tabindex="-1"><a href="#shouldrenderplaceholderitems-boolean">shouldRenderPlaceholderItems: boolean</a></h3>
+<p>Advises the <code>ToolsPanel</code> that all of its <code>ToolsPanelItem</code> children should render<br/>
+placeholder content (instead of <code>null</code>) when they are toggled off and hidden.</p>
+<p>Note that placeholder items won’t apply the <code>className</code> that would be<br/>
+normally applied to a visible <code>ToolsPanelItem</code> via the <code>className</code> prop.</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>false</code></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

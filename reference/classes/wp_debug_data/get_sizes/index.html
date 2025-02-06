@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_debug_data/">WP_Debug_Data</a></span><span class="is-current-page">WP_Debug_Data::get_sizes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Debug_Data::get_sizes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Debug_Data::get_sizes(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Fetches the sizes of the WordPress directories: <code>wordpress</code> (ABSPATH), <code>plugins</code>, <code>themes</code>, and <code>uploads</code>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Intended to supplement the array returned by <code>WP_Debug_Data::debug_data()</code>.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The sizes of the directories, also the database size and total installation size.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1617"><code class="language-php line-numbers" id="wporg-source-code" lang="php">			'private' =&gt; true,
+		),
+		'database_collate'   =&gt; array(
+			'label'   =&gt; __( 'Database collation' ),
+			'value'   =&gt; $wpdb-&gt;collate,
+			'private' =&gt; true,
+		),
+		'max_allowed_packet' =&gt; array(
+			'label' =&gt; __( 'Max allowed packet size' ),
+			'value' =&gt; self::get_mysql_var( 'max_allowed_packet' ),
+		),
+		'max_connections'    =&gt; array(
+			'label' =&gt; __( 'Max connections number' ),
+			'value' =&gt; self::get_mysql_var( 'max_connections' ),
+		),
+	);
+
+	return array(
+		'label'  =&gt; __( 'Database' ),
+		'fields' =&gt; $fields,
+	);
+}
+
+/**
+ * Gets the file system section of the debug data.
+ *
+ * @since 6.7.0
+ *
+ * @return array
+ */
+private static function get_wp_filesystem(): array {
+	$upload_dir                     = wp_upload_dir();
+	$is_writable_abspath            = wp_is_writable( ABSPATH );
+	$is_writable_wp_content_dir     = wp_is_writable( WP_CONTENT_DIR );
+	$is_writable_upload_dir         = wp_is_writable( $upload_dir['basedir'] );
+	$is_writable_wp_plugin_dir      = wp_is_writable( WP_PLUGIN_DIR );
+	$is_writable_template_directory = wp_is_writable( get_theme_root( get_template() ) );
+	$is_writable_fonts_dir          = wp_is_writable( wp_get_font_dir()['basedir'] );
+
+	$fields = array(
+		'wordpress'  =&gt; array(
+			'label' =&gt; __( 'The main WordPress directory' ),
+			'value' =&gt; ( $is_writable_abspath ? __( 'Writable' ) : __( 'Not writable' ) ),
+			'debug' =&gt; ( $is_writable_abspath ? 'writable' : 'not writable' ),
+		),
+		'wp-content' =&gt; array(
+			'label' =&gt; __( 'The wp-content directory' ),
+			'value' =&gt; ( $is_writable_wp_content_dir ? __( 'Writable' ) : __( 'Not writable' ) ),
+			'debug' =&gt; ( $is_writable_wp_content_dir ? 'writable' : 'not writable' ),
+		),
+		'uploads'    =&gt; array(
+			'label' =&gt; __( 'The uploads directory' ),
+			'value' =&gt; ( $is_writable_upload_dir ? __( 'Writable' ) : __( 'Not writable' ) ),
+			'debug' =&gt; ( $is_writable_upload_dir ? 'writable' : 'not writable' ),
+		),
+		'plugins'    =&gt; array(
+			'label' =&gt; __( 'The plugins directory' ),
+			'value' =&gt; ( $is_writable_wp_plugin_dir ? __( 'Writable' ) : __( 'Not writable' ) ),
+			'debug' =&gt; ( $is_writable_wp_plugin_dir ? 'writable' : 'not writable' ),
+		),
+		'themes'     =&gt; array(
+			'label' =&gt; __( 'The themes directory' ),
+			'value' =&gt; ( $is_writable_template_directory ? __( 'Writable' ) : __( 'Not writable' ) ),
+			'debug' =&gt; ( $is_writable_template_directory ? 'writable' : 'not writable' ),
+		),
+		'fonts'      =&gt; array(
+			'label' =&gt; __( 'The fonts directory' ),
+			'value' =&gt; ( $is_writable_fonts_dir ? __( 'Writable' ) : __( 'Not writable' ) ),
+			'debug' =&gt; ( $is_writable_fonts_dir ? 'writable' : 'not writable' ),
+		),
+	);
+
+	// Add more filesystem checks.
+	if ( defined( 'WPMU_PLUGIN_DIR' ) &amp;&amp; is_dir( WPMU_PLUGIN_DIR ) ) {
+		$is_writable_wpmu_plugin_dir = wp_is_writable( WPMU_PLUGIN_DIR );
+
+		$fields['mu-plugins'] = array(
+			'label' =&gt; __( 'The must use plugins directory' ),
+			'value' =&gt; ( $is_writable_wpmu_plugin_dir ? __( 'Writable' ) : __( 'Not writable' ) ),
+			'debug' =&gt; ( $is_writable_wpmu_plugin_dir ? 'writable' : 'not writable' ),
+		);
+	}
+
+	return array(
+		'label'       =&gt; __( 'Filesystem Permissions' ),
+		'description' =&gt; __( 'Shows whether WordPress is able to write to the directories it needs access to.' ),
+		'fields'      =&gt; $fields,
+	);
+}
+
+/**
+ * Returns the value of a MySQL system variable.
+ *
+ * @since 5.9.0
+ *
+ * @global wpdb $wpdb WordPress database abstraction object.
+ *
+ * @param string $mysql_var Name of the MySQL system variable.
+ * @return string|null The variable value on success. Null if the variable does not exist.
+ */
+public static function get_mysql_var( $mysql_var ) {
+	global $wpdb;
+
+	$result = $wpdb-&gt;get_row(
+		$wpdb-&gt;prepare( 'SHOW VARIABLES LIKE %s', $mysql_var ),
+		ARRAY_A
+	);
+
+	if ( ! empty( $result ) &amp;&amp; array_key_exists( 'Value', $result ) ) {
+		return $result['Value'];
+	}
+
+	return null;
+}
+
+/**
+ * Formats the information gathered for debugging, in a manner suitable for copying to a forum or support ticket.
+ *
+ * @since 5.2.0
+ *
+ * @param array  $info_array Information gathered from the `WP_Debug_Data::debug_data()` function.
+ * @param string $data_type  The data type to return, either 'info' or 'debug'.
+ * @return string The formatted data.
+ */
+public static function format( $info_array, $data_type ) {
+	$return = "`\n";
+
+	foreach ( $info_array as $section =&gt; $details ) {
+		// Skip this section if there are no fields, or the section has been declared as private.
+		if ( empty( $details['fields'] ) || ( isset( $details['private'] ) &amp;&amp; $details['private'] ) ) {
+			continue;
+		}
+
+		$section_label = 'debug' === $data_type ? $section : $details['label'];
+
+		$return .= sprintf(
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-debug-data.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-debug-data.php#L1617">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-debug-data.php#L1617-L1752">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

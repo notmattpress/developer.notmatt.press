@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_server/">WP_REST_Server</a></span><span class="is-current-page">WP_REST_Server::serve_batch_request_v1()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_Server::serve_batch_request_v1()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_Server::serve_batch_request_v1( <span class="arg-type">WP_REST_Request</span> <span class="arg-name">$batch_request</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_rest_response/" rel="class">WP_REST_Response</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Serves the batch/v1 request.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$batch_request</code><span class="type"><span class="WP_REST_Request"><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/" rel="class">WP_REST_Request</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The batch request object.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_rest_response/" rel="class">WP_REST_Response</a></span> The generated response object.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1717"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function serve_batch_request_v1( WP_REST_Request $batch_request ) {
+	$requests = array();
+
+	foreach ( $batch_request['requests'] as $args ) {
+		$parsed_url = wp_parse_url( $args['path'] );
+
+		if ( false === $parsed_url ) {
+			$requests[] = new WP_Error( 'parse_path_failed', __( 'Could not parse the path.' ), array( 'status' =&gt; 400 ) );
+
+			continue;
+		}
+
+		$single_request = new WP_REST_Request( isset( $args['method'] ) ? $args['method'] : 'POST', $parsed_url['path'] );
+
+		if ( ! empty( $parsed_url['query'] ) ) {
+			$query_args = array();
+			wp_parse_str( $parsed_url['query'], $query_args );
+			$single_request-&gt;set_query_params( $query_args );
+		}
+
+		if ( ! empty( $args['body'] ) ) {
+			$single_request-&gt;set_body_params( $args['body'] );
+		}
+
+		if ( ! empty( $args['headers'] ) ) {
+			$single_request-&gt;set_headers( $args['headers'] );
+		}
+
+		$requests[] = $single_request;
+	}
+
+	$matches    = array();
+	$validation = array();
+	$has_error  = false;
+
+	foreach ( $requests as $single_request ) {
+		$match     = $this-&gt;match_request_to_handler( $single_request );
+		$matches[] = $match;
+		$error     = null;
+
+		if ( is_wp_error( $match ) ) {
+			$error = $match;
+		}
+
+		if ( ! $error ) {
+			list( $route, $handler ) = $match;
+
+			if ( isset( $handler['allow_batch'] ) ) {
+				$allow_batch = $handler['allow_batch'];
+			} else {
+				$route_options = $this-&gt;get_route_options( $route );
+				$allow_batch   = isset( $route_options['allow_batch'] ) ? $route_options['allow_batch'] : false;
+			}
+
+			if ( ! is_array( $allow_batch ) || empty( $allow_batch['v1'] ) ) {
+				$error = new WP_Error(
+					'rest_batch_not_allowed',
+					__( 'The requested route does not support batch requests.' ),
+					array( 'status' =&gt; 400 )
+				);
+			}
+		}
+
+		if ( ! $error ) {
+			$check_required = $single_request-&gt;has_valid_params();
+			if ( is_wp_error( $check_required ) ) {
+				$error = $check_required;
+			}
+		}
+
+		if ( ! $error ) {
+			$check_sanitized = $single_request-&gt;sanitize_params();
+			if ( is_wp_error( $check_sanitized ) ) {
+				$error = $check_sanitized;
+			}
+		}
+
+		if ( $error ) {
+			$has_error    = true;
+			$validation[] = $error;
+		} else {
+			$validation[] = true;
+		}
+	}
+
+	$responses = array();
+
+	if ( $has_error &amp;&amp; 'require-all-validate' === $batch_request['validation'] ) {
+		foreach ( $validation as $valid ) {
+			if ( is_wp_error( $valid ) ) {
+				$responses[] = $this-&gt;envelope_response( $this-&gt;error_to_response( $valid ), false )-&gt;get_data();
+			} else {
+				$responses[] = null;
+			}
+		}
+
+		return new WP_REST_Response(
+			array(
+				'failed'    =&gt; 'validation',
+				'responses' =&gt; $responses,
+			),
+			WP_Http::MULTI_STATUS
+		);
+	}
+
+	foreach ( $requests as $i =&gt; $single_request ) {
+		$clean_request = clone $single_request;
+		$clean_request-&gt;set_url_params( array() );
+		$clean_request-&gt;set_attributes( array() );
+		$clean_request-&gt;set_default_params( array() );
+
+		/** This filter is documented in wp-includes/rest-api/class-wp-rest-server.php */
+		$result = apply_filters( 'rest_pre_dispatch', null, $this, $clean_request );
+
+		if ( empty( $result ) ) {
+			$match = $matches[ $i ];
+			$error = null;
+
+			if ( is_wp_error( $validation[ $i ] ) ) {
+				$error = $validation[ $i ];
+			}
+
+			if ( is_wp_error( $match ) ) {
+				$result = $this-&gt;error_to_response( $match );
+			} else {
+				list( $route, $handler ) = $match;
+
+				if ( ! $error &amp;&amp; ! is_callable( $handler['callback'] ) ) {
+					$error = new WP_Error(
+						'rest_invalid_handler',
+						__( 'The handler for the route is invalid' ),
+						array( 'status' =&gt; 500 )
+					);
+				}
+
+				$result = $this-&gt;respond_to_request( $single_request, $route, $handler, $error );
+			}
+		}
+
+		/** This filter is documented in wp-includes/rest-api/class-wp-rest-server.php */
+		$result = apply_filters( 'rest_post_dispatch', rest_ensure_response( $result ), $this, $single_request );
+
+		$responses[] = $this-&gt;envelope_response( $result, false )-&gt;get_data();
+	}
+
+	return new WP_REST_Response( array( 'responses' =&gt; $responses ), WP_Http::MULTI_STATUS );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/class-wp-rest-server.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/class-wp-rest-server.php#L1717">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/class-wp-rest-server.php#L1717-L1863">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/rest_post_dispatch/"><span class="hook-func">apply_filters</span>( ‘rest_post_dispatch’,  <nobr><span class="arg-type">WP_HTTP_Response</span> <span class="arg-name">$result</span></nobr>,  <nobr><span class="arg-type">WP_REST_Server</span> <span class="arg-name">$server</span></nobr>,  <nobr><span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span></nobr> )</a></dt><dd><p>Filters the REST API response.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/rest_pre_dispatch/"><span class="hook-func">apply_filters</span>( ‘rest_pre_dispatch’,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$result</span></nobr>,  <nobr><span class="arg-type">WP_REST_Server</span> <span class="arg-name">$server</span></nobr>,  <nobr><span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span></nobr> )</a></dt><dd><p>Filters the pre-calculated result of a REST API dispatch request.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/match_request_to_handler/">WP_REST_Server::match_request_to_handler()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Matches a request object to its handler.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/respond_to_request/">WP_REST_Server::respond_to_request()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Dispatches the request to the callback handler.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_url/">wp_parse_url()</a><code>wp-includes/http.php</code></td><td><p>A wrapper for PHP’s parse_url() function that handles consistency in the return values across PHP versions.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/__construct/">WP_REST_Request::__construct()</a><code>wp-includes/rest-api/class-wp-rest-request.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/get_route_options/">WP_REST_Server::get_route_options()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Retrieves specified options for a route.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/envelope_response/">WP_REST_Server::envelope_response()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Wraps the response in an envelope.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/error_to_response/">WP_REST_Server::error_to_response()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Converts an error to a response object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_str/">wp_parse_str()</a><code>wp-includes/formatting.php</code></td><td><p>Parses a string into variables to be stored in an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/rest_ensure_response/">rest_ensure_response()</a><code>wp-includes/rest-api.php</code></td><td><p>Ensures a REST response is a response object (for consistency).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.6.0/">5.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

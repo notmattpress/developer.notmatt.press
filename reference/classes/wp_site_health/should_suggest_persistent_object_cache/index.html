@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_site_health/">WP_Site_Health</a></span><span class="is-current-page">WP_Site_Health::should_suggest_persistent_object_cache()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Site_Health::should_suggest_persistent_object_cache()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Site_Health::should_suggest_persistent_object_cache(): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Determines whether to suggest using a persistent object cache.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> Whether to suggest using a persistent object cache.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3513"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function should_suggest_persistent_object_cache() {
+	global $wpdb;
+
+	/**
+	 * Filters whether to suggest use of a persistent object cache and bypass default threshold checks.
+	 *
+	 * Using this filter allows to override the default logic, effectively short-circuiting the method.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param bool|null $suggest Boolean to short-circuit, for whether to suggest using a persistent object cache.
+	 *                           Default null.
+	 */
+	$short_circuit = apply_filters( 'site_status_should_suggest_persistent_object_cache', null );
+	if ( is_bool( $short_circuit ) ) {
+		return $short_circuit;
+	}
+
+	if ( is_multisite() ) {
+		return true;
+	}
+
+	/**
+	 * Filters the thresholds used to determine whether to suggest the use of a persistent object cache.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param int[] $thresholds The list of threshold numbers keyed by threshold name.
+	 */
+	$thresholds = apply_filters(
+		'site_status_persistent_object_cache_thresholds',
+		array(
+			'alloptions_count' =&gt; 500,
+			'alloptions_bytes' =&gt; 100000,
+			'comments_count'   =&gt; 1000,
+			'options_count'    =&gt; 1000,
+			'posts_count'      =&gt; 1000,
+			'terms_count'      =&gt; 1000,
+			'users_count'      =&gt; 1000,
+		)
+	);
+
+	$alloptions = wp_load_alloptions();
+
+	if ( $thresholds['alloptions_count'] &lt; count( $alloptions ) ) {
+		return true;
+	}
+
+	if ( $thresholds['alloptions_bytes'] &lt; strlen( serialize( $alloptions ) ) ) {
+		return true;
+	}
+
+	$table_names = implode( "','", array( $wpdb-&gt;comments, $wpdb-&gt;options, $wpdb-&gt;posts, $wpdb-&gt;terms, $wpdb-&gt;users ) );
+
+	// With InnoDB the `TABLE_ROWS` are estimates, which are accurate enough and faster to retrieve than individual `COUNT()` queries.
+	$results = $wpdb-&gt;get_results(
+		$wpdb-&gt;prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- This query cannot use interpolation.
+			"SELECT TABLE_NAME AS 'table', TABLE_ROWS AS 'rows', SUM(data_length + index_length) as 'bytes' FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME IN ('$table_names') GROUP BY TABLE_NAME;",
+			DB_NAME
+		),
+		OBJECT_K
+	);
+
+	$threshold_map = array(
+		'comments_count' =&gt; $wpdb-&gt;comments,
+		'options_count'  =&gt; $wpdb-&gt;options,
+		'posts_count'    =&gt; $wpdb-&gt;posts,
+		'terms_count'    =&gt; $wpdb-&gt;terms,
+		'users_count'    =&gt; $wpdb-&gt;users,
+	);
+
+	foreach ( $threshold_map as $threshold =&gt; $table ) {
+		if ( $thresholds[ $threshold ] &lt;= $results[ $table ]-&gt;rows ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-site-health.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-site-health.php#L3513">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-site-health.php#L3513-L3592">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/site_status_persistent_object_cache_thresholds/"><span class="hook-func">apply_filters</span>( ‘site_status_persistent_object_cache_thresholds’,  <nobr><span class="arg-type">int[]</span> <span class="arg-name">$thresholds</span></nobr> )</a></dt><dd><p>Filters the thresholds used to determine whether to suggest the use of a persistent object cache.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/site_status_should_suggest_persistent_object_cache/"><span class="hook-func">apply_filters</span>( ‘site_status_should_suggest_persistent_object_cache’,  <nobr><span class="arg-type">bool|null</span> <span class="arg-name">$suggest</span></nobr> )</a></dt><dd><p>Filters whether to suggest use of a persistent object cache and bypass default threshold checks.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_load_alloptions/">wp_load_alloptions()</a><code>wp-includes/option.php</code></td><td><p>Loads and caches all autoloaded options, if available or all options.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_results/">wpdb::get_results()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves an entire SQL result set from the database (i.e., many rows).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_test_persistent_object_cache/">WP_Site_Health::get_test_persistent_object_cache()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Tests if the site uses persistent object cache and recommends to use it if not.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

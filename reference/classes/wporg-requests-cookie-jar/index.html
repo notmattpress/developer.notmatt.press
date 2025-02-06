@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">Jar</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Jar</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> Jar {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Cookie holder object</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/__construct/">Jar::__construct</a></td><td>Create a new jar</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/before_redirect_check/">Jar::before_redirect_check</a></td><td>Parse all cookies from a response and attach them to the response</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/before_request/">Jar::before_request</a></td><td>Add Cookie header to a request if we have any</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/getiterator/">Jar::getIterator</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/normalize_cookie/">Jar::normalize_cookie</a></td><td>Normalise cookie data into a \WpOrg\Requests\Cookie</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/offsetexists/">Jar::offsetExists</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/offsetget/">Jar::offsetGet</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/offsetset/">Jar::offsetSet</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/offsetunset/">Jar::offsetUnset</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-cookie-jar/register/">Jar::register</a></td><td>Register the cookie handler with the request’s hooking system</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="26"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class Jar implements ArrayAccess, IteratorAggregate {
+	/**
+	 * Actual item data
+	 *
+	 * @var array
+	 */
+	protected $cookies = [];
+
+	/**
+	 * Create a new jar
+	 *
+	 * @param array $cookies Existing cookie values
+	 *
+	 * @throws \WpOrg\Requests\Exception\InvalidArgument When the passed argument is not an array.
+	 */
+	public function __construct($cookies = []) {
+		if (is_array($cookies) === false) {
+			throw InvalidArgument::create(1, '$cookies', 'array', gettype($cookies));
+		}
+
+		$this-&gt;cookies = $cookies;
+	}
+
+	/**
+	 * Normalise cookie data into a \WpOrg\Requests\Cookie
+	 *
+	 * @param string|\WpOrg\Requests\Cookie $cookie Cookie header value, possibly pre-parsed (object).
+	 * @param string                        $key    Optional. The name for this cookie.
+	 * @return \WpOrg\Requests\Cookie
+	 */
+	public function normalize_cookie($cookie, $key = '') {
+		if ($cookie instanceof Cookie) {
+			return $cookie;
+		}
+
+		return Cookie::parse($cookie, $key);
+	}
+
+	/**
+	 * Check if the given item exists
+	 *
+	 * @param string $offset Item key
+	 * @return boolean Does the item exist?
+	 */
+	#[ReturnTypeWillChange]
+	public function offsetExists($offset) {
+		return isset($this-&gt;cookies[$offset]);
+	}
+
+	/**
+	 * Get the value for the item
+	 *
+	 * @param string $offset Item key
+	 * @return string|null Item value (null if offsetExists is false)
+	 */
+	#[ReturnTypeWillChange]
+	public function offsetGet($offset) {
+		if (!isset($this-&gt;cookies[$offset])) {
+			return null;
+		}
+
+		return $this-&gt;cookies[$offset];
+	}
+
+	/**
+	 * Set the given item
+	 *
+	 * @param string $offset Item name
+	 * @param string $value Item value
+	 *
+	 * @throws \WpOrg\Requests\Exception On attempting to use dictionary as list (`invalidset`)
+	 */
+	#[ReturnTypeWillChange]
+	public function offsetSet($offset, $value) {
+		if ($offset === null) {
+			throw new Exception('Object is a dictionary, not a list', 'invalidset');
+		}
+
+		$this-&gt;cookies[$offset] = $value;
+	}
+
+	/**
+	 * Unset the given header
+	 *
+	 * @param string $offset The key for the item to unset.
+	 */
+	#[ReturnTypeWillChange]
+	public function offsetUnset($offset) {
+		unset($this-&gt;cookies[$offset]);
+	}
+
+	/**
+	 * Get an iterator for the data
+	 *
+	 * @return \ArrayIterator
+	 */
+	#[ReturnTypeWillChange]
+	public function getIterator() {
+		return new ArrayIterator($this-&gt;cookies);
+	}
+
+	/**
+	 * Register the cookie handler with the request's hooking system
+	 *
+	 * @param \WpOrg\Requests\HookManager $hooks Hooking system
+	 */
+	public function register(HookManager $hooks) {
+		$hooks-&gt;register('requests.before_request', [$this, 'before_request']);
+		$hooks-&gt;register('requests.before_redirect_check', [$this, 'before_redirect_check']);
+	}
+
+	/**
+	 * Add Cookie header to a request if we have any
+	 *
+	 * As per RFC 6265, cookies are separated by '; '
+	 *
+	 * @param string $url
+	 * @param array $headers
+	 * @param array $data
+	 * @param string $type
+	 * @param array $options
+	 */
+	public function before_request($url, &amp;$headers, &amp;$data, &amp;$type, &amp;$options) {
+		if (!$url instanceof Iri) {
+			$url = new Iri($url);
+		}
+
+		if (!empty($this-&gt;cookies)) {
+			$cookies = [];
+			foreach ($this-&gt;cookies as $key =&gt; $cookie) {
+				$cookie = $this-&gt;normalize_cookie($cookie, $key);
+
+				// Skip expired cookies
+				if ($cookie-&gt;is_expired()) {
+					continue;
+				}
+
+				if ($cookie-&gt;domain_matches($url-&gt;host)) {
+					$cookies[] = $cookie-&gt;format_for_header();
+				}
+			}
+
+			$headers['Cookie'] = implode('; ', $cookies);
+		}
+	}
+
+	/**
+	 * Parse all cookies from a response and attach them to the response
+	 *
+	 * @param \WpOrg\Requests\Response $response Response as received.
+	 */
+	public function before_redirect_check(Response $response) {
+		$url = $response-&gt;url;
+		if (!$url instanceof Iri) {
+			$url = new Iri($url);
+		}
+
+		$cookies           = Cookie::parse_from_headers($response-&gt;headers, $url);
+		$this-&gt;cookies     = array_merge($this-&gt;cookies, $cookies);
+		$response-&gt;cookies = $this;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/requests/src/cookie/jar.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/Requests/src/Cookie/Jar.php#L26">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/Requests/src/Cookie/Jar.php#L26-L187">View on GitHub</a></p></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,400 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/themes/">Themes</a></span><span class="is-current-page">Theme Support</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Theme Support</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The new Blocks include baseline support in all themes, enhancements to opt-in to and the ability to extend and customize.</p>
+<p>There are a few new concepts to consider when building themes:</p>
+<ul>
+<li><strong>Editor Color Palette</strong> – A default set of colors is provided, but themes can register their own and optionally lock users into picking from the defined palette.</li>
+<li><strong>Editor Text Size Palette</strong> – A default set of sizes is provided, but themes can register their own and optionally lock users into picking from preselected sizes.</li>
+<li><strong>Responsive Embeds</strong> – Themes must opt-in to responsive embeds.</li>
+<li><strong>Frontend &amp; Editor Styles</strong> – To get the most out of blocks, theme authors will want to make sure Core styles look good and opt-in, or write their own styles to best fit their theme.</li>
+<li><strong>Block Tools</strong> – Themes can opt-in to several block tools like line height, custom units.</li>
+<li><strong>Core Block Patterns</strong> – Themes can opt-out of the default block patterns.</li>
+</ul>
+<p>By default, blocks provide their styles to enable basic support for blocks in themes without any change. They also <a href="#default-block-styles">provide opt-in opinionated styles</a>. Themes can add/override these styles, or they can provide no styles at all, and rely fully on what the blocks provide.</p>
+<p>Some advanced block features require opt-in support in the theme itself as it’s difficult for the block to provide these styles, they may require some architecting of the theme itself, in order to work well.</p>
+<p>To opt-in for one of these features, call <code>add_theme_support</code> in the <code>functions.php</code> file of the theme. For example:</p>
+<pre><code class="language-php">function mytheme_setup_theme_supported_features() {
+    add_theme_support( 'editor-color-palette', array(
+        array(
+            'name'  =&gt; esc_attr__( 'strong magenta', 'themeLangDomain' ),
+            'slug'  =&gt; 'strong-magenta',
+            'color' =&gt; '#a156b4',
+        ),
+        array(
+            'name'  =&gt; esc_attr__( 'light grayish magenta', 'themeLangDomain' ),
+            'slug'  =&gt; 'light-grayish-magenta',
+            'color' =&gt; '#d0a5db',
+        ),
+        array(
+            'name'  =&gt; esc_attr__( 'very light gray', 'themeLangDomain' ),
+            'slug'  =&gt; 'very-light-gray',
+            'color' =&gt; '#eee',
+        ),
+        array(
+            'name'  =&gt; esc_attr__( 'very dark gray', 'themeLangDomain' ),
+            'slug'  =&gt; 'very-dark-gray',
+            'color' =&gt; '#444',
+        ),
+    ) );
+}
+
+add_action( 'after_setup_theme', 'mytheme_setup_theme_supported_features' );
+</code></pre>
+<h2 class="is-toc-heading" id="opt-in-features" tabindex="-1"><a href="#opt-in-features">Opt-in features</a></h2>
+<h2 class="is-toc-heading" id="default-block-styles" tabindex="-1"><a href="#default-block-styles">Default block styles</a></h2>
+<p>Core blocks include default structural styles. These are loaded in both the editor and the front end by default. An example of these styles is the CSS that powers the columns block. Without these rules, the block would result in a broken layout containing no columns at all.</p>
+<h3 class="is-toc-heading" id="opinionated-block-styles" tabindex="-1"><a href="#opinionated-block-styles">Opinionated block styles</a></h3>
+<p>The block editor allows themes to opt in to slightly more opinionated styles for the front end. An example of these styles is the default color bar to the left of blockquotes. If you’d like to use these opinionated styles in a classic theme, add theme support for <code>wp-block-styles</code>:</p>
+<pre><code class="language-php">add_theme_support( 'wp-block-styles' );
+</code></pre>
+<p>You can see the CSS that will be included in the <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/theme.scss">block library theme file</a>.</p>
+<p>For block themes or themes providing a <code>theme.json</code> file, it is not recommended to use this theme support. Instead, to ensure there is no styling conflict between global styles rules and block styles, add the desired block styles to the theme’s <code>theme.json</code> file.</p>
+<h3 class="is-toc-heading" id="wide-alignment" tabindex="-1"><a href="#wide-alignment">Wide Alignment:</a></h3>
+<p>Some blocks such as the image block have the possibility to define a “wide” or “full” alignment by adding the corresponding classname to the block’s wrapper ( <code>alignwide</code> or <code>alignfull</code> ). A theme can opt-in for this feature by calling:</p>
+<pre><code class="language-php">add_theme_support( 'align-wide' );
+</code></pre>
+<p>For more information about this function, see <a href="https://developer.notmatt.press/reference/functions/add_theme_support/">the developer docs on <code>add_theme_support()</code></a>.</p>
+<h3 class="is-toc-heading" id="wide-alignments-and-floats" tabindex="-1"><a href="#wide-alignments-and-floats">Wide Alignments and Floats</a></h3>
+<p>It can be difficult to create a responsive layout that accommodates wide images, a sidebar, a centered column, and floated elements that stay within that centered column.</p>
+<p>The block editor adds additional markup to floated images to make styling them easier.</p>
+<p>Here’s the markup for an <code>Image</code> with a caption:</p>
+<pre><code class="language-html">&lt;figure class="wp-block-image"&gt;
+    &lt;img src="..." alt="" width="200px" /&gt;
+    &lt;figcaption&gt;Short image caption.&lt;/figcaption&gt;
+&lt;/figure&gt;
+</code></pre>
+<p>Here’s the markup for a left-floated image:</p>
+<pre><code class="language-html">&lt;div class="wp-block-image"&gt;
+    &lt;figure class="alignleft"&gt;
+        &lt;img src="..." alt="" width="200px" /&gt;
+        &lt;figcaption&gt;Short image caption.&lt;/figcaption&gt;
+    &lt;/figure&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Here’s an example <a href="https://codepen.io/joen/pen/zLWvrW">codepen</a> using the above markup to achieve a responsive layout that features a sidebar, wide images, and floated elements with bounded captions.</p>
+<h3 class="is-toc-heading" id="block-color-palettes" tabindex="-1"><a href="#block-color-palettes">Block Color Palettes</a></h3>
+<p>Different blocks have the possibility of customizing colors. The block editor provides a default palette, but a theme can overwrite it and provide its own:</p>
+<pre><code class="language-php">add_theme_support( 'editor-color-palette', array(
+    array(
+        'name'  =&gt; esc_attr__( 'strong magenta', 'themeLangDomain' ),
+        'slug'  =&gt; 'strong-magenta',
+        'color' =&gt; '#a156b4',
+    ),
+    array(
+        'name'  =&gt; esc_attr__( 'light grayish magenta', 'themeLangDomain' ),
+        'slug'  =&gt; 'light-grayish-magenta',
+        'color' =&gt; '#d0a5db',
+    ),
+    array(
+        'name'  =&gt; esc_attr__( 'very light gray', 'themeLangDomain' ),
+        'slug'  =&gt; 'very-light-gray',
+        'color' =&gt; '#eee',
+    ),
+    array(
+        'name'  =&gt; esc_attr__( 'very dark gray', 'themeLangDomain' ),
+        'slug'  =&gt; 'very-dark-gray',
+        'color' =&gt; '#444',
+    ),
+) );
+</code></pre>
+<p><code>name</code> is a human-readable label (demonstrated above) that appears in the tooltip and provides a meaningful description of the color to users. It is especially important for those who rely on screen readers or would otherwise have difficulty perceiving the color. <code>slug</code> is a unique identifier for the color and is used to generate the CSS classes used by the block editor color palette. <code>color</code> is the hexadecimal code to specify the color.</p>
+<p>Some colors change dynamically — such as “Primary” and “Secondary” color — such as in the Twenty Nineteen theme and cannot be described programmatically. In spite of that, it is still advisable to provide meaningful <code>name</code>s for at least the default values when applicable.</p>
+<p>The colors will be shown in order on the palette, and there’s no limit to how many can be specified.</p>
+<p>Themes are responsible for creating the classes that apply the colors in different contexts. Core blocks use “color”, “background-color”, and “border-color” contexts. So to correctly apply “strong magenta” to all contexts of core blocks a theme should implement the classes itself. The class name is built appending ‘has-‘, followed by the class name <em>using</em> kebab case and ending with the context name.</p>
+<pre><code class="language-css">.has-strong-magenta-color {
+    color: #a156b4;
+}
+
+.has-strong-magenta-background-color {
+    background-color: #a156b4;
+}
+
+.has-strong-magenta-border-color {
+    border-color: #a156b4;
+}
+</code></pre>
+<p>Starting in WordPress 5.9, to override color values defined by core, themes without a <code>theme.json</code> have to set their values via CSS Custom Properties instead of providing the classes. The CSS Custom Properties use the following naming <code>--wp--preset--color--&lt;slug&gt;</code>. See more info in <a href="https://make.wordpress.org/core/2022/01/08/updates-for-settings-styles-and-theme-json/">this devnote</a>. For example:</p>
+<pre><code class="language-css">:root {
+    --wp--preset--color--cyan-bluish-gray: &lt;new_value&gt;;
+    --wp--preset--color--pale-pink: &lt;new_value&gt;;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="block-gradient-presets" tabindex="-1"><a href="#block-gradient-presets">Block Gradient Presets</a></h3>
+<p>Different blocks have the possibility of selecting from a list of predefined gradients. The block editor provides a default gradient presets, but a theme can overwrite them and provide its own:</p>
+<pre><code class="language-php">add_theme_support(
+    'editor-gradient-presets',
+    array(
+        array(
+            'name'     =&gt; esc_attr__( 'Vivid cyan blue to vivid purple', 'themeLangDomain' ),
+            'gradient' =&gt; 'linear-gradient(135deg,rgba(6,147,227,1) 0%,rgb(155,81,224) 100%)',
+            'slug'     =&gt; 'vivid-cyan-blue-to-vivid-purple'
+        ),
+        array(
+            'name'     =&gt; esc_attr__( 'Vivid green cyan to vivid cyan blue', 'themeLangDomain' ),
+            'gradient' =&gt; 'linear-gradient(135deg,rgba(0,208,132,1) 0%,rgba(6,147,227,1) 100%)',
+            'slug'     =&gt;  'vivid-green-cyan-to-vivid-cyan-blue',
+        ),
+        array(
+            'name'     =&gt; esc_attr__( 'Light green cyan to vivid green cyan', 'themeLangDomain' ),
+            'gradient' =&gt; 'linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%)',
+            'slug'     =&gt; 'light-green-cyan-to-vivid-green-cyan',
+        ),
+        array(
+            'name'     =&gt; esc_attr__( 'Luminous vivid amber to luminous vivid orange', 'themeLangDomain' ),
+            'gradient' =&gt; 'linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%)',
+            'slug'     =&gt; 'luminous-vivid-amber-to-luminous-vivid-orange',
+        ),
+        array(
+            'name'     =&gt; esc_attr__( 'Luminous vivid orange to vivid red', 'themeLangDomain' ),
+            'gradient' =&gt; 'linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%)',
+            'slug'     =&gt; 'luminous-vivid-orange-to-vivid-red',
+        ),
+    )
+);
+</code></pre>
+<p><code>name</code> is a human-readable label (demonstrated above) that appears in the tooltip and provides a meaningful description of the gradient to users. It is especially important for those who rely on screen readers or would otherwise have difficulty perceiving the color. <code>gradient</code> is a CSS value of a gradient applied to a background-image of the block. Details of valid gradient types can be found in the <a href="https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Images/Using_CSS_gradients">mozilla documentation</a>. <code>slug</code> is a unique identifier for the gradient and is used to generate the CSS classes used by the block editor.</p>
+<p>Themes are responsible for creating the classes that apply the gradients. So to correctly apply “Vivid cyan blue to vivid purple” a theme should implement the following class:</p>
+<pre><code class="language-css">.has-vivid-cyan-blue-to-vivid-purple-gradient-background {
+    background: linear-gradient(
+        135deg,
+        rgba( 6, 147, 227, 1 ) 0%,
+        rgb( 155, 81, 224 ) 100%
+    );
+}
+</code></pre>
+<p>Starting in WordPress 5.9, to override gradient values defined by core, themes without a <code>theme.json</code> have to set their values via CSS Custom Properties instead of providing the classes. The CSS Custom Properties use the following naming <code>--wp--preset--gradient--&lt;slug&gt;</code>. See more info in <a href="https://make.wordpress.org/core/2022/01/08/updates-for-settings-styles-and-theme-json/">this devnote</a>. For example:</p>
+<pre><code class="language-css">:root {
+    --wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: &lt;new_value&gt;;
+    --wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: &lt;new_value&gt;;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="block-font-sizes" tabindex="-1"><a href="#block-font-sizes">Block Font Sizes</a></h3>
+<p>Blocks may allow the user to configure the font sizes they use, e.g., the paragraph block. The block provides a default set of font sizes, but a theme can overwrite it and provide its own:</p>
+<pre><code class="language-php">add_theme_support( 'editor-font-sizes', array(
+    array(
+        'name' =&gt; esc_attr__( 'Small', 'themeLangDomain' ),
+        'size' =&gt; 12,
+        'slug' =&gt; 'small'
+    ),
+    array(
+        'name' =&gt; esc_attr__( 'Regular', 'themeLangDomain' ),
+        'size' =&gt; 16,
+        'slug' =&gt; 'regular'
+    ),
+    array(
+        'name' =&gt; esc_attr__( 'Large', 'themeLangDomain' ),
+        'size' =&gt; 36,
+        'slug' =&gt; 'large'
+    ),
+    array(
+        'name' =&gt; esc_attr__( 'Huge', 'themeLangDomain' ),
+        'size' =&gt; 50,
+        'slug' =&gt; 'huge'
+    )
+) );
+</code></pre>
+<p>The font sizes are rendered on the font size picker in the order themes provide them.</p>
+<p>Themes are responsible for creating the classes that apply the correct font size styles.<br/>
+The class name is built appending ‘has-‘, followed by the font size name <em>using</em> kebab case and ending with <code>-font-size</code>.</p>
+<p>As an example for the regular font size, a theme may provide the following class.</p>
+<pre><code class="language-css">.has-regular-font-size {
+    font-size: 16px;
+}
+</code></pre>
+<div class="callout callout-info">
+<strong>Note:</strong> The slugs `default` and `custom` are reserved and cannot be used by themes.
+</div>
+<p>Starting in WordPress 5.9, to override font size values defined by core, themes without a <code>theme.json</code> have to set their values via CSS Custom Properties instead of providing the classes. The CSS Custom Properties use the following naming <code>--wp--preset--font-size--&lt;slug&gt;</code>. See more info in <a href="https://make.wordpress.org/core/2022/01/08/updates-for-settings-styles-and-theme-json/">this devnote</a>. For example:</p>
+<pre><code class="language-css">:root {
+    --wp--preset--font-size--small: &lt;new_value&gt;;
+    --wp--preset--font-size--large: &lt;new_value&gt;;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="disabling-custom-font-sizes" tabindex="-1"><a href="#disabling-custom-font-sizes">Disabling custom font sizes</a></h3>
+<p>Themes can disable the ability to set custom font sizes with the following code:</p>
+<pre><code class="language-php">add_theme_support( 'disable-custom-font-sizes' );
+</code></pre>
+<p>When set, users will be restricted to the default sizes provided in the block editor or the sizes provided via the <code>editor-font-sizes</code> theme support setting.</p>
+<h3 class="is-toc-heading" id="disabling-custom-colors-in-block-color-palettes" tabindex="-1"><a href="#disabling-custom-colors-in-block-color-palettes">Disabling custom colors in block Color Palettes</a></h3>
+<p>By default, the color palette offered to blocks allows the user to select a custom color different from the editor or theme default colors.</p>
+<p>Themes can disable this feature using:</p>
+<pre><code class="language-php">add_theme_support( 'disable-custom-colors' );
+</code></pre>
+<p>This flag will make sure users are only able to choose colors from the <code>editor-color-palette</code> the theme provided or from the editor default colors if the theme did not provide one.</p>
+<h3 class="is-toc-heading" id="disabling-custom-gradients" tabindex="-1"><a href="#disabling-custom-gradients">Disabling custom gradients</a></h3>
+<p>Themes can disable the ability to set a custom gradient with the following code:</p>
+<pre><code class="language-php">add_theme_support( 'disable-custom-gradients' );
+</code></pre>
+<p>When set, users will be restricted to the default gradients provided in the block editor or the gradients provided via the <code>editor-gradient-presets</code> theme support setting.</p>
+<h3 class="is-toc-heading" id="disabling-base-layout-styles" tabindex="-1"><a href="#disabling-base-layout-styles">Disabling base layout styles</a></h3>
+<p><em><strong>Note:</strong> Since WordPress 6.1.</em></p>
+<p>Themes can opt out of generated block layout styles that provide default structural styles for core blocks including Group, Columns, Buttons, and Social Icons. By using the following code, these themes commit to providing their own structural styling, as using this feature will result in core blocks displaying incorrectly in both the editor and site frontend:</p>
+<pre><code class="language-php">add_theme_support( 'disable-layout-styles' );
+</code></pre>
+<p>For themes looking to customize <code>blockGap</code> styles or block spacing, see <a href="https://developer.notmatt.press/block-editor/how-to-guides/themes/global-settings-and-styles/#what-is-blockgap-and-how-can-i-use-it">the developer docs on Global Settings &amp; Styles</a>.</p>
+<h3 class="is-toc-heading" id="supporting-custom-line-heights" tabindex="-1"><a href="#supporting-custom-line-heights">Supporting custom line heights</a></h3>
+<p>Some blocks like paragraph and headings support customizing the line height. Themes can enable support for this feature with the following code:</p>
+<pre><code class="language-php">add_theme_support( 'custom-line-height' );
+</code></pre>
+<h3 class="is-toc-heading" id="support-custom-units" tabindex="-1"><a href="#support-custom-units">Support custom units</a></h3>
+<p>In addition to pixels, users can use other units to define sizes, paddings… The available units are: px, em, rem, vh, vw. Themes can disable support for this feature with the following code:</p>
+<pre><code class="language-php">add_theme_support( 'custom-units', array() );
+</code></pre>
+<p>Themes can also filter the available custom units.</p>
+<pre><code class="language-php">add_theme_support( 'custom-units', 'rem', 'em' );
+</code></pre>
+<h3 class="is-toc-heading" id="disabling-the-default-block-patterns" tabindex="-1"><a href="#disabling-the-default-block-patterns">Disabling the default block patterns.</a></h3>
+<p>WordPress comes with a number of block patterns built-in, themes can opt-out of the bundled patterns and provide their own set using the following code:</p>
+<pre><code class="language-php">remove_theme_support( 'core-block-patterns' );
+</code></pre>
+<h2 class="is-toc-heading" id="editor-styles" tabindex="-1"><a href="#editor-styles">Editor styles</a></h2>
+<p>The block editor supports the theme’s <a href="https://codex.wordpress.org/Editor_Style">editor styles</a>, however it works a little differently than in the classic editor.</p>
+<p>In the classic editor, the editor stylesheet is loaded directly into the iframe of the WYSIWYG editor, with no changes. The block editor, however, doesn’t use iframes. To make sure your styles are applied only to the content of the editor, we automatically transform your editor styles by selectively rewriting or adjusting certain CSS selectors. This also allows the block editor to leverage your editor style in block variation previews.</p>
+<p>For example, if you write <code>body { ... }</code> in your editor style, this is rewritten to <code>.editor-styles-wrapper { ... }</code>. This also means that you should <em>not</em> target any of the editor class names directly.</p>
+<p>Because it works a little differently, you need to opt-in to this by adding an extra snippet to your theme, in addition to the add_editor_style function:</p>
+<pre><code class="language-php">add_theme_support( 'editor-styles' );
+</code></pre>
+<p>You shouldn’t need to change your editor styles too much; most themes can add the snippet above and get similar results in the classic editor and inside the block editor.</p>
+<h3 class="is-toc-heading" id="enqueuing-the-editor-style" tabindex="-1"><a href="#enqueuing-the-editor-style">Enqueuing the editor style</a></h3>
+<p>Use the <code>add_editor_style</code> function to enqueue and load CSS on the editor screen. For the classic editor, this was the only function needed to add style to the editor. For the new block editor, you first need to <code>add_theme_support( 'editor-styles');</code> mentioned above.</p>
+<pre><code class="language-php">add_editor_style( 'style-editor.css' );
+</code></pre>
+<p>Adding that to your <code>functions.php</code> file will add the stylesheet <code>style-editor.css</code> to the queue of stylesheets to be loaded in the editor.</p>
+<h3 class="is-toc-heading" id="basic-colors" tabindex="-1"><a href="#basic-colors">Basic colors</a></h3>
+<p>You can style the editor like any other webpage. Here’s how to change the background color and the font color to blue:</p>
+<pre><code class="language-css">/* Add this to your `style-editor.css` file */
+body {
+    background-color: #d3ebf3;
+    color: #00005d;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="changing-the-width-of-the-editor" tabindex="-1"><a href="#changing-the-width-of-the-editor">Changing the width of the editor</a></h3>
+<p>To change the main column width of the editor, add the following CSS to <code>style-editor.css</code>:</p>
+<pre><code class="language-css">/* Main column width */
+.wp-block {
+    max-width: 720px;
+}
+
+/* Width of "wide" blocks */
+.wp-block[data-align='wide'] {
+    max-width: 1080px;
+}
+
+/* Width of "full-wide" blocks */
+.wp-block[data-align='full'] {
+    max-width: none;
+}
+</code></pre>
+<p>You can use those editor widths to match those in your theme. You can use any CSS width unit, including <code>%</code> or <code>px</code>.</p>
+<p>Further reading: <a href="https://developer.notmatt.press/block-editor/how-to-guides/block-tutorial/applying-styles-with-stylesheets/">Applying Styles with Stylesheets</a>.</p>
+<h2 class="is-toc-heading" id="responsive-embedded-content" tabindex="-1"><a href="#responsive-embedded-content">Responsive embedded content</a></h2>
+<p>The embed blocks automatically apply styles to embedded content to reflect the aspect ratio of content that is embedded in an iFrame. A block styled with the aspect ratio responsive styles would look like:</p>
+<pre><code class="language-html">&lt;figure class="wp-embed-aspect-16-9 wp-has-aspect-ratio"&gt;...&lt;/figure&gt;
+</code></pre>
+<p>To make the content resize and keep its aspect ratio, the <code>&lt;body&gt;</code> element needs the <code>wp-embed-responsive</code> class. This is not set by default, and requires the theme to opt in to the <code>responsive-embeds</code> feature:</p>
+<pre><code class="language-php">add_theme_support( 'responsive-embeds' );
+</code></pre>
+<h2 class="is-toc-heading" id="spacing-control" tabindex="-1"><a href="#spacing-control">Spacing control</a></h2>
+<p>Some blocks can have padding controls. This is off by default, and requires the theme to opt in by declaring support:</p>
+<pre><code class="language-php">add_theme_support( 'custom-spacing' );
+</code></pre>
+<h2 class="is-toc-heading" id="link-color-control" tabindex="-1"><a href="#link-color-control">Link color control</a></h2>
+<p>Link support has been made stable as part of WordPress 5.8. It’s <code>false</code> by default and themes can enable it via the <a href="https://developer.notmatt.press/block-editor/how-to-guides/curating-the-editor-experience/theme-json/">theme.json file</a>:</p>
+<pre><code class="language-json">{
+    "settings": {
+        "color": {
+            "link": true
+        }
+    }
+}
+</code></pre>
+<blockquote><p>
+  Alternatively, with the Gutenberg plugin active, the old legacy support <code>add_theme_support( 'experimental-link-color' )</code> would also work. This fallback would be removed when the Gutenberg plugin requires WordPress 5.9 as the minimum version.
+</p></blockquote>
+<p>When the user sets the link color of a block, a new style will be added in the form of:</p>
+<pre><code class="language-css">.wp-elements-&lt;uuid&gt; a {
+    color: &lt;link-color&gt; !important;
+}
+</code></pre>
+<p>where</p>
+<ul>
+<li><code>&lt;uuid&gt;</code> is a random number</li>
+<li><code>&lt;link-color&gt;</code> is either <code>var(--wp--preset--color--slug)</code> (if the user selected a preset value) or a raw color value (if the user selected a custom value)</li>
+</ul>
+<p>The block will get attached the class <code>.wp-elements-&lt;uuid&gt;</code>.</p>
+<h2 class="is-toc-heading" id="appearance-tools" tabindex="-1"><a href="#appearance-tools">Appearance Tools</a></h2>
+<p>Use this setting to enable the following Global Styles settings:</p>
+<ul>
+<li>border: color, radius, style, width</li>
+<li>color: link</li>
+<li>spacing: blockGap, margin, padding</li>
+<li>typography: lineHeight</li>
+<li>dimensions: aspectRatio, minHeight</li>
+<li>position: sticky</li>
+</ul>
+<pre><code class="language-php">add_theme_support( 'appearance-tools' );
+</code></pre>
+<h2 class="is-toc-heading" id="border" tabindex="-1"><a href="#border">Border</a></h2>
+<p>Use this to enable all border settings:</p>
+<pre><code class="language-php">add_theme_support( 'border' );
+</code></pre>
+<h2 class="is-toc-heading" id="link-color" tabindex="-1"><a href="#link-color">Link color</a></h2>
+<p>Use this to enable the link color setting:</p>
+<pre><code class="language-php">add_theme_support( 'link-color' );
+</code></pre>
+<h2 class="is-toc-heading" id="block-based-template-parts" tabindex="-1"><a href="#block-based-template-parts">Block Based Template Parts</a></h2>
+<p>Block Based Template parts allow administrators to edit parts of the site using blocks. This is off by default, and requires the theme to opt in by declaring support:</p>
+<pre><code class="language-php">add_theme_support( 'block-template-parts' );
+</code></pre>
+<p>This feature is only relevant for non block based themes, as block based themes already support block based template parts as part of the site editor.</p>
+<p>The standalone template part editor does not allow editors to create new, or delete existing template parts. This is because the theme manually needs to include the template part in the PHP template.</p>
+<p>You can find out more about block based template parts in the <a href="https://developer.notmatt.press/themes/block-themes/templates-and-template-parts/#block-c5fa39a2-a27d-4bd2-98d0-dc6249a0801a">themes handbook block template and template parts section</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

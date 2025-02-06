@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">fetch_rss()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>fetch_rss()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">fetch_rss( <span class="arg-type">string</span> <span class="arg-name">$url</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/magpierss/" rel="class">MagpieRSS</a>|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Build Magpie object based on RSS from URL.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$url</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">URL to retrieve feed.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/magpierss/" rel="class">MagpieRSS</a>|false</span> <a href="https://developer.notmatt.press/reference/classes/magpierss/" rel="class">MagpieRSS</a> object on success, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="409"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function fetch_rss ($url) {
+	// initialize constants
+	init();
+
+	if ( !isset($url) ) {
+		// error("fetch_rss called without a url");
+		return false;
+	}
+
+	// if cache is disabled
+	if ( !MAGPIE_CACHE_ON ) {
+		// fetch file, and parse it
+		$resp = _fetch_remote_file( $url );
+		if ( is_success( $resp-&gt;status ) ) {
+			return _response_to_rss( $resp );
+		}
+		else {
+			// error("Failed to fetch $url and cache is off");
+			return false;
+		}
+	}
+	// else cache is ON
+	else {
+		// Flow
+		// 1. check cache
+		// 2. if there is a hit, make sure it's fresh
+		// 3. if cached obj fails freshness check, fetch remote
+		// 4. if remote fails, return stale object, or error
+
+		$cache = new RSSCache( MAGPIE_CACHE_DIR, MAGPIE_CACHE_AGE );
+
+		if (MAGPIE_DEBUG and $cache-&gt;ERROR) {
+			debug($cache-&gt;ERROR, E_USER_WARNING);
+		}
+
+		$cache_status 	 = 0;		// response of check_cache
+		$request_headers = array(); // HTTP headers to send with fetch
+		$rss 			 = 0;		// parsed RSS object
+		$errormsg		 = 0;		// errors, if any
+
+		if (!$cache-&gt;ERROR) {
+			// return cache HIT, MISS, or STALE
+			$cache_status = $cache-&gt;check_cache( $url );
+		}
+
+		// if object cached, and cache is fresh, return cached obj
+		if ( $cache_status == 'HIT' ) {
+			$rss = $cache-&gt;get( $url );
+			if ( isset($rss) and $rss ) {
+				$rss-&gt;from_cache = 1;
+				if ( MAGPIE_DEBUG &gt; 1) {
+				debug("MagpieRSS: Cache HIT", E_USER_NOTICE);
+			}
+				return $rss;
+			}
+		}
+
+		// else attempt a conditional get
+
+		// set up headers
+		if ( $cache_status == 'STALE' ) {
+			$rss = $cache-&gt;get( $url );
+			if ( isset($rss-&gt;etag) and $rss-&gt;last_modified ) {
+				$request_headers['If-None-Match'] = $rss-&gt;etag;
+				$request_headers['If-Last-Modified'] = $rss-&gt;last_modified;
+			}
+		}
+
+		$resp = _fetch_remote_file( $url, $request_headers );
+
+		if (isset($resp) and $resp) {
+			if ($resp-&gt;status == '304' ) {
+				// we have the most current copy
+				if ( MAGPIE_DEBUG &gt; 1) {
+					debug("Got 304 for $url");
+				}
+				// reset cache on 304 (at minutillo insistent prodding)
+				$cache-&gt;set($url, $rss);
+				return $rss;
+			}
+			elseif ( is_success( $resp-&gt;status ) ) {
+				$rss = _response_to_rss( $resp );
+				if ( $rss ) {
+					if (MAGPIE_DEBUG &gt; 1) {
+						debug("Fetch successful");
+					}
+					// add object to cache
+					$cache-&gt;set( $url, $rss );
+					return $rss;
+				}
+			}
+			else {
+				$errormsg = "Failed to fetch $url. ";
+				if ( $resp-&gt;error ) {
+					# compensate for Snoopy's annoying habit to tacking
+					# on '\n'
+					$http_error = substr($resp-&gt;error, 0, -2);
+					$errormsg .= "(HTTP Error: $http_error)";
+				}
+				else {
+					$errormsg .=  "(HTTP Response: " . $resp-&gt;response_code .')';
+				}
+			}
+		}
+		else {
+			$errormsg = "Unable to retrieve RSS file for unknown reasons.";
+		}
+
+		// else fetch failed
+
+		// attempt to return cached object
+		if ($rss) {
+			if ( MAGPIE_DEBUG ) {
+				debug("Returning STALE object for $url");
+			}
+			return $rss;
+		}
+
+		// else we totally failed
+		// error( $errormsg );
+
+		return false;
+
+	} // end if ( !MAGPIE_CACHE_ON ) {
+} // end fetch_rss()
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rss.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rss.php#L409">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rss.php#L409-L533">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/rsscache/__construct/">RSSCache::__construct()</a><code>wp-includes/rss.php</code></td><td><p>PHP5 constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/init/">init()</a><code>wp-includes/rss.php</code></td><td><p>Set up constants with default values, unless user overrides.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_fetch_remote_file/">_fetch_remote_file()</a><code>wp-includes/rss.php</code></td><td><p>Retrieve URL headers and content using WP HTTP Request API.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_success/">is_success()</a><code>wp-includes/rss.php</code></td><td></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_response_to_rss/">_response_to_rss()</a><code>wp-includes/rss.php</code></td><td><p>Retrieve</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_rss/">wp_rss()</a><code>wp-includes/rss.php</code></td><td><p>Display all RSS items in a HTML ordered list.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_rss/">get_rss()</a><code>wp-includes/rss.php</code></td><td><p>Display RSS items in HTML list items.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

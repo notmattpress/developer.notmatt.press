@@ -1,0 +1,267 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_verify_nonce()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_verify_nonce()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_verify_nonce( <span class="arg-type">string</span> <span class="arg-name">$nonce</span>,  <span class="arg-type">string|int</span> <span class="arg-name">$action</span> = <span class="arg-default">-1</span> ): <span class="return-type">int|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Verifies that a correct security nonce was used with time limit.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>A nonce is valid for 24 hours (by default).</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$nonce</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Nonce value that was used for verification, usually via a form field.</span></div></dd><dt><code>$action</code><span class="type"><span class="string">string</span>|<span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Should give context to what is taking place and be the same when nonce was created.</span></div><p class="default">Default:<code>-1</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">int|false</span> 1 if the nonce is valid and generated between 0-12 hours ago,                   2 if the nonce is valid and generated between 12-24 hours ago.<br/>
+False if the nonce is invalid.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>The function is used to verify the nonce sent in the current request usually accessed by the <tt><a class="external text" href="http://php.net/manual/en/reserved.variables.request.php" rel="nofollow">$_REQUEST</a></tt> PHP variable.</p>
+<p>Nonces should never be relied on for authentication or authorization, access control. Protect your functions using <a href="https://developer.notmatt.press/reference/functions/current_user_can/" title="Function Reference/current user can"><tt>current_user_can()</tt></a>, always assume Nonces can be compromised.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2354"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_verify_nonce( $nonce, $action = -1 ) {
+	$nonce = (string) $nonce;
+	$user  = wp_get_current_user();
+	$uid   = (int) $user-&gt;ID;
+	if ( ! $uid ) {
+		/**
+		 * Filters whether the user who generated the nonce is logged out.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param int        $uid    ID of the nonce-owning user.
+		 * @param string|int $action The nonce action, or -1 if none was provided.
+		 */
+		$uid = apply_filters( 'nonce_user_logged_out', $uid, $action );
+	}
+
+	if ( empty( $nonce ) ) {
+		return false;
+	}
+
+	$token = wp_get_session_token();
+	$i     = wp_nonce_tick( $action );
+
+	// Nonce generated 0-12 hours ago.
+	$expected = substr( wp_hash( $i . '|' . $action . '|' . $uid . '|' . $token, 'nonce' ), -12, 10 );
+	if ( hash_equals( $expected, $nonce ) ) {
+		return 1;
+	}
+
+	// Nonce generated 12-24 hours ago.
+	$expected = substr( wp_hash( ( $i - 1 ) . '|' . $action . '|' . $uid . '|' . $token, 'nonce' ), -12, 10 );
+	if ( hash_equals( $expected, $nonce ) ) {
+		return 2;
+	}
+
+	/**
+	 * Fires when nonce verification fails.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param string     $nonce  The invalid nonce.
+	 * @param string|int $action The nonce action.
+	 * @param WP_User    $user   The current user object.
+	 * @param string     $token  The user's session token.
+	 */
+	do_action( 'wp_verify_nonce_failed', $nonce, $action, $user, $token );
+
+	// Invalid nonce.
+	return false;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/pluggable.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/pluggable.php#L2354">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/pluggable.php#L2354-L2403">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/nonce_user_logged_out/"><span class="hook-func">apply_filters</span>( ‘nonce_user_logged_out’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$uid</span></nobr>,  <nobr><span class="arg-type">string|int</span> <span class="arg-name">$action</span></nobr> )</a></dt><dd><p>Filters whether the user who generated the nonce is logged out.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_verify_nonce_failed/"><span class="hook-func">do_action</span>( ‘wp_verify_nonce_failed’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$nonce</span></nobr>,  <nobr><span class="arg-type">string|int</span> <span class="arg-name">$action</span></nobr>,  <nobr><span class="arg-type">WP_User</span> <span class="arg-name">$user</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$token</span></nobr> )</a></dt><dd><p>Fires when nonce verification fails.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_session_token/">wp_get_session_token()</a><code>wp-includes/user.php</code></td><td><p>Retrieves the current session token from the logged_in cookie.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_tick/">wp_nonce_tick()</a><code>wp-includes/pluggable.php</code></td><td><p>Returns the time-dependent variable for nonce creation.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_hash/">wp_hash()</a><code>wp-includes/pluggable.php</code></td><td><p>Gets hash of given string.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_current_user/">wp_get_current_user()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves the current user object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_recovery_mode/handle_exit_recovery_mode/">WP_Recovery_Mode::handle_exit_recovery_mode()</a><code>wp-includes/class-wp-recovery-mode.php</code></td><td><p>Handles a request to exit Recovery Mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_edit_theme_plugin_file/">wp_edit_theme_plugin_file()</a><code>wp-admin/includes/file.php</code></td><td><p>Attempts to edit a file for a theme or plugin.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_cookie_check_errors/">rest_cookie_check_errors()</a><code>wp-includes/rest-api.php</code></td><td><p>Checks for errors when using cookie-based authentication.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_handle_comment_submission/">wp_handle_comment_submission()</a><code>wp-includes/comment.php</code></td><td><p>Handles the submission of a comment, usually posted to wp-comments-post.php via a comment form.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_destroy_sessions/">wp_ajax_destroy_sessions()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles destroying multiple open sessions for a user via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_install_list_table/prepare_items/">WP_Plugin_Install_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-plugin-install-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_autosave/">wp_autosave()</a><code>wp-admin/includes/post.php</code></td><td><p>Saves a post submitted with XHR.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_heartbeat/">wp_ajax_heartbeat()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles the Heartbeat API via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/request_filesystem_credentials/">request_filesystem_credentials()</a><code>wp-admin/includes/file.php</code></td><td><p>Displays a form to the user to request for their FTP/SSH details in order to connect to the filesystem.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/custom_image_header/step/">Custom_Image_Header::step()</a><code>wp-admin/includes/class-custom-image-header.php</code></td><td><p>Gets the current step.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_admin_referer/">check_admin_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Ensures intent by verifying that a user was referred from another admin page with the correct security nonce.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_ajax_referer/">check_ajax_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Verifies the Ajax request to prevent processing requests external of the blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/redirect_canonical/">redirect_canonical()</a><code>wp-includes/canonical.php</code></td><td><p>Redirects incoming links to the proper URL based on the site url.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_show_post_preview/">_show_post_preview()</a><code>wp-includes/revision.php</code></td><td><p>Filters the latest content for preview from the post autosave.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/signup_nonce_check/">signup_nonce_check()</a><code>wp-includes/ms-functions.php</code></td><td><p>Processes the signup nonce created in <a href="https://developer.notmatt.press/reference/functions/signup_nonce_fields/" rel="function">signup_nonce_fields()</a> .</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 10 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.3/">2.0.3</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="660" id="comment-660">
+<article class="comment-body" id="div-comment-660">
+<a class="screen-reader-text" href="#comment-content-660">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-660">
+<p><strong>Example</strong><br>
+Verify an nonce created with <code>wp_create_nonce()</code>:</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+// Step A: Create an nonce, and add it as a query var in a link to perform an action.
+$nonce = wp_create_nonce( 'my-nonce' );
+echo "&lt;a href='myplugin.php?_wpnonce={$nonce}'&gt;" . __( 'Save Something', 'textdomain' ) . "&lt;/a&gt;";
+?&gt;</code></pre>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Step B: In our file that handles the request, verify the nonce.
+$nonce = $_REQUEST['_wpnonce'];
+if ( ! wp_verify_nonce( $nonce, 'my-nonce' ) ) {
+	die( __( 'Security check', 'textdomain' ) ); 
+} else {
+	// Do stuff here.
+}</code></pre>
+<p>You may also decide to take different actions based on the age of the nonce:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$nonce = wp_verify_nonce( $nonce, 'my-nonce' );
+switch ( $nonce ) {
+	case 1:
+		echo 'Nonce is less than 12 hours old';
+		break;
+	case 2:
+		echo 'Nonce is between 12 and 24 hours old';
+		break;
+	default:
+		exit( 'Nonce is invalid' );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-660">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-wordproof even thread-even depth-1" data-comment-id="4725" id="comment-4725">
+<article class="comment-body" id="div-comment-4725">
+<a class="screen-reader-text" href="#comment-content-4725">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4725">
+<p>Per the WordPress Coding Standards, this is the way as to verify a nonce:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">if ( isset( $_REQUEST['_wpnonce'] ) &amp;&amp; wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce' ) ) {
+  
+  //do you action
+  
+} else {
+
+  die( __( 'Security check', 'textdomain' ) ); 
+
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-4725">
+<ul class="children">
+<li class="comment byuser comment-author-gerardreches odd alt depth-2" data-comment-id="6886" id="comment-6886">
+<article class="comment-body" id="div-comment-6886">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6886">
+<div>Source?</div>
+<div><a class="url" href="https://profiles.wordpress.org/gerardreches/" rel="external nofollow">Gerard Reches</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/wp_verify_nonce/#comment-6886"><time datetime="2024-01-28T15:46:03+00:00">1 year ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-lev0 even thread-odd thread-alt depth-1" data-comment-id="5066" id="comment-5066">
+<article class="comment-body" id="div-comment-5066">
+<a class="screen-reader-text" href="#comment-content-5066">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5066">
+<p>This system is not very accurate and the comment about the return values is incorrect. The value <code>1</code> means &lt; 12 hours old, but <code>2</code> means anywhere from 1 second to &lt; 24 hours old.</p>
+<p>Observe what happens to the nonce tick value over a day:</p>
+<p>local time ~~~ seconds since epoch ~~~ tick<br/>
+2021-05-20T00:00:00+03:00 ~~~ 1621458000 ~~~ 37534<br/>
+2021-05-20T01:00:00+03:00 ~~~ 1621461600 ~~~ 37534<br/>
+2021-05-20T02:00:00+03:00 ~~~ 1621465200 ~~~ 37534<br/>
+2021-05-20T03:00:00+03:00 ~~~ 1621468800 ~~~ 37534<br/>
+2021-05-20T04:00:00+03:00 ~~~ 1621472400 ~~~ 37535<br/>
+2021-05-20T05:00:00+03:00 ~~~ 1621476000 ~~~ 37535<br/>
+2021-05-20T06:00:00+03:00 ~~~ 1621479600 ~~~ 37535<br/>
+2021-05-20T07:00:00+03:00 ~~~ 1621483200 ~~~ 37535<br/>
+2021-05-20T08:00:00+03:00 ~~~ 1621486800 ~~~ 37535<br/>
+2021-05-20T09:00:00+03:00 ~~~ 1621490400 ~~~ 37535<br/>
+2021-05-20T10:00:00+03:00 ~~~ 1621494000 ~~~ 37535<br/>
+2021-05-20T11:00:00+03:00 ~~~ 1621497600 ~~~ 37535<br/>
+2021-05-20T12:00:00+03:00 ~~~ 1621501200 ~~~ 37535<br/>
+2021-05-20T13:00:00+03:00 ~~~ 1621504800 ~~~ 37535<br/>
+2021-05-20T14:00:00+03:00 ~~~ 1621508400 ~~~ 37535<br/>
+2021-05-20T15:00:00+03:00 ~~~ 1621512000 ~~~ 37535<br/>
+2021-05-20T16:00:00+03:00 ~~~ 1621515600 ~~~ 37536<br/>
+2021-05-20T17:00:00+03:00 ~~~ 1621519200 ~~~ 37536<br/>
+2021-05-20T18:00:00+03:00 ~~~ 1621522800 ~~~ 37536<br/>
+2021-05-20T19:00:00+03:00 ~~~ 1621526400 ~~~ 37536<br/>
+2021-05-20T20:00:00+03:00 ~~~ 1621530000 ~~~ 37536<br/>
+2021-05-20T21:00:00+03:00 ~~~ 1621533600 ~~~ 37536<br/>
+2021-05-20T22:00:00+03:00 ~~~ 1621537200 ~~~ 37536<br/>
+2021-05-20T23:00:00+03:00 ~~~ 1621540800 ~~~ 37536</p>
+<p>…and over the boundary of a tick:</p>
+<p>local time ~~~ seconds since epoch ~~~ tick<br/>
+2021-05-20T14:59:58+03:00 ~~~ 1621511998 ~~~ 37535<br/>
+2021-05-20T14:59:59+03:00 ~~~ 1621511999 ~~~ 37535<br/>
+2021-05-20T15:00:00+03:00 ~~~ 1621512000 ~~~ 37535<br/>
+2021-05-20T15:00:01+03:00 ~~~ 1621512001 ~~~ 37536<br/>
+2021-05-20T15:00:02+03:00 ~~~ 1621512002 ~~~ 37536</p>
+<p>In this example, you can see that a nonce generated at 3pm and verified one second later will return <code>2</code> because of the tick change. The ticks do not align with timezones due to their basis in universal time, so nonces will always appear “old” to your code at certain times of the day.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-5066">
+<ul class="children">
+<li class="comment byuser comment-author-mumbomedia odd alt depth-2" data-comment-id="5725" id="comment-5725">
+<article class="comment-body" id="div-comment-5725">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5725">
+<div>You’re right, but it doesn’t matter if the function returns 1 or 2 because this function is use in an if clause and therefore the value is converted to a boolean which will be true for any value that is not 0. The check will only fail if the hashes don’t match.</div>
+<div><a class="url" href="https://profiles.wordpress.org/mumbomedia/" rel="external nofollow">mumbomedia</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/wp_verify_nonce/#comment-5725"><time datetime="2022-03-08T09:12:20+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

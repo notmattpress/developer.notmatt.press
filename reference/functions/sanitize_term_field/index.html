@@ -1,0 +1,243 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">sanitize_term_field()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>sanitize_term_field()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">sanitize_term_field( <span class="arg-type">string</span> <span class="arg-name">$field</span>,  <span class="arg-type">string</span> <span class="arg-name">$value</span>,  <span class="arg-type">int</span> <span class="arg-name">$term_id</span>,  <span class="arg-type">string</span> <span class="arg-name">$taxonomy</span>,  <span class="arg-type">string</span> <span class="arg-name">$context</span> ): <span class="return-type">mixed</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sanitizes the field value in the term based on the context.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Passing a term field value through the function should be assumed to have cleansed the value for whatever context the term field is going to be used.</p>
+<p>If no context or an unsupported context is given, then default filters will be applied.</p>
+<p>There are enough filters for each context to support a custom filtering without creating your own filter function. Simply create a function that hooks into the filter you need.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$field</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Term field to sanitize.</span></div></dd><dt><code>$value</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Search for this term value.</span></div></dd><dt><code>$term_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Term ID.</span></div></dd><dt><code>$taxonomy</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Taxonomy name.</span></div></dd><dt><code>$context</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Context in which to sanitize the term field.<br/>
+Accepts <code>'raw'</code>, <code>'edit'</code>, <code>'db'</code>, <code>'display'</code>, <code>'rss'</code>,                         <code>'attribute'</code>, or <code>'js'</code>. Default <code>'display'</code>.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">mixed</span> Sanitized field.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1756"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function sanitize_term_field( $field, $value, $term_id, $taxonomy, $context ) {
+	$int_fields = array( 'parent', 'term_id', 'count', 'term_group', 'term_taxonomy_id', 'object_id' );
+	if ( in_array( $field, $int_fields, true ) ) {
+		$value = (int) $value;
+		if ( $value &lt; 0 ) {
+			$value = 0;
+		}
+	}
+
+	$context = strtolower( $context );
+
+	if ( 'raw' === $context ) {
+		return $value;
+	}
+
+	if ( 'edit' === $context ) {
+
+		/**
+		 * Filters a term field to edit before it is sanitized.
+		 *
+		 * The dynamic portion of the hook name, `$field`, refers to the term field.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param mixed $value     Value of the term field.
+		 * @param int   $term_id   Term ID.
+		 * @param string $taxonomy Taxonomy slug.
+		 */
+		$value = apply_filters( "edit_term_{$field}", $value, $term_id, $taxonomy );
+
+		/**
+		 * Filters the taxonomy field to edit before it is sanitized.
+		 *
+		 * The dynamic portions of the filter name, `$taxonomy` and `$field`, refer
+		 * to the taxonomy slug and taxonomy field, respectively.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param mixed $value   Value of the taxonomy field to edit.
+		 * @param int   $term_id Term ID.
+		 */
+		$value = apply_filters( "edit_{$taxonomy}_{$field}", $value, $term_id );
+
+		if ( 'description' === $field ) {
+			$value = esc_html( $value ); // textarea_escaped
+		} else {
+			$value = esc_attr( $value );
+		}
+	} elseif ( 'db' === $context ) {
+
+		/**
+		 * Filters a term field value before it is sanitized.
+		 *
+		 * The dynamic portion of the hook name, `$field`, refers to the term field.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param mixed  $value    Value of the term field.
+		 * @param string $taxonomy Taxonomy slug.
+		 */
+		$value = apply_filters( "pre_term_{$field}", $value, $taxonomy );
+
+		/**
+		 * Filters a taxonomy field before it is sanitized.
+		 *
+		 * The dynamic portions of the filter name, `$taxonomy` and `$field`, refer
+		 * to the taxonomy slug and field name, respectively.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param mixed $value Value of the taxonomy field.
+		 */
+		$value = apply_filters( "pre_{$taxonomy}_{$field}", $value );
+
+		// Back compat filters.
+		if ( 'slug' === $field ) {
+			/**
+			 * Filters the category nicename before it is sanitized.
+			 *
+			 * Use the <a href="https://developer.notmatt.press/reference/functions/pre_taxonomy_field">'pre_$taxonomy_$field'</a> hook instead.
+			 *
+			 * @since 2.0.3
+			 *
+			 * @param string $value The category nicename.
+			 */
+			$value = apply_filters( 'pre_category_nicename', $value );
+		}
+	} elseif ( 'rss' === $context ) {
+
+		/**
+		 * Filters the term field for use in RSS.
+		 *
+		 * The dynamic portion of the hook name, `$field`, refers to the term field.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param mixed  $value    Value of the term field.
+		 * @param string $taxonomy Taxonomy slug.
+		 */
+		$value = apply_filters( "term_{$field}_rss", $value, $taxonomy );
+
+		/**
+		 * Filters the taxonomy field for use in RSS.
+		 *
+		 * The dynamic portions of the hook name, `$taxonomy`, and `$field`, refer
+		 * to the taxonomy slug and field name, respectively.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param mixed $value Value of the taxonomy field.
+		 */
+		$value = apply_filters( "{$taxonomy}_{$field}_rss", $value );
+	} else {
+		// Use display filters by default.
+
+		/**
+		 * Filters the term field sanitized for display.
+		 *
+		 * The dynamic portion of the hook name, `$field`, refers to the term field name.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param mixed  $value    Value of the term field.
+		 * @param int    $term_id  Term ID.
+		 * @param string $taxonomy Taxonomy slug.
+		 * @param string $context  Context to retrieve the term field value.
+		 */
+		$value = apply_filters( "term_{$field}", $value, $term_id, $taxonomy, $context );
+
+		/**
+		 * Filters the taxonomy field sanitized for display.
+		 *
+		 * The dynamic portions of the filter name, `$taxonomy`, and `$field`, refer
+		 * to the taxonomy slug and taxonomy field, respectively.
+		 *
+		 * @since 2.3.0
+		 *
+		 * @param mixed  $value   Value of the taxonomy field.
+		 * @param int    $term_id Term ID.
+		 * @param string $context Context to retrieve the taxonomy field value.
+		 */
+		$value = apply_filters( "{$taxonomy}_{$field}", $value, $term_id, $context );
+	}
+
+	if ( 'attribute' === $context ) {
+		$value = esc_attr( $value );
+	} elseif ( 'js' === $context ) {
+		$value = esc_js( $value );
+	}
+
+	// Restore the type for integer fields after esc_attr().
+	if ( in_array( $field, $int_fields, true ) ) {
+		$value = (int) $value;
+	}
+
+	return $value;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/taxonomy.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/taxonomy.php#L1756">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/taxonomy.php#L1756-L1912">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/edit_term_field/"><span class="hook-func">apply_filters</span>( “edit_term_{$field}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$term_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr> )</a></dt><dd><p>Filters a term field to edit before it is sanitized.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/edit_taxonomy_field/"><span class="hook-func">apply_filters</span>( “edit_{$taxonomy}_{$field}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$term_id</span></nobr> )</a></dt><dd><p>Filters the taxonomy field to edit before it is sanitized.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_category_nicename/"><span class="hook-func">apply_filters</span>( ‘pre_category_nicename’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$value</span></nobr> )</a></dt><dd><p>Filters the category nicename before it is sanitized.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_term_field/"><span class="hook-func">apply_filters</span>( “pre_term_{$field}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr> )</a></dt><dd><p>Filters a term field value before it is sanitized.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_taxonomy_field/"><span class="hook-func">apply_filters</span>( “pre_{$taxonomy}_{$field}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr> )</a></dt><dd><p>Filters a taxonomy field before it is sanitized.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/term_field/"><span class="hook-func">apply_filters</span>( “term_{$field}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$term_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr> )</a></dt><dd><p>Filters the term field sanitized for display.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/term_field_rss/"><span class="hook-func">apply_filters</span>( “term_{$field}_rss”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr> )</a></dt><dd><p>Filters the term field for use in RSS.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/taxonomy_field/"><span class="hook-func">apply_filters</span>( “{$taxonomy}_{$field}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$term_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr> )</a></dt><dd><p>Filters the taxonomy field sanitized for display.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/taxonomy_field_rss/"><span class="hook-func">apply_filters</span>( “{$taxonomy}_{$field}_rss”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr> )</a></dt><dd><p>Filters the taxonomy field for use in RSS.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_js/">esc_js()</a><code>wp-includes/formatting.php</code></td><td><p>Escapes single quotes, <code>"</code>, <code></code>, <code>&amp;amp;</code>, and fixes line endings.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_term_query/get_terms/">WP_Term_Query::get_terms()</a><code>wp-includes/class-wp-term-query.php</code></td><td><p>Retrieves the query results.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/column_default/">WP_Posts_List_Table::column_default()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td><p>Handles the default column output.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_media_list_table/column_default/">WP_Media_List_Table::column_default()</a><code>wp-admin/includes/class-wp-media-list-table.php</code></td><td><p>Handles output for the default column.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_query/parse_tax_query/">WP_Query::parse_tax_query()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Parses various taxonomy related query vars.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_category_field/">sanitize_category_field()</a><code>wp-includes/category.php</code></td><td><p>Sanitizes data in single category key field.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_term_field/">get_term_field()</a><code>wp-includes/taxonomy.php</code></td><td><p>Gets sanitized term field.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_term/">sanitize_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Sanitizes all term fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_category_rss/">get_the_category_rss()</a><code>wp-includes/feed.php</code></td><td><p>Retrieves all of the post categories, formatted for use in feeds.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.3.0/">2.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

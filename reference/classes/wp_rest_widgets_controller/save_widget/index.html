@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_widgets_controller/">WP_REST_Widgets_Controller</a></span><span class="is-current-page">WP_REST_Widgets_Controller::save_widget()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_Widgets_Controller::save_widget()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_Widgets_Controller::save_widget( <span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span>,  <span class="arg-type">string</span> <span class="arg-name">$sidebar_id</span> ): <span class="return-type">string|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Saves the widget in the request object.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$request</code><span class="type"><span class="WP_REST_Request"><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/" rel="class">WP_REST_Request</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Full details about the request.</span></div></dd><dt><code>$sidebar_id</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">ID of the sidebar the widget belongs to.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> The saved widget ID.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="521"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function save_widget( $request, $sidebar_id ) {
+	global $wp_widget_factory, $wp_registered_widget_updates;
+
+	require_once ABSPATH . 'wp-admin/includes/widgets.php'; // For next_widget_id_number().
+
+	if ( isset( $request['id'] ) ) {
+		// Saving an existing widget.
+		$id            = $request['id'];
+		$parsed_id     = wp_parse_widget_id( $id );
+		$id_base       = $parsed_id['id_base'];
+		$number        = isset( $parsed_id['number'] ) ? $parsed_id['number'] : null;
+		$widget_object = $wp_widget_factory-&gt;get_widget_object( $id_base );
+		$creating      = false;
+	} elseif ( $request['id_base'] ) {
+		// Saving a new widget.
+		$id_base       = $request['id_base'];
+		$widget_object = $wp_widget_factory-&gt;get_widget_object( $id_base );
+		$number        = $widget_object ? next_widget_id_number( $id_base ) : null;
+		$id            = $widget_object ? $id_base . '-' . $number : $id_base;
+		$creating      = true;
+	} else {
+		return new WP_Error(
+			'rest_invalid_widget',
+			__( 'Widget type (id_base) is required.' ),
+			array( 'status' =&gt; 400 )
+		);
+	}
+
+	if ( ! isset( $wp_registered_widget_updates[ $id_base ] ) ) {
+		return new WP_Error(
+			'rest_invalid_widget',
+			__( 'The provided widget type (id_base) cannot be updated.' ),
+			array( 'status' =&gt; 400 )
+		);
+	}
+
+	if ( isset( $request['instance'] ) ) {
+		if ( ! $widget_object ) {
+			return new WP_Error(
+				'rest_invalid_widget',
+				__( 'Cannot set instance on a widget that does not extend WP_Widget.' ),
+				array( 'status' =&gt; 400 )
+			);
+		}
+
+		if ( isset( $request['instance']['raw'] ) ) {
+			if ( empty( $widget_object-&gt;widget_options['show_instance_in_rest'] ) ) {
+				return new WP_Error(
+					'rest_invalid_widget',
+					__( 'Widget type does not support raw instances.' ),
+					array( 'status' =&gt; 400 )
+				);
+			}
+			$instance = $request['instance']['raw'];
+		} elseif ( isset( $request['instance']['encoded'], $request['instance']['hash'] ) ) {
+			$serialized_instance = base64_decode( $request['instance']['encoded'] );
+			if ( ! hash_equals( wp_hash( $serialized_instance ), $request['instance']['hash'] ) ) {
+				return new WP_Error(
+					'rest_invalid_widget',
+					__( 'The provided instance is malformed.' ),
+					array( 'status' =&gt; 400 )
+				);
+			}
+			$instance = unserialize( $serialized_instance );
+		} else {
+			return new WP_Error(
+				'rest_invalid_widget',
+				__( 'The provided instance is invalid. Must contain raw OR encoded and hash.' ),
+				array( 'status' =&gt; 400 )
+			);
+		}
+
+		$form_data = array(
+			"widget-$id_base" =&gt; array(
+				$number =&gt; $instance,
+			),
+			'sidebar'         =&gt; $sidebar_id,
+		);
+	} elseif ( isset( $request['form_data'] ) ) {
+		$form_data = $request['form_data'];
+	} else {
+		$form_data = array();
+	}
+
+	$original_post    = $_POST;
+	$original_request = $_REQUEST;
+
+	foreach ( $form_data as $key =&gt; $value ) {
+		$slashed_value    = wp_slash( $value );
+		$_POST[ $key ]    = $slashed_value;
+		$_REQUEST[ $key ] = $slashed_value;
+	}
+
+	$callback = $wp_registered_widget_updates[ $id_base ]['callback'];
+	$params   = $wp_registered_widget_updates[ $id_base ]['params'];
+
+	if ( is_callable( $callback ) ) {
+		ob_start();
+		call_user_func_array( $callback, $params );
+		ob_end_clean();
+	}
+
+	$_POST    = $original_post;
+	$_REQUEST = $original_request;
+
+	if ( $widget_object ) {
+		// Register any multi-widget that the update callback just created.
+		$widget_object-&gt;_set( $number );
+		$widget_object-&gt;_register_one( $number );
+
+		/*
+		 * WP_Widget sets `updated = true` after an update to prevent more than one widget
+		 * from being saved per request. This isn't what we want in the REST API, though,
+		 * as we support batch requests.
+		 */
+		$widget_object-&gt;updated = false;
+	}
+
+	/**
+	 * Fires after a widget is created or updated via the REST API.
+	 *
+	 * @since 5.8.0
+	 *
+	 * @param string          $id         ID of the widget being saved.
+	 * @param string          $sidebar_id ID of the sidebar containing the widget being saved.
+	 * @param WP_REST_Request $request    Request object.
+	 * @param bool            $creating   True when creating a widget, false when updating.
+	 */
+	do_action( 'rest_after_save_widget', $id, $sidebar_id, $request, $creating );
+
+	return $id;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/endpoints/class-wp-rest-widgets-controller.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-widgets-controller.php#L521">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-widgets-controller.php#L521-L652">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/rest_after_save_widget/"><span class="hook-func">do_action</span>( ‘rest_after_save_widget’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$sidebar_id</span></nobr>,  <nobr><span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$creating</span></nobr> )</a></dt><dd><p>Fires after a widget is created or updated via the REST API.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_factory/get_widget_object/">WP_Widget_Factory::get_widget_object()</a><code>wp-includes/class-wp-widget-factory.php</code></td><td><p>Returns the registered <a href="https://developer.notmatt.press/reference/classes/wp_widget/" rel="class">WP_Widget</a> object for the given widget type.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_widget_id/">wp_parse_widget_id()</a><code>wp-includes/widgets.php</code></td><td><p>Converts a widget ID into its id_base and number components.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/next_widget_id_number/">next_widget_id_number()</a><code>wp-admin/includes/widgets.php</code></td><td></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_hash/">wp_hash()</a><code>wp-includes/pluggable.php</code></td><td><p>Gets hash of given string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_slash/">wp_slash()</a><code>wp-includes/formatting.php</code></td><td><p>Adds slashes to a string or recursively adds slashes to strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_widgets_controller/create_item/">WP_REST_Widgets_Controller::create_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-widgets-controller.php</code></td><td><p>Creates a widget.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_widgets_controller/update_item/">WP_REST_Widgets_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-widgets-controller.php</code></td><td><p>Updates an existing widget.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

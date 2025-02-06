@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_block/">WP_Block</a></span><span class="is-current-page">WP_Block::process_block_bindings()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Block::process_block_bindings()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Block::process_block_bindings(): <span class="return-type">array</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Processes the block bindings and updates the block attributes with the values from the sources.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>A block might contain bindings in its attributes. Bindings are mappings between an attribute of the block and a source. A "source" is a function registered with <code>register_block_bindings_source()</code> that defines how to retrieve a value from outside the block, e.g. from post meta.</p> <p>This function will process those bindings and update the block’s attributes with the values coming from the bindings.</p> <h3 class="is-toc-heading" id="example" tabindex="-1"><a href="#example">Example</a></h3> <p>The "bindings" property for an Image block might look like this:</p> <pre class="wp-block-code"><code class="language-php line-numbers" lang="php">{
+  "metadata": {
+    "bindings": {
+      "title": {
+        "source": "core/post-meta",
+        "args": { "key": "text_custom_field" }
+      },
+      "url": {
+        "source": "core/post-meta",
+        "args": { "key": "url_custom_field" }
+      }
+    }
+  }
+}</code></pre> <p>The above example will replace the <code>title</code> and <code>url</code> attributes of the Image block with the values of the <code>text_custom_field</code> and <code>url_custom_field</code> post meta.</p></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The computed block attributes for the provided block bindings.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="244"><code class="language-php line-numbers" id="wporg-source-code" lang="php">private function process_block_bindings() {
+	$parsed_block               = $this-&gt;parsed_block;
+	$computed_attributes        = array();
+	$supported_block_attributes = array(
+		'core/paragraph' =&gt; array( 'content' ),
+		'core/heading'   =&gt; array( 'content' ),
+		'core/image'     =&gt; array( 'id', 'url', 'title', 'alt' ),
+		'core/button'    =&gt; array( 'url', 'text', 'linkTarget', 'rel' ),
+	);
+
+	// If the block doesn't have the bindings property, isn't one of the supported
+	// block types, or the bindings property is not an array, return the block content.
+	if (
+		! isset( $supported_block_attributes[ $this-&gt;name ] ) ||
+		empty( $parsed_block['attrs']['metadata']['bindings'] ) ||
+		! is_array( $parsed_block['attrs']['metadata']['bindings'] )
+	) {
+		return $computed_attributes;
+	}
+
+	$bindings = $parsed_block['attrs']['metadata']['bindings'];
+
+	/*
+	 * If the default binding is set for pattern overrides, replace it
+	 * with a pattern override binding for all supported attributes.
+	 */
+	if (
+		isset( $bindings['__default']['source'] ) &amp;&amp;
+		'core/pattern-overrides' === $bindings['__default']['source']
+	) {
+		$updated_bindings = array();
+
+		/*
+		 * Build a binding array of all supported attributes.
+		 * Note that this also omits the `__default` attribute from the
+		 * resulting array.
+		 */
+		foreach ( $supported_block_attributes[ $parsed_block['blockName'] ] as $attribute_name ) {
+			// Retain any non-pattern override bindings that might be present.
+			$updated_bindings[ $attribute_name ] = isset( $bindings[ $attribute_name ] )
+				? $bindings[ $attribute_name ]
+				: array( 'source' =&gt; 'core/pattern-overrides' );
+		}
+		$bindings = $updated_bindings;
+		/*
+		 * Update the bindings metadata of the computed attributes.
+		 * This ensures the block receives the expanded __default binding metadata when it renders.
+		 */
+		$computed_attributes['metadata'] = array_merge(
+			$parsed_block['attrs']['metadata'],
+			array( 'bindings' =&gt; $bindings )
+		);
+	}
+
+	foreach ( $bindings as $attribute_name =&gt; $block_binding ) {
+		// If the attribute is not in the supported list, process next attribute.
+		if ( ! in_array( $attribute_name, $supported_block_attributes[ $this-&gt;name ], true ) ) {
+			continue;
+		}
+		// If no source is provided, or that source is not registered, process next attribute.
+		if ( ! isset( $block_binding['source'] ) || ! is_string( $block_binding['source'] ) ) {
+			continue;
+		}
+
+		$block_binding_source = get_block_bindings_source( $block_binding['source'] );
+		if ( null === $block_binding_source ) {
+			continue;
+		}
+
+		// Adds the necessary context defined by the source.
+		if ( ! empty( $block_binding_source-&gt;uses_context ) ) {
+			foreach ( $block_binding_source-&gt;uses_context as $context_name ) {
+				if ( array_key_exists( $context_name, $this-&gt;available_context ) ) {
+					$this-&gt;context[ $context_name ] = $this-&gt;available_context[ $context_name ];
+				}
+			}
+		}
+
+		$source_args  = ! empty( $block_binding['args'] ) &amp;&amp; is_array( $block_binding['args'] ) ? $block_binding['args'] : array();
+		$source_value = $block_binding_source-&gt;get_value( $source_args, $this, $attribute_name );
+
+		// If the value is not null, process the HTML based on the block and the attribute.
+		if ( ! is_null( $source_value ) ) {
+			$computed_attributes[ $attribute_name ] = $source_value;
+		}
+	}
+
+	return $computed_attributes;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-block.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-block.php#L244">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-block.php#L244-L332">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_block_bindings_source/">get_block_bindings_source()</a><code>wp-includes/block-bindings.php</code></td><td><p>Retrieves a registered block bindings source.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block/render/">WP_Block::render()</a><code>wp-includes/class-wp-block.php</code></td><td><p>Generates the render output for the block.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td><span class="since-description">Return any updated bindings metadata in the computed attributes.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.6.0/">6.6.0</a></td><td><span class="since-description">Handle the <code>__default</code> attribute for pattern overrides.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

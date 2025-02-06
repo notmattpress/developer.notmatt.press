@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/apis/">Common APIs Handbook</a></span><span><a href="https://developer.wordpress.org/apis/security/">Security</a></span><span class="is-current-page">Common Vulnerabilities</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Common Vulnerabilities</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Security is an ever-changing landscape, and vulnerabilities evolve over time. The following is a discussion of common vulnerabilities you should protect against, and the techniques for protecting your theme from exploitation.</p>
+<h2 class="is-toc-heading wp-block-heading" id="types-of-vulnerabilities" tabindex="-1"><a href="#types-of-vulnerabilities">Types of Vulnerabilities</a></h2>
+<h3 class="is-toc-heading wp-block-heading" id="sql-injection" tabindex="-1"><a href="#sql-injection">SQL Injection</a></h3>
+<p>SQL injection happens when values being inputted are not properly sanitized allowing for any SQL commands in the inputted data to potentially be executed. To prevent this, the WordPress API is extensive, offering functions like <code>add_post_meta();</code> instead of you needing to adding the post meta manually via SQL (<code>INSERT INTO wp_postmeta…</code>).</p>
+<figure class="wp-block-image aligncenter"><img alt="exploits_of_a_mom" class="wp-image-4237" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/make.wordpress.org/docs/files/2013/03/exploits_of_a_mom.png?ssl=1"/></figure>
+<p><small>xkcd <a href="https://xkcd.com/327/">Exploits of a Mom</a></small></p>
+<p>The first rule for hardening your theme against SQL injection is: When there’s a WordPress function, use it.</p>
+<p>But sometimes you need to do complex queries, that have not been accounted for in the API. If this is the case, always use the <a href="https://developer.notmatt.press/reference/classes/wpdb/"><code>$wpdb</code> functions</a>. These were built specifically to protect your database.</p>
+<p>All data in SQL queries must be SQL-escaped before the SQL query is executed to prevent against SQL injection attacks. The best function to use for SQL-escaping is <code>$wpdb-&gt;prepare()</code> which supports both a <a href="http://secure.php.net/sprintf" rel="noreferrer noopener" target="_blank">sprintf()</a>-like and <a href="http://secure.php.net/vsprintf" rel="noreferrer noopener" target="_blank">vsprintf()</a>-like syntax.</p>
+<pre class="wp-block-code has-small-font-size"><code class="language-php line-numbers" lang="php">$wpdb-&gt;get_var( $wpdb-&gt;prepare(
+    "SELECT something FROM table WHERE foo = %s and status = %d",
+    $name, // an unescaped string (function will do the sanitization for you)
+    $status // an untrusted integer (function will do the sanitization for you)
+) );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="cross-site-scripting-xss" tabindex="-1"><a href="#cross-site-scripting-xss">Cross Site Scripting (XSS)</a></h3>
+<p>Cross Site Scripting (XSS) happens when a nefarious party injects JavaScript into a web page.</p>
+<p>Avoid XSS vulnerabilities by escaping output, stripping out unwanted data. As a theme’s primary responsibility is outputting content, a theme should <a href="https://developer.notmatt.press/themes/theme-security/data-sanitization-escaping/">escape dynamic content</a> with the proper function depending on the type of the content.</p>
+<p>An example of one of the escaping functions is escaping URL from a user profile.</p>
+<pre class="wp-block-code has-small-font-size"><code class="language-php" lang="php">&lt;img src="&lt;?php echo esc_url( $great_user_picture_url ); ?&gt;" /&gt;</code></pre>
+<p>Content that has HTML entities within can be sanitized to allow only specified HTML elements.</p>
+<pre class="wp-block-code has-small-font-size"><code class="language-php line-numbers" lang="php">$allowed_html = array(
+    'a' =&gt; array(
+        'href' =&gt; array(),
+        'title' =&gt; array()
+    ),
+    'br' =&gt; array(),
+    'em' =&gt; array(),
+    'strong' =&gt; array(),
+);
+
+echo wp_kses( $custom_content, $allowed_html );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="cross-site-request-forgery-csrf" tabindex="-1"><a href="#cross-site-request-forgery-csrf">Cross-site Request Forgery (CSRF)</a></h3>
+<p>Cross-site request forgery or CSRF (pronounced sea-surf) is when a nefarious party tricks a user into performing an unwanted action within a web application they are authenticated in. For example, a phishing email might contain a link to a page that would delete a user’s account in the WordPress admin.</p>
+<p>If your theme includes any HTML or HTTP-based form submissions, use a <a href="https://developer.notmatt.press/apis/security/nonces/">nonce</a> to guarantee a user intends to perform an action.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;form method="post"&gt;
+    &lt;!-- some inputs here … --&gt;
+    &lt;?php wp_nonce_field( 'name_of_my_action', 'name_of_nonce_field' ); ?&gt;
+&lt;/form&gt;</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="staying-current" tabindex="-1"><a href="#staying-current">Staying Current</a></h3>
+<p>It is important to stay current on potential security holes. The following resources provide a good starting point:</p>
+<ul class="wp-block-list">
+<li><a href="https://wordpress.org/about/security/">WordPress Security Whitepaper</a></li>
+<li><a href="https://wordpress.org/news/category/security/">WordPress Security Release</a></li>
+<li><a href="https://www.owasp.org/index.php/OWASP_Top_Ten_Cheat_Sheet">Open Web Application Security Project (OWASP) Top 10</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

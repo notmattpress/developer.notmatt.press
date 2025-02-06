@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_posts_list_table/">WP_Posts_List_Table</a></span><span class="is-current-page">WP_Posts_List_Table::column_date()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Posts_List_Table::column_date()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Posts_List_Table::column_date( <span class="arg-type">WP_Post</span> <span class="arg-name">$post</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Handles the post date column output.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post</code><span class="type"><span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The current <a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a> object.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1193"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function column_date( $post ) {
+	global $mode;
+
+	if ( '0000-00-00 00:00:00' === $post-&gt;post_date ) {
+		$t_time    = __( 'Unpublished' );
+		$time_diff = 0;
+	} else {
+		$t_time = sprintf(
+			/* translators: 1: Post date, 2: Post time. */
+			__( '%1$s at %2$s' ),
+			/* translators: Post date format. See https://www.php.net/manual/datetime.format.php */
+			get_the_time( __( 'Y/m/d' ), $post ),
+			/* translators: Post time format. See https://www.php.net/manual/datetime.format.php */
+			get_the_time( __( 'g:i a' ), $post )
+		);
+
+		$time      = get_post_timestamp( $post );
+		$time_diff = time() - $time;
+	}
+
+	if ( 'publish' === $post-&gt;post_status ) {
+		$status = __( 'Published' );
+	} elseif ( 'future' === $post-&gt;post_status ) {
+		if ( $time_diff &gt; 0 ) {
+			$status = '&lt;strong class="error-message"&gt;' . __( 'Missed schedule' ) . '&lt;/strong&gt;';
+		} else {
+			$status = __( 'Scheduled' );
+		}
+	} else {
+		$status = __( 'Last Modified' );
+	}
+
+	/**
+	 * Filters the status text of the post.
+	 *
+	 * @since 4.8.0
+	 *
+	 * @param string  $status      The status text.
+	 * @param WP_Post $post        Post object.
+	 * @param string  $column_name The column name.
+	 * @param string  $mode        The list display mode ('excerpt' or 'list').
+	 */
+	$status = apply_filters( 'post_date_column_status', $status, $post, 'date', $mode );
+
+	if ( $status ) {
+		echo $status . '&lt;br /&gt;';
+	}
+
+	/**
+	 * Filters the published, scheduled, or unpublished time of the post.
+	 *
+	 * @since 2.5.1
+	 * @since 5.5.0 Removed the difference between 'excerpt' and 'list' modes.
+	 *              The published time and date are both displayed now,
+	 *              which is equivalent to the previous 'excerpt' mode.
+	 *
+	 * @param string  $t_time      The published time.
+	 * @param WP_Post $post        Post object.
+	 * @param string  $column_name The column name.
+	 * @param string  $mode        The list display mode ('excerpt' or 'list').
+	 */
+	echo apply_filters( 'post_date_column_time', $t_time, $post, 'date', $mode );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-posts-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-posts-list-table.php#L1193">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-posts-list-table.php#L1193-L1255">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/post_date_column_status/"><span class="hook-func">apply_filters</span>( ‘post_date_column_status’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$status</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$column_name</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$mode</span></nobr> )</a></dt><dd><p>Filters the status text of the post.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/post_date_column_time/"><span class="hook-func">apply_filters</span>( ‘post_date_column_time’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$t_time</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$column_name</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$mode</span></nobr> )</a></dt><dd><p>Filters the published, scheduled, or unpublished time of the post.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_timestamp/">get_post_timestamp()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves post published or modified time as a Unix timestamp.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_the_time/">get_the_time()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves the time at which the post was written.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.3.0/">4.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

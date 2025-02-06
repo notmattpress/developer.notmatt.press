@@ -1,0 +1,342 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_search_form()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_search_form()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_search_form( <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> ): <span class="return-type">void|string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Displays search form.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Will first attempt to locate the searchform.php file in either the child or the parent, then load it. If it doesn’t exist, then the default search form will be displayed. The default search form is HTML, which will be displayed.<br/>There is a filter applied to the search form HTML in order to edit or replace it. The filter is <a href="https://developer.notmatt.press/reference/hooks/get_search_form/">‘get_search_form’</a>.</p>
+<p>This function is primarily used by themes which want to hardcode the search form into the sidebar and also by the search widget in WordPress.</p>
+<p>There is also an action that is called whenever the function is run called, <a href="https://developer.notmatt.press/reference/hooks/pre_get_search_form/">‘pre_get_search_form’</a>. This can be useful for outputting JavaScript that the search relies on or various formatting that applies to the beginning of the search. To give a few examples of what it can be used for.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Array of display arguments.<br/>
+<ul class="param-hash"><li><code>echo</code> <span class="type">bool</span><div class="desc">Whether to echo or return the form. Default true.</div></li>
+<li><code>aria_label</code> <span class="type">string</span><div class="desc">ARIA label for the search form. Useful to distinguish multiple search forms on the same page and improve accessibility. </div></li>
+</ul>
+</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">void|string</span> Void if <code>'echo'</code> argument is true, search form HTML if <code>'echo'</code> is false.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<h3 class="is-toc-heading wp-block-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h3>
+<pre class="wp-block-code"><code class="language-php" lang="php">get_search_form( $echo );</code></pre>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="241"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_search_form( $args = array() ) {
+	/**
+	 * Fires before the search form is retrieved, at the start of get_search_form().
+	 *
+	 * @since 2.7.0 as 'get_search_form' action.
+	 * @since 3.6.0
+	 * @since 5.5.0 The `$args` parameter was added.
+	 *
+	 * @link https://core.trac.wordpress.org/ticket/19321
+	 *
+	 * @param array $args The array of arguments for building the search form.
+	 *                    See get_search_form() for information on accepted arguments.
+	 */
+	do_action( 'pre_get_search_form', $args );
+
+	$echo = true;
+
+	if ( ! is_array( $args ) ) {
+		/*
+		 * Back compat: to ensure previous uses of get_search_form() continue to
+		 * function as expected, we handle a value for the boolean $echo param removed
+		 * in 5.2.0. Then we deal with the $args array and cast its defaults.
+		 */
+		$echo = (bool) $args;
+
+		// Set an empty array and allow default arguments to take over.
+		$args = array();
+	}
+
+	// Defaults are to echo and to output no custom label on the form.
+	$defaults = array(
+		'echo'       =&gt; $echo,
+		'aria_label' =&gt; '',
+	);
+
+	$args = wp_parse_args( $args, $defaults );
+
+	/**
+	 * Filters the array of arguments used when generating the search form.
+	 *
+	 * @since 5.2.0
+	 *
+	 * @param array $args The array of arguments for building the search form.
+	 *                    See get_search_form() for information on accepted arguments.
+	 */
+	$args = apply_filters( 'search_form_args', $args );
+
+	// Ensure that the filtered arguments contain all required default values.
+	$args = array_merge( $defaults, $args );
+
+	$format = current_theme_supports( 'html5', 'search-form' ) ? 'html5' : 'xhtml';
+
+	/**
+	 * Filters the HTML format of the search form.
+	 *
+	 * @since 3.6.0
+	 * @since 5.5.0 The `$args` parameter was added.
+	 *
+	 * @param string $format The type of markup to use in the search form.
+	 *                       Accepts 'html5', 'xhtml'.
+	 * @param array  $args   The array of arguments for building the search form.
+	 *                       See get_search_form() for information on accepted arguments.
+	 */
+	$format = apply_filters( 'search_form_format', $format, $args );
+
+	$search_form_template = locate_template( 'searchform.php' );
+
+	if ( '' !== $search_form_template ) {
+		ob_start();
+		require $search_form_template;
+		$form = ob_get_clean();
+	} else {
+		// Build a string containing an aria-label to use for the search form.
+		if ( $args['aria_label'] ) {
+			$aria_label = 'aria-label="' . esc_attr( $args['aria_label'] ) . '" ';
+		} else {
+			/*
+			 * If there's no custom aria-label, we can set a default here. At the
+			 * moment it's empty as there's uncertainty about what the default should be.
+			 */
+			$aria_label = '';
+		}
+
+		if ( 'html5' === $format ) {
+			$form = '&lt;form role="search" ' . $aria_label . 'method="get" class="search-form" action="' . esc_url( home_url( '/' ) ) . '"&gt;
+				&lt;label&gt;
+					&lt;span class="screen-reader-text"&gt;' .
+					/* translators: Hidden accessibility text. */
+					_x( 'Search for:', 'label' ) .
+					'&lt;/span&gt;
+					&lt;input type="search" class="search-field" placeholder="' . esc_attr_x( 'Search &amp;hellip;', 'placeholder' ) . '" value="' . get_search_query() . '" name="s" /&gt;
+				&lt;/label&gt;
+				&lt;input type="submit" class="search-submit" value="' . esc_attr_x( 'Search', 'submit button' ) . '" /&gt;
+			&lt;/form&gt;';
+		} else {
+			$form = '&lt;form role="search" ' . $aria_label . 'method="get" id="searchform" class="searchform" action="' . esc_url( home_url( '/' ) ) . '"&gt;
+				&lt;div&gt;
+					&lt;label class="screen-reader-text" for="s"&gt;' .
+					/* translators: Hidden accessibility text. */
+					_x( 'Search for:', 'label' ) .
+					'&lt;/label&gt;
+					&lt;input type="text" value="' . get_search_query() . '" name="s" id="s" /&gt;
+					&lt;input type="submit" id="searchsubmit" value="' . esc_attr_x( 'Search', 'submit button' ) . '" /&gt;
+				&lt;/div&gt;
+			&lt;/form&gt;';
+		}
+	}
+
+	/**
+	 * Filters the HTML output of the search form.
+	 *
+	 * @since 2.7.0
+	 * @since 5.5.0 The `$args` parameter was added.
+	 *
+	 * @param string $form The search form HTML output.
+	 * @param array  $args The array of arguments for building the search form.
+	 *                     See get_search_form() for information on accepted arguments.
+	 */
+	$result = apply_filters( 'get_search_form', $form, $args );
+
+	if ( null === $result ) {
+		$result = $form;
+	}
+
+	if ( $args['echo'] ) {
+		echo $result;
+	} else {
+		return $result;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/general-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/general-template.php#L241">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/general-template.php#L241-L370">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_search_form/"><span class="hook-func">apply_filters</span>( ‘get_search_form’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$form</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the HTML output of the search form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_get_search_form/"><span class="hook-func">do_action</span>( ‘pre_get_search_form’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Fires before the search form is retrieved, at the start of <a href="https://developer.notmatt.press/reference/functions/get_search_form/" rel="function">get_search_form()</a> .</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/search_form_args/"><span class="hook-func">apply_filters</span>( ‘search_form_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the array of arguments used when generating the search form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/search_form_format/"><span class="hook-func">apply_filters</span>( ‘search_form_format’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$format</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the HTML format of the search form.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_search_query/">get_search_query()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves the contents of the search WordPress query variable.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/locate_template/">locate_template()</a><code>wp-includes/template.php</code></td><td><p>Retrieves the name of the highest priority template file that exists.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_theme_supports/">current_theme_supports()</a><code>wp-includes/theme.php</code></td><td><p>Checks a theme’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_search/widget/">WP_Widget_Search::widget()</a><code>wp-includes/widgets/class-wp-widget-search.php</code></td><td><p>Outputs the content for the current Search widget instance.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td><span class="since-description">The <code>$args</code> array parameter was added in place of an <code>$echo</code> boolean flag.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.7.0/">2.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="369" id="comment-369">
+<article class="comment-body" id="div-comment-369">
+<a class="screen-reader-text" href="#comment-content-369">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-369">
+<p><strong>Theme Form</strong><br>
+If you do have <code>searchform.php</code> in your theme, it will be used instead. Keep in mind that the search form should do a GET to the homepage of your blog. The input text field should be named <code>s</code> and you should always include a label like in the examples above.</br></p>
+<p>Example of a custom <code>searchform.php</code>:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;form action="/" method="get"&gt;
+	&lt;label for="search"&gt;Search in &lt;?php echo home_url( '/' ); ?&gt;&lt;/label&gt;
+	&lt;input type="text" name="s" id="search" value="&lt;?php the_search_query(); ?&gt;" /&gt;
+	&lt;input type="image" alt="Search" src="&lt;?php bloginfo( 'template_url' ); ?&gt;/images/search.png" /&gt;
+&lt;/form&gt;</code></pre>
+<p>The only parameter here that will be submitted is s with the value of the current search query. However, you can refine it in many ways. For example by only showing posts in the search results. This can be done with the next addition to the form above:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;input type="hidden" value="post" name="post_type" id="post_type" /&gt;</code></pre>
+<p>Here we submit the value post. The default value is any, meaning, posts, pages and custom post types. With the input above added to the form it will now only search in posts with the <code>post_type</code> post. There are many additions like this. With a <code>var_dump</code> of the object <code>$wp_query</code> you can see all the default values of the search variables. With a <code>var_dump</code> of <code>$wp_query-&gt;query</code> you can see the current query.</p>
+<p>A last option is to write a custom function (in your <code>functions.php</code> file) and hook that function to the <code>get_search_form</code> action hook.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Generate custom search form
+ *
+ * @param string $form Form HTML.
+ * @return string Modified form HTML.
+ */
+function wpdocs_my_search_form( $form ) {
+	$form = '&lt;form role="search" method="get" id="searchform" class="searchform" action="' . home_url( '/' ) . '" &gt;
+	&lt;div&gt;&lt;label class="screen-reader-text" for="s"&gt;' . __( 'Search for:' ) . '&lt;/label&gt;
+	&lt;input type="text" value="' . get_search_query() . '" name="s" id="s" /&gt;
+	&lt;input type="submit" id="searchsubmit" value="'. esc_attr__( 'Search' ) .'" /&gt;
+	&lt;/div&gt;
+	&lt;/form&gt;';
+
+	return $form;
+}
+add_filter( 'get_search_form', 'wpdocs_my_search_form' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-369">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="368" id="comment-368">
+<article class="comment-body" id="div-comment-368">
+<a class="screen-reader-text" href="#comment-content-368">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-368">
+<p><strong>Default HTML5 Form</strong><br/>
+Since WordPress 3.6, If your theme supports HTML5 Markup, which happens if it uses:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Add HTML5 theme support.
+ */
+function wpdocs_after_setup_theme() {
+	add_theme_support( 'html5', array( 'search-form' ) );
+}
+add_action( 'after_setup_theme', 'wpdocs_after_setup_theme' );</code></pre>
+<p>WordPress will render its built-in HTML5 search form:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;form role="search" method="get" class="search-form" action="&lt;?php echo home_url( '/' ); ?&gt;"&gt;
+	&lt;label&gt;
+		&lt;span class="screen-reader-text"&gt;&lt;?php echo _x( 'Search for:', 'label' ) ?&gt;&lt;/span&gt;
+		&lt;input type="search" class="search-field"
+			placeholder="&lt;?php echo esc_attr_x( 'Search …', 'placeholder' ) ?&gt;"
+			value="&lt;?php echo get_search_query() ?&gt;" name="s"
+			title="&lt;?php echo esc_attr_x( 'Search for:', 'label' ) ?&gt;" /&gt;
+	&lt;/label&gt;
+	&lt;input type="submit" class="search-submit"
+		value="&lt;?php echo esc_attr_x( 'Search', 'submit button' ) ?&gt;" /&gt;
+&lt;/form&gt;</code></pre>
+<p>Among the changes is that the form has a <code>class="search-form"</code>. Also, the input is <code>type="search"</code> and not <code>type="text"</code>. Furthermore there is a placeholder, which displays text when appropriate, which means you don’t need JavaScript to display the placeholder. There are no elements with an id anymore, so you can have multiple searchforms in a valid document.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-368">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="367" id="comment-367">
+<article class="comment-body" id="div-comment-367">
+<a class="screen-reader-text" href="#comment-content-367">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-367">
+<p><strong>Default HTML4 Form</strong><br/>
+If you don’t have <code>searchform.php</code> in your theme, WordPress will render its built-in search form:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;form role="search" method="get" id="searchform"
+	class="searchform" action="&lt;?php echo esc_url( home_url( '/' ) ); ?&gt;"&gt;
+	&lt;div&gt;
+		&lt;label class="screen-reader-text" for="s"&gt;&lt;?php _x( 'Search for:', 'label' ); ?&gt;&lt;/label&gt;
+		&lt;input type="text" value="&lt;?php echo get_search_query(); ?&gt;" name="s" id="s" /&gt;
+		&lt;input type="submit" id="searchsubmit"
+			value="&lt;?php echo esc_attr_x( 'Search', 'submit button' ); ?&gt;" /&gt;
+	&lt;/div&gt;
+&lt;/form&gt;</code></pre>
+<p>The above form is used on HTML4 websites.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-367">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-deafinitive odd alt thread-odd thread-alt depth-1 bad-note" data-comment-id="2584" id="comment-2584">
+<article class="comment-body" id="div-comment-2584">
+<a class="screen-reader-text" href="#comment-content-2584">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2584">
+<p>[html]<br/>
+&lt;form role="search"<br/>
+[/html]<br/>
+This is incorrect as it overrides the native semantics of the element.<br/>
+Place <code>role="search"</code> before or after the &lt;form element</p>
+<p>[html]<br/>
+&lt;form method="get" id="searchform" class="searchform" …<br/>
+&lt;div role="search"<br/>
+[/html]<br/>
+or<br/>
+[html]<br/>
+&lt;div role="search"<br/>
+&lt;form method="get" id="searchform" class="searchform" …<br/>
+[/html]</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2584">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

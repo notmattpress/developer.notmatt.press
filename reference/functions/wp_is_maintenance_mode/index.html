@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_is_maintenance_mode()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_is_maintenance_mode()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_is_maintenance_mode(): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Checks if maintenance mode is enabled.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Checks for a file in the WordPress root directory named ".maintenance".<br/>This file will contain the variable $upgrading, set to the time the file was created. If the file was created less than 10 minutes ago, WordPress is in maintenance mode.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True if maintenance mode is enabled, false otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="409"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_is_maintenance_mode() {
+	global $upgrading;
+
+	if ( ! file_exists( ABSPATH . '.maintenance' ) || wp_installing() ) {
+		return false;
+	}
+
+	require ABSPATH . '.maintenance';
+
+	// If the $upgrading timestamp is older than 10 minutes, consider maintenance over.
+	if ( ( time() - $upgrading ) &gt;= 10 * MINUTE_IN_SECONDS ) {
+		return false;
+	}
+
+	// Don't enable maintenance mode while scraping for fatal errors.
+	if ( is_int( $upgrading ) &amp;&amp; isset( $_REQUEST['wp_scrape_key'], $_REQUEST['wp_scrape_nonce'] ) ) {
+		$key   = stripslashes( $_REQUEST['wp_scrape_key'] );
+		$nonce = stripslashes( $_REQUEST['wp_scrape_nonce'] );
+
+		if ( md5( $upgrading ) === $key &amp;&amp; (int) $nonce === $upgrading ) {
+			return false;
+		}
+	}
+
+	/**
+	 * Filters whether to enable maintenance mode.
+	 *
+	 * This filter runs before it can be used by plugins. It is designed for
+	 * non-web runtimes. If this filter returns true, maintenance mode will be
+	 * active and the request will end. If false, the request will be allowed to
+	 * continue processing even if maintenance mode should be active.
+	 *
+	 * @since 4.6.0
+	 *
+	 * @param bool $enable_checks Whether to enable maintenance mode. Default true.
+	 * @param int  $upgrading     The timestamp set in the .maintenance file.
+	 */
+	if ( ! apply_filters( 'enable_maintenance_mode', true, $upgrading ) ) {
+		return false;
+	}
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/load.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/load.php#L409">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/load.php#L409-L451">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/enable_maintenance_mode/"><span class="hook-func">apply_filters</span>( ‘enable_maintenance_mode’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$enable_checks</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$upgrading</span></nobr> )</a></dt><dd><p>Filters whether to enable maintenance mode.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_installing/">wp_installing()</a><code>wp-includes/load.php</code></td><td><p>Checks or sets whether WordPress is in “installation” mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_fatal_error_handler/handle/">WP_Fatal_Error_Handler::handle()</a><code>wp-includes/class-wp-fatal-error-handler.php</code></td><td><p>Runs the shutdown handler.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_maintenance/">wp_maintenance()</a><code>wp-includes/load.php</code></td><td><p>Dies with a maintenance message when conditions are met.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.5.0/">5.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

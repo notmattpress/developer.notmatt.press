@@ -1,0 +1,337 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/customize-api/">Theme Options – The Customize API</a></span><span class="is-current-page">Customizer Objects</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Customizer Objects</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The Customize API is object-oriented. There are four main types of Customizer objects: Panels, Sections, Settings, and Controls. Settings associate UI elements (controls) with settings that are saved in the database. Sections are UI containers for controls, to improve their organization. Panels are containers for sections, allowing multiple sections to be grouped together.</p>
+<p>Each Customizer object is represented by a PHP class, and all of the objects are managed by the Customize Manager object, <a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/">WP_Customize_Manager</a>.</p>
+<p><a href="https://i0.wp.com/developer.wordpress.org/files/2017/01/Customize-Object-Hierarchy-Graphic.png?ssl=1"><img alt="Graphic showing the relationship between each type of customize object" class="alignnone size-large wp-image-37716" data-recalc-dims="1" decoding="async" fetchpriority="high" height="360" sizes="(max-width: 640px) 100vw, 640px" src="https://i0.wp.com/developer.wordpress.org/files/2017/01/Customize-Object-Hierarchy-Graphic.png?resize=640%2C360&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2017/01/Customize-Object-Hierarchy-Graphic.png?resize=1024%2C576&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2017/01/Customize-Object-Hierarchy-Graphic.png?resize=300%2C169&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2017/01/Customize-Object-Hierarchy-Graphic.png?resize=768%2C432&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2017/01/Customize-Object-Hierarchy-Graphic.png?w=1280&amp;ssl=1 1280w" width="640"/></a></p>
+<p>To add, remove, or modify any Customizer object, and to access the Customizer Manager, use the <code><a href="https://developer.notmatt.press/reference/hooks/customize_register/">customize_register</a></code> hook:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function themeslug_customize_register( $wp_customize ) {
+  // Do stuff with $wp_customize, the WP_Customize_Manager object.
+}
+add_action( 'customize_register', 'themeslug_customize_register' );</code></pre>
+<p>The Customizer Manager provides add_, get_, and remove_ methods for each Customizer object type; each works with an id. The get_ methods allow for direct modification of parameters specified when adding a control.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action('customize_register','my_customize_register');
+function my_customize_register( $wp_customize ) {
+  $wp_customize-&gt;add_panel();
+  $wp_customize-&gt;get_panel();
+  $wp_customize-&gt;remove_panel();
+
+  $wp_customize-&gt;add_section();
+  $wp_customize-&gt;get_section();
+  $wp_customize-&gt;remove_section();
+
+  $wp_customize-&gt;add_setting();
+  $wp_customize-&gt;get_setting();
+  $wp_customize-&gt;remove_setting();
+
+  $wp_customize-&gt;add_control();
+  $wp_customize-&gt;get_control();
+  $wp_customize-&gt;remove_control();
+}</code></pre>
+<p>Note: themes generally should not modify core sections and panels with the get methods, since themes should not modify core, theme-agnostic functionality. Plugins are encouraged to use these functions where necessary. Themes should not “reorganize” customizer sections that aren’t added by the theme.</p>
+<h2 class="is-toc-heading" id="settings" tabindex="-1"><a href="#settings">Settings</a></h2>
+<p>Settings handle live-previewing, saving, and sanitization of your customizer objects. Each setting is managed by a control object. There are several parameters available when adding a new setting:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_setting( 'setting_id', array(
+  'type' =&gt; 'theme_mod', // or 'option'
+  'capability' =&gt; 'edit_theme_options',
+  'theme_supports' =&gt; '', // Rarely needed.
+  'default' =&gt; '',
+  'transport' =&gt; 'refresh', // or postMessage
+  'sanitize_callback' =&gt; '',
+  'sanitize_js_callback' =&gt; '', // Basically to_json.
+) );</code></pre>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><strong id="setting-id-naming-convention-notice">Important:</strong> Do <em>not</em> use a setting ID that looks like <code>widget_*</code>, <code>sidebars_widgets[*]</code>, <code>nav_menu[*]</code>, or <code>nav_menu_item[*]</code>. These setting ID patterns are reserved for widget instances, sidebars, nav menus, and nav menu items respectively. If you need to use “widget” in your setting ID, use it as a suffix instead of a prefix, for example “<code>homepage_widget</code>”.</div></div>
+<p>There are two primary types of settings: options and theme modifications. Options are stored directly in the wp_options table of the WordPress database and apply to the site regardless of the active theme. Themes should rarely if ever add settings of the option type. Theme mods, on the other hand, are specific to a particular theme. Most theme options should be theme_mods. For example, a custom CSS plugin could register a custom theme css setting as a theme_mod, allowing each theme to have a unique set of CSS rules without losing the CSS when switching themes then switching back.</p>
+<figure aria-describedby="caption-attachment-17080" class="wp-caption alignnone" id="attachment_17080" style="width: 640px"><a href="https://i0.wp.com/developer.wordpress.org/files/2014/10/customize-theme-mods-options.png?ssl=1"><img alt="customize-theme-mods-options" class="wp-image-17080 size-large" data-recalc-dims="1" decoding="async" height="359" sizes="(max-width: 640px) 100vw, 640px" src="https://i0.wp.com/developer.wordpress.org/files/2014/10/customize-theme-mods-options.png?resize=640%2C359&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2014/10/customize-theme-mods-options.png?resize=1024%2C574&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2014/10/customize-theme-mods-options.png?resize=300%2C168&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2014/10/customize-theme-mods-options.png?w=1229&amp;ssl=1 1229w" width="640"/></a><figcaption class="wp-caption-text" id="caption-attachment-17080">Theme_mod vs. option setting type example.</figcaption></figure>
+<p>It is usually most important to set the default value of the setting as well as its sanitization callback, which will ensure that no unsafe data is stored in the database. Typical theme usage:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$wp_customize-&gt;add_setting( 'accent_color', array(
+  'default' =&gt; '#f72525',
+  'sanitize_callback' =&gt; 'sanitize_hex_color',
+) );</code></pre>
+<p>Typical plugin usage:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_setting( 'myplugin_options[color]', array(
+  'type' =&gt; 'option',
+  'capability' =&gt; 'manage_options',
+  'default' =&gt; '#ff2525',
+  'sanitize_callback' =&gt; 'sanitize_hex_color',
+) );</code></pre>
+<p>Note that the Customizer can handle options stored as keyed arrays for settings using the option type. This allows multiple settings to be stored in a single option that isn’t a theme mod. To retrieve and use the values of your Customizer options, use <code><a href="https://developer.notmatt.press/reference/functions/get_theme_mod/">get_theme_mod()</a></code> and <code><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a></code> with the setting id:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function my_custom_css_output() {
+  echo '&lt;style type="text/css" id="custom-theme-css"&gt;' .
+  get_theme_mod( 'custom_theme_css', '' ) . '&lt;/style&gt;';
+  echo '&lt;style type="text/css" id="custom-plugin-css"&gt;' .
+  get_option( 'custom_plugin_css', '' ) . '&lt;/style&gt;';
+}
+add_action( 'wp_head', 'my_custom_css_output');</code></pre>
+<p>Note that the second argument for <code><a href="https://developer.notmatt.press/reference/functions/get_theme_mod/">get_theme_mod()</a></code> and <code><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a></code> is the default value, which should match the default you set when adding the setting.</p>
+<h2 class="is-toc-heading" id="controls" tabindex="-1"><a href="#controls">Controls</a></h2>
+<p>Controls are the primary Customizer object for creating UI.  Specifically, every control must be associated with a setting, and that setting will save user-entered data from the control to the database (in addition to displaying it in the live-preview and sanitizing it). Controls can be added by the Customizer Manager and provide a robust set of UI options with minimal effort:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_control( 'setting_id', array(
+  'type' =&gt; 'date',
+  'priority' =&gt; 10, // Within the section.
+  'section' =&gt; 'colors', // Required, core or custom.
+  'label' =&gt; __( 'Date' ),
+  'description' =&gt; __( 'This is a date control with a red border.' ),
+  'input_attrs' =&gt; array(
+    'class' =&gt; 'my-custom-class-for-js',
+    'style' =&gt; 'border: 1px solid #900',
+    'placeholder' =&gt; __( 'mm/dd/yyyy' ),
+  ),
+  'active_callback' =&gt; 'is_front_page',
+) );</code></pre>
+<p>The most important parameter when adding a control is its type — this determines what type of UI the Customizer will display. Core provides several built-in control types:</p>
+<ul>
+<li><code>&lt;input&gt;</code> elements with any allowed type (see below)</li>
+<li><code>checkbox</code></li>
+<li><code>textarea</code></li>
+<li><code>radio</code> (pass a keyed array of values =&gt; labels to the <code>choices</code> argument)</li>
+<li><code>select</code> (pass a keyed array of values =&gt; labels to the <code>choices</code> argument)</li>
+<li><code>dropdown-pages</code> (use the <code>allow_addition</code> argument to allow users to add new pages from the control)</li>
+</ul>
+<p>For any input type supported by the html <code>input</code> element, simply pass the type attribute value to the type parameter when adding the control. This allows support for control types such as <code>text</code>, <code>hidden</code>, <code>number</code>, <code>range</code>, <code>url</code>, <code>tel</code>, <code>email</code>, <code>search</code>, <code>time</code>, <code>date</code>, <code>datetime</code>, and <code>week</code>, pending browser support.</p>
+<p>Controls must be added to a section before they will be displayed (and sections must contain controls to be displayed). This is done by specifying the section parameter when adding the control. Here is an example for adding a basic textarea control:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_control( 'custom_theme_css', array(
+  'label' =&gt; __( 'Custom Theme CSS' ),
+  'type' =&gt; 'textarea',
+  'section' =&gt; 'custom_css',
+) );</code></pre>
+<p>And here’s an example of a basic range (slider) control. Note that most browsers will not display the numeric value of this control because the range input type is designed for settings where the exact value is unimportant. If the numeric value is important, consider using the number type. The <code>input_attrs</code> parameter will map a keyed array of attributes =&gt; values to attributes on the input element, and can be used for purposes ranging from placeholder text to <code>data-</code> JavaScript-referenced data in custom scripts. For number and range controls, it allows us to set the minimum, maximum, and step values.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_control( 'setting_id', array(
+  'type' =&gt; 'range',
+  'section' =&gt; 'title_tagline',
+  'label' =&gt; __( 'Range' ),
+  'description' =&gt; __( 'This is the range control description.' ),
+  'input_attrs' =&gt; array(
+    'min' =&gt; 0,
+    'max' =&gt; 10,
+    'step' =&gt; 2,
+  ),
+) );</code></pre>
+<h3 class="is-toc-heading" id="core-custom-controls" tabindex="-1"><a href="#core-custom-controls">Core Custom Controls</a></h3>
+<p>If none of the basic control types suit your needs, you can easily create and add custom controls. Custom controls are explained more fully later in this post, but they are essentially subclasses of the base <code><a href="https://developer.notmatt.press/reference/classes/wp_customize_control/">WP_Customize_Control</a></code> object that allow any arbitrary html markup and functionality that you might need. Core features several built-in custom controls that allow developers to implement rich JavaScript-driven features with ease. A color picker control can be added as follows:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$wp_customize-&gt;add_control( new WP_Customize_Color_Control( $wp_customize, 'color_control', array(
+  'label' =&gt; __( 'Accent Color', 'theme_textdomain' ),
+  'section' =&gt; 'media',
+) ) );</code></pre>
+<p>WordPress 4.1 and 4.2 also added support for any type of multimedia content, with the Media control. The media control implements the native WordPress media manager, allowing users to select files from their library or upload new ones. By specifying the <code>mime_type</code> parameter when adding the control, you can instruct the media library show to a specific type such as images or audio:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_control( new WP_Customize_Media_Control( $wp_customize, 'image_control', array(
+  'label' =&gt; __( 'Featured Home Page Image', 'theme_textdomain' ),
+  'section' =&gt; 'media',
+  'mime_type' =&gt; 'image',
+) ) );</code></pre>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_control( new WP_Customize_Media_Control( $wp_customize, 'audio_control', array(
+  'label' =&gt; _( 'Featured Home Page Recording', 'theme_textdomain' ),
+  'section' =&gt; 'media',
+  'mime_type' =&gt; 'audio',
+) ) );</code></pre>
+<p>Note that settings associated with <code>WP_Customize_Media_Control </code>save the associated attachment ID, while all other media-related controls (children of <code>WP_Customize_Upload_Control</code>) save the media file URL to the setting. <a href="https://make.wordpress.org/core/2015/07/16/new-customizer-media-controls-in-4-3-and-4-2/">More information</a> is available on Make WordPress Core.</p>
+<p>Additionally, WordPress 4.3 introduced the <code>WP_Customize_Cropped_Image_Control</code>, which provides an interface for cropping an image after selecting it. This is useful for instances where a particular aspect ratio is needed.</p>
+<h2 class="is-toc-heading" id="sections" tabindex="-1"><a href="#sections">Sections</a></h2>
+<p>Sections are UI containers for Customizer controls. While you can add custom controls to the core sections, if you have more than a few options you may want to add one or more custom sections. Use the <code><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/add_section/">add_section</a></code> method of the <a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/" rel="class">WP_Customize_Manager</a> object to add a new section:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_section( 'custom_css', array(
+  'title' =&gt; __( 'Custom CSS' ),
+  'description' =&gt; __( 'Add custom CSS here' ),
+  'panel' =&gt; '', // Not typically needed.
+  'priority' =&gt; 160,
+  'capability' =&gt; 'edit_theme_options',
+  'theme_supports' =&gt; '', // Rarely needed.
+) );</code></pre>
+<p>You only need to include fields that you want to override the default values of. For example, the default priority (order of appearance) is typically acceptable, and most sections shouldn’t require descriptive text if your options are self-explanatory. If you do want to change the location of your custom section, the priorities of the core sections are below:</p>
+<figure class="wp-block-table is-style-borderless"><table>
+<thead>
+<tr>
+<td>Title</td>
+<td>ID</td>
+<td>Priority (Order)</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Site Title &amp; Tagline</td>
+<td>title_tagline</td>
+<td>20</td>
+</tr>
+<tr>
+<td>Colors</td>
+<td>colors</td>
+<td>40</td>
+</tr>
+<tr>
+<td>Header Image</td>
+<td>header_image</td>
+<td>60</td>
+</tr>
+<tr>
+<td>Background Image</td>
+<td>background_image</td>
+<td>80</td>
+</tr>
+<tr>
+<td>Menus (Panel)</td>
+<td>nav_menus</td>
+<td>100</td>
+</tr>
+<tr>
+<td>Widgets (Panel)</td>
+<td>widgets</td>
+<td>110</td>
+</tr>
+<tr>
+<td>Static Front Page</td>
+<td>static_front_page</td>
+<td>120</td>
+</tr>
+<tr>
+<td><i>default</i></td>
+<td></td>
+<td>160</td>
+</tr>
+<tr>
+<td>Additional CSS</td>
+<td>custom_css</td>
+<td>200</td>
+</tr>
+</tbody>
+</table></figure>
+<p>In most cases, sections can be added with only one or two parameters being specified. Here’s an example for adding a section for options that pertain to a theme’s footer:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Add a footer/copyright information section.
+$wp_customize-&gt;add_section( 'footer' , array(
+  'title' =&gt; __( 'Footer', 'themename' ),
+  'priority' =&gt; 105, // Before Widgets.
+) );</code></pre>
+<h2 class="is-toc-heading" id="panels" tabindex="-1"><a href="#panels">Panels</a></h2>
+<p>The Customizer Panels API was introduced in WordPress 4.0, and allows developers to create an additional layer of hierarchy beyond controls and sections. More than simply grouping sections of controls, panels are designed to provide distinct contexts for the Customizer, such as Customizing Widgets, Menus, or perhaps in the future, editing posts. There is an important technical distinction between the section and panel objects.</p>
+<p><strong>Themes should not register their own panels in most cases</strong>. Sections do <em>not</em> need to be nested under a panel, and each section should generally contain multiple controls. Controls should also be added to the Sections that core provides, such as adding color options to the colors Section. Also make sure that your options are as streamlined and efficient as possible; see the <a href="https://wordpress.org/about/philosophy/">WordPress philosophy</a>. Panels are designed as contexts for entire features such as Widgets, Menus, or Posts, not as wrappers for generic sections. If you absolutely must use Panels, you’ll find that the API is nearly identical to that for Sections:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_panel( 'menus', array(
+  'title' =&gt; __( 'Menus' ),
+  'description' =&gt; $description, // Include html tags such as &lt;p&gt;.
+  'priority' =&gt; 160, // Mixed with top-level-section hierarchy.
+) );
+$wp_customize-&gt;add_section( $section_id , array(
+  'title' =&gt; $menu-&gt;name,
+  'panel' =&gt; 'menus',
+) );</code></pre>
+<p>Panels must contain at least one Section, which must contain at least one Control, to be displayed. As you can see in the above example, Sections can be added to Panels similarly to how Controls are added to Sections. However, unlike with controls, if the Panel parameter is empty when registering a Section, it will be displayed on the main, top-level Customizer context, as most sections should not be contained with a panel.</p>
+<h2 class="is-toc-heading" id="custom-controls-sections-and-panels" tabindex="-1"><a href="#custom-controls-sections-and-panels">Custom Controls, Sections, and Panels</a></h2>
+<p>Custom Controls, Sections, and Panels can be easily created by subclassing the PHP objects associated with each Customizer object: <code><a href="https://developer.notmatt.press/reference/classes/wp_customize_control/">WP_Customize_Control</a></code>, <code><a href="https://developer.notmatt.press/reference/classes/wp_customize_section/">WP_Customize_Section</a></code>, and <code><a href="https://developer.notmatt.press/reference/classes/wp_customize_panel/">WP_Customize_Panel</a></code> (this can also be done for <code><a href="https://developer.notmatt.press/reference/classes/wp_customize_setting/">WP_Customize_Setting</a></code>, but custom settings are typically better implemented using custom setting types, as outlined in the next section). Here’s an example for a basic custom control:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">class WP_New_Menu_Customize_Control extends WP_Customize_Control {
+  public $type = 'new_menu';
+  /**
+  * Render the control's content.
+  */
+  public function render_content() {
+  ?&gt;
+    &lt;button class="button button-primary" id="create-new-menu-submit" tabindex="0"&gt;&lt;?php _e( 'Create Menu' ); ?&gt;&lt;/button&gt;
+  &lt;?php
+  }
+}</code></pre>
+<p>By subclassing the base control class, you can override any functionality with custom functionality or use the core functionality depending on your needs. The most common function to override is <code>render_content()</code> as it allows you to create custom UI from scratch with HTML. Custom Controls should be used with caution, however, as they may introduce UI that is inconsistent with the surrounding core UI and cause confusion for users. Custom Customizer objects can be added similarly to how default controls, sections, and panels are added:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$wp_customize-&gt;add_control(
+  new WP_Customize_Color_Control(
+    $wp_customize, // WP_Customize_Manager
+    'accent_color', // Setting id
+    array( // Args, including any custom ones.
+      'label' =&gt; __( 'Accent Color' ),
+      'section' =&gt; 'colors',
+    )
+  )
+);</code></pre>
+<p>Parameters passed when adding controls are mapped to class variables within the control class, so you can add and use custom ones where certain parts of your custom object are different across different instances.</p>
+<p>When creating custom Controls, Sections, or Panels, it is strongly recommended to reference the core code, in order to fully understand the available functionality that can be overridden. Core also includes examples of custom objects of each type. This can be found in <a href="https://core.trac.wordpress.org/browser/trunk/src/wp-includes/class-wp-customize-control.php">wp-includes/class-wp-customize-control.php</a>, <a href="https://core.trac.wordpress.org/browser/trunk/src/wp-includes/class-wp-customize-section.php">wp-includes/class-wp-customize-section.php</a>, and <a href="https://core.trac.wordpress.org/browser/trunk/src/wp-includes/class-wp-customize-panel.php">wp-includes/class-wp-customize-panel.php</a>. There is also a JavaScript API for each Customizer object type, which can be extended with custom objects; see the Customizer JavaScript API section for more details.</p>
+<h3 class="is-toc-heading" id="customizer-ui-standards" tabindex="-1"><a href="#customizer-ui-standards">Customizer UI Standards</a></h3>
+<p>Custom customizer controls, sections, and panels should match core UI practices wherever possible. This includes relying on standards from wp-admin, such as using the <code>.button</code> and <code>.button-primary</code> classes, for example. There are also a few standards specific to the customizer (as of WordPress 4.7):</p>
+<ul>
+<li>White background colors are used <em>only</em> to indicate navigation and actionable items (such as inputs)</li>
+<li>The general <code>#eee</code> background color provides visual contrast against the white elements</li>
+<li><code>1px #ddd</code> borders separate navigational elements from background margins and from each other</li>
+<li><code>15px</code> of spacing is provided between elements where visual separation is desired</li>
+<li><code>4px</code> borders are used on one side of a navigation element to show hover or focus, with a color of <code>#0073aa</code></li>
+<li>Customizer text uses <code>color: #555d66</code>, with <code>#0073aa</code> for hover and focus states on navigation elements</li>
+</ul>
+<h2 class="is-toc-heading" id="custom-setting-types" tabindex="-1"><a href="#custom-setting-types">Custom Setting Types</a></h2>
+<p>By default, the Customizer supports saving settings as options or theme modifications. But this behavior can be easily overwritten to manually save and preview settings outside of the wp_options table of the WordPress database, or to apply other custom handling. To get started, specify a type other than option or theme_mod when adding your setting (you can use pretty much any string):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$wp_customize-&gt;add_setting( $nav_menu_setting_id, array(
+  'type' =&gt; 'nav_menu',
+  'default' =&gt; $item_ids,
+) );</code></pre>
+<p>The setting will no longer be saved or previewed when its value is changed in the associated control. Now, you can use the <code>customize_update_$setting-&gt;type </code>and<code> customize_preview_$setting-&gt;type</code> actions to implement custom saving and previewing functionality. Here is an example for saving a menu item’s order property from the Menu Customizer project (the value of the setting is an ordered array of menu ids):</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function menu_customizer_update_nav_menu( $value, $setting ) {
+  $menu_id = str_replace( 'nav_menu_', '', $setting-&gt;id );
+  // ...
+  $i = 0;
+  foreach( $value as $item_id ) { // $value is ordered array of item ids.
+    menu_customizer_update_menu_item_order( $menu_id, $item_id, $i );
+  $i++;
+  }
+}
+add_action( 'customize_update_nav_menu', 'menu_customizer_update_nav_menu', 10, 2 );</code></pre>
+<p>And here is how the same plugin implements previewing for nav menu items (note that this example requires PHP 5.3 or higher):</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function menu_customizer_preview_nav_menu( $setting ) {
+  $menu_id = str_replace( 'nav_menu_', '', $setting-&gt;id );
+  add_filter( 'wp_get_nav_menu_items', function( $items, $menu, $args ) use ( $menu_id, $setting ) {
+    $preview_menu_id = $menu-&gt;term_id;
+    if ( $menu_id == $preview_menu_id ) {
+      $new_ids = $setting-&gt;post_value();
+      foreach ( $new_ids as $item_id ) {
+        $item = wp_setup_nav_menu_item( $item );
+        $item-&gt;menu_order = $i;
+        $new_items[] = $item;
+        $i++;
+      }
+      return $new_items;
+    } else {
+      return $items;
+    }
+  }, 10, 3 );
+}
+add_action( 'customize_preview_nav_menu', 'menu_customizer_preview_nav_menu', 10, 2 );</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

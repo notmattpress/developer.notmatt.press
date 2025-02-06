@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_deprecated_argument()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_deprecated_argument()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_deprecated_argument( <span class="arg-type">string</span> <span class="arg-name">$function_name</span>,  <span class="arg-type">string</span> <span class="arg-name">$version</span>,  <span class="arg-type">string</span> <span class="arg-name">$message</span> = <span class="arg-default">''</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This function is to be used whenever a deprecated function argument is used.<br/>Before this function is called, the argument must be checked for whether it was used by comparing it to its default value or evaluating whether it is empty.</p> <p>For example:</p> <pre class="wp-block-code"><code class="language-php" lang="php">if ( ! empty( $deprecated ) ) {
+    _deprecated_argument( __FUNCTION__, '3.0.0' );
+}</code></pre> <p>There is a <a href="https://developer.notmatt.press/reference/hooks/deprecated_argument_run/">‘deprecated_argument_run’</a> hook that will be called that can be used to get the backtrace up to what file and function used the deprecated argument.</p> <p>The current behavior is to trigger a user error if WP_DEBUG is true.</p></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$function_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The function that was called.</span></div></dd><dt><code>$version</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The version of WordPress that deprecated the argument used.</span></div></dd><dt><code>$message</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A message regarding the change. </span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="5853"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _deprecated_argument( $function_name, $version, $message = '' ) {
+
+	/**
+	 * Fires when a deprecated argument is called.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $function_name The function that was called.
+	 * @param string $message       A message regarding the change.
+	 * @param string $version       The version of WordPress that deprecated the argument used.
+	 */
+	do_action( 'deprecated_argument_run', $function_name, $message, $version );
+
+	/**
+	 * Filters whether to trigger an error for deprecated arguments.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param bool $trigger Whether to trigger the error for deprecated arguments. Default true.
+	 */
+	if ( WP_DEBUG &amp;&amp; apply_filters( 'deprecated_argument_trigger_error', true ) ) {
+		if ( function_exists( '__' ) ) {
+			if ( $message ) {
+				$message = sprintf(
+					/* translators: 1: PHP function name, 2: Version number, 3: Optional message regarding the change. */
+					__( 'Function %1$s was called with an argument that is &lt;strong&gt;deprecated&lt;/strong&gt; since version %2$s! %3$s' ),
+					$function_name,
+					$version,
+					$message
+				);
+			} else {
+				$message = sprintf(
+					/* translators: 1: PHP function name, 2: Version number. */
+					__( 'Function %1$s was called with an argument that is &lt;strong&gt;deprecated&lt;/strong&gt; since version %2$s with no alternative available.' ),
+					$function_name,
+					$version
+				);
+			}
+		} else {
+			if ( $message ) {
+				$message = sprintf(
+					'Function %1$s was called with an argument that is &lt;strong&gt;deprecated&lt;/strong&gt; since version %2$s! %3$s',
+					$function_name,
+					$version,
+					$message
+				);
+			} else {
+				$message = sprintf(
+					'Function %1$s was called with an argument that is &lt;strong&gt;deprecated&lt;/strong&gt; since version %2$s with no alternative available.',
+					$function_name,
+					$version
+				);
+			}
+		}
+
+		wp_trigger_error( '', $message, E_USER_DEPRECATED );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L5853">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L5853-L5910">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/deprecated_argument_run/"><span class="hook-func">do_action</span>( ‘deprecated_argument_run’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$function_name</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$message</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$version</span></nobr> )</a></dt><dd><p>Fires when a deprecated argument is called.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/deprecated_argument_trigger_error/"><span class="hook-func">apply_filters</span>( ‘deprecated_argument_trigger_error’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$trigger</span></nobr> )</a></dt><dd><p>Filters whether to trigger an error for deprecated arguments.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_trigger_error/">wp_trigger_error()</a><code>wp-includes/functions.php</code></td><td><p>Generates a user-level error/warning/notice/deprecation message.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/inject_ignored_hooked_blocks_metadata_attributes/">inject_ignored_hooked_blocks_metadata_attributes()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Inject ignoredHookedBlocks metadata attributes into a template or template part.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_load_remote_block_patterns/">_load_remote_block_patterns()</a><code>wp-includes/block-patterns.php</code></td><td><p>Register Core’s official patterns from wordpress.org/patterns.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/get_theme_data/">WP_Theme_JSON_Resolver::get_theme_data()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Returns the theme’s data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/get_merged_data/">WP_Theme_JSON_Resolver::get_merged_data()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Returns the data merged from multiple origins.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_environment_type/">wp_get_environment_type()</a><code>wp-includes/load.php</code></td><td><p>Retrieves the current environment type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/__unset/">WP_User::__unset()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Magic method for unsetting a certain custom field.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_user_status/">update_user_status()</a><code>wp-includes/ms-deprecated.php</code></td><td><p>Update the status of a user in the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_save_image_file/">wp_save_image_file()</a><code>wp-admin/includes/image-edit.php</code></td><td><p>Saves image to file.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/image_edit_apply_changes/">image_edit_apply_changes()</a><code>wp-admin/includes/image-edit.php</code></td><td><p>Performs group of changes on Editor specified.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_stream_image/">wp_stream_image()</a><code>wp-admin/includes/image-edit.php</code></td><td><p>Streams image in <a href="https://developer.notmatt.press/reference/classes/wp_image_editor/" rel="class">WP_Image_Editor</a> to browser.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_install/">wp_install()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Installs the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_setting/">register_setting()</a><code>wp-includes/option.php</code></td><td><p>Registers a setting and its data.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/unregister_setting/">unregister_setting()</a><code>wp-includes/option.php</code></td><td><p>Unregisters a setting.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_plugin_data/">get_plugin_data()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Parses the plugin contents to retrieve plugin’s metadata.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_settings_field/">add_settings_field()</a><code>wp-admin/includes/template.php</code></td><td><p>Adds a new field to a section of a settings page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_settings_section/">add_settings_section()</a><code>wp-admin/includes/template.php</code></td><td><p>Adds a new section to a settings page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/xfn_check/">xfn_check()</a><code>wp-admin/includes/meta-boxes.php</code></td><td><p>Displays ‘checked’ checkboxes attribute for XFN microformat options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/has_cap/">WP_User::has_cap()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Returns whether the user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/__isset/">WP_User::__isset()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Magic method for checking the existence of a certain custom field.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/__get/">WP_User::__get()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Magic method for accessing custom fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user/__set/">WP_User::__set()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Magic method for setting custom user fields.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_clear_scheduled_hook/">wp_clear_scheduled_hook()</a><code>wp-includes/cron.php</code></td><td><p>Unschedules all events attached to the hook with the specified arguments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_category_parents/">get_category_parents()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves category parents with separator.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dropdown_categories/">wp_dropdown_categories()</a><code>wp-includes/category-template.php</code></td><td><p>Displays or retrieves the HTML dropdown list of categories.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_email/">is_email()</a><code>wp-includes/formatting.php</code></td><td><p>Verifies that an email is valid.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/convert_chars/">convert_chars()</a><code>wp-includes/formatting.php</code></td><td><p>Converts lone &amp; characters into <code>&amp;</code> (a.k.a. <code>&amp;amp;</code>)</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_new_user_notification/">wp_new_user_notification()</a><code>wp-includes/pluggable.php</code></td><td><p>Emails login credentials to a newly-registered user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_notify_postauthor/">wp_notify_postauthor()</a><code>wp-includes/pluggable.php</code></td><td><p>Notifies an author (and/or others) of a comment/trackback/pingback on a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bloginfo/">get_bloginfo()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves information about the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/safecss_filter_attr/">safecss_filter_attr()</a><code>wp-includes/kses.php</code></td><td><p>Filters an inline style attribute and removes disallowed rules.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get_posts/">WP_Query::get_posts()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves an array of posts based on query variables.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_categories/">get_categories()</a><code>wp-includes/category.php</code></td><td><p>Retrieves a list of category objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_upload_bits/">wp_upload_bits()</a><code>wp-includes/functions.php</code></td><td><p>Creates a file in the upload folder with given content.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_http_headers/">wp_get_http_headers()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves HTTP Headers from URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_adjacent_post/">get_adjacent_post()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the adjacent post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_delete_post_link/">get_delete_post_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the delete posts link for post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/add_node/">WP_Admin_Bar::add_node()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td><p>Adds a node to the menu.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_wp_title_rss/">get_wp_title_rss()</a><code>wp-includes/feed.php</code></td><td><p>Retrieves the blog title for the feed title.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_title_rss/">wp_title_rss()</a><code>wp-includes/feed.php</code></td><td><p>Displays the blog title for display of the feed title.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_option/">add_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_user_query/prepare_query/">WP_User_Query::prepare_query()</a><code>wp-includes/class-wp-user-query.php</code></td><td><p>Prepares the query variables.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_user_option/">get_user_option()</a><code>wp-includes/user.php</code></td><td><p>Retrieves user option that can be either per Site or per Network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_list_post_revisions/">wp_list_post_revisions()</a><code>wp-includes/post-template.php</code></td><td><p>Displays a list of a post’s revisions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_attachment_link/">the_attachment_link()</a><code>wp-includes/post-template.php</code></td><td><p>Displays an attachment page link using an image or icon.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_excerpt/">get_the_excerpt()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves the post excerpt.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_recent_posts/">wp_get_recent_posts()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a number of recent posts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_author_posts_link/">the_author_posts_link()</a><code>wp-includes/author-template.php</code></td><td><p>Displays an HTML link to the author page of the current post’s author.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_author/">get_the_author()</a><code>wp-includes/author-template.php</code></td><td><p>Retrieves the author of the current post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_author/">the_author()</a><code>wp-includes/author-template.php</code></td><td><p>Displays the name of the author of the current post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_blog_status/">update_blog_status()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Updates a blog details field.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_last_updated/">get_last_updated()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Gets a list of most recently updated blogs.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_blog_option/">update_blog_option()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Updates an option for a particular blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/ms_subdomain_constants/">ms_subdomain_constants()</a><code>wp-includes/ms-default-constants.php</code></td><td><p>Defines Multisite subdomain constants and handles warnings and notices.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_sidebars_widgets/">wp_get_sidebars_widgets()</a><code>wp-includes/widgets.php</code></td><td><p>Retrieve full list of sidebars and their widget instance IDs.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trackback_url/">trackback_url()</a><code>wp-includes/comment-template.php</code></td><td><p>Displays the current post’s trackback URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trackback_rdf/">trackback_rdf()</a><code>wp-includes/comment-template.php</code></td><td><p>Generates and displays the RDF for the trackback information of current post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/comments_link/">comments_link()</a><code>wp-includes/comment-template.php</code></td><td><p>Displays the link to the current post comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/discover_pingback_server_uri/">discover_pingback_server_uri()</a><code>wp-includes/comment.php</code></td><td><p>Finds a pingback server URI based on the given URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/_wp_editors/parse_settings/">_WP_Editors::parse_settings()</a><code>wp-includes/class-wp-editor.php</code></td><td><p>Parse default arguments for the editor instance.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 56 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.4.0/">5.4.0</a></td><td><span class="since-description">The error type is now classified as E_USER_DEPRECATED (used to default to E_USER_NOTICE).</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

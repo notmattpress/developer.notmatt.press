@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">search_theme_directories()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>search_theme_directories()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">search_theme_directories( <span class="arg-type">bool</span> <span class="arg-name">$force</span> = <span class="arg-default">false</span> ): <span class="return-type">array|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Searches all registered theme directories for complete and valid themes.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$force</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to force a new directory scan. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|false</span> Valid themes found on success, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="449"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function search_theme_directories( $force = false ) {
+	global $wp_theme_directories;
+	static $found_themes = null;
+
+	if ( empty( $wp_theme_directories ) ) {
+		return false;
+	}
+
+	if ( ! $force &amp;&amp; isset( $found_themes ) ) {
+		return $found_themes;
+	}
+
+	$found_themes = array();
+
+	$wp_theme_directories = (array) $wp_theme_directories;
+	$relative_theme_roots = array();
+
+	/*
+	 * Set up maybe-relative, maybe-absolute array of theme directories.
+	 * We always want to return absolute, but we need to cache relative
+	 * to use in get_theme_root().
+	 */
+	foreach ( $wp_theme_directories as $theme_root ) {
+		if ( str_starts_with( $theme_root, WP_CONTENT_DIR ) ) {
+			$relative_theme_roots[ str_replace( WP_CONTENT_DIR, '', $theme_root ) ] = $theme_root;
+		} else {
+			$relative_theme_roots[ $theme_root ] = $theme_root;
+		}
+	}
+
+	/**
+	 * Filters whether to get the cache of the registered theme directories.
+	 *
+	 * @since 3.4.0
+	 *
+	 * @param bool   $cache_expiration Whether to get the cache of the theme directories. Default false.
+	 * @param string $context          The class or function name calling the filter.
+	 */
+	$cache_expiration = apply_filters( 'wp_cache_themes_persistently', false, 'search_theme_directories' );
+
+	if ( $cache_expiration ) {
+		$cached_roots = get_site_transient( 'theme_roots' );
+		if ( is_array( $cached_roots ) ) {
+			foreach ( $cached_roots as $theme_dir =&gt; $theme_root ) {
+				// A cached theme root is no longer around, so skip it.
+				if ( ! isset( $relative_theme_roots[ $theme_root ] ) ) {
+					continue;
+				}
+				$found_themes[ $theme_dir ] = array(
+					'theme_file' =&gt; $theme_dir . '/style.css',
+					'theme_root' =&gt; $relative_theme_roots[ $theme_root ], // Convert relative to absolute.
+				);
+			}
+			return $found_themes;
+		}
+		if ( ! is_int( $cache_expiration ) ) {
+			$cache_expiration = 30 * MINUTE_IN_SECONDS;
+		}
+	} else {
+		$cache_expiration = 30 * MINUTE_IN_SECONDS;
+	}
+
+	/* Loop the registered theme directories and extract all themes */
+	foreach ( $wp_theme_directories as $theme_root ) {
+
+		// Start with directories in the root of the active theme directory.
+		$dirs = @ scandir( $theme_root );
+		if ( ! $dirs ) {
+			wp_trigger_error( __FUNCTION__, "$theme_root is not readable" );
+			continue;
+		}
+		foreach ( $dirs as $dir ) {
+			if ( ! is_dir( $theme_root . '/' . $dir ) || '.' === $dir[0] || 'CVS' === $dir ) {
+				continue;
+			}
+			if ( file_exists( $theme_root . '/' . $dir . '/style.css' ) ) {
+				/*
+				 * wp-content/themes/a-single-theme
+				 * wp-content/themes is $theme_root, a-single-theme is $dir.
+				 */
+				$found_themes[ $dir ] = array(
+					'theme_file' =&gt; $dir . '/style.css',
+					'theme_root' =&gt; $theme_root,
+				);
+			} else {
+				$found_theme = false;
+				/*
+				 * wp-content/themes/a-folder-of-themes/*
+				 * wp-content/themes is $theme_root, a-folder-of-themes is $dir, then themes are $sub_dirs.
+				 */
+				$sub_dirs = @ scandir( $theme_root . '/' . $dir );
+				if ( ! $sub_dirs ) {
+					wp_trigger_error( __FUNCTION__, "$theme_root/$dir is not readable" );
+					continue;
+				}
+				foreach ( $sub_dirs as $sub_dir ) {
+					if ( ! is_dir( $theme_root . '/' . $dir . '/' . $sub_dir ) || '.' === $dir[0] || 'CVS' === $dir ) {
+						continue;
+					}
+					if ( ! file_exists( $theme_root . '/' . $dir . '/' . $sub_dir . '/style.css' ) ) {
+						continue;
+					}
+					$found_themes[ $dir . '/' . $sub_dir ] = array(
+						'theme_file' =&gt; $dir . '/' . $sub_dir . '/style.css',
+						'theme_root' =&gt; $theme_root,
+					);
+					$found_theme                           = true;
+				}
+				/*
+				 * Never mind the above, it's just a theme missing a style.css.
+				 * Return it; WP_Theme will catch the error.
+				 */
+				if ( ! $found_theme ) {
+					$found_themes[ $dir ] = array(
+						'theme_file' =&gt; $dir . '/style.css',
+						'theme_root' =&gt; $theme_root,
+					);
+				}
+			}
+		}
+	}
+
+	asort( $found_themes );
+
+	$theme_roots          = array();
+	$relative_theme_roots = array_flip( $relative_theme_roots );
+
+	foreach ( $found_themes as $theme_dir =&gt; $theme_data ) {
+		$theme_roots[ $theme_dir ] = $relative_theme_roots[ $theme_data['theme_root'] ]; // Convert absolute to relative.
+	}
+
+	if ( get_site_transient( 'theme_roots' ) !== $theme_roots ) {
+		set_site_transient( 'theme_roots', $theme_roots, $cache_expiration );
+	}
+
+	return $found_themes;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/theme.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/theme.php#L449">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/theme.php#L449-L585">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_cache_themes_persistently/"><span class="hook-func">apply_filters</span>( ‘wp_cache_themes_persistently’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$cache_expiration</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr> )</a></dt><dd><p>Filters whether to get the cache of the registered theme directories.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_trigger_error/">wp_trigger_error()</a><code>wp-includes/functions.php</code></td><td><p>Generates a user-level error/warning/notice/deprecation message.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_site_transient/">set_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a site transient.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_site_transient/">get_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_query_themes/">wp_ajax_query_themes()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles getting themes from <a href="https://developer.notmatt.press/reference/functions/themes_api/" rel="function">themes_api()</a>  via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_theme_roots/">get_theme_roots()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves theme roots.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_themes/">wp_get_themes()</a><code>wp-includes/theme.php</code></td><td><p>Returns an array of <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a> objects based on the arguments.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_clean_themes_cache/">wp_clean_themes_cache()</a><code>wp-includes/theme.php</code></td><td><p>Clears the cache held by <a href="https://developer.notmatt.press/reference/functions/get_theme_roots/" rel="function">get_theme_roots()</a>  and <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a>.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/__construct/">WP_Theme::__construct()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Constructor for <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a>.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.9.0/">2.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-changwoo odd alt thread-odd thread-alt depth-1" data-comment-id="5968" id="comment-5968">
+<article class="comment-body" id="div-comment-5968">
+<a class="screen-reader-text" href="#comment-content-5968">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5968">
+<p><a href="https://developer.notmatt.press/themes/basics/main-stylesheet-style-css/#location">The official documentation</a> states that “the style.css file must be located in the root directory of the theme, not in a subdirectory.”. However, looking at the implementation of this function, we can see that this is not true. You can place the style.css and functions.php files in one of direct subdirectories of the root directory. The core will find those files and recognize the subdirectory as the theme’s root directory.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5968">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">register_new_user()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>register_new_user()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">register_new_user( <span class="arg-type">string</span> <span class="arg-name">$user_login</span>,  <span class="arg-type">string</span> <span class="arg-name">$user_email</span> ): <span class="return-type">int|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Handles registering a new user.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$user_login</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">User’s username for logging in</span></div></dd><dt><code>$user_email</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">User’s email address to send password and add</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">int|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> Either user’s ID or error on failure.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>The <strong class="selflink"><a href="https://developer.notmatt.press/reference/functions/register_new_user/" rel="function">register_new_user()</a> </strong> function inserts a new user into the WordPress database. This function is used when a new user registers through WordPress’ Login Page. It differs from <a href="https://codex.wordpress.org/Function_Reference/wp_create_user" title="Function Reference/wp create user">wp_create_user()</a> in that it requires a valid username and email address but doesn’t allow to choose a password, generating a random one using <a href="https://codex.wordpress.org/Function_Reference/wp_generate_password" title="Function Reference/wp generate password">wp_generate_password()</a>. If you want to create a new user with a specific password or with additional parameters, use <a href="https://codex.wordpress.org/Function_Reference/wp_create_user" title="Function Reference/wp create user">wp_create_user()</a> or <a href="https://developer.notmatt.press/reference/functions/wp_insert_user/" title="Function Reference/wp insert user">wp_insert_user()</a> instead.</p>
+<p><strong class="selflink"><a href="https://developer.notmatt.press/reference/functions/register_new_user/" rel="function">register_new_user()</a> </strong> doesn’t handle the user creation itself, it simply checks the submitted username and email validity and generates a random password, relying on <a href="https://developer.notmatt.press/reference/functions/wp_create_user/" rel="function">wp_create_user()</a>  to create the new User. If registration worked it sends a notification email to the user with his password using <a href="https://codex.wordpress.org/Function_Reference/wp_new_user_notification" title="Function Reference/wp new user notification">wp_new_user_notification()</a>. In case of registration failure it returns a <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a>().</p>
+<p><a href="https://developer.notmatt.press/reference/functions/register_new_user/" rel="function">register_new_user()</a>  also provides two useful hooks to customize validation rules or user registration process, <a href="https://codex.wordpress.org/Plugin_API/Action_Reference/register_post" title="Plugin API/Action Reference/register post">register_post</a> and <a href="https://codex.wordpress.org/Plugin_API/Filter_Reference/registration_errors" title="Plugin API/Filter Reference/registration errors">registration_errors</a>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3392"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function register_new_user( $user_login, $user_email ) {
+	$errors = new WP_Error();
+
+	$sanitized_user_login = sanitize_user( $user_login );
+	/**
+	 * Filters the email address of a user being registered.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $user_email The email address of the new user.
+	 */
+	$user_email = apply_filters( 'user_registration_email', $user_email );
+
+	// Check the username.
+	if ( '' === $sanitized_user_login ) {
+		$errors-&gt;add( 'empty_username', __( '&lt;strong&gt;Error:&lt;/strong&gt; Please enter a username.' ) );
+	} elseif ( ! validate_username( $user_login ) ) {
+		$errors-&gt;add( 'invalid_username', __( '&lt;strong&gt;Error:&lt;/strong&gt; This username is invalid because it uses illegal characters. Please enter a valid username.' ) );
+		$sanitized_user_login = '';
+	} elseif ( username_exists( $sanitized_user_login ) ) {
+		$errors-&gt;add( 'username_exists', __( '&lt;strong&gt;Error:&lt;/strong&gt; This username is already registered. Please choose another one.' ) );
+	} else {
+		/** This filter is documented in wp-includes/user.php */
+		$illegal_user_logins = (array) apply_filters( 'illegal_user_logins', array() );
+		if ( in_array( strtolower( $sanitized_user_login ), array_map( 'strtolower', $illegal_user_logins ), true ) ) {
+			$errors-&gt;add( 'invalid_username', __( '&lt;strong&gt;Error:&lt;/strong&gt; Sorry, that username is not allowed.' ) );
+		}
+	}
+
+	// Check the email address.
+	if ( '' === $user_email ) {
+		$errors-&gt;add( 'empty_email', __( '&lt;strong&gt;Error:&lt;/strong&gt; Please type your email address.' ) );
+	} elseif ( ! is_email( $user_email ) ) {
+		$errors-&gt;add( 'invalid_email', __( '&lt;strong&gt;Error:&lt;/strong&gt; The email address is not correct.' ) );
+		$user_email = '';
+	} elseif ( email_exists( $user_email ) ) {
+		$errors-&gt;add(
+			'email_exists',
+			sprintf(
+				/* translators: %s: Link to the login page. */
+				__( '&lt;strong&gt;Error:&lt;/strong&gt; This email address is already registered. &lt;a href="%s"&gt;Log in&lt;/a&gt; with this address or choose another one.' ),
+				wp_login_url()
+			)
+		);
+	}
+
+	/**
+	 * Fires when submitting registration form data, before the user is created.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string   $sanitized_user_login The submitted username after being sanitized.
+	 * @param string   $user_email           The submitted email.
+	 * @param WP_Error $errors               Contains any errors with submitted username and email,
+	 *                                       e.g., an empty field, an invalid username or email,
+	 *                                       or an existing username or email.
+	 */
+	do_action( 'register_post', $sanitized_user_login, $user_email, $errors );
+
+	/**
+	 * Filters the errors encountered when a new user is being registered.
+	 *
+	 * The filtered WP_Error object may, for example, contain errors for an invalid
+	 * or existing username or email address. A WP_Error object should always be returned,
+	 * but may or may not contain errors.
+	 *
+	 * If any errors are present in $errors, this will abort the user's registration.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param WP_Error $errors               A WP_Error object containing any errors encountered
+	 *                                       during registration.
+	 * @param string   $sanitized_user_login User's username after it has been sanitized.
+	 * @param string   $user_email           User's email.
+	 */
+	$errors = apply_filters( 'registration_errors', $errors, $sanitized_user_login, $user_email );
+
+	if ( $errors-&gt;has_errors() ) {
+		return $errors;
+	}
+
+	$user_pass = wp_generate_password( 12, false );
+	$user_id   = wp_create_user( $sanitized_user_login, $user_pass, $user_email );
+	if ( ! $user_id || is_wp_error( $user_id ) ) {
+		$errors-&gt;add(
+			'registerfail',
+			sprintf(
+				/* translators: %s: Admin email address. */
+				__( '&lt;strong&gt;Error:&lt;/strong&gt; Could not register you&amp;hellip; please contact the &lt;a href="mailto:%s"&gt;site admin&lt;/a&gt;!' ),
+				get_option( 'admin_email' )
+			)
+		);
+		return $errors;
+	}
+
+	update_user_meta( $user_id, 'default_password_nag', true ); // Set up the password change nag.
+
+	if ( ! empty( $_COOKIE['wp_lang'] ) ) {
+		$wp_lang = sanitize_text_field( $_COOKIE['wp_lang'] );
+		if ( in_array( $wp_lang, get_available_languages(), true ) ) {
+			update_user_meta( $user_id, 'locale', $wp_lang ); // Set user locale if defined on registration.
+		}
+	}
+
+	/**
+	 * Fires after a new user registration has been recorded.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param int $user_id ID of the newly registered user.
+	 */
+	do_action( 'register_new_user', $user_id );
+
+	return $user_id;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/user.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/user.php#L3392">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/user.php#L3392-L3506">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/illegal_user_logins/"><span class="hook-func">apply_filters</span>( ‘illegal_user_logins’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$usernames</span></nobr> )</a></dt><dd><p>Filters the list of disallowed usernames.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/register_new_user/"><span class="hook-func">do_action</span>( ‘register_new_user’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$user_id</span></nobr> )</a></dt><dd><p>Fires after a new user registration has been recorded.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/register_post/"><span class="hook-func">do_action</span>( ‘register_post’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$sanitized_user_login</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$user_email</span></nobr>,  <nobr><span class="arg-type">WP_Error</span> <span class="arg-name">$errors</span></nobr> )</a></dt><dd><p>Fires when submitting registration form data, before the user is created.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/registration_errors/"><span class="hook-func">apply_filters</span>( ‘registration_errors’,  <nobr><span class="arg-type">WP_Error</span> <span class="arg-name">$errors</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$sanitized_user_login</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$user_email</span></nobr> )</a></dt><dd><p>Filters the errors encountered when a new user is being registered.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/user_registration_email/"><span class="hook-func">apply_filters</span>( ‘user_registration_email’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$user_email</span></nobr> )</a></dt><dd><p>Filters the email address of a user being registered.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_email/">is_email()</a><code>wp-includes/formatting.php</code></td><td><p>Verifies that an email is valid.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_user/">sanitize_user()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a username, stripping out unsafe characters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_generate_password/">wp_generate_password()</a><code>wp-includes/pluggable.php</code></td><td><p>Generates a random password drawn from the defined set of characters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_login_url/">wp_login_url()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves the login URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_create_user/">wp_create_user()</a><code>wp-includes/user.php</code></td><td><p>Provides a simpler way of inserting a user into the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/validate_username/">validate_username()</a><code>wp-includes/user.php</code></td><td><p>Checks whether a username is valid.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/username_exists/">username_exists()</a><code>wp-includes/user.php</code></td><td><p>Determines whether the given username exists.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/email_exists/">email_exists()</a><code>wp-includes/user.php</code></td><td><p>Determines whether the given email exists.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_user_meta/">update_user_meta()</a><code>wp-includes/user.php</code></td><td><p>Updates user meta field based on user ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_text_field/">sanitize_text_field()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string from user input or from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 10 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="755" id="comment-755">
+<article class="comment-body" id="div-comment-755">
+<a class="screen-reader-text" href="#comment-content-755">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-755">
+<p><strong>Example</strong><br/>
+As used in <em>wp-login.php</em>:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$user_login = sanitize_text_field( $_POST['user_login'] );
+$user_email = sanitize_email( $_POST['user_email'] );
+$user = register_new_user( $user_login, $user_email );
+if ( ! is_wp_error( $user ) ) {
+	$redirect_to = ! empty( $_POST['redirect_to'] ) ? $_POST['redirect_to'] : 'wp-login.php?checkemail=registered';
+	wp_safe_redirect( $redirect_to );
+	exit();
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-755">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

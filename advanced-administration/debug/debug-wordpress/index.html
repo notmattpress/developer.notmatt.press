@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/advanced-administration/">Advanced Administration Handbook</a></span><span><a href="https://developer.wordpress.org/advanced-administration/debug/">Debugging WordPress</a></span><span class="is-current-page">Debugging in WordPress</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Debugging in WordPress</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Debugging PHP code is part of any project, but WordPress comes with specific debugging systems designed to simplify the process as well as standardize code across the core, plugins, and themes. This page describes the various debugging tools available in WordPress and how to be more productive in your coding, as well as increasing the overall quality and interoperability of your code.</p>
+<p>For non-programmers or general users, these options can be used to show detailed information about errors.</p>
+<p><strong>NOTE</strong>: Before making any modifications to your website, verify that you have either utilized a staging environment or taken an appropriate backup of your site.</p>
+<h2 class="is-toc-heading" id="example-wp-config-php-for-debugging" tabindex="-1"><a href="#example-wp-config-php-for-debugging">Example wp-config.php for Debugging</a></h2>
+<p>The following code, inserted in your <a href="https://wordpress.org/documentation/article/editing-wp-config-php/">wp-config.php</a> file, will log all errors, notices, and warnings to a file called <code>debug.log</code> in the <code>wp-content</code> directory. It will also hide the errors, so they do not interrupt page generation.</p>
+<pre><code>// Enable WP_DEBUG mode
+define( 'WP_DEBUG', true );
+</code></pre>
+<pre><code>// Enable Debug logging to the /wp-content/debug.log file
+define( 'WP_DEBUG_LOG', true );
+</code></pre>
+<pre><code>// Disable display of errors and warnings
+define( 'WP_DEBUG_DISPLAY', false );
+@ini_set( 'display_errors', 0 );
+</code></pre>
+<pre><code>// Use dev versions of core JS and CSS files (only needed if you are modifying these core files)
+define( 'SCRIPT_DEBUG', true );
+</code></pre>
+<p><strong>NOTE</strong>: You must insert this <strong>BEFORE</strong> <code>/* That's all, stop editing! Happy blogging. */</code> in the <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">wp-config.php</a> file.</p>
+<h2 class="is-toc-heading" id="wp_debug" tabindex="-1"><a href="#wp_debug">WP_DEBUG</a></h2>
+<p><code>WP_DEBUG</code> is a PHP constant (a permanent global variable) that can be used to trigger the “debug” mode throughout WordPress. It is assumed to be false by default, and is usually set to true in the <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">wp-config.php</a> file on development copies of WordPress.</p>
+<pre><code>// This enables debugging.
+define( 'WP_DEBUG', true );
+</code></pre>
+<pre><code>// This disables debugging.  
+define( 'WP_DEBUG', false );
+</code></pre>
+<p><strong>Note</strong>: The <code>true</code> and <code>false</code> values in the example are not surrounded by apostrophes (‘) because they are boolean (true/false) values. If you set constants to <code>'false'</code>, they will be interpreted as true because the quotes make it a string rather than a boolean.</p>
+<p>It is not recommended to use <code>WP_DEBUG</code> or the other debug tools on live sites; they are meant for local testing and staging installs.</p>
+<h3 class="is-toc-heading" id="php-errors-warnings-and-notices" tabindex="-1"><a href="#php-errors-warnings-and-notices">PHP Errors, Warnings, and Notices</a></h3>
+<p>Enabling <code>WP_DEBUG</code> will cause all PHP errors, notices, and warnings to be displayed. This is likely to modify the default behavior of PHP, which only displays fatal errors or shows a white screen of death when errors are reached.</p>
+<p>Showing all PHP notices and warnings often results in error messages for things that don’t seem broken, but do not follow proper data validation conventions inside PHP. These warnings are easy to fix once the relevant code has been identified, and the resulting code is almost always more bug-resistant and easier to maintain.</p>
+<h3 class="is-toc-heading" id="custom-php-debugging" tabindex="-1"><a href="#custom-php-debugging">Custom PHP Debugging</a></h3>
+<p>If it is necessary to log non-error information for debugging purposes, PHP does offer the <code>error_log</code> function for this purpose. However, this method does not provide properly formatted output by default.</p>
+<p>To address this, you may add another function on your site to handle formatting, either by creating a <a href="https://developer.notmatt.press/plugins/plugin-basics/">custom plugin</a> or using a snippet with some <a href="https://wordpress.org/plugins/search/code+snippets/">code snippets</a> plugin. The function will act as a wrapper for the <code>error_log</code> using <code>print_r</code> to format arrays and objects correctly before logging them.</p>
+<p>Below is an example function that requires <code>WP_DEBUG</code> to be enabled.</p>
+<pre><code>function write_log( $data ) {
+    if ( true === WP_DEBUG ) {
+        if ( is_array( $data ) || is_object( $data ) ) {
+            error_log( print_r( $data, true ) );
+        } else {
+            error_log( $data );
+        }
+    }
+}
+</code></pre>
+<p>Usage Examples:</p>
+<pre><code>write_log( 'DEBUG TEXT' );
+write_log( $variable );
+</code></pre>
+<p><strong>Note</strong>: It is not recommended to add custom code like the above example in <code>functions.php</code> to avoid maintenance, security, performance, compatibility, and code organization issues.</p>
+<h3 class="is-toc-heading" id="deprecated-functions-and-arguments" tabindex="-1"><a href="#deprecated-functions-and-arguments">Deprecated Functions and Arguments</a></h3>
+<p>Enabling <code>WP_DEBUG</code> will also cause notices about deprecated functions and arguments within WordPress that are being used on your site. These are functions or function arguments that have not been removed from the core code yet, but are slated for deletion in the near future. Deprecation notices often indicate the new function that should be used instead.</p>
+<h2 class="is-toc-heading" id="wp_debug_log" tabindex="-1"><a href="#wp_debug_log">WP_DEBUG_LOG</a></h2>
+<p><code>WP_DEBUG_LOG</code> is a companion to WP_DEBUG that causes all errors to also be saved to a <code>debug.log</code> log file. This is useful if you want to review all notices later or need to view notices generated off-screen (e.g. during an AJAX request or <code>wp-cron</code> run).</p>
+<p>Note that this allows you to write to a log file using PHP’s built in <code>error_log()</code> function, which can be useful for instance when debugging Ajax events.</p>
+<p>When set to <code>true</code>, the log is saved to <code>debug.log</code> in the content directory (usually <code>wp-content/debug.log</code>) within your site’s file system. Alternatively, you can set it to a valid file path to have the file saved elsewhere.</p>
+<pre><code>define( 'WP_DEBUG_LOG', true );
+</code></pre>
+<p>-or-</p>
+<pre><code>define( 'WP_DEBUG_LOG', '/tmp/wp-errors.log' );
+</code></pre>
+<p><strong>Note</strong>: for <code>WP_DEBUG_LOG</code> to do anything, <code>WP_DEBUG</code> must be enabled (true). Remember, you can turn off <code>WP_DEBUG_DISPLAY</code> independently.</p>
+<h2 class="is-toc-heading" id="wp_debug_display" tabindex="-1"><a href="#wp_debug_display">WP_DEBUG_DISPLAY</a></h2>
+<p><code>WP_DEBUG_DISPLAY</code> is another companion to <code>WP_DEBUG</code> that controls whether debug messages are shown inside the HTML of pages or not. The default is ‘true’ which shows errors and warnings as they are generated. Setting this to false will hide all errors. This should be used with <code>WP_DEBUG_LOG</code> so that errors can be reviewed later.</p>
+<pre><code>define( 'WP_DEBUG_DISPLAY', false );
+</code></pre>
+<p><strong>Note</strong>: for <code>WP_DEBUG_DISPLAY</code> to do anything, <code>WP_DEBUG</code> must be enabled (true). Remember, you can control <code>WP_DEBUG_LOG</code> independently.</p>
+<h2 class="is-toc-heading" id="script_debug" tabindex="-1"><a href="#script_debug">SCRIPT_DEBUG</a></h2>
+<p><code>SCRIPT_DEBUG</code> is a related constant that will force WordPress to use the “dev” versions of core CSS and JavaScript files rather than the minified versions that are normally loaded. This is useful when you are testing modifications to any built-in <code>.js</code> or <code>.css</code> files. The default is <code>false</code>.</p>
+<pre><code>define( 'SCRIPT_DEBUG', true );
+</code></pre>
+<h2 class="is-toc-heading" id="savequeries" tabindex="-1"><a href="#savequeries">SAVEQUERIES</a></h2>
+<p>The <code>SAVEQUERIES</code> definition saves database queries to an array, which can then be displayed to help analyze those queries. When the constant is set to true, it causes each query to be saved along with the time it took to execute and the function that called it.</p>
+<pre><code>define( 'SAVEQUERIES', true );
+</code></pre>
+<p>The array is stored in the global <code>$wpdb-&gt;queries</code>.</p>
+<p><strong>NOTE</strong>: This will have a performance impact on your site, so make sure to turn this off when you aren’t debugging.</p>
+<h2 class="is-toc-heading" id="debugging-plugins" tabindex="-1"><a href="#debugging-plugins">Debugging Plugins</a></h2>
+<p>There are many <a href="https://wordpress.org/plugins/search/debug/">debugging plugins</a> for WordPress that show more information about the internals, either for a specific component or in general.</p>
+<p>For example, <a href="https://wordpress.org/plugins/debug-bar/">Debug Bar</a> adds a debug menu to the admin bar that shows query, cache, and other helpful debugging information. When WP_DEBUG is enabled, it also tracks PHP Warnings and Notices to make them easier to find.</p>
+<h2 class="is-toc-heading" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2>
+<ul>
+<li>2023-02-01: Updated original content.</li>
+<li>2022-09-11: Original content from <a href="https://wordpress.org/documentation/article/debugging-in-wordpress/">Debugging in WordPress</a>; ticket from <a href="https://github.com/WordPress/Documentation-Issue-Tracker/issues/349">Github</a>.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

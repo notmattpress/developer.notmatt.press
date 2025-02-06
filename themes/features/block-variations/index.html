@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/features/">Features</a></span><span class="is-current-page">Block Variations</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Block Variations</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>The Block Variations API is a powerful feature that allows you to extend any registered blocks. Basically, it gives you the ability to create alternate versions of a block’s settings. This can make it easier for your users to insert blocks without the hassle of going through all of the setup they might need for a specific scenario.</p>
+<p>The <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-variations/">Block Variations API</a> is often pitched as a plugin developer API. In many cases, plugins are the best place for variations to live. But there are also use cases for theme creators.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Several WordPress features use the term “variations” in their name. This can be confusing at times. The biggest thing to note is that block variations are not the same thing as <a href="https://developer.notmatt.press/themes/global-settings-and-styles/style-variations/">global style variations</a> and <a href="https://developer.notmatt.press/themes/features/block-style-variations/">block style variations</a>.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="what-are-block-variations" tabindex="-1"><a href="#what-are-block-variations">What are block variations?</a></h2>
+<p>The simplest explanation of block variations is that they are literally variations on an existing block. Let’s take a look at an example to explore this further.</p>
+<p>The Social Icon block is a simple block to add a link to some social site, but WordPress bundles many different variations of this base block to cover a wide range of social sites:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-variations-social-icons.jpg?ssl=1"><img alt="WordPress post editor with several social icons shown in a row." class="wp-image-149281" data-recalc-dims="1" decoding="async" fetchpriority="high" height="924" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-variations-social-icons.jpg?resize=2048%2C924&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/block-variations-social-icons.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-variations-social-icons.jpg?resize=300%2C135&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-variations-social-icons.jpg?resize=1024%2C462&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-variations-social-icons.jpg?resize=768%2C347&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/block-variations-social-icons.jpg?resize=1536%2C693&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>Without the Block Variations API, each of those variations would need to be individually-coded blocks. There are many reasons that would be a bad idea. So instead of writing a block for each social icon, developers only need to make a few configuration changes to create an alternate version of the original block.</p>
+<p>There are many, many ways that you could potentially change a block to make it different from its default configuration. This can be something as simple as setting up a Spacer block with your theme’s preferred default spacing. Or it can be as complex as a custom Query Loop block with a complex posts query for the front-page template. </p>
+<p>While it is more advanced than some theme features, the API does give you the flexibility to make more complex themes than what is available out of the box.</p>
+<h3 class="is-toc-heading wp-block-heading" id="block-variations-vs-block-styles" tabindex="-1"><a href="#block-variations-vs-block-styles">Block variations vs. block styles</a></h3>
+<p>An oft-repeated question is: <em>When should I create a block variation vs. a block style?</em></p>
+<p>The answer is almost always the same as the answer to another question: <em>Can these changes be made through </em><a href="https://developers.wordpress.org/themes/global-settings-and-styles/styles/"><em><code>theme.json</code> styles</em></a><em> or CSS?</em> If yes, you should almost always create a custom <a href="https://developers.wordpress.org/themes/features/block-style-variations/">block style</a>.</p>
+<p>But if you need to change a block’s settings so that it is set up differently when a user inserts an instance of it into a post, a custom block variation is probably the best route to take.</p>
+<h2 class="is-toc-heading wp-block-heading" id="working-with-block-variations" tabindex="-1"><a href="#working-with-block-variations">Working with block variations</a></h2>
+<p>Block variations require that you work with JavaScript instead of PHP. The examples below do not require a build process, so you can use them as-is.</p>
+<p>But the more you work with WordPress’ JavaScript packages, the more likely you’ll want to incorporate build tools into your workflow. It’s possible to use the <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-scripts/"><code>@wordpress/scripts</code></a> package, originally meant block development, with your theme. For a deeper dive into how this works, read <a href="https://developer.notmatt.press/news/2023/07/beyond-block-styles-part-1-using-the-wordpress-scripts-package-with-themes/">Beyond block styles, part 1: using the WordPress scripts package with themes</a>.</p>
+<p>In the next sections, you will learn how to work with block variations by building a simple variation on the WordPress Spacer block, as shown in this screenshot:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/variation-theme-spacer.jpg?ssl=1"><img alt="WordPress post editor with a Table of Contents block, Spacer block, and demo content." class="wp-image-149282" data-recalc-dims="1" decoding="async" height="1072" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/variation-theme-spacer.jpg?resize=2048%2C1072&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/variation-theme-spacer.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/variation-theme-spacer.jpg?resize=300%2C157&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/variation-theme-spacer.jpg?resize=1024%2C536&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/variation-theme-spacer.jpg?resize=768%2C402&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/variation-theme-spacer.jpg?resize=1536%2C804&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>For a deeper dive into block variations, check out these tutorials on the WordPress Developer Blog:</p>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/news/2023/08/an-introduction-to-block-variations/">An introduction to block variations</a></li>
+<li><a href="https://developer.notmatt.press/news/2022/12/building-a-book-review-grid-with-a-query-loop-block-variation/">Building a book review grid with a Query Loop block variation</a></li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="setup-loading-javascript" tabindex="-1"><a href="#setup-loading-javascript">Setup: Loading JavaScript</a></h3>
+<p>The first step for working with block variations is to create an empty file for adding your custom JavaScript to. This can be at any location you choose, but the code example below will attempt to find a <code>block-variations.js</code> in your theme’s <code>/assets/js</code> folder.</p>
+<p>So your theme structure should look similar to this:</p>
+<ul class="wp-block-list">
+<li><code>/assets</code>
+<ul class="wp-block-list">
+<li><code>/js</code>
+<ul class="wp-block-list">
+<li><code>/block-variations.js</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>…other files and folders</li>
+</ul>
+<p>To load that file in the editor, you must call the <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/"><code>wp_enqueue_script()</code></a> function within a callback added to the <a href="https://developer.notmatt.press/reference/hooks/enqueue_block_editor_assets/"><code>enqueue_block_editor_assets</code></a> action hook.</p>
+<p>Add this code to your theme’s <code>functions.php</code> file:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'enqueue_block_editor_assets', 'themeslug_enqueue_block_variations' );
+
+function themeslug_enqueue_block_variations() {
+	wp_enqueue_script(
+		'themeslug-block-variations',
+		get_theme_file_uri( 'assets/js/block-variations.js' ),
+		array( 
+			'wp-blocks', 
+			'wp-dom-ready',
+			'wp-i18n'
+		),
+		wp_get_theme()-&gt;get( 'Version' ),
+		true
+	);
+}</code></pre>
+<p>Take note of the dependencies array (third parameter) within <code>wp_enqueue_script()</code>. This includes the <code>wp-blocks</code>, <code>wp-dom-ready</code>, and <code>wp-i18n</code> scripts, which are needed for the JavaScript code in the below examples.</p>
+<h3 class="is-toc-heading wp-block-heading" id="registering-block-variations" tabindex="-1"><a href="#registering-block-variations">Registering block variations</a></h3>
+<p>To register block variations, you must use the <code>registerBlockVariation()</code> JavaScript function. Here is a look at the function’s signature:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">const registerBlockVariation = ( blockName, variation )</code></pre>
+<p>The function accepts two parameters:</p>
+<ul class="wp-block-list">
+<li><strong><code>blockName</code>:</strong> The name of the block (including namespace) to register the variation for.</li>
+<li><strong><code>variation</code>:</strong> An optional object for configuring the variation, which may include any of the following properties:
+<ul class="wp-block-list">
+<li><strong><code>name</code>:</strong> A unique, machine-readable slug for your variation.</li>
+<li><strong><code>title</code>:</strong> A human-readable title for your variation that should be internationalized.</li>
+<li><strong><code>description</code>:</strong> A human-readable description of the variation that should be internationalized if added.</li>
+<li><strong><code>category</code>:</strong> The slug of a registered block type category</li>
+<li><strong><code>keywords</code>:</strong> An array of keywords to help users discover the variation when searching.</li>
+<li><strong><code>icon</code>:</strong> An icon to use to visualize the variation. Either a string or object is accepted.</li>
+<li><strong><code>attributes</code>:</strong> An object that overrides the block’s attributes.</li>
+<li><strong><code>innerBlocks</code></strong>: An array to handle the initial configuration of nested blocks.</li>
+<li><strong><code>example</code>:</strong> An object that provides structured data for the block preview. Can be set to <code>undefined</code> to disable the preview.</li>
+<li><strong><code>scope</code>:</strong> A list of scopes where the block can be used. Available options are: <code>block</code>, <code>inserter</code>, and <code>transform</code>.</li>
+<li><strong><code>isDefault</code>:</strong> Whether to set the variation as the default variation of the block. Defaults to <code>false</code>.</li>
+<li><strong><code>isActive</code>:</strong> A function or array of block attributes used to determine if the variation is active when the block is selected.</li>
+</ul>
+</li>
+</ul>
+<p>To learn more about block variations, read the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-variations/">Block Variations API</a> documentation in the Block Editor Handbook.</p>
+<p>To build your custom variation, the most important thing is to think about the attributes that you want to control that will set this variation apart from the default block. That’s what makes a variation a <em>variation</em>.</p>
+<p>For Spacer block variations, this is likely to be the <code>height</code> attribute. Suppose you wanted it to have a default of <code>180px</code>. For your variation, you’d need to set <code>attributes.height</code> and also check if <code>180px</code> is the value of the attribute in the <code>isActive</code> callback function.</p>
+<p>Try this by pasting this code in your <code>block-variations.js</code> file:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">const { registerBlockVariation } = wp.blocks;
+const { __ } = wp.i18n;
+
+registerBlockVariation( 'core/spacer', {
+	name:       'themeslug/spacer',
+	title:      __( 'Theme Name: Spacer', 'themeslug' ),
+	keywords:   [ 'space', 'spacer', 'spacing' ],
+	attributes: {
+		height: '180px'
+	},
+	isActive: ( blockAttributes ) =&gt;
+		blockAttributes.height &amp;&amp; '180px' === blockAttributes.height
+} );</code></pre>
+<p>Each block will have its own attributes, so you will need to dive into the block’s code to determine all of the available attributes you may want to overwrite for your variations. That is something beyond what can be covered in this doc, but the above code block should give you a solid starting point.</p>
+<h3 class="is-toc-heading wp-block-heading" id="unregistering-block-variations" tabindex="-1"><a href="#unregistering-block-variations">Unregistering block variations</a></h3>
+<p>To unregister a block variation, you must use the <code>unregisterBlockVariation()</code> JavaScript function. Here is a look at the function’s signature:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">const unregisterBlockVariation = ( blockName, variationName )</code></pre>
+<p>The function accepts two parameters:</p>
+<ul class="wp-block-list">
+<li><strong><code>blockName</code>:</strong> The name of the block (including namespace) for the variation you want to unregister.</li>
+<li><strong><code>variationName</code>:</strong> The name of the variation to unregister.</li>
+</ul>
+<p>Suppose that you wanted to remove the Spacer block variation that you just added from the previous section. All you need to do is plug in the block and variation names.</p>
+<p>Add this code at the end of your <code>block-variations.js</code> file to test it:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">wp.domReady( () =&gt; {
+	wp.blocks.unregisterBlockVariation( 
+		'core/spacer', 
+		'themeslug/spacer' 
+	);
+} );</code></pre>
+<p>One important thing to note when unregistering variations is that you should wrap them in a <code>wp.domReady()</code> call. This is to ensure that the unregistering process happens later in the loading process after variations have already been registered.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

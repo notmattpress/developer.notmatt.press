@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_replace_in_html_tags()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_replace_in_html_tags()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_replace_in_html_tags( <span class="arg-type">string</span> <span class="arg-name">$haystack</span>,  <span class="arg-type">array</span> <span class="arg-name">$replace_pairs</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Replaces characters or phrases within HTML elements only.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$haystack</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The text which has to be formatted.</span></div></dd><dt><code>$replace_pairs</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">In the form array(<code>'from'</code> =&gt; <code>'to'</code>, …).</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The formatted text.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="757"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_replace_in_html_tags( $haystack, $replace_pairs ) {
+	// Find all elements.
+	$textarr = wp_html_split( $haystack );
+	$changed = false;
+
+	// Optimize when searching for one item.
+	if ( 1 === count( $replace_pairs ) ) {
+		// Extract $needle and $replace.
+		$needle  = array_key_first( $replace_pairs );
+		$replace = $replace_pairs[ $needle ];
+
+		// Loop through delimiters (elements) only.
+		for ( $i = 1, $c = count( $textarr ); $i &lt; $c; $i += 2 ) {
+			if ( str_contains( $textarr[ $i ], $needle ) ) {
+				$textarr[ $i ] = str_replace( $needle, $replace, $textarr[ $i ] );
+				$changed       = true;
+			}
+		}
+	} else {
+		// Extract all $needles.
+		$needles = array_keys( $replace_pairs );
+
+		// Loop through delimiters (elements) only.
+		for ( $i = 1, $c = count( $textarr ); $i &lt; $c; $i += 2 ) {
+			foreach ( $needles as $needle ) {
+				if ( str_contains( $textarr[ $i ], $needle ) ) {
+					$textarr[ $i ] = strtr( $textarr[ $i ], $replace_pairs );
+					$changed       = true;
+					// After one strtr() break out of the foreach loop and look at next element.
+					break;
+				}
+			}
+		}
+	}
+
+	if ( $changed ) {
+		$haystack = implode( $textarr );
+	}
+
+	return $haystack;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/formatting.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/formatting.php#L757">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/formatting.php#L757-L797">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_html_split/">wp_html_split()</a><code>wp-includes/formatting.php</code></td><td><p>Separates HTML elements and comments from the text.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wpautop/">wpautop()</a><code>wp-includes/formatting.php</code></td><td><p>Replaces double line breaks with paragraph elements.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_embed/autoembed/">WP_Embed::autoembed()</a><code>wp-includes/class-wp-embed.php</code></td><td><p>Passes any unlinked URLs that are on their own line to <a href="https://developer.notmatt.press/reference/classes/wp_embed/shortcode/" rel="method">WP_Embed::shortcode()</a> for potential embedding.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.2.3/">4.2.3</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-masoudnkh even thread-even depth-1" data-comment-id="6932" id="comment-6932">
+<article class="comment-body" id="div-comment-6932">
+<a class="screen-reader-text" href="#comment-content-6932">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6932">
+<p>Replace “products” with “services” in text</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$content = 'Welcome to our website! We offer a variety of products.';
+
+$replacements = array(
+  'products' =&gt; 'services', // Replace "products" with "services"
+);
+
+$new_content = wp_replace_in_html_tags($content, $replacements);
+
+echo $new_content;</code></pre>
+<p>Output:<br/>
+Welcome to our website! We offer a variety of services.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6932">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-masoudnkh odd alt thread-odd thread-alt depth-1" data-comment-id="6933" id="comment-6933">
+<article class="comment-body" id="div-comment-6933">
+<a class="screen-reader-text" href="#comment-content-6933">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6933">
+<p>Add Attributes to Existing Elements:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$content = ''; // Missing alt attribute
+
+$replacements = array(
+  ' '&lt;img alt="description of the image"', // Add alt attribute
+);
+
+$new_content = wp_replace_in_html_tags($content, $replacements);
+
+echo $new_content;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6933">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

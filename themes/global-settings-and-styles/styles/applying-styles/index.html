@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/global-settings-and-styles/">Global Settings and Styles (theme.json)</a></span><span><a href="https://developer.wordpress.org/themes/global-settings-and-styles/styles/">Styles</a></span><span class="is-current-page">Applying Styles</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Applying Styles</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Traditionally, theme authors would style everything from a stylesheet—and they still sometimes must. In modern WordPress, you can also style most, if not all, of your theme directly from your <code>theme.json</code> file.</p>
+<p>When you use this standard system, it is also reflected in the <strong>Appearance &gt; Editor &gt; Styles</strong> interface. This means your theme’s users with access to that admin screen can also make changes that easily work alongside your theme’s styles. But it also means that you can design your theme directly from this visual interface if you choose to do so.</p>
+<p><code>theme.json</code> supports styles at three different levels:</p>
+<ul class="wp-block-list">
+<li>Root (global)</li>
+<li>Elements</li>
+<li>Blocks</li>
+</ul>
+<p>In this document, you will learn the syntax necessary for styling each of these things via JSON.</p>
+<h2 class="is-toc-heading wp-block-heading" id="styling-the-root-element" tabindex="-1"><a href="#styling-the-root-element">Styling the root element</a></h2>
+<p>When referring to the “root” element in WordPress themes, we’re specifically talking about the HTML <code>&lt;body&gt;</code> tag. It’s the root of the visual output for the page.</p>
+<p>Technically, when styling the root element, you are adding <em>global</em> styles that trickle down through the design and are used unless a more specific element or block style overrides them. For example, you’ll likely want to set a default font-family or font-size that is used across the entire design. But you’ll, of course, want to change that in specific instances.</p>
+<p>Because these are global styles, it means that they belong directly under the <code>styles</code> property.</p>
+<p>So let’s add a default text and background color to show how this works:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"styles": {
+		"color": {
+			"text": "#000000",
+			"background": "#f5f1ea"
+		}
+	}
+}</code></pre>
+<p>As you can see, the <code>color</code> property is nested directly beneath the <code>styles</code> property. This means that the <code>text</code> and <code>background</code> colors are applied directly to the <code>&lt;body&gt;</code> element by WordPress, resulting in this CSS in the editor and on the front end:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">body {
+	background: #f5f1ea;
+	color: #000000;
+}</code></pre>
+<p>And because of the way the <em>cascade</em> works in CSS, these colors will be used for everything, unless a more specific style rule overwrites it.</p>
+<p>If you open your site on the front end or via <strong>Appearance &gt; Editor</strong> in the WordPress admin, you should see your colors applied:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-root-colors.jpg?ssl=1"><img alt="WordPress Site Editor with Styles interface open, showing the theme's colors." class="wp-image-149110" data-recalc-dims="1" decoding="async" fetchpriority="high" height="1071" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-root-colors.jpg?resize=2048%2C1071&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-root-colors.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-root-colors.jpg?resize=300%2C157&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-root-colors.jpg?resize=1024%2C536&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-root-colors.jpg?resize=768%2C402&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-root-colors.jpg?resize=1536%2C803&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>You are not just limited to colors. You can add <code>typography</code>, <code>spacing</code>, and more here. The root element supports almost all of the available style properties, which you can reference in the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles/styles-reference/">Supported Styles</a> documentation.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>The <code>styles.spacing.padding</code> property has a unique use case when used in conjunction with <code>settings.useRootPaddingAwareAlignments</code>. For more information on how these two work together, read the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/use-root-padding-aware-alignments/">Use Root Padding Aware Alignments</a> documentation.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="styling-elements" tabindex="-1"><a href="#styling-elements">Styling elements</a></h2>
+<p>WordPress has a standard system for styling elements via <code>theme.json</code>. In this case, “elements” usually maps to actual HTML elements. But there are cases where it’s referring to something that doesn’t map directly to a single HTML element. In general, these should be reasonably straightforward.</p>
+<p>Just like styling the root element and blocks, which you’ll learn about below, you can apply a wide range of the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles/styles-reference/">supported styles</a> to elements.</p>
+<p>The currently-supported elements are:</p>
+<ul class="wp-block-list">
+<li><strong><code>button</code>: </strong>Applied to <code>&lt;button&gt;</code> elements and button-like links, such as that used for the Button block.</li>
+<li><strong><code>caption</code>:</strong> Applied to media captions, which are wrapped in a <code>&lt;figcaption&gt;</code> element.</li>
+<li><strong><code>cite</code>:</strong> Applied to the <code>&lt;cite&gt;</code> element when used for citations, such as that used for the Quote and Pullquote blocks.</li>
+<li><strong><code>heading</code>:</strong> Applied to all heading elements from <code>&lt;h1&gt;</code> through <code>&lt;h6&gt;</code>, but these can be overridden for individual headings.</li>
+<li><strong><code>h1 - h6</code>: </strong>Each of the <code>&lt;h1&gt;</code> through <code>&lt;h6&gt;</code> elements can be individually styled.</li>
+<li><strong><code>link</code>:</strong> Applied to the <code>&lt;a&gt;</code> tag, which is used to create links.</li>
+</ul>
+<p>Let’s try a real example now. Suppose you wanted to give all buttons across the site a white text color that sits atop a red background. You need to target the <code>text</code> and <code>background</code> properties of <code>styles.elements.button.color</code>.</p>
+<p>Add this code to your <code>theme.json</code> file:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"styles": {
+		"elements": {
+			"button": {
+				"color": {
+					"text": "#ffffff",
+					"background": "#aa3f33"
+				}
+			}
+		}
+	}
+}</code></pre>
+<p>If you view a button in the Site Editor or on the front end of the site, you should see these colors applied:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-elements-button.jpg?ssl=1"><img alt="WordPress Style Book with the Buttons block highlighted and the Text color option expanded." class="wp-image-149112" data-recalc-dims="1" decoding="async" height="1071" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-elements-button.jpg?resize=2048%2C1071&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-elements-button.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-elements-button.jpg?resize=300%2C157&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-elements-button.jpg?resize=1024%2C536&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-elements-button.jpg?resize=768%2C402&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-elements-button.jpg?resize=1536%2C803&amp;ssl=1 1536w" width="2048"/></a></figure>
+<div class="wp-block-wporg-notice is-alert-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Some elements both serve as element styles and the foundation of more specific blocks. In the case of elements that also tie into blocks, the block styles will overrule the element styles. For example, the Button and Heading blocks can have their own styles but they will fall back to the <code>button</code> and <code>heading</code> element styles.</p></div></div>
+<p>WordPress will generate this CSS in both the editor and on the front end for your <code>button</code> element styles:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">.wp-element-button, 
+.wp-block-button__link {
+	background-color: #aa3f33;
+	color: #ffffff;
+}</code></pre>
+<p>WordPress sometimes—but not always—gives elements a specific CSS class with the naming scheme of <code>.wp-element-{$element}</code>. For example, button elements have the <code>.wp-element-button</code> class. The styles you provide via <code>theme.json</code> are then applied to that CSS class.</p>
+<p>As you can see in the generated CSS, WordPress is targeting the <code>.wp-element-button</code> class when styling the <code>button</code> element. But it’s also specifically targeting the <code>.wp-block-button__link</code> class for backward compatibility with the Button block.</p>
+<h3 class="is-toc-heading wp-block-heading" id="styling-pseudo-classes" tabindex="-1"><a href="#styling-pseudo-classes">Styling pseudo-classes</a></h3>
+<p>You can also add style properties for a standard set of CSS pseudo-classes for some elements. Generally, this will be for features like link hover and focus styles.</p>
+<p>The <code>button</code> and <code>link</code> elements support these pseudo-classes:</p>
+<ul class="wp-block-list">
+<li><code>:hover</code></li>
+<li><code>:focus</code></li>
+<li><code>:active</code></li>
+<li><code>:visited</code></li>
+</ul>
+<p>Each pseudo-class must be added as a property nested under the element you want to style. For example, you must target <code>styles.elements.link.:hover</code> to customize link hover styles.</p>
+<p>Let’s look at this in context using the previous example of styling <code>button</code> elements. Suppose you wanted to change the background color when a user’s mouse hovers over buttons. Use this <code>theme.json</code> code to achieve that:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"styles": {
+		"elements": {
+			"button": {
+				"color": {
+					"text": "#ffffff",
+					"background": "#aa3f33"
+				},
+				":hover": {
+					"color": {
+						"background": "#822f27"
+					}
+				}
+			}
+		}
+	}
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="styling-blocks" tabindex="-1"><a href="#styling-blocks">Styling blocks</a></h2>
+<p>One of the great things about the block system is that it provides a standardized system for styling any block. This means that you can add styles for core WordPress blocks as well as third-party plugin blocks directly in <code>theme.json</code>.</p>
+<p>To style a specific block, you must target <code>styles.blocks.blockname</code> in your <code>theme.json</code> file. From there, you can add any of the block’s <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles/styles-reference/">supported styles</a>.</p>
+<p>Let’s take a look at a basic example. Assume that you want to give a slightly rounded border to all Image blocks. For this, you need to target the <code>border.radius</code> property.</p>
+<p>Add this code to your <code>theme.json</code> file:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"styles": {
+		"blocks": {
+			"core/image": {
+				"border": {
+					"radius": "6px"
+				}
+			}
+		}
+	}
+}</code></pre>
+<p>This should make any instance of the Image block on your site appear with a rounded border:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-blocks-image.jpg?ssl=1"><img alt="WordPress Style book with the Image block highlighted." class="wp-image-149113" data-recalc-dims="1" decoding="async" height="1056" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-blocks-image.jpg?resize=2048%2C1056&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-blocks-image.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-blocks-image.jpg?resize=300%2C155&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-blocks-image.jpg?resize=1024%2C528&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-blocks-image.jpg?resize=768%2C396&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-blocks-image.jpg?resize=1536%2C792&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>WordPress will also generate this CSS for the nested <code>&lt;img&gt;</code> element within the Image block for both the editor and front end:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">.wp-block-image img {
+	border-radius: 6px;
+}</code></pre>
+<p>You can add styles for as many or as few blocks as you want. That’s entirely up to you and what you want to accomplish with your design. Have fun with it!</p>
+<p>For a full list of core WordPress blocks that you can style, visit the <a href="https://developer.notmatt.press/block-editor/reference-guides/core-blocks/">Core Blocks Reference</a>. Note that this does not include blocks from plugins and other third-party sources.</p>
+<div class="wp-block-wporg-notice is-tip-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>When targeting a block’s styles, you must know both its namespace and slug. Above, you learned that the Image block has the namespace (<code>core</code>) and slug (<code>image</code>), creating the namespace/slug combination of <code>core/image</code>. All core WordPress blocks have the <code>core</code> namespace, and you can find this information for any block (including from third-party plugins) in its <code>block.json</code> file.</p></div></div>
+<h3 class="is-toc-heading wp-block-heading" id="styling-elements-nested-in-blocks" tabindex="-1"><a href="#styling-elements-nested-in-blocks">Styling elements nested in blocks</a></h3>
+<p>You can also add custom styles for elements that are nested within blocks. This feature gives you a lot of flexibility for contextually styling elements directly within <code>theme.json</code>.</p>
+<p>When styling a block’s nested elements, you must pass an <code>elements</code> object directly under the block property: <code>styles.blocks.blockname.elements</code>.</p>
+<p>Suppose you wanted a large font size for the PullQuote block but you wanted to create a fluid size for its nested <code>&lt;cite&gt;</code> element that never grew larger than <code>50%</code> of the parent block or <code>1.5rem</code>, whichever is the larger of the two.</p>
+<p>For this, you need to define the <code>typography.fontSize</code> for both the <code>core/pullquote</code> block and its nested <code>cite</code> element in <code>theme.json</code>: </p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"styles": {
+		"elements": {
+			"core/pullquote": {
+				"typography": {
+					"fontSize": "2.25rem"
+				},
+				"elements": {
+					"cite": {
+						"typography": {
+							"fontSize": "max( 50%, 1.5rem )"
+						}
+					}
+				}
+			}
+		}
+	}
+}</code></pre>
+<p>The font-size will now look like this in the editor:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-element-cite.jpg?ssl=1"><img alt="WordPress post editor with a Pullquote block and nested cite element." class="wp-image-149114" data-recalc-dims="1" decoding="async" height="1056" loading="lazy" sizes="auto, (max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-element-cite.jpg?resize=2048%2C1056&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-element-cite.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-element-cite.jpg?resize=300%2C155&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-element-cite.jpg?resize=1024%2C528&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-element-cite.jpg?resize=768%2C396&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-element-cite.jpg?resize=1536%2C792&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>WordPress generates this CSS for styling both the Pullquote block and its nested <code>&lt;cite&gt;</code> element:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">.wp-block-pullquote {
+	font-size: 2.25rem;
+}
+
+.wp-block-pullquote cite {
+	font-size: max( 50%, 1.5rem );
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="styling-block-style-variations-block-styles" tabindex="-1"><a href="#styling-block-style-variations-block-styles">Styling block style variations (block styles)</a></h3>
+<p>Since WordPress 6.2, you can customize the core block style variations (i.e., block styles) via <code>theme.json</code>. This feature allows you to use <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles/styles-reference/">supported styles</a> without having to write custom CSS in a separate stylesheet.</p>
+<p>To customize a block style variation, you must add a nested <code>variations</code> property within the block you want to style in <code>theme.json</code>. Then, each variation can use any of the block’s supported styles.</p>
+<p>Let’s walk through an example of modifying the Button block’s Outline style variation. Suppose you wanted to define the border color, style, and width that is specific to this block style variation.</p>
+<p>Add this code to your <code>theme.json</code>:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"styles": {
+		"blocks": {
+			"core/button": {
+				"variations": {
+					"outline": {
+						"border": {
+							"color": "currentColor",
+							"style": "solid",
+							"width": "2px"
+						}
+					}
+				}
+			}
+		}
+	}
+}</code></pre>
+<p>You should now see these changes reflected in the editor when the Outline block style variation is selected for the Button block:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-variations-button.jpg?ssl=1"><img alt="WordPress post editor with four Button blocks in a 2x2 grid. Two of the buttons have a filled background, and the other two are outlined." class="wp-image-149111" data-recalc-dims="1" decoding="async" height="1056" loading="lazy" sizes="auto, (max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-variations-button.jpg?resize=2048%2C1056&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-variations-button.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-variations-button.jpg?resize=300%2C155&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-variations-button.jpg?resize=1024%2C528&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-variations-button.jpg?resize=768%2C396&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/styles-block-variations-button.jpg?resize=1536%2C792&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>The currently available blocks and their core WordPress style variations are:</p>
+<ul class="wp-block-list">
+<li><strong><code>core/button</code>:</strong> <code>outline</code>, <code>fill</code></li>
+<li><strong><code>core/image</code>:</strong> <code>rounded</code></li>
+<li><strong><code>core/quote</code>:</strong> <code>plain</code></li>
+<li><strong><code>core/site-logo</code>:</strong> <code>rounded</code></li>
+<li><strong><code>core/separator</code>:</strong> <code>wide</code>, <code>dots</code></li>
+<li><strong><code>core/social-links</code>:</strong> <code>logos-only</code>, <code>pill-shape</code></li>
+<li><strong><code>core/table</code>:</strong> <code>stripes</code></li>
+<li><strong><code>core/tag-cloud</code>:</strong> <code>outline</code></li>
+</ul>
+<p>For a deeper dive into customizing block style variations, check out <a href="https://developer.notmatt.press/news/2023/05/customizing-core-block-style-variations-via-theme-json/">Customizing core block style variations via theme.json</a> on the WordPress Developer Blog.</p>
+<div class="wp-block-wporg-notice is-alert-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p><em>Custom</em> block style variations are not currently supported in <code>theme.json</code>. There is an <a href="https://github.com/WordPress/gutenberg/issues/49602">open ticket for the feature</a>. For now, you are limited to the core block style variations.</p></div></div>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

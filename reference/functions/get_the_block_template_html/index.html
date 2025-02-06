@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_the_block_template_html()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_the_block_template_html()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_the_block_template_html(): <span class="return-type">string</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns the markup for the current template.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Block template markup.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="218"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_the_block_template_html() {
+	global $_wp_current_template_id, $_wp_current_template_content, $wp_embed, $wp_query;
+
+	if ( ! $_wp_current_template_content ) {
+		if ( is_user_logged_in() ) {
+			return '&lt;h1&gt;' . esc_html__( 'No matching template found' ) . '&lt;/h1&gt;';
+		}
+		return;
+	}
+
+	$content = $wp_embed-&gt;run_shortcode( $_wp_current_template_content );
+	$content = $wp_embed-&gt;autoembed( $content );
+	$content = shortcode_unautop( $content );
+	$content = do_shortcode( $content );
+
+	/*
+	 * Most block themes omit the `core/query` and `core/post-template` blocks in their singular content templates.
+	 * While this technically still works since singular content templates are always for only one post, it results in
+	 * the main query loop never being entered which causes bugs in core and the plugin ecosystem.
+	 *
+	 * The workaround below ensures that the loop is started even for those singular templates. The while loop will by
+	 * definition only go through a single iteration, i.e. `do_blocks()` is only called once. Additional safeguard
+	 * checks are included to ensure the main query loop has not been tampered with and really only encompasses a
+	 * single post.
+	 *
+	 * Even if the block template contained a `core/query` and `core/post-template` block referencing the main query
+	 * loop, it would not cause errors since it would use a cloned instance and go through the same loop of a single
+	 * post, within the actual main query loop.
+	 *
+	 * This special logic should be skipped if the current template does not come from the current theme, in which case
+	 * it has been injected by a plugin by hijacking the block template loader mechanism. In that case, entirely custom
+	 * logic may be applied which is unpredictable and therefore safer to omit this special handling on.
+	 */
+	if (
+		$_wp_current_template_id &amp;&amp;
+		str_starts_with( $_wp_current_template_id, get_stylesheet() . '//' ) &amp;&amp;
+		is_singular() &amp;&amp;
+		1 === $wp_query-&gt;post_count &amp;&amp;
+		have_posts()
+	) {
+		while ( have_posts() ) {
+			the_post();
+			$content = do_blocks( $content );
+		}
+	} else {
+		$content = do_blocks( $content );
+	}
+
+	$content = wptexturize( $content );
+	$content = convert_smilies( $content );
+	$content = wp_filter_content_tags( $content, 'template' );
+	$content = str_replace( ']]&gt;', ']]&amp;gt;', $content );
+
+	// Wrap block template in .wp-site-blocks to allow for specific descendant styles
+	// (e.g. `.wp-site-blocks &gt; *`).
+	return '&lt;div class="wp-site-blocks"&gt;' . $content . '&lt;/div&gt;';
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/block-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/block-template.php#L218">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/block-template.php#L218-L274">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/do_blocks/">do_blocks()</a><code>wp-includes/blocks.php</code></td><td><p>Parses dynamic blocks out of <code>post_content</code> and re-renders them.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_stylesheet/">get_stylesheet()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves name of the current stylesheet.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/convert_smilies/">convert_smilies()</a><code>wp-includes/formatting.php</code></td><td><p>Converts text equivalent of smilies to images.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/shortcode_unautop/">shortcode_unautop()</a><code>wp-includes/formatting.php</code></td><td><p>Don’t auto-p wrap shortcodes that stand alone.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wptexturize/">wptexturize()</a><code>wp-includes/formatting.php</code></td><td><p>Replaces common plain text characters with formatted entities.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_singular/">is_singular()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing single post of any post type (post, attachment, page, custom post types).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/have_posts/">have_posts()</a><code>wp-includes/query.php</code></td><td><p>Determines whether current WordPress query has posts to loop over.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_post/">the_post()</a><code>wp-includes/query.php</code></td><td><p>Iterate the post index in the loop.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_embed/autoembed/">WP_Embed::autoembed()</a><code>wp-includes/class-wp-embed.php</code></td><td><p>Passes any unlinked URLs that are on their own line to <a href="https://developer.notmatt.press/reference/classes/wp_embed/shortcode/" rel="method">WP_Embed::shortcode()</a> for potential embedding.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_embed/run_shortcode/">WP_Embed::run_shortcode()</a><code>wp-includes/class-wp-embed.php</code></td><td><p>Processes the  shortcode.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_shortcode/">do_shortcode()</a><code>wp-includes/shortcodes.php</code></td><td><p>Searches content for shortcodes and filter shortcodes through their hooks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

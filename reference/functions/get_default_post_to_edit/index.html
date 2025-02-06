@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_default_post_to_edit()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_default_post_to_edit()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_default_post_to_edit( <span class="arg-type">string</span> <span class="arg-name">$post_type</span> = <span class="arg-default">'post'</span>,  <span class="arg-type">bool</span> <span class="arg-name">$create_in_db</span> = <span class="arg-default">false</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_post/" rel="class">WP_Post</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns default post information to use when populating the “Write Post” form.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post_type</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A post type string. Default <code>'post'</code>.</span></div><p class="default">Default:<code>'post'</code></p></dd><dt><code>$create_in_db</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to insert the post into database. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span> Post object containing all the default post data as attributes</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="742"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_default_post_to_edit( $post_type = 'post', $create_in_db = false ) {
+	$post_title = '';
+	if ( ! empty( $_REQUEST['post_title'] ) ) {
+		$post_title = esc_html( wp_unslash( $_REQUEST['post_title'] ) );
+	}
+
+	$post_content = '';
+	if ( ! empty( $_REQUEST['content'] ) ) {
+		$post_content = esc_html( wp_unslash( $_REQUEST['content'] ) );
+	}
+
+	$post_excerpt = '';
+	if ( ! empty( $_REQUEST['excerpt'] ) ) {
+		$post_excerpt = esc_html( wp_unslash( $_REQUEST['excerpt'] ) );
+	}
+
+	if ( $create_in_db ) {
+		$post_id = wp_insert_post(
+			array(
+				'post_title'  =&gt; __( 'Auto Draft' ),
+				'post_type'   =&gt; $post_type,
+				'post_status' =&gt; 'auto-draft',
+			),
+			false,
+			false
+		);
+		$post    = get_post( $post_id );
+		if ( current_theme_supports( 'post-formats' ) &amp;&amp; post_type_supports( $post-&gt;post_type, 'post-formats' ) &amp;&amp; get_option( 'default_post_format' ) ) {
+			set_post_format( $post, get_option( 'default_post_format' ) );
+		}
+		wp_after_insert_post( $post, false, null );
+
+		// Schedule auto-draft cleanup.
+		if ( ! wp_next_scheduled( 'wp_scheduled_auto_draft_delete' ) ) {
+			wp_schedule_event( time(), 'daily', 'wp_scheduled_auto_draft_delete' );
+		}
+	} else {
+		$post                 = new stdClass();
+		$post-&gt;ID             = 0;
+		$post-&gt;post_author    = '';
+		$post-&gt;post_date      = '';
+		$post-&gt;post_date_gmt  = '';
+		$post-&gt;post_password  = '';
+		$post-&gt;post_name      = '';
+		$post-&gt;post_type      = $post_type;
+		$post-&gt;post_status    = 'draft';
+		$post-&gt;to_ping        = '';
+		$post-&gt;pinged         = '';
+		$post-&gt;comment_status = get_default_comment_status( $post_type );
+		$post-&gt;ping_status    = get_default_comment_status( $post_type, 'pingback' );
+		$post-&gt;post_pingback  = get_option( 'default_pingback_flag' );
+		$post-&gt;post_category  = get_option( 'default_category' );
+		$post-&gt;page_template  = 'default';
+		$post-&gt;post_parent    = 0;
+		$post-&gt;menu_order     = 0;
+		$post                 = new WP_Post( $post );
+	}
+
+	/**
+	 * Filters the default post content initially used in the "Write Post" form.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string  $post_content Default post content.
+	 * @param WP_Post $post         Post object.
+	 */
+	$post-&gt;post_content = (string) apply_filters( 'default_content', $post_content, $post );
+
+	/**
+	 * Filters the default post title initially used in the "Write Post" form.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string  $post_title Default post title.
+	 * @param WP_Post $post       Post object.
+	 */
+	$post-&gt;post_title = (string) apply_filters( 'default_title', $post_title, $post );
+
+	/**
+	 * Filters the default post excerpt initially used in the "Write Post" form.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string  $post_excerpt Default post excerpt.
+	 * @param WP_Post $post         Post object.
+	 */
+	$post-&gt;post_excerpt = (string) apply_filters( 'default_excerpt', $post_excerpt, $post );
+
+	return $post;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/post.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/post.php#L742">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/post.php#L742-L831">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/default_content/"><span class="hook-func">apply_filters</span>( ‘default_content’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_content</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the default post content initially used in the “Write Post” form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/default_excerpt/"><span class="hook-func">apply_filters</span>( ‘default_excerpt’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_excerpt</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the default post excerpt initially used in the “Write Post” form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/default_title/"><span class="hook-func">apply_filters</span>( ‘default_title’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_title</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the default post title initially used in the “Write Post” form.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_after_insert_post/">wp_after_insert_post()</a><code>wp-includes/post.php</code></td><td><p>Fires actions after a post, its terms and meta data has been saved.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_default_comment_status/">get_default_comment_status()</a><code>wp-includes/comment.php</code></td><td><p>Gets the default comment status for a post type.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_next_scheduled/">wp_next_scheduled()</a><code>wp-includes/cron.php</code></td><td><p>Retrieves the next timestamp for an event.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_schedule_event/">wp_schedule_event()</a><code>wp-includes/cron.php</code></td><td><p>Schedules a recurring event.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_post/__construct/">WP_Post::__construct()</a><code>wp-includes/class-wp-post.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_post/">wp_insert_post()</a><code>wp-includes/post.php</code></td><td><p>Inserts or update a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_type_supports/">post_type_supports()</a><code>wp-includes/post.php</code></td><td><p>Checks a post type’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_post_format/">set_post_format()</a><code>wp-includes/post-formats.php</code></td><td><p>Assign a format to a post</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_theme_supports/">current_theme_supports()</a><code>wp-includes/theme.php</code></td><td><p>Checks a theme’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 9 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_default_page_to_edit/">get_default_page_to_edit()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Gets the default page information to use.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_quick_press/">wp_dashboard_quick_press()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Displays the Quick Draft widget.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/inline_edit/">WP_Posts_List_Table::inline_edit()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td><p>Outputs the hidden row displayed when inline editing</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_newpost/">wp_xmlrpc_server::mw_newPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Creates a new post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/_insert_post/">wp_xmlrpc_server::_insert_post()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Helper method for wp_newPost() and wp_editPost(), containing shared logic.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.0/">2.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="4491" id="comment-4491">
+<article class="comment-body" id="div-comment-4491">
+<a class="screen-reader-text" href="#comment-content-4491">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4491">
+<p>Before using this function for your own theme or plugin, be wary of these non-obvious implicit behaviors (as of 4.2.3):</p>
+<ul>
+<li>The returned post will have a <code>post_category</code> member set, even if the <code>$post_type</code> does not use the category taxonomy.</li>
+<li>This <code>post_category</code> value will be scalar, which causes warnings passed into <code>wp_insert_post</code> without additional manipulation.</li>
+<li>Some of the post’s fields will be pulled out of <code>$_REQUEST</code> if present, which may not be the intended goal.</li>
+</ul>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4491">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

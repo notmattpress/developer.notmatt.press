@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_scheduled_delete()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_scheduled_delete()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_scheduled_delete()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Permanently deletes comments or posts of any type that have held a status of ‘trash’ for the number of days defined in EMPTY_TRASH_DAYS.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The default value of <code>EMPTY_TRASH_DAYS</code> is 30 (days).</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="6829"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_scheduled_delete() {
+	global $wpdb;
+
+	$delete_timestamp = time() - ( DAY_IN_SECONDS * EMPTY_TRASH_DAYS );
+
+	$posts_to_delete = $wpdb-&gt;get_results( $wpdb-&gt;prepare( "SELECT post_id FROM $wpdb-&gt;postmeta WHERE meta_key = '_wp_trash_meta_time' AND meta_value &lt; %d", $delete_timestamp ), ARRAY_A );
+
+	foreach ( (array) $posts_to_delete as $post ) {
+		$post_id = (int) $post['post_id'];
+		if ( ! $post_id ) {
+			continue;
+		}
+
+		$del_post = get_post( $post_id );
+
+		if ( ! $del_post || 'trash' !== $del_post-&gt;post_status ) {
+			delete_post_meta( $post_id, '_wp_trash_meta_status' );
+			delete_post_meta( $post_id, '_wp_trash_meta_time' );
+		} else {
+			wp_delete_post( $post_id );
+		}
+	}
+
+	$comments_to_delete = $wpdb-&gt;get_results( $wpdb-&gt;prepare( "SELECT comment_id FROM $wpdb-&gt;commentmeta WHERE meta_key = '_wp_trash_meta_time' AND meta_value &lt; %d", $delete_timestamp ), ARRAY_A );
+
+	foreach ( (array) $comments_to_delete as $comment ) {
+		$comment_id = (int) $comment['comment_id'];
+		if ( ! $comment_id ) {
+			continue;
+		}
+
+		$del_comment = get_comment( $comment_id );
+
+		if ( ! $del_comment || 'trash' !== $del_comment-&gt;comment_approved ) {
+			delete_comment_meta( $comment_id, '_wp_trash_meta_time' );
+			delete_comment_meta( $comment_id, '_wp_trash_meta_status' );
+		} else {
+			wp_delete_comment( $del_comment );
+		}
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L6829">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L6829-L6869">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post/">wp_delete_post()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes a post or page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/delete_post_meta/">delete_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Deletes a post meta field for the given post ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_comment/">wp_delete_comment()</a><code>wp-includes/comment.php</code></td><td><p>Trashes or deletes a comment.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/delete_comment_meta/">delete_comment_meta()</a><code>wp-includes/comment.php</code></td><td><p>Removes metadata matching criteria from a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_results/">wpdb::get_results()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves an entire SQL result set from the database (i.e., many rows).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comment/">get_comment()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves comment data given a comment ID or comment object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.9.0/">2.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

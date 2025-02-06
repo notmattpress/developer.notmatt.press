@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_get_available_translations()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_get_available_translations()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_get_available_translations(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Get available translations from the WordPress.org API.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/translations_api">translations_api()</a></li>
+</ul></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Array of translations keyed by the language code, each an associative array of data.<br/>
+If the API response results in an error, an empty array will be returned.<br/>
+<ul class="param-hash"><li><code>...$0</code> <span class="type">array</span><div class="desc"><ul class="param-hash">
+<li><code>language</code> <span class="type">string</span><div class="desc">Language code.</div></li>
+<li><code>version</code> <span class="type">string</span><div class="desc">WordPress version.</div></li>
+<li><code>updated</code> <span class="type">string</span><div class="desc">Date the translation was last updated, in MySQL datetime format.</div></li>
+<li><code>english_name</code> <span class="type">string</span><div class="desc">English name of the language.</div></li>
+<li><code>native_name</code> <span class="type">string</span><div class="desc">Native name of the language.</div></li>
+<li><code>package</code> <span class="type">string</span><div class="desc">URL to download the translation package.</div></li>
+<li><code>iso</code> <span class="type">string[]</span><div class="desc">Array of ISO language codes.</div></li>
+<li><code>strings</code> <span class="type">array</span><div class="desc">Array of translated strings used in the installation process.<br/>
+</div></li></ul>
+</div></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="167"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_get_available_translations() {
+	if ( ! wp_installing() ) {
+		$translations = get_site_transient( 'available_translations' );
+		if ( false !== $translations ) {
+			return $translations;
+		}
+	}
+
+	$api = translations_api( 'core', array( 'version' =&gt; wp_get_wp_version() ) );
+
+	if ( is_wp_error( $api ) || empty( $api['translations'] ) ) {
+		return array();
+	}
+
+	$translations = array();
+	// Key the array with the language code.
+	foreach ( $api['translations'] as $translation ) {
+		$translations[ $translation['language'] ] = $translation;
+	}
+
+	if ( ! defined( 'WP_INSTALLING' ) ) {
+		set_site_transient( 'available_translations', $translations, 3 * HOUR_IN_SECONDS );
+	}
+
+	return $translations;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/translation-install.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/translation-install.php#L167">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/translation-install.php#L167-L192">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_wp_version/">wp_get_wp_version()</a><code>wp-includes/functions.php</code></td><td><p>Returns the current WordPress version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_installing/">wp_installing()</a><code>wp-includes/load.php</code></td><td><p>Checks or sets whether WordPress is in “installation” mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/translations_api/">translations_api()</a><code>wp-admin/includes/translation-install.php</code></td><td><p>Retrieve translations from WordPress Translation API.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_site_transient/">set_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a site transient.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_site_transient/">get_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_download_language_pack/">wp_download_language_pack()</a><code>wp-admin/includes/translation-install.php</code></td><td><p>Download a language pack.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.0.0/">4.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-fduraibi odd alt thread-odd thread-alt depth-1" data-comment-id="1567" id="comment-1567">
+<article class="comment-body" id="div-comment-1567">
+<a class="screen-reader-text" href="#comment-content-1567">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1567">
+<p>Before calling <code>wp_get_available_translations</code> you should include <code>translation-install.php</code> like in the following example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">require_once( ABSPATH . 'wp-admin/includes/translation-install.php' );
+$language_list = wp_get_available_translations();</code></pre>
+<p>Otherwise you might get this fatal error if that file was not included before:<br>
+<code>Fatal error: Call to undefined function wp_get_available_translations()</code></br></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1567">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

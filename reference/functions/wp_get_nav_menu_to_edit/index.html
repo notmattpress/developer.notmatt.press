@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_get_nav_menu_to_edit()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_get_nav_menu_to_edit()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_get_nav_menu_to_edit( <span class="arg-type">int</span> <span class="arg-name">$menu_id</span> ): <span class="return-type">string|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns the menu formatted to edit.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$menu_id</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The ID of the menu to format. Default 0.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> The menu formatted to edit or error object on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1243"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_get_nav_menu_to_edit( $menu_id = 0 ) {
+	$menu = wp_get_nav_menu_object( $menu_id );
+
+	// If the menu exists, get its items.
+	if ( is_nav_menu( $menu ) ) {
+		$menu_items = wp_get_nav_menu_items( $menu-&gt;term_id, array( 'post_status' =&gt; 'any' ) );
+		$result     = '&lt;div id="menu-instructions" class="post-body-plain';
+		$result    .= ( ! empty( $menu_items ) ) ? ' menu-instructions-inactive"&gt;' : '"&gt;';
+		$result    .= '&lt;p&gt;' . __( 'Add menu items from the column on the left.' ) . '&lt;/p&gt;';
+		$result    .= '&lt;/div&gt;';
+
+		if ( empty( $menu_items ) ) {
+			return $result . ' &lt;ul class="menu" id="menu-to-edit"&gt; &lt;/ul&gt;';
+		}
+
+		/**
+		 * Filters the Walker class used when adding nav menu items.
+		 *
+		 * @since 3.0.0
+		 *
+		 * @param string $class   The walker class to use. Default 'Walker_Nav_Menu_Edit'.
+		 * @param int    $menu_id ID of the menu being rendered.
+		 */
+		$walker_class_name = apply_filters( 'wp_edit_nav_menu_walker', 'Walker_Nav_Menu_Edit', $menu_id );
+
+		if ( class_exists( $walker_class_name ) ) {
+			$walker = new $walker_class_name();
+		} else {
+			return new WP_Error(
+				'menu_walker_not_exist',
+				sprintf(
+					/* translators: %s: Walker class name. */
+					__( 'The Walker class named %s does not exist.' ),
+					'&lt;strong&gt;' . $walker_class_name . '&lt;/strong&gt;'
+				)
+			);
+		}
+
+		$some_pending_menu_items = false;
+		$some_invalid_menu_items = false;
+
+		foreach ( (array) $menu_items as $menu_item ) {
+			if ( isset( $menu_item-&gt;post_status ) &amp;&amp; 'draft' === $menu_item-&gt;post_status ) {
+				$some_pending_menu_items = true;
+			}
+			if ( ! empty( $menu_item-&gt;_invalid ) ) {
+				$some_invalid_menu_items = true;
+			}
+		}
+
+		if ( $some_pending_menu_items ) {
+			$message     = __( 'Click Save Menu to make pending menu items public.' );
+			$notice_args = array(
+				'type'               =&gt; 'info',
+				'additional_classes' =&gt; array( 'notice-alt', 'inline' ),
+			);
+			$result     .= wp_get_admin_notice( $message, $notice_args );
+		}
+
+		if ( $some_invalid_menu_items ) {
+			$message     = __( 'There are some invalid menu items. Please check or delete them.' );
+			$notice_args = array(
+				'type'               =&gt; 'error',
+				'additional_classes' =&gt; array( 'notice-alt', 'inline' ),
+			);
+			$result     .= wp_get_admin_notice( $message, $notice_args );
+		}
+
+		$result .= '&lt;ul class="menu" id="menu-to-edit"&gt; ';
+		$result .= walk_nav_menu_tree(
+			array_map( 'wp_setup_nav_menu_item', $menu_items ),
+			0,
+			(object) array( 'walker' =&gt; $walker )
+		);
+		$result .= ' &lt;/ul&gt; ';
+
+		return $result;
+	} elseif ( is_wp_error( $menu ) ) {
+		return $menu;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/nav-menu.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/nav-menu.php#L1243">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/nav-menu.php#L1243-L1323">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_edit_nav_menu_walker/"><span class="hook-func">apply_filters</span>( ‘wp_edit_nav_menu_walker’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$class</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$menu_id</span></nobr> )</a></dt><dd><p>Filters the <a href="https://developer.notmatt.press/reference/classes/walker/" rel="class">Walker</a> class used when adding nav menu items.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_admin_notice/">wp_get_admin_notice()</a><code>wp-includes/functions.php</code></td><td><p>Creates and returns the markup for an admin notice.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/walk_nav_menu_tree/">walk_nav_menu_tree()</a><code>wp-includes/nav-menu-template.php</code></td><td><p>Retrieves the HTML list content for nav menu items.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_nav_menu_items/">wp_get_nav_menu_items()</a><code>wp-includes/nav-menu.php</code></td><td><p>Retrieves all menu items of a navigation menu.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_nav_menu_object/">wp_get_nav_menu_object()</a><code>wp-includes/nav-menu.php</code></td><td><p>Returns a navigation menu object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_nav_menu/">is_nav_menu()</a><code>wp-includes/nav-menu.php</code></td><td><p>Determines whether the given ID is a navigation menu.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

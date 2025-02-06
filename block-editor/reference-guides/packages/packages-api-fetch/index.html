@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/api-fetch</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/api-fetch</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Utility to make WordPress REST API requests. It’s a wrapper around <code>window.fetch</code>.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module</p>
+<pre><code class="language-bash">npm install @wordpress/api-fetch --save
+</code></pre>
+<p><em>This package assumes that your code will run in an <strong>ES2015+</strong> environment. If you’re using an environment that has limited or no support for such language features and APIs, you should include <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default#polyfill">the polyfill shipped in <code>@wordpress/babel-preset-default</code></a> in your code.</em></p>
+<h2 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h2>
+<h3 class="is-toc-heading" id="get" tabindex="-1"><a href="#get">GET</a></h3>
+<pre><code class="language-js">import apiFetch from '@wordpress/api-fetch';
+
+apiFetch( { path: '/wp/v2/posts' } ).then( ( posts ) =&gt; {
+    console.log( posts );
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="get-with-query-args" tabindex="-1"><a href="#get-with-query-args">GET with Query Args</a></h3>
+<pre><code class="language-js">import apiFetch from '@wordpress/api-fetch';
+import { addQueryArgs } from '@wordpress/url';
+
+const queryParams = { include: [1,2,3] }; // Return posts with ID = 1,2,3.
+
+apiFetch( { path: addQueryArgs( '/wp/v2/posts', queryParams ) } ).then( ( posts ) =&gt; {
+    console.log( posts );
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="post" tabindex="-1"><a href="#post">POST</a></h3>
+<pre><code class="language-js">apiFetch( {
+    path: '/wp/v2/posts/1',
+    method: 'POST',
+    data: { title: 'New Post Title' },
+} ).then( ( res ) =&gt; {
+    console.log( res );
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="options" tabindex="-1"><a href="#options">Options</a></h3>
+<p><code>apiFetch</code> supports and passes through all <a href="https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch">options of the <code>fetch</code> global</a>.</p>
+<p>Additionally, the following options are available:</p>
+<h4><code>path</code> (<code>string</code>)</h4>
+<p>Shorthand to be used in place of <code>url</code>, appended to the REST API root URL for the current site.</p>
+<h4><code>url</code> (<code>string</code>)</h4>
+<p>Absolute URL to the endpoint from which to fetch.</p>
+<h4><code>parse</code> (<code>boolean</code>, default <code>true</code>)</h4>
+<p>Unlike <code>fetch</code>, the <code>Promise</code> return value of <code>apiFetch</code> will resolve to the parsed JSON result. Disable this behavior by passing <code>parse</code> as <code>false</code>.</p>
+<h4><code>data</code> (<code>object</code>)</h4>
+<p>Sent on <code>POST</code> or <code>PUT</code> requests only. Shorthand to be used in place of <code>body</code>, accepts an object value to be stringified to JSON.</p>
+<h3 class="is-toc-heading" id="aborting-a-request" tabindex="-1"><a href="#aborting-a-request">Aborting a request</a></h3>
+<p>Aborting a request can be achieved through the use of <a href="https://developer.mozilla.org/en-US/docs/Web/API/AbortController"><code>AbortController</code></a> in the same way as you would when using the native <code>fetch</code> API.</p>
+<p>For legacy browsers that don’t support <code>AbortController</code>, you can either:</p>
+<ul>
+<li>Provide your own polyfill of <code>AbortController</code> if you still want it to be abortable.</li>
+<li>Ignore it as shown in the example below.</li>
+</ul>
+<p><strong>Example</strong></p>
+<pre><code class="language-js">const controller =
+    typeof AbortController === 'undefined' ? undefined : new AbortController();
+
+apiFetch( { path: '/wp/v2/posts', signal: controller?.signal } ).catch(
+    ( error ) =&gt; {
+        // If the browser doesn't support AbortController then the code below will never log.
+        // However, in most cases this should be fine as it can be considered to be a progressive enhancement.
+        if ( error.name === 'AbortError' ) {
+            console.log( 'Request has been aborted' );
+        }
+    }
+);
+
+controller?.abort();
+</code></pre>
+<h3 class="is-toc-heading" id="middlewares" tabindex="-1"><a href="#middlewares">Middlewares</a></h3>
+<p>the <code>api-fetch</code> package supports middlewares. Middlewares are functions you can use to wrap the <code>apiFetch</code> calls to perform any pre/post process to the API requests.</p>
+<p><strong>Example</strong></p>
+<pre><code class="language-js">import apiFetch from '@wordpress/api-fetch';
+
+apiFetch.use( ( options, next ) =&gt; {
+    const start = Date.now();
+    const result = next( options );
+    result.then( () =&gt; {
+        console.log( 'The request took ' + ( Date.now() - start ) + 'ms' );
+    } );
+    return result;
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="built-in-middlewares" tabindex="-1"><a href="#built-in-middlewares">Built-in middlewares</a></h3>
+<p>The <code>api-fetch</code> package provides built-in middlewares you can use to provide a <code>nonce</code> and a custom <code>rootURL</code>.</p>
+<p><strong>Nonce middleware</strong></p>
+<pre><code class="language-js">import apiFetch from '@wordpress/api-fetch';
+
+const nonce = 'nonce value';
+apiFetch.use( apiFetch.createNonceMiddleware( nonce ) );
+</code></pre>
+<p>The function returned by <code>createNonceMiddleware</code> includes a <code>nonce</code> property corresponding to the actively used nonce. You may also assign to this property if you have a fresh nonce value to use.</p>
+<p><strong>Root URL middleware</strong></p>
+<pre><code class="language-js">import apiFetch from '@wordpress/api-fetch';
+
+const rootURL = 'http://my-wordpress-site/wp-json/';
+apiFetch.use( apiFetch.createRootURLMiddleware( rootURL ) );
+</code></pre>
+<h3 class="is-toc-heading" id="custom-fetch-handler" tabindex="-1"><a href="#custom-fetch-handler">Custom fetch handler</a></h3>
+<p>The <code>api-fetch</code> package uses <code>window.fetch</code> for making the requests but you can use a custom fetch handler by using the <code>setFetchHandler</code> method. The custom fetch handler will receive the <code>options</code> passed to the <code>apiFetch</code> calls.</p>
+<p><strong>Example</strong></p>
+<p>The example below uses a custom fetch handler for making all the requests with <a href="https://github.com/axios/axios"><code>axios</code></a>.</p>
+<pre><code class="language-js">import apiFetch from '@wordpress/api-fetch';
+import axios from 'axios';
+
+apiFetch.setFetchHandler( ( options ) =&gt; {
+    const { url, path, data, method } = options;
+
+    return axios( {
+        url: url || path,
+        method,
+        data,
+    } );
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_close_comments_for_old_posts()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_close_comments_for_old_posts()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_close_comments_for_old_posts( <span class="arg-type">WP_Post</span> <span class="arg-name">$posts</span>,  <span class="arg-type">WP_Query</span> <span class="arg-name">$query</span> ): <span class="return-type">array</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Closes comments on old posts on the fly, without any extra DB queries. Hooked to the_posts.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$posts</code><span class="type"><span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Post data object.</span></div></dd><dt><code>$query</code><span class="type"><span class="WP_Query"><a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Query object.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3394"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _close_comments_for_old_posts( $posts, $query ) {
+	if ( empty( $posts ) || ! $query-&gt;is_singular() || ! get_option( 'close_comments_for_old_posts' ) ) {
+		return $posts;
+	}
+
+	/**
+	 * Filters the list of post types to automatically close comments for.
+	 *
+	 * @since 3.2.0
+	 *
+	 * @param string[] $post_types An array of post type names.
+	 */
+	$post_types = apply_filters( 'close_comments_for_post_types', array( 'post' ) );
+	if ( ! in_array( $posts[0]-&gt;post_type, $post_types, true ) ) {
+		return $posts;
+	}
+
+	$days_old = (int) get_option( 'close_comments_days_old' );
+	if ( ! $days_old ) {
+		return $posts;
+	}
+
+	if ( time() - strtotime( $posts[0]-&gt;post_date_gmt ) &gt; ( $days_old * DAY_IN_SECONDS ) ) {
+		$posts[0]-&gt;comment_status = 'closed';
+		$posts[0]-&gt;ping_status    = 'closed';
+	}
+
+	return $posts;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/comment.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/comment.php#L3394">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/comment.php#L3394-L3422">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/close_comments_for_post_types/"><span class="hook-func">apply_filters</span>( ‘close_comments_for_post_types’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$post_types</span></nobr> )</a></dt><dd><p>Filters the list of post types to automatically close comments for.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.7.0/">2.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-azadehnoory odd alt thread-odd thread-alt depth-1" data-comment-id="7155" id="comment-7155">
+<article class="comment-body" id="div-comment-7155">
+<a class="screen-reader-text" href="#comment-content-7155">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7155">
+<p>Automatically disable comments on old custom post types:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_filter( 'close_comments_for_post_types', 'wpdocs_close_comments' );
+function wpdocs_close_comments() : array {
+    return array( 'your_old_custom_post_type' );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-7155">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

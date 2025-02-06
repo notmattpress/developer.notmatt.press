@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/interactivity-api/">Interactivity API Reference</a></span><span class="is-current-page">Frequently Asked Questions</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Frequently Asked Questions</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="how-does-the-interactivity-api-work-under-the-hood" tabindex="-1"><a href="#how-does-the-interactivity-api-work-under-the-hood">How does the Interactivity API work under the hood?</a></h2>
+<p>Its three main components are:</p>
+<ul>
+<li><a href="https://preactjs.com/">Preact</a> combined with <a href="https://preactjs.com/guide/v10/signals/">Preact Signals</a> for hydration, client logic, and client-side navigation.</li>
+<li>HTML Directives that can be understood by both the client and server.</li>
+<li>Server-side logic, handled by the <a href="https://make.wordpress.org/core/2023/03/07/introducing-the-html-api-in-wordpress-6-2/">HTML_Tag_Processor</a>.</li>
+</ul>
+<h2 class="is-toc-heading" id="why-preact-to-build-the-directives-system-why-not-react-or-another-javascript-framework" tabindex="-1"><a href="#why-preact-to-build-the-directives-system-why-not-react-or-another-javascript-framework">Why Preact to build the directives system? Why not React or another JavaScript framework?</a></h2>
+<p>Preact has a number of advantages over React and other JavaScript frameworks like Vue, Svelte, or Solid in the context of the frontend (which is the focus of the Interactivity API):</p>
+<ul>
+<li>It’s small: 8kB, including <a href="https://preactjs.com/guide/v10/hooks/">hooks</a> and <a href="https://preactjs.com/blog/introducing-signals/">signals</a>.</li>
+<li>It gives us DOM diffing out of the box.</li>
+<li>It’s extremely extensible through their Option Hooks. They use that extensibility for the hooks (preact/hooks), compatibility with React (preact/compat) and their signals (@preact/signals). Basically, everything but the DOM diffing algorithm.</li>
+<li>Its core team has been great and very helpful. They are also interested in enhancing this “island-based” usage of Preact.</li>
+</ul>
+<h2 class="is-toc-heading" id="is-gutenberg-going-to-move-from-react-to-preact-since-the-interactivity-api-uses-it" tabindex="-1"><a href="#is-gutenberg-going-to-move-from-react-to-preact-since-the-interactivity-api-uses-it">Is Gutenberg going to move from React to Preact since the Interactivity API uses it?</a></h2>
+<p>No. At the moment, there are no plans to make that transition. The requirements and advantages of the editor, as a fully interactive application, are quite different. Preact does have a <a href="https://preactjs.com/guide/v10/switching-to-preact/"><code>@preact/compat</code></a> package that enables full compatibility with the React ecosystem, and many large web applications use it. However, using Preact in the block editor would not offer advantages like it does on the frontend in the Interactivity API.</p>
+<h2 class="is-toc-heading" id="what-approaches-have-been-considered-instead-of-using-directives" tabindex="-1"><a href="#what-approaches-have-been-considered-instead-of-using-directives">What approaches have been considered instead of using directives?</a></h2>
+<p>Many alternative approaches were considered. Here’s a brief summary of some of them:</p>
+<h3 class="is-toc-heading" id="react-and-other-javascript-frameworks" tabindex="-1"><a href="#react-and-other-javascript-frameworks">React and other JavaScript frameworks</a></h3>
+<p>React was considered first because Gutenberg developers are familiar with it. Other popular JS frameworks like Svelte, Vue.js, or Angular were also considered, but none of them (including React) are PHP-friendly or compatible with WordPress hooks or internationalization.</p>
+<h3 class="is-toc-heading" id="alpine-js" tabindex="-1"><a href="#alpine-js">Alpine.js</a></h3>
+<p>Alpine.js is a great framework, and it inspired a lot of functionality in the Interactivity API. However, it doesn’t support server-side rendering of its <a href="https://github.com/alpinejs/alpine/tree/d7f9d641f7a763c56c598d118bd189a406a22383/packages/docs/src/en/directives">directives</a>, and having a similar system tailored for WordPress blocks has many benefits.</p>
+<p>Preact was chosen instead of Alpine.js for numerous reasons, such as its smaller size, its better performance (especially with the addition of <a href="https://preactjs.com/guide/v10/signals/">signals</a>), the fact that custom directives are written with Preact’s declarative syntax and tooling (hooks, signals), it’s more battle-tested and has a larger community than Alpine.js. It’s also compatible with React (for sharing client-side rendered components from the Editor), and it provides to the Interactivity API the fastest DOM diffing algorithm out of the box, including UI state preservation.</p>
+<p>Furthermore, with Preact operating in the background, the Interactivity API manages “the final layer” so it can be better adapted to WordPress requirements. For example, JavaScript expressions are not allowed inside directives to avoid security risks and ensure compliance with strict security policies, and all WordPress directives are spec-compliant HTML attributes.</p>
+<div class="callout callout-info">
+  Have a look at the conversation at <a href="https://github.com/WordPress/gutenberg/discussions/53022#discussioncomment-4696611">“Why Preact instead of Alpine?”</a> to learn more about this.
+</div>
+<h3 class="is-toc-heading" id="plain-javascript" tabindex="-1"><a href="#plain-javascript">Plain JavaScript</a></h3>
+<p>See the answer below.</p>
+<h3 class="is-toc-heading" id="template-dsl" tabindex="-1"><a href="#template-dsl">Template DSL</a></h3>
+<p>The possibility of creating a <a href="https://en.wikipedia.org/wiki/Domain-specific_language">DSL</a> for writing interactive templates was also researched. The code written in that Template DSL would then be compiled into both JavaScript and PHP. However, creating a production-grade Template compiler is complex and would be a large and risky investment of effort. This approach is still being considered for the future, with the directives serving as a compilation target.</p>
+<h2 class="is-toc-heading" id="why-should-i-as-a-block-developer-use-the-interactivity-api-rather-than-react" tabindex="-1"><a href="#why-should-i-as-a-block-developer-use-the-interactivity-api-rather-than-react">Why should I, as a block developer, use the Interactivity API rather than React?</a></h2>
+<p>Using React on the frontend doesn’t work smoothly with server rendering in PHP. Every approach that uses React to render blocks has to load content using client-side JavaScript. If you only render your blocks on the client, it typically results in a poor user experience because the user stares at empty placeholders and spinners while waiting for content to load.</p>
+<p>Using JS in PHP extensions (like v8js) is also possible, but unfortunately PHP extensions are not backward compatible and can only be used when there’s a PHP fallback.</p>
+<p>Now, it’s possible to server-render a block in PHP <strong>and</strong> use React to render the same block on the frontend. However, this results in a poor developer experience because the logic has to be duplicated across the PHP and React parts. Not only that, but you have now exposed yourself to subtle bugs caused by WordPress hooks!</p>
+<p>Imagine installing a third-party plugin with a hook (filter) that modifies the server-rendered HTML. Let’s say this filter adds a single CSS class to your block’s HTML. That CSS class will be present in the server-rendered markup. On the frontend, your block will render again in React, but now the content will not include that CSS class because there is no way to apply WordPress hooks to React-rendered content!</p>
+<p>On the other hand, the Interactivity API is designed to work perfectly with WordPress hooks because directives enhance the server-rendered HTML with behaviors. This also means it works out of the box with WordPress backend APIs like i18n.</p>
+<p>To summarize, using the Interactivity API rather than just using React comes with these benefits:</p>
+<ul>
+<li>If you use React, your interactive blocks must generate the same markup on the client as they do on the server in PHP. Using the Interactivity API, there is no such requirement as directives are added to server-rendered HTML.</li>
+<li>The Interactivity API is PHP-friendlier. It works out of the box with WordPress hooks or other server functionalities such as internationalization. For example, with React, you can’t know which hooks are applied on the server, and their modifications would be overwritten after hydration.</li>
+<li>All the benefits of <a href="https://developer.notmatt.press/block-editor/reference-guides/interactivity-api/iapi-about/#why-a-standard">using a standard</a>.</li>
+</ul>
+<h2 class="is-toc-heading" id="what-are-the-benefits-of-interactivity-api-over-just-using-jquery-or-vanilla-javascript" tabindex="-1"><a href="#what-are-the-benefits-of-interactivity-api-over-just-using-jquery-or-vanilla-javascript">What are the benefits of Interactivity API over just using jQuery or vanilla JavaScript?</a></h2>
+<p>The main difference is that the Interactivity API is <strong>declarative and reactive</strong>, so writing and maintaining complex interactive experiences should become way easier. Additionally, it has been <strong>specially designed to work with blocks</strong>, providing a standard that comes with the benefits mentioned above, like inter-block communication, compatibility, or site-wide features such as client-side navigation.</p>
+<p>Finally, comparing it with jQuery, <strong>the Interactivity API runtime is ~10kb</strong>, which is much more lightweight. Actually, there is an ongoing effort to remove heavy frameworks like jQuery across the WordPress ecosystem, and this would help in this regard.</p>
+<h2 class="is-toc-heading" id="do-i-need-to-know-react-php-and-this-interactivity-api" tabindex="-1"><a href="#do-i-need-to-know-react-php-and-this-interactivity-api">Do I need to know React, PHP, and this Interactivity API?</a></h2>
+<p>If you want to add frontend interactivity to your blocks using this API, the short answer is yes. If your block is not interactive, the block creation workflow will remain exactly the same.</p>
+<p>The Interactivity API introduces a new standard method to facilitate the integration of interactive behaviors into the frontend part of WordPress. This means that you still need to use React to handle the editor part of your blocks.</p>
+<p>On the other hand, if you want to create an interactive block, with the Interactivity API you don’t have to deal with complex topics like tooling, integration with WordPress, inter-block communication, or the server-side rendering of the interactive parts.</p>
+<h2 class="is-toc-heading" id="can-the-interactivity-api-be-used-beyond-a-block" tabindex="-1"><a href="#can-the-interactivity-api-be-used-beyond-a-block">Can the Interactivity API be used beyond a block?</a></h2>
+<p>Absolutely, yes, it is not limited to blocks. You’ll see a lot of mentions of how the Interactivity API provides a standard for creating interactive blocks, but that’s only because that’s the most common use case. More generally speaking, the Interactivity API standard can be used to add “interactive behaviors” to the front end of any part of WordPress.</p>
+<p>See the <a href="https://developer.notmatt.press/reference/functions/wp_interactivity_process_directives/"><code>wp_interactivity_process_directives</code> function</a> for details on using the Interactivity API outside of blocks with arbitrary HTML.</p>
+<h2 class="is-toc-heading" id="does-this-mean-i-must-migrate-all-my-interactive-blocks-to-use-this-api" tabindex="-1"><a href="#does-this-mean-i-must-migrate-all-my-interactive-blocks-to-use-this-api">Does this mean I must migrate all my interactive blocks to use this API?</a></h2>
+<p>No. Blocks outside the Interactivity API can coexist with blocks using it. However, as explained above, keep in mind that there are some benefits for blocks that use the API:</p>
+<ul>
+<li><strong>Blocks can communicate with each other easily</strong>. With a standard, this communication is handled by default. When different blocks use different approaches to frontend interactivity, inter-block communication becomes more complex and gets almost impossible when separate developers create blocks.</li>
+<li><strong>Composability and compatibility</strong>: You can combine interactive blocks, nest them in structures with defined behaviors, and, thanks to following the same standard, they are fully cross-compatible. If each block were to use a different approach to interactivity, they would likely break.</li>
+<li><strong>Fewer KBs will be sent to the browser</strong>. If each plugin author uses a different JS framework, more code will be loaded in the frontend. If all the blocks use the same one, the code is reused.</li>
+<li>If all the blocks on a page use this standard, site-wide features like client-side navigation can be enabled.</li>
+</ul>
+<h2 class="is-toc-heading" id="what-are-the-performance-implications-of-using-this-api-is-it-worth-loading-the-interactivity-api-for-very-simple-use-cases" tabindex="-1"><a href="#what-are-the-performance-implications-of-using-this-api-is-it-worth-loading-the-interactivity-api-for-very-simple-use-cases">What are the performance implications of using this API? Is it worth loading the Interactivity API for very simple use cases?</a></h2>
+<p>The API has been designed with performance in mind, so it shouldn’t be a problem:</p>
+<ul>
+<li><strong>The runtime code needed for the directives is just ~10 KB</strong>, and it only needs to be loaded once for all the blocks.</li>
+<li><strong>All the script modules that belong to the Interactivity API (including the <code>view.js</code> files) will load without blocking the page rendering.</strong></li>
+<li>There are <a href="https://github.com/WordPress/gutenberg/discussions/52723">ongoing explorations</a> about the possibility of <strong>delaying the scripts loading once the block is in the viewport</strong>. This way, the initial load would be optimized without affecting the user experience.</li>
+</ul>
+<h2 class="is-toc-heading" id="does-it-work-with-the-core-translation-api" tabindex="-1"><a href="#does-it-work-with-the-core-translation-api">Does it work with the Core Translation API?</a></h2>
+<p>As the Interactivity API works perfectly with server-side rendering, you can use all the WordPress APIs including <a href="https://developer.notmatt.press/reference/functions/__/"><code>__()</code></a> and <a href="https://developer.notmatt.press/reference/functions/_e/"><code>_e()</code></a>. You can use it to translate the text in the HTML (as you normally would) and even use it inside the store when <a href="https://developer.notmatt.press/block-editor/reference-guides/interactivity-api/api-reference/#setting-the-store">using <code>wp_interactivity_state()</code> on the server side</a>. It might look something like this:</p>
+<pre><code class="language-php">// render.php
+wp_interactivity_state( 'favoriteMovies', array(
+      "1" =&gt; array(
+        "id" =&gt; "123-abc",
+        "movieName" =&gt; __("someMovieName", "textdomain")
+      ),
+) );
+</code></pre>
+<p>A translation API compatible with script modules (needed for the Interactivity API) is currently being worked on. Check <a href="https://core.trac.wordpress.org/ticket/60234">#60234</a> to follow the progress on this work.</p>
+<h2 class="is-toc-heading" id="im-concerned-about-xss-can-javascript-be-injected-into-directives" tabindex="-1"><a href="#im-concerned-about-xss-can-javascript-be-injected-into-directives">I’m concerned about XSS; can JavaScript be injected into directives?</a></h2>
+<p>No. The Interactivity API only allows for <a href="https://developer.notmatt.press/block-editor/reference-guides/interactivity-api/api-reference/#values-of-directives-are-references-to-store-properties">References</a> to be passed as values to the directives. This way, there is no need to eval() full JavaScript expressions, so it’s not possible to perform XSS attacks.</p>
+<h2 class="is-toc-heading" id="does-this-work-with-custom-security-policies" tabindex="-1"><a href="#does-this-work-with-custom-security-policies">Does this work with Custom Security Policies?</a></h2>
+<p>Yes. The Interactivity API does not use <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval"><code>eval()</code></a> or the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/Function"><code>Function()</code></a> constructor, so it doesn’t violate the <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy#unsafe_keyword_values"><code>unsafe-eval</code></a> content security policy. It is also designed to work with any <a href="https://developer.notmatt.press/apis/security/">custom content security policy</a>.</p>
+<h2 class="is-toc-heading" id="can-you-use-directives-to-make-ajax-rest-api-requests" tabindex="-1"><a href="#can-you-use-directives-to-make-ajax-rest-api-requests">Can you use directives to make AJAX/REST-API requests?</a></h2>
+<p>Sure. Actions and callbacks called by directives can do anything a JavaScript function can, including making API requests.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

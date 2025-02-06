@@ -1,0 +1,648 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span class="is-current-page">Coding Guidelines</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Coding Guidelines</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>This living document serves to prescribe coding guidelines specific to the Gutenberg project. Base coding guidelines follow the <a href="https://developer.notmatt.press/coding-standards/wordpress-coding-standards/">WordPress Coding Standards</a>. The following sections outline additional patterns and conventions used in the Gutenberg project.</p>
+<h2 class="is-toc-heading" id="css" tabindex="-1"><a href="#css">CSS</a></h2>
+<h3 class="is-toc-heading" id="naming" tabindex="-1"><a href="#naming">Naming</a></h3>
+<p>To avoid class name collisions, class names <strong>must</strong> adhere to the following guidelines, which are loosely inspired by the <a href="https://en.bem.info/methodology/">BEM (Block, Element, Modifier) methodology</a>.</p>
+<p>All class names assigned to an element must be prefixed with the name of the package, followed by a dash and the name of the directory in which the component resides. Any descendent of the component’s root element must append a dash-delimited descriptor, separated from the base by two consecutive underscores <code>__</code>.</p>
+<ul>
+<li>Root element: <code>package-directory</code></li>
+<li>Child elements: <code>package-directory__descriptor-foo-bar</code></li>
+</ul>
+<p>The root element is considered to be the highest ancestor element returned by the default export in the <code>index.js</code>. Notably, if your folder contains multiple files, each with their own default exported component, only the element rendered by that of <code>index.js</code> can be considered the root. All others should be treated as descendents.</p>
+<p><strong>Example:</strong></p>
+<p>Consider the following component located at <code>packages/components/src/notice/index.js</code>:</p>
+<pre><code class="language-jsx">export default function Notice( { children, onRemove } ) {
+    return (
+        &lt;div className="components-notice"&gt;
+            &lt;div className="components-notice__content"&gt;{ children }&lt;/div&gt;
+            &lt;Button
+                className="components-notice__dismiss"
+                icon={ check }
+                label={ __( 'Dismiss this notice' ) }
+                onClick={ onRemove }
+            /&gt;
+        &lt;/div&gt;
+    );
+}
+</code></pre>
+<p>Components may be assigned with class names that indicate states (for example, an “active” tab or an “opened” panel). These modifiers should be applied as a separate class name, prefixed as an adjective expression by <code>is-</code> (<code>is-active</code> or <code>is-opened</code>). In rare cases, you may encounter variations of the modifier prefix, usually to improve readability (<code>has-warning</code>). Because a modifier class name is not contextualized to a specific component, it should always be written in stylesheets as accompanying the component being modified (<code>.components-panel.is-opened</code>).</p>
+<p><strong>Example:</strong></p>
+<p>Consider again the Notices example. We may want to apply specific styling for dismissible notices. The <a href="https://www.npmjs.com/package/clsx"><code>clsx</code> package</a> can be a helpful utility for conditionally applying modifier class names.</p>
+<pre><code class="language-jsx">import clsx from 'clsx';
+
+export default function Notice( { children, onRemove, isDismissible } ) {
+    const classes = clsx( 'components-notice', {
+        'is-dismissible': isDismissible,
+    } );
+
+    return &lt;div className={ classes }&gt;{ /* ... */ }&lt;/div&gt;;
+}
+</code></pre>
+<p>A component’s class name should <strong>never</strong> be used outside its own folder (with rare exceptions such as <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/base-styles/_z-index.scss"><code>_z-index.scss</code></a>). If you need to inherit styles of another component in your own components, you should render an instance of that other component. At worst, you should duplicate the styles within your own component’s stylesheet. This is intended to improve maintainability by isolating shared components as a reusable interface, reducing the surface area of similar UI elements by adapting a limited set of common components to support a varied set of use-cases.</p>
+<h4>SCSS file naming conventions for blocks</h4>
+<p>The build process will split SCSS from within the blocks library directory into two separate CSS files when Webpack runs.</p>
+<p>Styles placed in a <code>style.scss</code> file will be built into <code>blocks/build/style.css</code>, to load on the front end theme as well as in the editor. If you need additional styles specific to the block’s display in the editor, add them to an <code>editor.scss</code>.</p>
+<p>Examples of styles that appear in both the theme and the editor include gallery columns and drop caps.</p>
+<h2 class="is-toc-heading" id="javascript" tabindex="-1"><a href="#javascript">JavaScript</a></h2>
+<p>JavaScript in Gutenberg uses modern language features of the <a href="https://www.ecma-international.org/ecma-262/">ECMAScript language specification</a> as well as the <a href="https://react.dev/learn/writing-markup-with-jsx">JSX language syntax extension</a>. These are enabled through a combination of preset configurations, notably <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default"><code>@wordpress/babel-preset-default</code></a> which is used as a preset in the project’s <a href="https://babeljs.io/">Babel</a> configuration.</p>
+<p>While the <a href="https://tc39.es/process-document/">staged process</a> for introducing a new JavaScript language feature offers an opportunity to use new features before they are considered complete, <strong>the Gutenberg project and the <code>@wordpress/babel-preset-default</code> configuration will only target support for proposals which have reached Stage 4 (“Finished”)</strong>.</p>
+<h3 class="is-toc-heading" id="imports" tabindex="-1"><a href="#imports">Imports</a></h3>
+<p>In the Gutenberg project, we use <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import">the ES2015 import syntax</a> to enable us to create modular code with clear separations between code of a specific feature, code shared across distinct WordPress features, and third-party dependencies.</p>
+<p>These separations are identified by multi-line comments at the top of a file which imports code from another file or source.</p>
+<h4>External dependencies</h4>
+<p>An external dependency is third-party code that is not maintained by WordPress contributors, but instead <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/#default-scripts-included-and-registered-by-wordpress">included in WordPress as a default script</a> or referenced from an outside package manager like <a href="https://www.npmjs.com/">npm</a>.</p>
+<p>Example:</p>
+<pre><code class="language-js">/**
+ * External dependencies
+ */
+import moment from 'moment';
+</code></pre>
+<h4>WordPress dependencies</h4>
+<p>To encourage reusability between features, our JavaScript is split into domain-specific modules which <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export"><code>export</code></a> one or more functions or objects. In the Gutenberg project, we’ve distinguished these modules under top-level directories. Each module serve an independent purpose, and often code is shared between them. For example, in order to localize its text, editor code will need to include functions from the <code>i18n</code> module.</p>
+<p>Example:</p>
+<pre><code class="language-js">/**
+ * WordPress dependencies
+ */
+import { __ } from '@wordpress/i18n';
+</code></pre>
+<h4>Internal dependencies</h4>
+<p>Within a specific feature, code is organized into separate files and folders. As is the case with external and WordPress dependencies, you can bring this code into scope by using the <code>import</code> keyword. The main distinction here is that when importing internal files, you should use relative paths specific to top-level directory you’re working in.</p>
+<p>Example:</p>
+<pre><code class="language-js">/**
+ * Internal dependencies
+ */
+import VisualEditor from '../visual-editor';
+</code></pre>
+<h3 class="is-toc-heading" id="legacy-experimental-apis-plugin-only-apis-and-private-apis" tabindex="-1"><a href="#legacy-experimental-apis-plugin-only-apis-and-private-apis">Legacy experimental APIs, plugin-only APIs, and private APIs</a></h3>
+<h4>Legacy experimental APIs</h4>
+<p>Historically, Gutenberg has used the <code>__experimental</code> and <code>__unstable</code> prefixes to indicate that a given API is not yet stable and may be subject to change. This is a legacy convention which should be avoided in favor of the plugin-only API pattern or a private API pattern described below.</p>
+<p>The problem with using the prefixes was that these APIs rarely got stabilized or removed. As of June 2022, WordPress Core contained 280 publicly exported experimental APIs merged from the Gutenberg plugin during the major WordPress releases. Many plugins and themes started relying on these experimental APIs for essential features that couldn’t be accessed in any other way.</p>
+<p>The legacy <code>__experimental</code> APIs can’t be removed on a whim anymore. They became a part of the WordPress public API and fall under the <a href="https://developer.notmatt.press/block-editor/contributors/code/backward-compatibility/">WordPress Backwards Compatibility policy</a>. Removing them involves a deprecation process. It may be relatively easy for some APIs, but it may require effort and span multiple WordPress releases for others.</p>
+<p>All in all, don’t use the <code>__experimental</code> prefix for new APIs. Use plugin-only APIs and private APIs instead.</p>
+<h4>Plugin-only APIs</h4>
+<p>Plugin-only APIs are temporary values exported from a module whose existence is either pending future revision or provides an immediate means to an end.</p>
+<p><em>To External Consumers:</em></p>
+<p><strong>There is no support commitment for plugin-only APIs.</strong> They can and will be removed or changed without advance warning, including as part of a minor or patch release. As an external consumer, you should avoid these APIs.</p>
+<p><em>To Project Contributors:</em></p>
+<p>An <strong>plugin-only API</strong> is one which is planned for eventual public availability, but is subject to further experimentation, testing, and discussion. It should be made stable or removed at the earliest opportunity.</p>
+<p>Plugin-only APIs are excluded from WordPress Core and only available in the Gutenberg Plugin:</p>
+<pre><code class="language-js">// Using globalThis.IS_GUTENBERG_PLUGIN allows Webpack to exclude this
+// export from WordPress core:
+if ( globalThis.IS_GUTENBERG_PLUGIN ) {
+    export { doSomethingExciting } from './api';
+}
+</code></pre>
+<p>The public interface of such APIs is not yet finalized. Aside from references within the code, they APIs should neither be documented nor mentioned in any CHANGELOG. They should effectively be considered to not exist from an external perspective. In most cases, they should only be exposed to satisfy requirements between packages maintained in this repository.</p>
+<p>While a plugin-only API may often stabilize into a publicly-available API, there is no guarantee that it will.</p>
+<h4>Private APIs</h4>
+<p>Each <code>@wordpress</code> package wanting to privately access or expose a private APIs can<br/>
+do so by opting-in to <code>@wordpress/private-apis</code>:</p>
+<pre><code class="language-js">// In packages/block-editor/private-apis.js:
+import { __dangerousOptInToUnstableAPIsOnlyForCoreModules } from '@wordpress/private-apis';
+export const { lock, unlock } =
+    __dangerousOptInToUnstableAPIsOnlyForCoreModules(
+        'I acknowledge private features are not for use in themes or plugins and doing so will break in the next version of WordPress.',
+        '@wordpress/block-editor' // Name of the package calling __dangerousOptInToUnstableAPIsOnlyForCoreModules,
+        // (not the name of the package whose APIs you want to access)
+    );
+</code></pre>
+<p>Each <code>@wordpress</code> package may only opt-in once. The process clearly communicates the extenders are not supposed<br/>
+to use it. This document will focus on the usage examples, but you can <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-private-apis/">find out more about the <code>@wordpress/private-apis</code> package in the its README.md</a>.</p>
+<p>Once the package opted-in, you can use the <code>lock()</code> and <code>unlock()</code> utilities:</p>
+<pre><code class="language-js">// Say this object is exported from a package:
+export const publicObject = {};
+
+// However, this string is internal and should not be publicly available:
+const privateString = 'private information';
+
+// Solution: lock the string "inside" of the object:
+lock( publicObject, privateString );
+
+// The string is not nested in the object and cannot be extracted from it:
+console.log( publicObject );
+// {}
+
+// The only way to access the string is by "unlocking" the object:
+console.log( unlock( publicObject ) );
+// "private information"
+
+// lock() accepts all data types, not just strings:
+export const anotherObject = {};
+lock( anotherObject, function privateFn() {} );
+console.log( unlock( anotherObject ) );
+// function privateFn() {}
+</code></pre>
+<p>Keep reading to learn how to use <code>lock()</code> and <code>unlock()</code> to avoid publicly exporting<br/>
+different kinds of <code>private</code> APIs.</p>
+<h5>Private selectors and actions</h5>
+<p>You can attach private selectors and actions to a public store:</p>
+<pre><code class="language-js">// In packages/package1/store.js:
+import { privateHasContentRoleAttribute } from './private-selectors';
+import { privateToggleFeature } from './private-actions';
+// The `lock` function is exported from the internal private-apis.js file where
+// the opt-in function was called.
+import { lock, unlock } from './lock-unlock';
+
+export const store = registerStore( /* ... */ );
+// Attach a private action to the exported store:
+unlock( store ).registerPrivateActions( {
+    privateToggleFeature,
+} );
+
+// Attach a private action to the exported store:
+unlock( store ).registerPrivateSelectors( {
+    privateHasContentRoleAttribute,
+} );
+</code></pre>
+<pre><code class="language-js">// In packages/package2/MyComponent.js:
+import { store } from '@wordpress/package1';
+import { useSelect } from '@wordpress/data';
+// The `unlock` function is exported from the internal private-apis.js file where
+// the opt-in function was called.
+import { unlock } from './lock-unlock';
+
+function MyComponent() {
+    const hasRole = useSelect(
+        ( select ) =&gt;
+            // Use the private selector:
+            unlock( select( store ) ).privateHasContentRoleAttribute()
+        // Note the unlock() is required. This line wouldn't work:
+        // select( store ).privateHasContentRoleAttribute()
+    );
+
+    // Use the private action:
+    unlock( useDispatch( store ) ).privateToggleFeature();
+
+    // ...
+}
+</code></pre>
+<h5>Private functions, classes, and variables</h5>
+<pre><code class="language-js">// In packages/package1/index.js:
+import { lock } from './lock-unlock';
+
+export const privateApis = {};
+/* Attach private data to the exported object */
+lock( privateApis, {
+    privateCallback: function () {},
+    privateReactComponent: function PrivateComponent() {
+        return &lt;div /&gt;;
+    },
+    privateClass: class PrivateClass {},
+    privateVariable: 5,
+} );
+</code></pre>
+<pre><code class="language-js">// In packages/package2/index.js:
+import { privateApis } from '@wordpress/package1';
+import { unlock } from './lock-unlock';
+
+const {
+    privateCallback,
+    privateReactComponent,
+    privateClass,
+    privateVariable,
+} = unlock( privateApis );
+</code></pre>
+<p>Remember to always register the private actions and selectors on the <strong>registered</strong> store.</p>
+<p>Sometimes that’s easy:</p>
+<pre><code class="language-js">export const store = createReduxStore( STORE_NAME, storeConfig() );
+// `register` uses the same `store` object created from `createReduxStore`.
+register( store );
+unlock( store ).registerPrivateActions( {
+    // ...
+} );
+</code></pre>
+<p>However some package might call both <code>createReduxStore</code> <strong>and</strong> <code>registerStore</code>. In this case, always choose the store that gets registered:</p>
+<pre><code class="language-js">export const store = createReduxStore( STORE_NAME, {
+    ...storeConfig,
+    persist: [ 'preferences' ],
+} );
+const registeredStore = registerStore( STORE_NAME, {
+    ...storeConfig,
+    persist: [ 'preferences' ],
+} );
+unlock( registeredStore ).registerPrivateActions( {
+    // ...
+} );
+</code></pre>
+<h4>Private function arguments</h4>
+<p>To add a private argument to a stable function you’ll need<br/>
+to prepare a stable and a private version of that function.<br/>
+Then, export the stable function and <code>lock()</code> the unstable function<br/>
+inside it:</p>
+<pre><code class="language-js">// In @wordpress/package1/index.js:
+import { lock } from './lock-unlock';
+
+// A private function contains all the logic
+function privateValidateBlocks( formula, privateIsStrict ) {
+    let isValid = false;
+    // ...complex logic we don't want to duplicate...
+    if ( privateIsStrict ) {
+        // ...
+    }
+    // ...complex logic we don't want to duplicate...
+
+    return isValid;
+}
+
+// The stable public function is a thin wrapper that calls the
+// private function with the private features disabled
+export function validateBlocks( blocks ) {
+    privateValidateBlocks( blocks, false );
+}
+
+export const privateApis = {};
+lock( privateApis, { privateValidateBlocks } );
+</code></pre>
+<pre><code class="language-js">// In @wordpress/package2/index.js:
+import { privateApis as package1PrivateApis } from '@wordpress/package1';
+import { unlock } from './lock-unlock';
+
+// The private function may be "unlocked" given the stable function:
+const { privateValidateBlocks } = unlock( package1PrivateApis );
+privateValidateBlocks( blocks, true );
+</code></pre>
+<h4>Private React component properties</h4>
+<p>To add an private argument to a stable component you’ll need<br/>
+to prepare a stable and an private version of that component.<br/>
+Then, export the stable function and <code>lock()</code> the unstable function<br/>
+inside it:</p>
+<pre><code class="language-js">// In @wordpress/package1/index.js:
+import { lock } from './lock-unlock';
+
+// The private component contains all the logic
+const PrivateMyButton = ( { title, privateShowIcon = true } ) =&gt; {
+    // ...complex logic we don't want to duplicate...
+
+    return (
+        &lt;button&gt;
+            { privateShowIcon &amp;&amp; &lt;Icon src={ someIcon } /&gt; } { title }
+        &lt;/button&gt;
+    );
+};
+
+// The stable public component is a thin wrapper that calls the
+// private component with the private features disabled
+export const MyButton = ( { title } ) =&gt; (
+    &lt;PrivateMyButton title={ title } privateShowIcon={ false } /&gt;
+);
+
+export const privateApis = {};
+lock( privateApis, { PrivateMyButton } );
+</code></pre>
+<pre><code class="language-js">// In @wordpress/package2/index.js:
+import { privateApis } from '@wordpress/package1';
+import { unlock } from './lock-unlock';
+
+// The private component may be "unlocked" given the stable component:
+const { PrivateMyButton } = unlock( privateApis );
+export function MyComponent() {
+    return &lt;PrivateMyButton data={ data } privateShowIcon={ true } /&gt;;
+}
+</code></pre>
+<h4>Private editor settings</h4>
+<p>WordPress extenders cannot update the private block settings on their own. The <code>updateSettings()</code> actions of the <code>@wordpress/block-editor</code> store will filter out all the settings that are <strong>not</strong> a part of the public API. The only way to actually store them is via the private action <code>__experimentalUpdateSettings()</code>.</p>
+<p>To privatize a block editor setting, add it to the <code>privateSettings</code> list in <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-block-editor/src/store/actions.js/">/packages/block-editor/src/store/actions.js</a>:</p>
+<pre><code class="language-js">const privateSettings = [
+    'inserterMediaCategories',
+    // List a block editor setting here to make it private
+];
+</code></pre>
+<h4>Private block.json and theme.json APIs</h4>
+<p>As of today, there is no way to restrict the <code>block.json</code> and <code>theme.json</code> APIs<br/>
+to the Gutenberg codebase. In the future, however, the new private APIs<br/>
+will only apply to the core WordPress blocks and plugins and themes will not be<br/>
+able to access them.</p>
+<h4>Inline small actions in thunks</h4>
+<p>Finally, instead of introducing a new action creator, consider using a <a href="https://developer.notmatt.press/block-editor/how-to-guides/thunks/">thunk</a>:</p>
+<pre><code class="language-js">export function toggleFeature( scope, featureName ) {
+    return function ( { dispatch } ) {
+        dispatch( { type: '__private_BEFORE_TOGGLE' } );
+        // ...
+    };
+}
+</code></pre>
+<h3 class="is-toc-heading" id="exposing-private-apis-publicly" tabindex="-1"><a href="#exposing-private-apis-publicly">Exposing private APIs publicly</a></h3>
+<p>Some private APIs could benefit from community feedback and it makes sense to expose them to WordPress extenders. At the same time, it doesn’t make sense to turn them into a public API in WordPress core. What should you do?</p>
+<p>You can re-export that private API as a plugin-only API to expose it publicly only in the Gutenberg plugin:</p>
+<pre><code class="language-js">// This function can't be used by extenders in any context:
+function privateEverywhere() {}
+
+// This function can be used by extenders with the Gutenberg plugin but not in vanilla WordPress Core:
+function privateInCorePublicInPlugin() {}
+
+// Gutenberg treats both functions as private APIs internally:
+const privateApis = {};
+lock( privateApis, { privateEverywhere, privateInCorePublicInPlugin } );
+
+// The privateInCorePublicInPlugin function is explicitly exported,
+// but this export will not be merged into WordPress core thanks to
+// the globalThis.IS_GUTENBERG_PLUGIN check.
+if ( globalThis.IS_GUTENBERG_PLUGIN ) {
+    export const privateInCorePublicInPlugin =
+        unlock( privateApis ).privateInCorePublicInPlugin;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="objects" tabindex="-1"><a href="#objects">Objects</a></h3>
+<p>When possible, use <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer#New_notations_in_ECMAScript_2015">shorthand notation</a> when defining object property values:</p>
+<p><!-- prettier-ignore --></p>
+<pre><code class="language-js">const a = 10;
+
+// Bad:
+const object = {
+    a: a,
+    performAction: function () {
+        // ...
+    },
+};
+
+// Good:
+const object = {
+    a,
+    performAction() {
+        // ...
+    },
+};
+</code></pre>
+<h3 class="is-toc-heading" id="strings" tabindex="-1"><a href="#strings">Strings</a></h3>
+<p>String literals should be declared with single-quotes <em>unless</em> the string itself contains a single-quote that would need to be escaped–in that case: use a double-quote. If the string contains a single-quote <em>and</em> a double-quote, you can use ES6 template strings to avoid escaping the quotes.</p>
+<p><strong>Note:</strong> The single-quote character (<code>'</code>) should never be used in place of an apostrophe (<code>’</code>) for words like <code>it’s</code> or <code>haven’t</code> in user-facing strings. For test code it’s still encouraged to use a real apostrophe.</p>
+<p>In general, avoid backslash-escaping quotes:</p>
+<p><!-- prettier-ignore --></p>
+<pre><code class="language-js">// Bad:
+const name = "Matt";
+// Good:
+const name = 'Matt';
+
+// Bad:
+const pet = "Matt's dog";
+// Also bad (not using an apostrophe):
+const pet = "Matt's dog";
+// Good:
+const pet = 'Matt’s dog';
+// Also good:
+const oddString = "She said 'This is odd.'";
+</code></pre>
+<p>You should use ES6 Template Strings over string concatenation whenever possible:</p>
+<p><!-- prettier-ignore --></p>
+<pre><code class="language-js">const name = 'Stacey';
+
+// Bad:
+alert( 'My name is ' + name + '.' );
+// Good:
+alert( `My name is ${ name }.` );
+</code></pre>
+<h3 class="is-toc-heading" id="optional-chaining" tabindex="-1"><a href="#optional-chaining">Optional chaining</a></h3>
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining">Optional chaining</a> is a new language feature introduced in version 2020 of the ECMAScript specification. While the feature can be very convenient for property access on objects which are potentially null-ish (<code>null</code> or <code>undefined</code>), there are a number of common pitfalls to be aware of when using optional chaining. These may be issues that linting and/or type-checking can help protect against at some point in the future. In the meantime, you will want to be cautious of the following items:</p>
+<ul>
+<li>When negating (<code>!</code>) the result of a value which is evaluated with optional chaining, you should be observant that in the case that optional chaining reaches a point where it cannot proceed, it will produce a <a href="https://developer.mozilla.org/en-US/docs/Glossary/Falsy">falsy value</a> that will be transformed to <code>true</code> when negated. In many cases, this is not an expected result.
+<ul>
+<li>Example: <code>const hasFocus = ! nodeRef.current?.contains( document.activeElement );</code> will yield <code>true</code> if <code>nodeRef.current</code> is not assigned.</li>
+<li>See related issue: <a href="https://github.com/WordPress/gutenberg/issues/21984">#21984</a></li>
+<li>See similar ESLint rule: <a href="https://eslint.org/docs/rules/no-unsafe-negation"><code>no-unsafe-negation</code></a></li>
+</ul>
+</li>
+<li>When assigning a boolean value, observe that optional chaining may produce values which are <a href="https://developer.mozilla.org/en-US/docs/Glossary/Falsy">falsy</a> (<code>undefined</code>, <code>null</code>), but not strictly <code>false</code>. This can become an issue when the value is passed around in a way where it is expected to be a boolean (<code>true</code> or <code>false</code>). While it’s a common occurrence for booleans—since booleans are often used in ways where the logic considers truthiness and falsyness broadly—these issues can also occur for other optional chaining when eagerly assuming a type resulting from the end of the property access chain. <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/README.md#typescript">Type-checking</a> may help in preventing these sorts of errors.
+<ul>
+<li>Example: <code>document.body.classList.toggle( 'has-focus', nodeRef.current?.contains( document.activeElement ) );</code> may wrongly <em>add</em> the class, since <a href="https://developer.mozilla.org/en-US/docs/Web/API/DOMTokenList/toggle">the second argument is optional</a>. If <code>undefined</code> is passed, it would not unset the class as it would when <code>false</code> is passed.</li>
+<li>Example: <code>&lt;input value={ state.selected?.value.trim() } /&gt;</code> may inadvertently cause warnings in React by toggling between <a href="https://reactjs.org/docs/uncontrolled-components.html">controlled and uncontrolled inputs</a>. This is an easy trap to fall into when eagerly assuming that a result of <code>trim()</code> will always return a string value, overlooking the fact the optional chaining may have caused evaluation to abort earlier with a value of <code>undefined</code>.</li>
+</ul>
+</li>
+</ul>
+<h3 class="is-toc-heading" id="react-components" tabindex="-1"><a href="#react-components">React components</a></h3>
+<p>It is preferred to implement all components as <a href="https://react.dev/learn/your-first-component">function components</a>, using <a href="https://react.dev/reference/react/hooks">hooks</a> to manage component state and lifecycle. With the exception of <a href="https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary">error boundaries</a>, you should never encounter a situation where you must use a class component. Note that the <a href="https://make.wordpress.org/core/handbook/contribute/code-refactoring/">WordPress guidance on Code Refactoring</a> applies here: There needn’t be a concentrated effort to update class components in bulk. Instead, consider it as a good refactoring opportunity in combination with some other change.</p>
+<h2 class="is-toc-heading" id="javascript-documentation-using-jsdoc" tabindex="-1"><a href="#javascript-documentation-using-jsdoc">JavaScript documentation using JSDoc</a></h2>
+<p>Gutenberg follows the <a href="https://make.wordpress.org/core/handbook/best-practices/inline-documentation-standards/javascript/">WordPress JavaScript Documentation Standards</a>, with additional guidelines relevant for its distinct use of <a href="https://developer.notmatt.press/block-editor/contributors/code/coding-guidelines/#imports">import semantics</a> in organizing files, the <a href="https://developer.notmatt.press/block-editor/contributors/code/testing-overview/#javascript-testing">use of TypeScript tooling</a> for types validation, and automated documentation generation using <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/docgen"><code>@wordpress/docgen</code></a>.</p>
+<p>For additional guidance, consult the following resources:</p>
+<ul>
+<li><a href="https://jsdoc.app/index.html">JSDoc Official Documentation</a></li>
+<li><a href="https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html">TypeScript Supported JSDoc</a></li>
+</ul>
+<h3 class="is-toc-heading" id="custom-types" tabindex="-1"><a href="#custom-types">Custom types</a></h3>
+<p>Define custom types using the <a href="https://jsdoc.app/tags-typedef.html">JSDoc <code>@typedef</code> tag</a>.</p>
+<p>A custom type should include a description, and should always include its base type.</p>
+<p>Custom types should be named as succinctly as possible, while still retaining clarity of meaning and avoiding conflict with other global or scoped types. A <code>WP</code> prefix should be applied to all custom types. Avoid superfluous or redundant prefixes and suffixes (for example, a <code>Type</code> suffix, or <code>Custom</code> prefix). Custom types are not global by default, so a custom type does not need to be excessively specific to a particular package. However, they should be named with enough specificity to avoid ambiguity or name collisions when brought into the same scope as another type.</p>
+<pre><code class="language-js">/**
+ * A block selection object.
+ *
+ * @typedef WPBlockSelection
+ *
+ * @property {string} clientId     A block client ID.
+ * @property {string} attributeKey A block attribute key.
+ * @property {number} offset       An attribute value offset, based on the rich
+ *                                 text value.
+ */
+</code></pre>
+<p>Note that there is no <code>{Object}</code> between <code>@typedef</code> and the type name. As <code>@property</code>s below tells us that it is a type for objects, it is recommend to not use <code>{Object}</code> when you want to define types for your objects.</p>
+<p>Custom types can also be used to describe a set of predefined options. While the <a href="https://jsdoc.app/tags-type.html">type union</a> can be used with literal values as an inline type, it can be difficult to align tags while still respecting a maximum line length of 80 characters. Using a custom type to define a union type can afford the opportunity to describe the purpose of these options, and helps to avoid these line length issues.</p>
+<pre><code class="language-js">/**
+ * Named breakpoint sizes.
+ *
+ * @typedef {'huge'|'wide'|'large'|'medium'|'small'|'mobile'} WPBreakpoint
+ */
+</code></pre>
+<p>Note the use of quotes when defining a set of string literals. As in the <a href="https://make.wordpress.org/core/handbook/best-practices/coding-standards/javascript/">JavaScript Coding Standards</a>, single quotes should be used when assigning a string literal either as the type or as a <a href="#nullable-undefined-and-void-types">default function parameter</a>, or when <a href="#importing-and-exporting-types">specifying the path</a> of an imported type.</p>
+<h3 class="is-toc-heading" id="importing-and-exporting-types" tabindex="-1"><a href="#importing-and-exporting-types">Importing and exporting types</a></h3>
+<p>Use the <a href="https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html#import-types">TypeScript <code>import</code> function</a> to import type declarations from other files or third-party dependencies.</p>
+<p>Since an imported type declaration can occupy an excess of the available line length and become verbose when referenced multiple times, you are encouraged to create an alias of the external type using a <code>@typedef</code> declaration at the top of the file, immediately following <a href="https://developer.notmatt.press/block-editor/contributors/code/coding-guidelines/#imports">the <code>import</code> groupings</a>.</p>
+<pre><code class="language-js">/** @typedef {import('@wordpress/data').WPDataRegistry} WPDataRegistry */
+</code></pre>
+<p>Note that all custom types defined in another file can be imported.</p>
+<p>When considering which types should be made available from a WordPress package, the <code>@typedef</code> statements in the package’s entry point script should be treated as effectively the same as its public API. It is important to be aware of this, both to avoid unintentionally exposing internal types on the public interface, and as a way to expose the public types of a project.</p>
+<pre><code class="language-js">// packages/data/src/index.js
+
+/** @typedef {import('./registry').WPDataRegistry} WPDataRegistry */
+</code></pre>
+<p>In this snippet, the <code>@typedef</code> will support the usage of the previous example’s <code>import('@wordpress/data')</code>.</p>
+<h4>External dependencies</h4>
+<p>Many third-party dependencies will distribute their own TypeScript typings. For these, the <code>import</code> semantics should “just work”.</p>
+<p>&lt;img src="https://user-images.githubusercontent.com/1779930/70167742-62198800-1695-11ea-9c21-82a91d4a60e2.png" alt="Working Example: <code>import</code> type” /&gt;</p>
+<p>If you use a <a href="https://github.com/Microsoft/TypeScript/wiki/TypeScript-Editor-Support">TypeScript integration</a> for your editor, you can typically see that this works if the type resolves to anything other than the fallback <code>any</code> type.</p>
+<p>For packages which do not distribute their own TypeScript types, you are welcomed to install and use the <a href="https://definitelytyped.org/">DefinitelyTyped</a> community-maintained types definitions, if one exists.</p>
+<h3 class="is-toc-heading" id="generic-types" tabindex="-1"><a href="#generic-types">Generic types</a></h3>
+<p>When documenting a generic type such as <code>Object</code>, <code>Function</code>, <code>Promise</code>, etc., always include details about the expected record types.</p>
+<pre><code class="language-js">// Bad:
+
+/** @type {Object} */
+/** @type {Function} */
+/** @type {Promise} */
+
+// Good:
+
+/** @type {Record&lt;string,number&gt;} */ /* or */ /** @type  */
+/** @type {(key:string)=&gt;boolean} */
+/** @type {Promise&lt;string&gt;} */
+</code></pre>
+<p>When an object is used as a dictionary, you can define its type in 2 ways: indexable interface (<code>{[setting:string]:any}</code>) or <code>Record</code>. When the name of the key for an object provides hints for developers what to do like <code>setting</code>, use indexable interface. If not, use <code>Record</code>.</p>
+<p>The function expression here uses TypeScript’s syntax for function types, which can be useful in providing more detailed information about the names and types of the expected parameters. For more information, consult the <a href="https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html#type">TypeScript <code>@type</code> tag function recommendations</a>.</p>
+<p>In more advanced cases, you may define your own custom types as a generic type using the <a href="https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html#template">TypeScript <code>@template</code> tag</a>.</p>
+<p>Similar to the “Custom Types” advice concerning type unions and with literal values, you can consider to create a custom type <code>@typedef</code> to better describe expected key values for object records, or to extract a complex function signature.</p>
+<pre><code class="language-js">/**
+ * An apiFetch middleware handler. Passed the fetch options, the middleware is
+ * expected to call the `next` middleware once it has completed its handling.
+ *
+ * @typedef {(options:WPAPIFetchOptions,next:WPAPIFetchMiddleware)=&gt;void} WPAPIFetchMiddleware
+ */
+</code></pre>
+<pre><code class="language-js">/**
+ * Named breakpoint sizes.
+ *
+ * @typedef {"huge"|"wide"|"large"|"medium"|"small"|"mobile"} WPBreakpoint
+ */
+
+/**
+ * Hash of breakpoint names with pixel width at which it becomes effective.
+ *
+ * @type {Record&lt;WPBreakpoint,number&gt;}
+ */
+const BREAKPOINTS = { huge: 1440 /* , ... */ };
+</code></pre>
+<h3 class="is-toc-heading" id="nullable-undefined-and-void-types" tabindex="-1"><a href="#nullable-undefined-and-void-types">Nullable, undefined, and void types</a></h3>
+<p>You can express a nullable type using a leading <code>?</code>. Use the nullable form of a type only if you’re describing either the type or an explicit <code>null</code> value. Do not use the nullable form as an indicator of an optional parameter.</p>
+<pre><code class="language-js">/**
+ * Returns a configuration value for a given key, if exists. Returns null if
+ * there is no configured value.
+ *
+ * @param {string} key Configuration key to retrieve.
+ *
+ * @return {?*} Configuration value, if exists.
+ */
+function getConfigurationValue( key ) {
+    return config.hasOwnProperty( key ) ? config[ key ] : null;
+}
+</code></pre>
+<p>Similarly, use the <code>undefined</code> type only if you’re expecting an explicit value of <code>undefined</code>.</p>
+<pre><code class="language-js">/**
+ * Returns true if the next HTML token closes the current token.
+ *
+ * @param {WPHTMLToken}           currentToken Current token to compare with.
+ * @param {WPHTMLToken|undefined} nextToken    Next token to compare against.
+ *
+ * @return {boolean} True if `nextToken` closes `currentToken`, false otherwise.
+ */
+</code></pre>
+<p>If a parameter is optional, use the <a href="https://jsdoc.app/tags-param.html#optional-parameters-and-default-values">square-bracket notation</a>. If an optional parameter has a default value which can be expressed as a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Default_parameters">default parameter</a> in the function expression, it is not necessary to include the value in JSDoc. If the function parameter has an effective default value which requires complex logic and cannot be expressed using the default parameters syntax, you can choose to include the default value in the JSDoc.</p>
+<pre><code class="language-js">/**
+ * Renders a toolbar.
+ *
+ * @param {Object} props             Component props.
+ * @param {string} [props.className] Class to set on the container `&lt;div /&gt;`.
+ */
+</code></pre>
+<p>When a function does not include a <code>return</code> statement, it is said to have a <code>void</code> return value. It is not necessary to include a <code>@return</code> tag if the return type is <code>void</code>.</p>
+<p>If a function has multiple code paths where some (but not all) conditions result in a <code>return</code> statement, you can document this as a union type including the <code>void</code> type.</p>
+<pre><code class="language-js">/**
+ * Returns a configuration value for a given key, if exists.
+ *
+ * @param {string} key Configuration key to retrieve.
+ *
+ * @return {*|void} Configuration value, if exists.
+ */
+function getConfigurationValue( key ) {
+    if ( config.hasOwnProperty( key ) ) {
+        return config[ key ];
+    }
+}
+</code></pre>
+<p>When documenting a <a href="#generic-types">function type</a>, you must always include the <code>void</code> return value type, as otherwise the function is inferred to return a mixed (“any”) value, not a void result.</p>
+<pre><code class="language-js">/**
+ * An apiFetch middleware handler. Passed the fetch options, the middleware is
+ * expected to call the `next` middleware once it has completed its handling.
+ *
+ * @typedef {(options:WPAPIFetchOptions,next:WPAPIFetchMiddleware)=&gt;void} WPAPIFetchMiddleware
+ */
+</code></pre>
+<h3 class="is-toc-heading" id="documenting-examples" tabindex="-1"><a href="#documenting-examples">Documenting examples</a></h3>
+<p>Because the documentation generated using the <code>@wordpress/docgen</code> tool will include <code>@example</code> tags if they are defined, it is considered a best practice to include usage examples for functions and components. This is especially important for documented members of a package’s public API.</p>
+<p>When documenting an example, use the markdown <code>\`\`\`</code> code block to demarcate the beginning and end of the code sample. An example can span multiple lines.</p>
+<pre><code class="language-js">/**
+ * Given the name of a registered store, returns an object of the store's
+ * selectors. The selector functions are been pre-bound to pass the current
+ * state automatically. As a consumer, you need only pass arguments of the
+ * selector, if applicable.
+ *
+ * @param {string} name Store name.
+ *
+ * @example
+ * ```js
+ * select( 'my-shop' ).getPrice( 'hammer' );
+ * ```
+ *
+ * @return {Record&lt;string,WPDataSelector&gt;} Object containing the store's
+ *                                         selectors.
+ */
+</code></pre>
+<h3 class="is-toc-heading" id="documenting-react-components" tabindex="-1"><a href="#documenting-react-components">Documenting React components</a></h3>
+<p>When possible, all components should be implemented as <a href="https://react.dev/learn/your-first-component">function components</a>, using <a href="https://react.dev/reference/react/hooks">hooks</a> for managing component lifecycle and state.</p>
+<p>Documenting a function component should be treated the same as any other function. The primary caveat in documenting a component is being aware that the function typically accepts only a single argument (the “props”), which may include many property members. Use the <a href="https://jsdoc.app/tags-param.html#parameters-with-properties">dot syntax for parameter properties</a> to document individual prop types.</p>
+<pre><code class="language-js">/**
+ * Renders the block's configured title as a string, or empty if the title
+ * cannot be determined.
+ *
+ * @example
+ *
+ * ```jsx
+ * &lt;BlockTitle clientId="afd1cb17-2c08-4e7a-91be-007ba7ddc3a1" /&gt;
+ * ```
+ *
+ * @param {Object} props
+ * @param {string} props.clientId Client ID of block.
+ *
+ * @return {?string} Block title.
+ */
+</code></pre>
+<p>For class components, there is no recommendation for documenting the props of the component. Gutenberg does not use or endorse the <a href="https://react.dev/reference/react/Component#static-proptypes"><code>propTypes</code> static class member</a>.</p>
+<h2 class="is-toc-heading" id="php" tabindex="-1"><a href="#php">PHP</a></h2>
+<p>We use<br/>
+<a href="https://github.com/squizlabs/PHP_CodeSniffer"><code>phpcs</code> (PHP_CodeSniffer)</a> with the <a href="https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards">WordPress Coding Standards ruleset</a> to run a lot of automated checks against all PHP code in this project. This ensures that we are consistent with WordPress PHP coding standards.</p>
+<p>The easiest way to use PHPCS is <a href="https://developer.notmatt.press/block-editor/contributors/code/getting-started-with-code-contribution/#local-environment">local environment</a>. Once that’s installed, you can check your PHP by running <code>npm run lint:php</code>.</p>
+<p>If you prefer to install PHPCS locally, you should use <code>composer</code>. <a href="https://getcomposer.org/download/">Install <code>composer</code></a> on your computer, then run <code>composer install</code>. This will install <code>phpcs</code> and <code>WordPress-Coding-Standards</code> which you can then run via <code>composer lint</code>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

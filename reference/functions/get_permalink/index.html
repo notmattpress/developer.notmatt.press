@@ -1,0 +1,556 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_permalink()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_permalink()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_permalink( <span class="arg-type">int|WP_Post</span> <span class="arg-name">$post</span>,  <span class="arg-type">bool</span> <span class="arg-name">$leavename</span> = <span class="arg-default">false</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the full permalink for the current post or post ID.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID or post object. Default is the global <code>$post</code>.</span></div></dd><dt><code>$leavename</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to keep post name or page name. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> The permalink URL. False if the post does not exist.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>In a Plugin or Theme, it can be used as early as the <code><a href="https://developer.notmatt.press/reference/hooks/setup_theme/">setup_theme</a></code> Action. Any earlier usage, including <code><a href="https://developer.notmatt.press/reference/hooks/plugins_loaded/">plugins_loaded</a></code>, generates a Fatal Error.</p>
+<p>Note that when used outside The Loop on a posts page (index, archive, etc.) without the ID parameter, it will return the URL of the last post in The Loop, <i>not</i> the permalink for the current page.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="170"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_permalink( $post = 0, $leavename = false ) {
+	$rewritecode = array(
+		'%year%',
+		'%monthnum%',
+		'%day%',
+		'%hour%',
+		'%minute%',
+		'%second%',
+		$leavename ? '' : '%postname%',
+		'%post_id%',
+		'%category%',
+		'%author%',
+		$leavename ? '' : '%pagename%',
+	);
+
+	if ( is_object( $post ) &amp;&amp; isset( $post-&gt;filter ) &amp;&amp; 'sample' === $post-&gt;filter ) {
+		$sample = true;
+	} else {
+		$post   = get_post( $post );
+		$sample = false;
+	}
+
+	if ( empty( $post-&gt;ID ) ) {
+		return false;
+	}
+
+	if ( 'page' === $post-&gt;post_type ) {
+		return get_page_link( $post, $leavename, $sample );
+	} elseif ( 'attachment' === $post-&gt;post_type ) {
+		return get_attachment_link( $post, $leavename );
+	} elseif ( in_array( $post-&gt;post_type, get_post_types( array( '_builtin' =&gt; false ) ), true ) ) {
+		return get_post_permalink( $post, $leavename, $sample );
+	}
+
+	$permalink = get_option( 'permalink_structure' );
+
+	/**
+	 * Filters the permalink structure for a post before token replacement occurs.
+	 *
+	 * Only applies to posts with post_type of 'post'.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string  $permalink The site's permalink structure.
+	 * @param WP_Post $post      The post in question.
+	 * @param bool    $leavename Whether to keep the post name.
+	 */
+	$permalink = apply_filters( 'pre_post_link', $permalink, $post, $leavename );
+
+	if (
+		$permalink &amp;&amp;
+		! wp_force_plain_post_permalink( $post )
+	) {
+
+		$category = '';
+		if ( str_contains( $permalink, '%category%' ) ) {
+			$cats = get_the_category( $post-&gt;ID );
+			if ( $cats ) {
+				$cats = wp_list_sort(
+					$cats,
+					array(
+						'term_id' =&gt; 'ASC',
+					)
+				);
+
+				/**
+				 * Filters the category that gets used in the %category% permalink token.
+				 *
+				 * @since 3.5.0
+				 *
+				 * @param WP_Term  $cat  The category to use in the permalink.
+				 * @param array    $cats Array of all categories (WP_Term objects) associated with the post.
+				 * @param WP_Post  $post The post in question.
+				 */
+				$category_object = apply_filters( 'post_link_category', $cats[0], $cats, $post );
+
+				$category_object = get_term( $category_object, 'category' );
+				$category        = $category_object-&gt;slug;
+				if ( $category_object-&gt;parent ) {
+					$category = get_category_parents( $category_object-&gt;parent, false, '/', true ) . $category;
+				}
+			}
+			/*
+			 * Show default category in permalinks,
+			 * without having to assign it explicitly.
+			 */
+			if ( empty( $category ) ) {
+				$default_category = get_term( get_option( 'default_category' ), 'category' );
+				if ( $default_category &amp;&amp; ! is_wp_error( $default_category ) ) {
+					$category = $default_category-&gt;slug;
+				}
+			}
+		}
+
+		$author = '';
+		if ( str_contains( $permalink, '%author%' ) ) {
+			$authordata = get_userdata( $post-&gt;post_author );
+			$author     = $authordata-&gt;user_nicename;
+		}
+
+		/*
+		 * This is not an API call because the permalink is based on the stored post_date value,
+		 * which should be parsed as local time regardless of the default PHP timezone.
+		 */
+		$date = explode( ' ', str_replace( array( '-', ':' ), ' ', $post-&gt;post_date ) );
+
+		$rewritereplace = array(
+			$date[0],
+			$date[1],
+			$date[2],
+			$date[3],
+			$date[4],
+			$date[5],
+			$post-&gt;post_name,
+			$post-&gt;ID,
+			$category,
+			$author,
+			$post-&gt;post_name,
+		);
+
+		$permalink = home_url( str_replace( $rewritecode, $rewritereplace, $permalink ) );
+		$permalink = user_trailingslashit( $permalink, 'single' );
+
+	} else { // If they're not using the fancy permalink option.
+		$permalink = home_url( '?p=' . $post-&gt;ID );
+	}
+
+	/**
+	 * Filters the permalink for a post.
+	 *
+	 * Only applies to posts with post_type of 'post'.
+	 *
+	 * @since 1.5.0
+	 *
+	 * @param string  $permalink The post's permalink.
+	 * @param WP_Post $post      The post in question.
+	 * @param bool    $leavename Whether to keep the post name.
+	 */
+	return apply_filters( 'post_link', $permalink, $post, $leavename );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/link-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/link-template.php#L170">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/link-template.php#L170-L309">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/post_link/"><span class="hook-func">apply_filters</span>( ‘post_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$permalink</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$leavename</span></nobr> )</a></dt><dd><p>Filters the permalink for a post.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/post_link_category/"><span class="hook-func">apply_filters</span>( ‘post_link_category’,  <nobr><span class="arg-type">WP_Term</span> <span class="arg-name">$cat</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$cats</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the category that gets used in the %category% permalink token.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_post_link/"><span class="hook-func">apply_filters</span>( ‘pre_post_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$permalink</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$leavename</span></nobr> )</a></dt><dd><p>Filters the permalink structure for a post before token replacement occurs.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_force_plain_post_permalink/">wp_force_plain_post_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Determine whether post should always use a plain permalink structure.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_list_sort/">wp_list_sort()</a><code>wp-includes/functions.php</code></td><td><p>Sorts an array of objects or arrays based on one or more orderby arguments.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_the_category/">get_the_category()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves post categories.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_category_parents/">get_category_parents()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves category parents with separator.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_page_link/">get_page_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for the current page or page ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_attachment_link/">get_attachment_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_permalink/">get_post_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for a post of a custom post type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/user_trailingslashit/">user_trailingslashit()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves a trailing-slashed string if the site is set for adding trailing slashes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_userdata/">get_userdata()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves user info by user ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_term/">get_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Gets all term data from database by term ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_types/">get_post_types()</a><code>wp-includes/post.php</code></td><td><p>Gets a list of all registered post type objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 11 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_sitemaps_posts/get_url_list/">WP_Sitemaps_Posts::get_url_list()</a><code>wp-includes/sitemaps/providers/class-wp-sitemaps-posts.php</code></td><td><p>Gets a URL list for a post type sitemap.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_post_search_handler/prepare_item/">WP_REST_Post_Search_Handler::prepare_item()</a><code>wp-includes/rest-api/search/class-wp-rest-post-search-handler.php</code></td><td><p>Prepares the search result for a given post ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_privacy_policy_url/">get_privacy_policy_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the privacy policy page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_posts_controller/prepare_item_for_response/">WP_REST_Posts_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php</code></td><td><p>Prepares a single post output for response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_posts_controller/get_item/">WP_REST_Posts_Controller::get_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php</code></td><td><p>Retrieves a single post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/ajax_insert_auto_draft_post/">WP_Customize_Nav_Menus::ajax_insert_auto_draft_post()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Ajax handler for adding a new auto-draft post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_canonical_url/">wp_get_canonical_url()</a><code>wp-includes/link-template.php</code></td><td><p>Returns the canonical URL for a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_embed_excerpt_more/">wp_embed_excerpt_more()</a><code>wp-includes/embed.php</code></td><td><p>Filters the string in the ‘more’ link displayed after a trimmed excerpt.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_oembed_add_discovery_links/">wp_oembed_add_discovery_links()</a><code>wp-includes/embed.php</code></td><td><p>Adds oEmbed discovery links in the head element of the website.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_embed_url/">get_post_embed_url()</a><code>wp-includes/embed.php</code></td><td><p>Retrieves the URL to embed a specific post in an iframe.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_embed_html/">get_post_embed_html()</a><code>wp-includes/embed.php</code></td><td><p>Retrieves the embed code for a specific post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_preview_post_link/">get_preview_post_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL used for the post preview.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menu_item_setting/value_as_wp_post_nav_menu_item/">WP_Customize_Nav_Menu_Item_Setting::value_as_wp_post_nav_menu_item()</a><code>wp-includes/customize/class-wp-customize-nav-menu-item-setting.php</code></td><td><p>Get the value emulated into a <a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a> and set up as a nav_menu_item.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/search_available_items_query/">WP_Customize_Nav_Menus::search_available_items_query()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Performs post queries for available-item searching.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/load_available_items_query/">WP_Customize_Nav_Menus::load_available_items_query()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Performs the post_type and taxonomy queries for loading available menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_posts_list_table/handle_row_actions/">WP_Posts_List_Table::handle_row_actions()</a><code>wp-admin/includes/class-wp-posts-list-table.php</code></td><td><p>Generates and displays row action links.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_install_maybe_enable_pretty_permalinks/">wp_install_maybe_enable_pretty_permalinks()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Maybe enable pretty permalinks on installation.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_recent_posts/">wp_dashboard_recent_posts()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Generates Publishing Soon and Recently Published sections.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_media_item/">get_media_item()</a><code>wp-admin/includes/media.php</code></td><td><p>Retrieves HTML form for modifying the image attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_sample_permalink_html/">get_sample_permalink_html()</a><code>wp-admin/includes/post.php</code></td><td><p>Returns the HTML of the sample permalink slug editor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_sample_permalink/">get_sample_permalink()</a><code>wp-admin/includes/post.php</code></td><td><p>Returns a sample permalink based on the post name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_media_list_table/_get_row_actions/">WP_Media_List_Table::_get_row_actions()</a><code>wp-admin/includes/class-wp-media-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_comments_list_table/column_response/">WP_Comments_List_Table::column_response()</a><code>wp-admin/includes/class-wp-comments-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_list_categories/">wp_list_categories()</a><code>wp-includes/category-template.php</code></td><td><p>Displays or retrieves the HTML list of categories.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_notify_postauthor/">wp_notify_postauthor()</a><code>wp-includes/pluggable.php</code></td><td><p>Notifies an author (and/or others) of a comment/trackback/pingback on a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_notify_moderator/">wp_notify_moderator()</a><code>wp-includes/pluggable.php</code></td><td><p>Notifies the moderator of the site about a new comment that is awaiting approval.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_archives/">wp_get_archives()</a><code>wp-includes/general-template.php</code></td><td><p>Displays archive links based on type and format.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_boundary_post_rel_link/">get_boundary_post_rel_link()</a><code>wp-includes/deprecated.php</code></td><td><p>Get boundary post relational link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_parent_post_rel_link/">get_parent_post_rel_link()</a><code>wp-includes/deprecated.php</code></td><td><p>Get parent post relational link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/previous_post/">previous_post()</a><code>wp-includes/deprecated.php</code></td><td><p>Prints a link to the previous post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/next_post/">next_post()</a><code>wp-includes/deprecated.php</code></td><td><p>Prints link to the next post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_old_slug_redirect/">wp_old_slug_redirect()</a><code>wp-includes/query.php</code></td><td><p>Redirect old slugs to the correct permalink.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comments_pagenum_link/">get_comments_pagenum_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the comments page number link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/paginate_comments_links/">paginate_comments_links()</a><code>wp-includes/link-template.php</code></td><td><p>Displays or retrieves pagination links for the comments on the current post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_adjacent_post_link/">get_adjacent_post_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the adjacent post link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_adjacent_post_rel_link/">get_adjacent_post_rel_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the adjacent post relational link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_archive_link/">get_post_type_archive_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for a post type archive.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_comments_feed_link/">get_post_comments_feed_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for the post comments feed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_permalink/">post_permalink()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieve permalink from post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_permalink/">get_the_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the full permalink for the current post or post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_attachment_link/">get_attachment_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_permalink/">the_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Displays the permalink for the current post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_bar_edit_menu/">wp_admin_bar_edit_menu()</a><code>wp-includes/admin-bar.php</code></td><td><p>Provides an edit link for posts and terms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/the_permalink_rss/">the_permalink_rss()</a><code>wp-includes/feed.php</code></td><td><p>Displays the permalink to the post for use in feeds.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/walker_page/start_el/">Walker_Page::start_el()</a><code>wp-includes/class-walker-page.php</code></td><td><p>Outputs the beginning of the current element in the tree.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_link_page/">_wp_link_page()</a><code>wp-includes/post-template.php</code></td><td><p>Helper function for <a href="https://developer.notmatt.press/reference/functions/wp_link_pages/" rel="function">wp_link_pages()</a> .</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_content/">get_the_content()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves the post content.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_transition_post_status/">_transition_post_status()</a><code>wp-includes/post.php</code></td><td><p>Hook for managing future post transitions to published.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_post/">wp_insert_post()</a><code>wp-includes/post.php</code></td><td><p>Inserts or update a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/redirect_guess_404_permalink/">redirect_guess_404_permalink()</a><code>wp-includes/canonical.php</code></td><td><p>Attempts to guess the correct URL for a 404 request based on query vars.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/redirect_canonical/">redirect_canonical()</a><code>wp-includes/canonical.php</code></td><td><p>Redirects incoming links to the proper URL based on the site url.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_blog_permalink/">get_blog_permalink()</a><code>wp-includes/ms-functions.php</code></td><td><p>Gets the permalink for a post on another blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_setup_nav_menu_item/">wp_setup_nav_menu_item()</a><code>wp-includes/nav-menu.php</code></td><td><p>Decorates a menu item object with the shared navigation menu item properties.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_getpost/">wp_xmlrpc_server::mw_getPost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/mw_getrecentposts/">wp_xmlrpc_server::mw_getRecentPosts()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves list of recent posts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/_prepare_page/">wp_xmlrpc_server::_prepare_page()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Prepares page data for return in an XML-RPC object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/_prepare_post/">wp_xmlrpc_server::_prepare_post()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Prepares post data for return in an XML-RPC object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_reply_link/">get_post_reply_link()</a><code>wp-includes/comment-template.php</code></td><td><p>Retrieves HTML content for reply to post link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/comment_form/">comment_form()</a><code>wp-includes/comment-template.php</code></td><td><p>Outputs a complete commenting form for use within a template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_trackback_url/">get_trackback_url()</a><code>wp-includes/comment-template.php</code></td><td><p>Retrieves the current post’s trackback URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/comments_popup_link/">comments_popup_link()</a><code>wp-includes/comment-template.php</code></td><td><p>Displays the link to the comments for the current post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comment_reply_link/">get_comment_reply_link()</a><code>wp-includes/comment-template.php</code></td><td><p>Retrieves HTML content for reply to comment link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comment_link/">get_comment_link()</a><code>wp-includes/comment-template.php</code></td><td><p>Retrieves the link to a given comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comments_link/">get_comments_link()</a><code>wp-includes/comment-template.php</code></td><td><p>Retrieves the link to the current post comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trackback/">trackback()</a><code>wp-includes/comment.php</code></td><td><p>Sends a Trackback.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/pingback/">pingback()</a><code>wp-includes/comment.php</code></td><td><p>Pings back the links found in a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/_wp_editors/wp_link_query/">_WP_Editors::wp_link_query()</a><code>wp-includes/class-wp-editor.php</code></td><td><p>Performs post queries for internal linking.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 62 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.0.0/">1.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-stratboy odd alt thread-even depth-1" data-comment-id="1711" id="comment-1711">
+<article class="comment-body" id="div-comment-1711">
+<a class="screen-reader-text" href="#comment-content-1711">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1711">
+<p>Get post or page (or whatever) permalink by slug:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function get_link_by_slug($slug, $type = 'post'){
+  $post = get_page_by_path($slug, OBJECT, $type);
+  return get_permalink($post-&gt;ID);
+}</code></pre>
+<p>If you are using polylang (like I usually do), you can get the permalink starting from whichever language slug (I generally start from my language, usually the websites’s default):</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function get_link_by_slug($slug, $lang_slug = null, $type = 'post'){
+  $post = get_page_by_path($slug, OBJECT, $type);
+  $id = ($lang_slug) ? pll_get_post($post-&gt;ID, $lang_slug) : $post-&gt;ID;
+  return get_permalink($id);
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1711">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="319" id="comment-319">
+<article class="comment-body" id="div-comment-319">
+<a class="screen-reader-text" href="#comment-content-319">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-319">
+<p><strong>Default Usage</strong><br/>
+The permalink for current post (used within The Loop). As the tag does not display the permalink, the example uses the PHP echo command.</p>
+<p>Permalink for this post:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">echo get_permalink();</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-319">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-even depth-1" data-comment-id="321" id="comment-321">
+<article class="comment-body" id="div-comment-321">
+<a class="screen-reader-text" href="#comment-content-321">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-321">
+<p><strong>Pass in a post object instead of an ID</strong><br/>
+This shows how you can you can get the permalink with the page title instead of the ID.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;a href="&lt;?php echo esc_url( get_permalink( get_page_by_title( 'Monthly Events' ) ) ); ?&gt;"&gt;&lt;?php esc_html_e( 'Monthly Events', 'textdomain' ); ?&gt;&lt;/a&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="2" id="feedback-321">
+<ul class="children">
+<li class="comment byuser comment-author-maxpertici even depth-2" data-comment-id="6391" id="comment-6391">
+<article class="comment-body" id="div-comment-6391">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6391">
+<div><a href="https://developer.notmatt.press/reference/functions/get_page_by_title/" rel="function">get_page_by_title()</a>  is now deprecated : <a href="https://make.wordpress.org/core/2023/03/06/get_page_by_title-deprecated/" rel="nofollow ugc">https://make.wordpress.org/core/2023/03/06/get_page_by_title-deprecated/</a></div>
+<div><a class="url" href="https://profiles.wordpress.org/maxpertici/" rel="external nofollow">Maxime Pertici</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/get_permalink/#comment-6391"><time datetime="2023-03-06T22:49:16+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-astianax odd alt depth-2" data-comment-id="6817" id="comment-6817">
+<article class="comment-body" id="div-comment-6817">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6817">
+<div>get_page_by_title is deprecated now</div>
+<div><a class="url" href="https://profiles.wordpress.org/astianax/" rel="external nofollow">Kevin</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/get_permalink/#comment-6817"><time datetime="2023-12-14T10:37:26+00:00">1 year ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-odd thread-alt depth-1" data-comment-id="320" id="comment-320">
+<article class="comment-body" id="div-comment-320">
+<a class="screen-reader-text" href="#comment-content-320">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-320">
+<p><strong>Link to Specific Post</strong><br/>
+Returns the permalinks of two specific posts (post IDs 1 and 10) as hypertext links within an informational list.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;ul&gt;
+	&lt;li&gt;&lt;?php esc_html_e( 'MyBlog info:', 'textdomain' ); ?&gt;
+		&lt;ul&gt;
+			&lt;li&gt;&lt;a href="&lt;?php echo esc_url( get_permalink(1) ); ?&gt;"&gt;&lt;?php esc_html_e( 'About MyBlog', 'textdomain' ); ?&gt;&lt;/a&gt;&lt;/li&gt;
+			&lt;li&gt;&lt;a href="&lt;?php echo esc_url( get_permalink(10) ); ?&gt;"&gt;&lt;?php esc_html_e( 'About the owner', 'textdomain' ); ?&gt;&lt;/a&gt;&lt;/li&gt;
+		&lt;/ul&gt;
+	&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-320">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-talentedaamer odd alt thread-even depth-1" data-comment-id="1268" id="comment-1268">
+<article class="comment-body" id="div-comment-1268">
+<a class="screen-reader-text" href="#comment-content-1268">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1268">
+<p>Get current post/page url outside loop. $post is a global variable.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo get_permalink( $post-&gt;ID ); ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1268">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-stelaras1 even thread-odd thread-alt depth-1" data-comment-id="1819" id="comment-1819">
+<article class="comment-body" id="div-comment-1819">
+<a class="screen-reader-text" href="#comment-content-1819">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1819">
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo str_replace("<a href="http://www.mysite.com/&amp;quot" rel="nofollow ugc">http://www.mysite.com/&amp;quot</a>;,"<a href="http://www.yoursite.com/&amp;quot" rel="nofollow ugc">http://www.yoursite.com/&amp;quot</a>;,get_permalink()); ?&gt;</code></pre>
+<p>Return the permalink of the post, then search for <a href="http://www.mysite.com/" rel="nofollow ugc">http://www.mysite.com/</a> and change it to <a href="http://www.yoursite.com/" rel="nofollow ugc">http://www.yoursite.com/</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1819">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-iqbalbary odd alt thread-even depth-1" data-comment-id="1780" id="comment-1780">
+<article class="comment-body" id="div-comment-1780">
+<a class="screen-reader-text" href="#comment-content-1780">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1780">
+<p>Example: Woocommerce shop page permalink</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo get_permalink( wc_get_page_id( 'shop' ) ); ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1780">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-shossain571 even thread-odd thread-alt depth-1" data-comment-id="3360" id="comment-3360">
+<article class="comment-body" id="div-comment-3360">
+<a class="screen-reader-text" href="#comment-content-3360">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3360">
+<p>Redirect to a page with page ID:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_redirect( get_permalink(1443) ); exit;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3360">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-hongtodd09 odd alt thread-even depth-1" data-comment-id="3378" id="comment-3378">
+<article class="comment-body" id="div-comment-3378">
+<a class="screen-reader-text" href="#comment-content-3378">Skip to note 21 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3378">
+<p>Get permalink for a page parent from current child page (using within the loop):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">while( have_posts() ): the_post();
+	get_permalink( wp_get_post_parent_id( get_the_ID() ) );
+endwhile;</code></pre>
+<p><code>get_the_ID</code>: get id of current page.<br/>
+<code>wp_get_post_parent_id</code>: get the parent page id of the current page.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3378">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tolkodelo even thread-odd thread-alt depth-1" data-comment-id="4147" id="comment-4147">
+<article class="comment-body" id="div-comment-4147">
+<a class="screen-reader-text" href="#comment-content-4147">Skip to note 22 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4147">
+<p>Get page permalink by its template slug:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function wpdocs_wp_get_page_url_by_template_slug( $template_slug ) {
+    $url = null;
+    $template = 'page-' . $template_slug . '.php';
+
+    $pages = get_posts( array(
+        'post_type' =&gt; 'page',
+        'meta_query' =&gt; array(
+            array(
+                'key' =&gt; '_wp_page_template',
+                'value' =&gt; $template,
+                'compare' =&gt; '=',
+            )
+        )
+    ) );
+
+    if ( isset( $pages[0] ) ) {
+        $url = get_permalink( $pages[0]-&gt;ID );
+    }
+    return $url;
+}</code></pre>
+<p>You can call the function anywhere in your theme like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">//outputs url like "http(s)://(www.)(subdomain.)domain.com/shopping-cart-page-name__depends-on-permalink-settings/"
+echo wpdocs_wp_get_page_url_by_template_slug( 'shopping_cart' );</code></pre>
+<p><strong>Note:</strong> the function only retreives the first page that uses the given template. I wrote it to get the url for my shopping cart, and the like, obviously these are used only once. I have modified my templates dropdown so that it won’t show certain templates if they have been used in any other post. If you want to get all the posts that use the given template, modify the function like this:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function wpdocs_wp_get_page_url_by_template_slug( $template_slug ) {
+    $urls = array();
+    $template = 'page-' . $template_slug . '.php';
+
+    $pages = get_posts( array(
+        'post_type' =&gt; 'page',
+        'meta_query' =&gt; array(
+            array(
+                'key' =&gt; '_wp_page_template',
+                'value' =&gt; $template,
+                'compare' =&gt; '=',
+            )
+        )
+    ) );
+
+    foreach ( $pages as $page ) {
+        $urls[] = get_permalink( $page-&gt;ID );
+    }
+
+    return !empty( $urls ) ? $urls : false;
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4147">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-zaforiqbal odd alt thread-even depth-1" data-comment-id="5220" id="comment-5220">
+<article class="comment-body" id="div-comment-5220">
+<a class="screen-reader-text" href="#comment-content-5220">Skip to note 23 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5220">
+<p>Another use of permalink can be </p>
+<pre class="wp-block-code"><code class="language-js" lang="js">echo "&lt;script&gt;window.location = '" . get_permalink($post_id) . "'&lt;/script&gt;";</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5220">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-vanstoneonline even thread-odd thread-alt depth-1 bad-note" data-comment-id="4932" id="comment-4932">
+<article class="comment-body" id="div-comment-4932">
+<a class="screen-reader-text" href="#comment-content-4932">Skip to note 24 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4932">
+<p>For security measure be sure to use:   </p>
+<pre class="wp-block-code"><code class="language-php" lang="php">esc_url( $url:string, $protocols:array|null, $_context:string );</code></pre>
+<p>Example:  </p>
+<pre class="wp-block-code"><code class="language-php" lang="php">echo esc_url( get_permalink(), 'textdomain' );</code></pre>
+<p>See <a href="https://developer.notmatt.press/plugins/security/securing-output/" rel="ugc">https://developer.notmatt.press/plugins/security/securing-output/</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-4932">
+<ul class="children">
+<li class="comment byuser comment-author-crstauf odd alt depth-2" data-comment-id="4948" id="comment-4948">
+<article class="comment-body" id="div-comment-4948">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4948">
+<div>The parameters passed to <code>esc_url()</code> are incorrect in the example. The second parameter should be the allowed protocols (<code>http</code>, <code>https</code>, etc), and the third parameter is the context (ex: ‘display’), not the text domain.</div>
+<div><a class="url" href="https://profiles.wordpress.org/crstauf/" rel="external nofollow">crstauf</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/get_permalink/#comment-4948"><time datetime="2021-03-23T14:58:39+00:00">4 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_url_details_controller/">WP_REST_URL_Details_Controller</a></span><span class="is-current-page">WP_REST_URL_Details_Controller::get_meta_with_content_elements()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_URL_Details_Controller::get_meta_with_content_elements()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_URL_Details_Controller::get_meta_with_content_elements( <span class="arg-type">string</span> <span class="arg-name">$html</span> ): <span class="return-type">array</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Gets all the meta tag elements that have a ‘content’ attribute.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$html</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The string of HTML to be parsed.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> A multidimensional indexed array on success, else empty array.<br/>
+<ul class="param-hash"><li><code>0</code> <span class="type">string[]</span><div class="desc">Meta elements with a content attribute.</div></li>
+<li><code>1</code> <span class="type">string[]</span><div class="desc">Content attribute’s opening quotation mark.</div></li>
+<li><code>2</code> <span class="type">string[]</span><div class="desc">Content attribute’s value for each meta element.</div></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="535"><code class="language-php line-numbers" id="wporg-source-code" lang="php">private function get_meta_with_content_elements( $html ) {
+	/*
+	 * Parse all meta elements with a content attribute.
+	 *
+	 * Why first search for the content attribute rather than directly searching for name=description element?
+	 * tl;dr The content attribute's value will be truncated when it contains a &gt; symbol.
+	 *
+	 * The content attribute's value (i.e. the description to get) can have HTML in it and be well-formed as
+	 * it's a string to the browser. Imagine what happens when attempting to match for the name=description
+	 * first. Hmm, if a &gt; or /&gt; symbol is in the content attribute's value, then it terminates the match
+	 * as the element's closing symbol. But wait, it's in the content attribute and is not the end of the
+	 * element. This is a limitation of using regex. It can't determine "wait a minute this is inside of quotation".
+	 * If this happens, what gets matched is not the entire element or all of the content.
+	 *
+	 * Why not search for the name=description and then content="(.*)"?
+	 * The attribute order could be opposite. Plus, additional attributes may exist including being between
+	 * the name and content attributes.
+	 *
+	 * Why not lookahead?
+	 * Lookahead is not constrained to stay within the element. The first &lt;meta it finds may not include
+	 * the name or content, but rather could be from a different element downstream.
+	 */
+	$pattern = '#&lt;meta\s' .
+
+			/*
+			 * Allows for additional attributes before the content attribute.
+			 * Searches for anything other than &gt; symbol.
+			 */
+			'[^&gt;]*' .
+
+			/*
+			* Find the content attribute. When found, capture its value (.*).
+			*
+			* Allows for (a) single or double quotes and (b) whitespace in the value.
+			*
+			* Why capture the opening quotation mark, i.e. (["\']), and then backreference,
+			* i.e \1, for the closing quotation mark?
+			* To ensure the closing quotation mark matches the opening one. Why? Attribute values
+			* can contain quotation marks, such as an apostrophe in the content.
+			*/
+			'content=(["\']??)(.*)\1' .
+
+			/*
+			* Allows for additional attributes after the content attribute.
+			* Searches for anything other than &gt; symbol.
+			*/
+			'[^&gt;]*' .
+
+			/*
+			* \/?&gt; searches for the closing &gt; symbol, which can be in either /&gt; or &gt; format.
+			* # ends the pattern.
+			*/
+			'\/?&gt;#' .
+
+			/*
+			* These are the options:
+			* - i : case-insensitive
+			* - s : allows newline characters for the . match (needed for multiline elements)
+			* - U means non-greedy matching
+			*/
+			'isU';
+
+	preg_match_all( $pattern, $html, $elements );
+
+	return $elements;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php#L535">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php#L535-L600">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_url_details_controller/parse_url_details/">WP_REST_URL_Details_Controller::parse_url_details()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php</code></td><td><p>Retrieves the contents of the title tag from the HTML response.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.9.0/">5.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

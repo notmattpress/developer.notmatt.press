@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_http/">WP_Http</a></span><span class="is-current-page">WP_Http::make_absolute_url()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Http::make_absolute_url()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Http::make_absolute_url( <span class="arg-type">string</span> <span class="arg-name">$maybe_relative_path</span>,  <span class="arg-type">string</span> <span class="arg-name">$url</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Converts a relative URL to an absolute URL relative to a given URL.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If an Absolute URL is provided, no processing of that URL is done.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$maybe_relative_path</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The URL which might be relative.</span></div></dd><dt><code>$url</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The URL which $maybe_relative_path is relative to.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> An Absolute URL, in a failure condition where the URL cannot be parsed, the relative URL will be returned.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="967"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function make_absolute_url( $maybe_relative_path, $url ) {
+	if ( empty( $url ) ) {
+		return $maybe_relative_path;
+	}
+
+	$url_parts = wp_parse_url( $url );
+	if ( ! $url_parts ) {
+		return $maybe_relative_path;
+	}
+
+	$relative_url_parts = wp_parse_url( $maybe_relative_path );
+	if ( ! $relative_url_parts ) {
+		return $maybe_relative_path;
+	}
+
+	// Check for a scheme on the 'relative' URL.
+	if ( ! empty( $relative_url_parts['scheme'] ) ) {
+		return $maybe_relative_path;
+	}
+
+	$absolute_path = $url_parts['scheme'] . '://';
+
+	// Schemeless URLs will make it this far, so we check for a host in the relative URL
+	// and convert it to a protocol-URL.
+	if ( isset( $relative_url_parts['host'] ) ) {
+		$absolute_path .= $relative_url_parts['host'];
+		if ( isset( $relative_url_parts['port'] ) ) {
+			$absolute_path .= ':' . $relative_url_parts['port'];
+		}
+	} else {
+		$absolute_path .= $url_parts['host'];
+		if ( isset( $url_parts['port'] ) ) {
+			$absolute_path .= ':' . $url_parts['port'];
+		}
+	}
+
+	// Start off with the absolute URL path.
+	$path = ! empty( $url_parts['path'] ) ? $url_parts['path'] : '/';
+
+	// If it's a root-relative path, then great.
+	if ( ! empty( $relative_url_parts['path'] ) &amp;&amp; '/' === $relative_url_parts['path'][0] ) {
+		$path = $relative_url_parts['path'];
+
+		// Else it's a relative path.
+	} elseif ( ! empty( $relative_url_parts['path'] ) ) {
+		// Strip off any file components from the absolute path.
+		$path = substr( $path, 0, strrpos( $path, '/' ) + 1 );
+
+		// Build the new path.
+		$path .= $relative_url_parts['path'];
+
+		// Strip all /path/../ out of the path.
+		while ( strpos( $path, '../' ) &gt; 1 ) {
+			$path = preg_replace( '![^/]+/\.\./!', '', $path );
+		}
+
+		// Strip any final leading ../ from the path.
+		$path = preg_replace( '!^/(\.\./)+!', '', $path );
+	}
+
+	// Add the query string.
+	if ( ! empty( $relative_url_parts['query'] ) ) {
+		$path .= '?' . $relative_url_parts['query'];
+	}
+
+	// Add the fragment.
+	if ( ! empty( $relative_url_parts['fragment'] ) ) {
+		$path .= '#' . $relative_url_parts['fragment'];
+	}
+
+	return $absolute_path . '/' . ltrim( $path, '/' );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-http.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-http.php#L967">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-http.php#L967-L1038">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_url/">wp_parse_url()</a><code>wp-includes/http.php</code></td><td><p>A wrapper for PHP’s parse_url() function that handles consistency in the return values across PHP versions.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_url_details_controller/get_icon/">WP_REST_URL_Details_Controller::get_icon()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php</code></td><td><p>Parses the site icon from the provided HTML.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_url_details_controller/get_image/">WP_REST_URL_Details_Controller::get_image()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-url-details-controller.php</code></td><td><p>Parses the Open Graph (OG) Image from the provided HTML.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_links_add_base/">_links_add_base()</a><code>wp-includes/formatting.php</code></td><td><p>Callback to add a base URL to relative links in passed content.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http/handle_redirects/">WP_Http::handle_redirects()</a><code>wp-includes/class-wp-http.php</code></td><td><p>Handles an HTTP redirect and follows it if appropriate.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.4.0/">3.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

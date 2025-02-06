@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">human_readable_duration()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>human_readable_duration()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">human_readable_duration( <span class="arg-type">string</span> <span class="arg-name">$duration</span> = <span class="arg-default">''</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Converts a duration to human readable format.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$duration</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Duration will be in string format (HH:ii:ss) OR (ii:ss),                         with a possible prepended negative sign (-).</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> A human readable duration string, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="508"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function human_readable_duration( $duration = '' ) {
+	if ( ( empty( $duration ) || ! is_string( $duration ) ) ) {
+		return false;
+	}
+
+	$duration = trim( $duration );
+
+	// Remove prepended negative sign.
+	if ( str_starts_with( $duration, '-' ) ) {
+		$duration = substr( $duration, 1 );
+	}
+
+	// Extract duration parts.
+	$duration_parts = array_reverse( explode( ':', $duration ) );
+	$duration_count = count( $duration_parts );
+
+	$hour   = null;
+	$minute = null;
+	$second = null;
+
+	if ( 3 === $duration_count ) {
+		// Validate HH:ii:ss duration format.
+		if ( ! ( (bool) preg_match( '/^([0-9]+):([0-5]?[0-9]):([0-5]?[0-9])$/', $duration ) ) ) {
+			return false;
+		}
+		// Three parts: hours, minutes &amp; seconds.
+		list( $second, $minute, $hour ) = $duration_parts;
+	} elseif ( 2 === $duration_count ) {
+		// Validate ii:ss duration format.
+		if ( ! ( (bool) preg_match( '/^([0-5]?[0-9]):([0-5]?[0-9])$/', $duration ) ) ) {
+			return false;
+		}
+		// Two parts: minutes &amp; seconds.
+		list( $second, $minute ) = $duration_parts;
+	} else {
+		return false;
+	}
+
+	$human_readable_duration = array();
+
+	// Add the hour part to the string.
+	if ( is_numeric( $hour ) ) {
+		/* translators: %s: Time duration in hour or hours. */
+		$human_readable_duration[] = sprintf( _n( '%s hour', '%s hours', $hour ), (int) $hour );
+	}
+
+	// Add the minute part to the string.
+	if ( is_numeric( $minute ) ) {
+		/* translators: %s: Time duration in minute or minutes. */
+		$human_readable_duration[] = sprintf( _n( '%s minute', '%s minutes', $minute ), (int) $minute );
+	}
+
+	// Add the second part to the string.
+	if ( is_numeric( $second ) ) {
+		/* translators: %s: Time duration in second or seconds. */
+		$human_readable_duration[] = sprintf( _n( '%s second', '%s seconds', $second ), (int) $second );
+	}
+
+	return implode( ', ', $human_readable_duration );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L508">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L508-L567">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/attachment_submitbox_metadata/">attachment_submitbox_metadata()</a><code>wp-admin/includes/media.php</code></td><td><p>Displays non-editable attachment metadata in the publish meta box.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.1.0/">5.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-rabmalin even thread-even depth-1" data-comment-id="3179" id="comment-3179">
+<article class="comment-body" id="div-comment-3179">
+<a class="screen-reader-text" href="#comment-content-3179">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3179">
+<pre class="wp-block-code"><code class="language-php" lang="php">// Get duration in human readable format.
+$duration = human_readable_duration( '4:30:25' );
+echo $duration;</code></pre>
+<p><strong>Output:</strong><br/>
+<code>4 hours, 30 minutes, 25 seconds</code></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3179">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-mattiasf odd alt thread-odd thread-alt depth-1" data-comment-id="4263" id="comment-4263">
+<article class="comment-body" id="div-comment-4263">
+<a class="screen-reader-text" href="#comment-content-4263">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4263">
+<pre class="wp-block-code"><code class="language-php" lang="php">// Get duration in human readable format from seconds
+$seconds = '121';
+$duration = human_readable_duration( gmdate( 'H:i:s', $seconds ) );
+echo $duration;</code></pre>
+<p><strong>Output:</strong><br/>
+<code>0 hours, 2 minutes, 1 second</code></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4263">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

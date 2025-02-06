@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_specialchars_decode()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_specialchars_decode()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_specialchars_decode( <span class="arg-type">string</span> <span class="arg-name">$text</span>,  <span class="arg-type">string|int</span> <span class="arg-name">$quote_style</span> = <span class="arg-default">ENT_NOQUOTES</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Converts a number of HTML entities into their special characters.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Specifically deals with: <code>&amp;</code>, <code>&lt;</code>, <code>&gt;</code>, <code>"</code>, and <code>'</code>.</p>
+<p><code>$quote_style</code> can be set to ENT_COMPAT to decode <code>"</code> entities, or ENT_QUOTES to do both <code>"</code> and <code>'</code>. Default is ENT_NOQUOTES where no quotes are decoded.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$text</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The text which is to be decoded.</span></div></dd><dt><code>$quote_style</code><span class="type"><span class="string">string</span>|<span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Converts double quotes if set to ENT_COMPAT,                                both single and double if set to ENT_QUOTES or                                none if set to ENT_NOQUOTES.<br/>
+Also compatible with old <a href="https://developer.notmatt.press/reference/functions/_wp_specialchars/" rel="function">_wp_specialchars()</a>  values;                                converting single quotes if set to <code>'single'</code>,                                double if set to <code>'double'</code> or both if otherwise set.<br/>
+Default is ENT_NOQUOTES.</span><details class="extended-description"><summary>More Arguments from _wp_specialchars( … $quote_style )</summary><span class="description">Converts double quotes if set to ENT_COMPAT,                                    both single and double if set to ENT_QUOTES or none if set to ENT_NOQUOTES.<br/>
+Converts single and double quotes, as well as converting HTML                                    named entities (that are not also XML named entities) to their                                    code points if set to ENT_XML1. Also compatible with old values;                                    converting single quotes if set to <code>'single'</code>,                                    double if set to <code>'double'</code> or both if otherwise set.<br/>
+Default is ENT_NOQUOTES.</span></details></div><p class="default">Default:<code>ENT_NOQUOTES</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The decoded text without HTML entities.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1012"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_specialchars_decode( $text, $quote_style = ENT_NOQUOTES ) {
+	$text = (string) $text;
+
+	if ( 0 === strlen( $text ) ) {
+		return '';
+	}
+
+	// Don't bother if there are no entities - saves a lot of processing.
+	if ( ! str_contains( $text, '&amp;' ) ) {
+		return $text;
+	}
+
+	// Match the previous behavior of _wp_specialchars() when the $quote_style is not an accepted value.
+	if ( empty( $quote_style ) ) {
+		$quote_style = ENT_NOQUOTES;
+	} elseif ( ! in_array( $quote_style, array( 0, 2, 3, 'single', 'double' ), true ) ) {
+		$quote_style = ENT_QUOTES;
+	}
+
+	// More complete than get_html_translation_table( HTML_SPECIALCHARS ).
+	$single      = array(
+		'&amp;#039;' =&gt; '\'',
+		'&amp;#x27;' =&gt; '\'',
+	);
+	$single_preg = array(
+		'/&amp;#0*39;/'   =&gt; '&amp;#039;',
+		'/&amp;#x0*27;/i' =&gt; '&amp;#x27;',
+	);
+	$double      = array(
+		'&amp;quot;' =&gt; '"',
+		'&amp;#034;' =&gt; '"',
+		'&amp;#x22;' =&gt; '"',
+	);
+	$double_preg = array(
+		'/&amp;#0*34;/'   =&gt; '&amp;#034;',
+		'/&amp;#x0*22;/i' =&gt; '&amp;#x22;',
+	);
+	$others      = array(
+		'&amp;lt;'   =&gt; '&lt;',
+		'&amp;#060;' =&gt; '&lt;',
+		'&amp;gt;'   =&gt; '&gt;',
+		'&amp;#062;' =&gt; '&gt;',
+		'&amp;amp;'  =&gt; '&amp;',
+		'&amp;#038;' =&gt; '&amp;',
+		'&amp;#x26;' =&gt; '&amp;',
+	);
+	$others_preg = array(
+		'/&amp;#0*60;/'   =&gt; '&amp;#060;',
+		'/&amp;#0*62;/'   =&gt; '&amp;#062;',
+		'/&amp;#0*38;/'   =&gt; '&amp;#038;',
+		'/&amp;#x0*26;/i' =&gt; '&amp;#x26;',
+	);
+
+	if ( ENT_QUOTES === $quote_style ) {
+		$translation      = array_merge( $single, $double, $others );
+		$translation_preg = array_merge( $single_preg, $double_preg, $others_preg );
+	} elseif ( ENT_COMPAT === $quote_style || 'double' === $quote_style ) {
+		$translation      = array_merge( $double, $others );
+		$translation_preg = array_merge( $double_preg, $others_preg );
+	} elseif ( 'single' === $quote_style ) {
+		$translation      = array_merge( $single, $others );
+		$translation_preg = array_merge( $single_preg, $others_preg );
+	} elseif ( ENT_NOQUOTES === $quote_style ) {
+		$translation      = $others;
+		$translation_preg = $others_preg;
+	}
+
+	// Remove zero padding on numeric entities.
+	$text = preg_replace( array_keys( $translation_preg ), array_values( $translation_preg ), $text );
+
+	// Replace characters according to translation table.
+	return strtr( $text, $translation );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/formatting.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/formatting.php#L1012">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/formatting.php#L1012-L1084">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wpmu_new_site_admin_notification/">wpmu_new_site_admin_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Notifies the Multisite network administrator that a new site was created.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/send_plugin_theme_email/">WP_Automatic_Updater::send_plugin_theme_email()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Sends an email upon the completion or failure of a plugin or theme background update.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_recovery_mode_email_service/send_recovery_mode_email/">WP_Recovery_Mode_Email_Service::send_recovery_mode_email()</a><code>wp-includes/class-wp-recovery-mode-email-service.php</code></td><td><p>Sends the Recovery Mode email to the site admin email address.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_privacy_send_request_confirmation_notification/">_wp_privacy_send_request_confirmation_notification()</a><code>wp-includes/user.php</code></td><td><p>Notifies the site administrator via email when a request is confirmed.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_privacy_send_erasure_fulfillment_notification/">_wp_privacy_send_erasure_fulfillment_notification()</a><code>wp-includes/user.php</code></td><td><p>Notifies the user when their erasure request is fulfilled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_user_request/">wp_send_user_request()</a><code>wp-includes/user.php</code></td><td><p>Send a confirmation request email to confirm an action.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_send_personal_data_export_email/">wp_privacy_send_personal_data_export_email()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Send an email to the user with a link to the personal data export file</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_site_admin_email_change_notification/">wp_site_admin_email_change_notification()</a><code>wp-includes/functions.php</code></td><td><p>Sends an email to the old site admin email address when the site admin email address changes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_network_option_new_admin_email/">update_network_option_new_admin_email()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends a confirmation request email when a change of network admin email address is attempted.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_network_admin_email_change_notification/">wp_network_admin_email_change_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends an email to the old network admin email address when the network admin email address changes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/retrieve_password/">retrieve_password()</a><code>wp-includes/user.php</code></td><td><p>Handles sending a password retrieval email to a user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/send_email/">WP_Automatic_Updater::send_email()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Sends an email upon the completion or failure of a background core update.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/send_debug_email/">WP_Automatic_Updater::send_debug_email()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Prepares and sends an email of a full log of background update results, useful for debugging and geekery.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option_new_admin_email/">update_option_new_admin_email()</a><code>wp-admin/includes/misc.php</code></td><td><p>Sends a confirmation request email when a change of site admin email address is attempted.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/send_confirmation_on_profile_email/">send_confirmation_on_profile_email()</a><code>wp-includes/user.php</code></td><td><p>Sends a confirmation request email when a change of user email address is attempted.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_created_user_email/">admin_created_user_email()</a><code>wp-admin/includes/user.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_password_change_notification/">wp_password_change_notification()</a><code>wp-includes/pluggable.php</code></td><td><p>Notifies the blog admin of a user changing password, normally via email.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_new_user_notification/">wp_new_user_notification()</a><code>wp-includes/pluggable.php</code></td><td><p>Emails login credentials to a newly-registered user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_notify_postauthor/">wp_notify_postauthor()</a><code>wp-includes/pluggable.php</code></td><td><p>Notifies an author (and/or others) of a comment/trackback/pingback on a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_notify_moderator/">wp_notify_moderator()</a><code>wp-includes/pluggable.php</code></td><td><p>Notifies the moderator of the site about a new comment that is awaiting approval.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_user/">wp_update_user()</a><code>wp-includes/user.php</code></td><td><p>Updates a user in the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_welcome_user_notification/">wpmu_welcome_user_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Notifies a user that their account activation has been successful.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_welcome_notification/">wpmu_welcome_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Notifies the site administrator that their site activation was successful.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_signup_blog_notification/">wpmu_signup_blog_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends a confirmation request email to a user when they sign up for a new site. The new site will not become active until the confirmation link is clicked.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_signup_user_notification/">wpmu_signup_user_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends a confirmation request email to a user when they sign up for a new user account (without signing up for a site at the same time). The user account will not become active until the confirmation link is clicked.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_nav_menu_item/">wp_update_nav_menu_item()</a><code>wp-includes/nav-menu.php</code></td><td><p>Saves the properties of a menu item or create a new one.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 21 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-picocodes odd alt thread-odd thread-alt depth-1" data-comment-id="4251" id="comment-4251">
+<article class="comment-body" id="div-comment-4251">
+<a class="screen-reader-text" href="#comment-content-4251">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4251">
+<p>Beware that this function does not decode all entities. For example, it does not decode <code>&amp;#8211</code>.</p>
+<p>If you encounter such an issue, try using <code>html_entity_decode()</code>.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4251">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

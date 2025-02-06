@@ -1,0 +1,385 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Attributes</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Attributes</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Block attributes provide information about the data stored by a block. For example, rich content, a list of image URLs, a background color, or a button title.</p>
+<p>A block can contain any number of attributes, and these are specified by the <code>attributes</code> field – an object where each key is the name of the attribute, and the value is the attribute definition.</p>
+<p>The attribute definition will contain, at a minimum, either a <code>type</code> or an <code>enum</code>. There may be additional fields.</p>
+<p><em>Example</em>: Attributes object defining three attributes – <code>url</code>, <code>title</code>, and <code>size</code>.</p>
+<pre><code class="language-js">{
+    url: {
+        type: 'string',
+        source: 'attribute',
+        selector: 'img',
+        attribute: 'src',
+    },
+    title: {
+        type: 'string',
+    },
+    size: {
+        enum: [ 'large', 'small' ],
+    },
+}
+</code></pre>
+<p>When a block is parsed this definition will be used to extract data from the block content. Anything that matches will  be available to your block through the <code>attributes</code> prop.</p>
+<p>This parsing process can be summarized as:</p>
+<ol>
+<li>Extract value from the <code>source</code>.</li>
+<li>Check value matches the <code>type</code>, or is one of the <code>enum</code> values.</li>
+</ol>
+<p><em>Example</em>: Attributes available in the <code>edit</code> and function, using the above attributes definition.</p>
+<pre><code class="language-js">function YourBlockEdit( { attributes } ) {
+    return (
+        &lt;p&gt;URL is { attributes.url }, title is { attributes.title }, and size is { attributes.size }.&lt;/p&gt;
+    )
+}
+</code></pre>
+<p>The block is responsible for using the <code>save</code> function to ensure that all attributes with a <code>source</code> field are saved according to the attributes definition. This is not automatic.</p>
+<p>Attributes without a <code>source</code> will be automatically saved in the block <a href="https://developer.notmatt.press/block-editor/explanations/architecture/key-concepts/#data-attributes">comment delimiter</a>.</p>
+<p>For example, using the above attributes definition you would need to ensure that your <code>save</code> function has a corresponding img tag for the <code>url</code> attribute. The <code>title</code> and <code>size</code> attributes will be saved in the comment delimiter.</p>
+<p><em>Example</em>: Example <code>save</code> function that contains the <code>url</code> attribute</p>
+<pre><code class="language-js">function YourBlockSave( { attributes } ) {
+    return (
+        &lt;img src={ attributes.url } /&gt;
+    )
+}
+</code></pre>
+<p>The saved HTML will contain the <code>title</code> and <code>size</code> in the comment delimiter, and the <code>url</code> in the <code>img</code> node.</p>
+<pre><code class="language-html">&lt;!-- block:your-block {"title":"hello world","size":"large"} --&gt;
+&lt;img src="/image.jpg" /&gt;
+&lt;!-- /block:your-block --&gt;
+</code></pre>
+<p>If an attribute changes over time then a <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-deprecation/">block deprecation</a> can help migrate from an older attribute, or remove it entirely.</p>
+<h2 class="is-toc-heading" id="type-validation" tabindex="-1"><a href="#type-validation">Type validation</a></h2>
+<p>The <code>type</code> indicates the type of data that is stored by the attribute. It does not indicate where the data is stored, which is defined by the <code>source</code> field.</p>
+<p>A <code>type</code> is required, unless an <code>enum</code> is provided. A <code>type</code> can be used with an <code>enum</code>.</p>
+<p>The <code>type</code> field MUST be one of the following:</p>
+<ul>
+<li><code>null</code></li>
+<li><code>boolean</code></li>
+<li><code>object</code></li>
+<li><code>array</code></li>
+<li><code>string</code></li>
+<li><code>integer</code></li>
+<li><code>number</code> (same as <code>integer</code>)</li>
+</ul>
+<p>Note that the validity of an <code>object</code> is determined by your <code>source</code>. For an example, see the <code>query</code> details below.</p>
+<h2 class="is-toc-heading" id="enum-validation" tabindex="-1"><a href="#enum-validation">Enum validation</a></h2>
+<p>An attribute can be defined as one of a fixed set of values. This is specified by an <code>enum</code>, which contains an array of allowed values:</p>
+<p><em>Example</em>: Example <code>enum</code>.</p>
+<pre><code class="language-js">{
+    size: {
+        enum: [ 'large', 'small', 'tiny' ]
+    }
+}
+</code></pre>
+<h2 class="is-toc-heading" id="value-source" tabindex="-1"><a href="#value-source">Value source</a></h2>
+<p>Attribute sources are used to define how the attribute values are extracted from saved post content. They provide a mechanism to map from the saved markup to a JavaScript representation of a block.</p>
+<p>The available <code>source</code> values are:<br/>
+– <code>(no value)</code> – when no <code>source</code> is specified then data is stored in the block’s <a href="https://developer.notmatt.press/block-editor/explanations/architecture/key-concepts/#data-attributes">comment delimiter</a>.<br/>
+– <code>attribute</code> – data is stored in an HTML element attribute.<br/>
+– <code>text</code> – data is stored in HTML text.<br/>
+– <code>html</code> – data is stored in HTML. This is typically used by <code>RichText</code>.<br/>
+– <code>query</code> – data is stored as an array of objects.<br/>
+– <code>meta</code> – data is stored in post meta (deprecated).</p>
+<p>The <code>source</code> field is usually combined with a <code>selector</code> field. If no selector argument is specified, the source definition runs against the block’s root node. If a selector argument is specified, it will run against the matching element(s) within the block.</p>
+<p>The <code>selector</code> can be an HTML tag, or anything queryable with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector">querySelector</a>, such as a class or id attribute. Examples are given below.</p>
+<p>For example, a <code>selector</code> of <code>img</code> will match an <code>img</code> element, and <code>img.class</code> will match an <code>img</code> element that has a class of <code>class</code>.</p>
+<p>Under the hood, attribute sources are a superset of the functionality provided by <a href="https://github.com/aduth/hpq">hpq</a>, a small library used to parse and query HTML markup into an object shape.</p>
+<p>To summarize, the <code>source</code> determines where data is stored in your content, and the <code>type</code> determines what that data is. To reduce the amount of data stored it is usually better to store as much data as possible within HTML rather than as attributes within the comment delimiter.</p>
+<h3 class="is-toc-heading" id="attribute-source" tabindex="-1"><a href="#attribute-source">attribute source</a></h3>
+<p>Use an <code>attribute</code> source to extract the value from an attribute in the markup. The attribute is specified by the <code>attribute</code> field, which must be supplied.</p>
+<p><em>Example</em>: Extract the <code>src</code> attribute from an image found in the block’s markup.</p>
+<p>Saved content:</p>
+<pre><code class="language-html">&lt;div&gt;
+    Block Content
+
+    &lt;img src="https://lorempixel.com/1200/800/" /&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Attribute definition:</p>
+<pre><code class="language-js">{
+    url: {
+        type: 'string',
+        source: 'attribute',
+        selector: 'img',
+        attribute: 'src',
+    }
+}
+</code></pre>
+<p>Attribute available in the block:</p>
+<pre><code class="language-js">{ "url": "https://lorempixel.com/1200/800/" }
+</code></pre>
+<p>Most attributes from markup will be of type <code>string</code>. Numeric attributes in HTML are still stored as strings, and are not converted automatically.</p>
+<p><em>Example</em>: Extract the <code>width</code> attribute from an image found in the block’s markup.</p>
+<p>Saved content:</p>
+<pre><code class="language-html">&lt;div&gt;
+    Block Content
+
+    &lt;img src="https://lorempixel.com/1200/800/" width="50" /&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Attribute definition:</p>
+<pre><code class="language-js">{
+    width: {
+        type: 'string',
+        source: 'attribute',
+        selector: 'img',
+        attribute: 'width',
+    }
+}
+</code></pre>
+<p>Attribute available in the block:</p>
+<pre><code class="language-js">{ "width": "50" }
+</code></pre>
+<p>The only exception is when checking for the existence of an attribute (for example, the <code>disabled</code> attribute on a <code>button</code>). In that case type <code>boolean</code> can be used and the stored value will be a boolean.</p>
+<p><em>Example</em>: Extract the <code>disabled</code> attribute from a button found in the block’s markup.</p>
+<p>Saved content:</p>
+<pre><code class="language-html">&lt;div&gt;
+    Block Content
+
+    &lt;button type="button" disabled&gt;Button&lt;/button&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Attribute definition:</p>
+<pre><code class="language-js">{
+    disabled: {
+        type: 'boolean',
+        source: 'attribute',
+        selector: 'button',
+        attribute: 'disabled',
+    }
+}
+</code></pre>
+<p>Attribute available in the block:</p>
+<pre><code class="language-js">{ "disabled": true }
+</code></pre>
+<h3 class="is-toc-heading" id="text-source" tabindex="-1"><a href="#text-source">text source</a></h3>
+<p>Use <code>text</code> to extract the inner text from markup. Note that HTML is returned according to the rules of <a href="https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent"><code>textContent</code></a>.</p>
+<p><em>Example</em>: Extract the <code>content</code> attribute from a figcaption element found in the block’s markup.</p>
+<p>Saved content:</p>
+<pre><code class="language-html">&lt;figure&gt;
+    &lt;img src="/image.jpg" /&gt;
+
+    &lt;figcaption&gt;The inner text of the figcaption element&lt;/figcaption&gt;
+&lt;/figure&gt;
+</code></pre>
+<p>Attribute definition:</p>
+<pre><code class="language-js">{
+    content: {
+        type: 'string',
+        source: 'text',
+        selector: 'figcaption',
+    }
+}
+</code></pre>
+<p>Attribute available in the block:</p>
+<pre><code class="language-js">{ "content": "The inner text of the figcaption element" }
+</code></pre>
+<p>Another example, using <code>text</code> as the source, and using <code>.my-content</code> class as the selector to extract text:</p>
+<p><em>Example</em>: Extract the <code>content</code> attribute from an element with <code>.my-content</code> class found in the block’s markup.</p>
+<p>Saved content:</p>
+<pre><code class="language-html">&lt;div&gt;
+    &lt;img src="/image.jpg" /&gt;
+
+    &lt;p class="my-content"&gt;The inner text of .my-content class&lt;/p&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Attribute definition:</p>
+<pre><code class="language-js">{
+    content: {
+        type: 'string',
+        source: 'text',
+        selector: '.my-content',
+    }
+}
+</code></pre>
+<p>Attribute available in the block:</p>
+<pre><code class="language-js">{ "content": "The inner text of .my-content class" }
+</code></pre>
+<h3 class="is-toc-heading" id="html-source" tabindex="-1"><a href="#html-source">html source</a></h3>
+<p>Use <code>html</code> to extract the inner HTML from markup. Note that text is returned according to the rules of <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML"><code>innerHTML</code></a>.</p>
+<p><em>Example</em>: Extract the <code>content</code> attribute from a figcaption element found in the block’s markup.</p>
+<p>Saved content:</p>
+<pre><code class="language-html">&lt;figure&gt;
+    &lt;img src="/image.jpg" /&gt;
+
+    &lt;figcaption&gt;The inner text of the &lt;strong&gt;figcaption&lt;/strong&gt; element&lt;/figcaption&gt;
+&lt;/figure&gt;
+</code></pre>
+<p>Attribute definition:</p>
+<pre><code class="language-js">{
+    content: {
+        type: 'string',
+        source: 'html',
+        selector: 'figcaption',
+    }
+}
+</code></pre>
+<p>Attribute available in the block:</p>
+<pre><code class="language-js">{ "content": "The inner text of the &lt;strong&gt;figcaption&lt;/strong&gt; element" }
+</code></pre>
+<h3 class="is-toc-heading" id="query-source" tabindex="-1"><a href="#query-source">query source</a></h3>
+<p>Use <code>query</code> to extract an array of values from markup. Entries of the array are determined by the <code>selector</code> argument, where each matched element within the block will have an entry structured corresponding to the second argument, an object of attribute sources.</p>
+<p>The <code>query</code> field is effectively a nested block attributes definition. It is possible (although not necessarily recommended) to nest further.</p>
+<p><em>Example</em>: Extract <code>src</code> and <code>alt</code> from each image element in the block’s markup.</p>
+<p>Saved content:</p>
+<pre><code class="language-html">&lt;div&gt;
+    &lt;img src="https://lorempixel.com/1200/800/" alt="large image" /&gt;
+    &lt;img src="https://lorempixel.com/50/50/" alt="small image" /&gt;
+&lt;/div&gt;
+</code></pre>
+<p>Attribute definition:</p>
+<pre><code class="language-js">{
+    images: {
+        type: 'array',
+        source: 'query',
+        selector: 'img',
+        query: {
+            url: {
+                type: 'string',
+                source: 'attribute',
+                attribute: 'src',
+            },
+            alt: {
+                type: 'string',
+                source: 'attribute',
+                attribute: 'alt',
+            },
+        }
+    }
+}
+</code></pre>
+<p>Attribute available in the block:</p>
+<pre><code class="language-js">{
+    "images": [
+        { "url": "https://lorempixel.com/1200/800/", "alt": "large image" },
+        { "url": "https://lorempixel.com/50/50/", "alt": "small image" }
+    ]
+}
+</code></pre>
+<h3 class="is-toc-heading" id="meta-source-deprecated" tabindex="-1"><a href="#meta-source-deprecated">Meta source (deprecated)</a></h3>
+<div class="callout callout-alert">
+Although attributes may be obtained from a post’s meta, meta attribute sources are considered deprecated; <a href="https://github.com/WordPress/gutenberg/blob/c367c4e2765f9e6b890d1565db770147efca5d66/packages/core-data/src/entity-provider.js">EntityProvider and related hook APIs</a> should be used instead, as shown in the <a href="https://developer.notmatt.press/block-editor/how-to-guides/metabox/#step-2-add-meta-block">Create Meta Block how-to</a>.
+</div>
+<p>Attributes may be obtained from a post’s meta rather than from the block’s representation in saved post content. For this, an attribute is required to specify its corresponding meta key under the <code>meta</code> key.</p>
+<p>Attribute definition:</p>
+<pre><code class="language-js">{
+    author: {
+        type: 'string',
+        source: 'meta',
+        meta: 'author'
+    },
+},
+</code></pre>
+<p>From here, meta attributes can be read and written by a block using the same interface as any attribute:</p>
+<pre><code class="language-js">edit( { attributes, setAttributes } ) {
+    function onChange( event ) {
+        setAttributes( { author: event.target.value } );
+    }
+
+    return &lt;input value={ attributes.author } onChange={ onChange } type="text" /&gt;;
+},
+</code></pre>
+<h4>Considerations</h4>
+<p>By default, a meta field will be excluded from a post object’s meta. This can be circumvented by explicitly making the field visible:</p>
+<pre><code class="language-php">function gutenberg_my_block_init() {
+    register_post_meta( 'post', 'author', array(
+        'show_in_rest' =&gt; true,
+    ) );
+}
+add_action( 'init', 'gutenberg_my_block_init' );
+</code></pre>
+<p>Furthermore, be aware that WordPress defaults to:</p>
+<ul>
+<li>not treating a meta datum as being unique, instead returning an array of values;</li>
+<li>treating that datum as a string.</li>
+</ul>
+<p>If either behavior is not desired, the same <code>register_post_meta</code> call can be complemented with the <code>single</code> and/or <code>type</code> parameters as follows:</p>
+<pre><code class="language-php">function gutenberg_my_block_init() {
+    register_post_meta( 'post', 'author_count', array(
+        'show_in_rest' =&gt; true,
+        'single' =&gt; true,
+        'type' =&gt; 'integer',
+    ) );
+}
+add_action( 'init', 'gutenberg_my_block_init' );
+</code></pre>
+<p>If you’d like to use an object or an array in an attribute, you can register a <code>string</code> attribute type and use JSON as the intermediary. Serialize the structured data to JSON prior to saving, and then deserialize the JSON string on the server. Keep in mind that you’re responsible for the integrity of the data; make sure to properly sanitize, accommodate missing data, etc.</p>
+<p>Lastly, make sure that you respect the data’s type when setting attributes, as the framework does not automatically perform type casting of meta. Incorrect typing in block attributes will result in a post remaining dirty even after saving (<em>cf.</em> <code>isEditedPostDirty</code>, <code>hasEditedAttributes</code>). For instance, if <code>authorCount</code> is an integer, remember that event handlers may pass a different kind of data, thus the value should be cast explicitly:</p>
+<pre><code class="language-js">function onChange( event ) {
+    props.setAttributes( { authorCount: Number( event.target.value ) } );
+}
+</code></pre>
+<h2 class="is-toc-heading" id="default-value" tabindex="-1"><a href="#default-value">Default value</a></h2>
+<p>A block attribute can contain a default value, which will be used if the <code>type</code> and <code>source</code> do not match anything within the block content.</p>
+<p>The value is provided by the <code>default</code> field, and the value should match the expected format of the attribute.</p>
+<p><em>Example</em>: Example <code>default</code> values.</p>
+<pre><code class="language-js">{
+    type: 'string',
+    default: 'hello world'
+}
+</code></pre>
+<pre><code class="language-js">{
+    type: 'array',
+    default: [
+        { "url": "https://lorempixel.com/1200/800/", "alt": "large image" },
+        { "url": "https://lorempixel.com/50/50/", "alt": "small image" }
+    ]
+}
+</code></pre>
+<pre><code class="language-js">{
+    type: 'object',
+    default: {
+        width: 100,
+        title: 'title'
+    }
+}
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

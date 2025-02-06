@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_img_tag_add_loading_optimization_attrs()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_img_tag_add_loading_optimization_attrs()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_img_tag_add_loading_optimization_attrs( <span class="arg-type">string</span> <span class="arg-name">$image</span>,  <span class="arg-type">string</span> <span class="arg-name">$context</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Adds optimization attributes to an <code>img</code> HTML tag.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$image</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The HTML <code>img</code> tag where the attribute should be added.</span></div></dd><dt><code>$context</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Additional context to pass to the filters.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Converted <code>img</code> tag with optimization attributes added.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1960"><code class="language-php line-numbers" id="wporg-source-code" lang="php">			if ( $add_iframe_loading_attr &amp;&amp; ! str_contains( $filtered_iframe, ' loading=' ) ) {
+				$filtered_iframe = wp_iframe_tag_add_loading_attr( $filtered_iframe, $context );
+			}
+
+			if ( $filtered_iframe !== $match[0] ) {
+				$content = str_replace( $match[0], $filtered_iframe, $content );
+			}
+
+			/*
+			 * Unset iframe lookup to not run the same logic again unnecessarily if the same iframe tag is used more
+			 * than once in the same blob of content.
+			 */
+			unset( $iframes[ $match[0] ] );
+		}
+	}
+
+	return $content;
+}
+
+/**
+ * Adds 'auto' to the sizes attribute to the image, if the image is lazy loaded and does not already include it.
+ *
+ * @since 6.7.0
+ *
+ * @param string $image The image tag markup being filtered.
+ * @return string The filtered image tag markup.
+ */
+function wp_img_tag_add_auto_sizes( string $image ): string {
+	$processor = new WP_HTML_Tag_Processor( $image );
+
+	// Bail if there is no IMG tag.
+	if ( ! $processor-&gt;next_tag( array( 'tag_name' =&gt; 'IMG' ) ) ) {
+		return $image;
+	}
+
+	// Bail early if the image is not lazy-loaded.
+	$value = $processor-&gt;get_attribute( 'loading' );
+	if ( ! is_string( $value ) || 'lazy' !== strtolower( trim( $value, " \t\f\r\n" ) ) ) {
+		return $image;
+	}
+
+	$sizes = $processor-&gt;get_attribute( 'sizes' );
+
+	// Bail early if the image is not responsive.
+	if ( ! is_string( $sizes ) ) {
+		return $image;
+	}
+
+	// Don't add 'auto' to the sizes attribute if it already exists.
+	if ( wp_sizes_attribute_includes_valid_auto( $sizes ) ) {
+		return $image;
+	}
+
+	$processor-&gt;set_attribute( 'sizes', "auto, $sizes" );
+	return $processor-&gt;get_updated_html();
+}
+
+/**
+ * Checks whether the given 'sizes' attribute includes the 'auto' keyword as the first item in the list.
+ *
+ * Per the HTML spec, if present it must be the first entry.
+ *
+ * @since 6.7.0
+ *
+ * @param string $sizes_attr The 'sizes' attribute value.
+ * @return bool True if the 'auto' keyword is present, false otherwise.
+ */
+function wp_sizes_attribute_includes_valid_auto( string $sizes_attr ): bool {
+	list( $first_size ) = explode( ',', $sizes_attr, 2 );
+	return 'auto' === strtolower( trim( $first_size, " \t\f\r\n" ) );
+}
+
+/**
+ * Adds optimization attributes to an `img` HTML tag.
+ *
+ * @since 6.3.0
+ *
+ * @param string $image   The HTML `img` tag where the attribute should be added.
+ * @param string $context Additional context to pass to the filters.
+ * @return string Converted `img` tag with optimization attributes added.
+ */
+function wp_img_tag_add_loading_optimization_attrs( $image, $context ) {
+	$src               = preg_match( '/ src=["\']?([^"\']*)/i', $image, $matche_src ) ? $matche_src[1] : null;
+	$width             = preg_match( '/ width=["\']([0-9]+)["\']/', $image, $match_width ) ? (int) $match_width[1] : null;
+	$height            = preg_match( '/ height=["\']([0-9]+)["\']/', $image, $match_height ) ? (int) $match_height[1] : null;
+	$loading_val       = preg_match( '/ loading=["\']([A-Za-z]+)["\']/', $image, $match_loading ) ? $match_loading[1] : null;
+	$fetchpriority_val = preg_match( '/ fetchpriority=["\']([A-Za-z]+)["\']/', $image, $match_fetchpriority ) ? $match_fetchpriority[1] : null;
+	$decoding_val      = preg_match( '/ decoding=["\']([A-Za-z]+)["\']/', $image, $match_decoding ) ? $match_decoding[1] : null;
+
+	/*
+	 * Get loading optimization attributes to use.
+	 * This must occur before the conditional check below so that even images
+	 * that are ineligible for being lazy-loaded are considered.
+	 */
+	$optimization_attrs = wp_get_loading_optimization_attributes(
+		'img',
+		array(
+			'src'           =&gt; $src,
+			'width'         =&gt; $width,
+			'height'        =&gt; $height,
+			'loading'       =&gt; $loading_val,
+			'fetchpriority' =&gt; $fetchpriority_val,
+			'decoding'      =&gt; $decoding_val,
+		),
+		$context
+	);
+
+	// Images should have source for the loading optimization attributes to be added.
+	if ( ! str_contains( $image, ' src="' ) ) {
+		return $image;
+	}
+
+	if ( empty( $decoding_val ) ) {
+		/**
+		 * Filters the `decoding` attribute value to add to an image. Default `async`.
+		 *
+		 * Returning a falsey value will omit the attribute.
+		 *
+		 * @since 6.1.0
+		 *
+		 * @param string|false|null $value      The `decoding` attribute value. Returning a falsey value
+		 *                                      will result in the attribute being omitted for the image.
+		 *                                      Otherwise, it may be: 'async', 'sync', or 'auto'. Defaults to false.
+		 * @param string            $image      The HTML `img` tag to be filtered.
+		 * @param string            $context    Additional context about how the function was called
+		 *                                      or where the img tag is.
+		 */
+		$filtered_decoding_attr = apply_filters(
+			'wp_img_tag_add_decoding_attr',
+			isset( $optimization_attrs['decoding'] ) ? $optimization_attrs['decoding'] : false,
+			$image,
+			$context
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/media.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/media.php#L1960">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/media.php#L1960-L2091">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

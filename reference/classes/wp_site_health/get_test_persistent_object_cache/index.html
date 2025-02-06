@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_site_health/">WP_Site_Health</a></span><span class="is-current-page">WP_Site_Health::get_test_persistent_object_cache()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Site_Health::get_test_persistent_object_cache()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Site_Health::get_test_persistent_object_cache(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Tests if the site uses persistent object cache and recommends to use it if not.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The test result.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2499"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_test_persistent_object_cache() {
+	/**
+	 * Filters the action URL for the persistent object cache health check.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param string $action_url Learn more link for persistent object cache health check.
+	 */
+	$action_url = apply_filters(
+		'site_status_persistent_object_cache_url',
+		/* translators: Localized Support reference. */
+		__( 'https://developer.notmatt.press/advanced-administration/performance/optimization/#persistent-object-cache' )
+	);
+
+	$result = array(
+		'test'        =&gt; 'persistent_object_cache',
+		'status'      =&gt; 'good',
+		'badge'       =&gt; array(
+			'label' =&gt; __( 'Performance' ),
+			'color' =&gt; 'blue',
+		),
+		'label'       =&gt; __( 'A persistent object cache is being used' ),
+		'description' =&gt; sprintf(
+			'&lt;p&gt;%s&lt;/p&gt;',
+			__( 'A persistent object cache makes your site&amp;#8217;s database more efficient, resulting in faster load times because WordPress can retrieve your site&amp;#8217;s content and settings much more quickly.' )
+		),
+		'actions'     =&gt; sprintf(
+			'&lt;p&gt;&lt;a href="%s" target="_blank"&gt;%s&lt;span class="screen-reader-text"&gt; %s&lt;/span&gt;&lt;span aria-hidden="true" class="dashicons dashicons-external"&gt;&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;',
+			esc_url( $action_url ),
+			__( 'Learn more about persistent object caching.' ),
+			/* translators: Hidden accessibility text. */
+			__( '(opens in a new tab)' )
+		),
+	);
+
+	if ( wp_using_ext_object_cache() ) {
+		return $result;
+	}
+
+	if ( ! $this-&gt;should_suggest_persistent_object_cache() ) {
+		$result['label'] = __( 'A persistent object cache is not required' );
+
+		return $result;
+	}
+
+	$available_services = $this-&gt;available_object_cache_services();
+
+	$notes = __( 'Your hosting provider can tell you if a persistent object cache can be enabled on your site.' );
+
+	if ( ! empty( $available_services ) ) {
+		$notes .= ' ' . sprintf(
+			/* translators: Available object caching services. */
+			__( 'Your host appears to support the following object caching services: %s.' ),
+			implode( ', ', $available_services )
+		);
+	}
+
+	/**
+	 * Filters the second paragraph of the health check's description
+	 * when suggesting the use of a persistent object cache.
+	 *
+	 * Hosts may want to replace the notes to recommend their preferred object caching solution.
+	 *
+	 * Plugin authors may want to append notes (not replace) on why object caching is recommended for their plugin.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param string   $notes              The notes appended to the health check description.
+	 * @param string[] $available_services The list of available persistent object cache services.
+	 */
+	$notes = apply_filters( 'site_status_persistent_object_cache_notes', $notes, $available_services );
+
+	$result['status']       = 'recommended';
+	$result['label']        = __( 'You should use a persistent object cache' );
+	$result['description'] .= sprintf(
+		'&lt;p&gt;%s&lt;/p&gt;',
+		wp_kses(
+			$notes,
+			array(
+				'a'      =&gt; array( 'href' =&gt; true ),
+				'code'   =&gt; true,
+				'em'     =&gt; true,
+				'strong' =&gt; true,
+			)
+		)
+	);
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-site-health.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-site-health.php#L2499">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-site-health.php#L2499-L2587">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/site_status_persistent_object_cache_notes/"><span class="hook-func">apply_filters</span>( ‘site_status_persistent_object_cache_notes’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$notes</span></nobr>,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$available_services</span></nobr> )</a></dt><dd><p>Filters the second paragraph of the health check’s description when suggesting the use of a persistent object cache.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/site_status_persistent_object_cache_url/"><span class="hook-func">apply_filters</span>( ‘site_status_persistent_object_cache_url’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$action_url</span></nobr> )</a></dt><dd><p>Filters the action URL for the persistent object cache health check.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/available_object_cache_services/">WP_Site_Health::available_object_cache_services()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Returns a list of available persistent object cache services.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/should_suggest_persistent_object_cache/">WP_Site_Health::should_suggest_persistent_object_cache()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Determines whether to suggest using a persistent object cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_kses/">wp_kses()</a><code>wp-includes/kses.php</code></td><td><p>Filters text content and strips out disallowed HTML.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_using_ext_object_cache/">wp_using_ext_object_cache()</a><code>wp-includes/load.php</code></td><td><p>Toggles <code>$_wp_using_ext_object_cache</code> on and off without directly touching global.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

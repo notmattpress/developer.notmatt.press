@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/widgets/">Widgets</a></span><span class="is-current-page">About the Legacy Widget block</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>About the Legacy Widget block</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The Legacy Widget block allows users to add, edit and preview third party widgets that are registered by plugins and widgets that were added using the classic Widgets Editor.</p>
+<p>Third party widgets can be added by inserting a Legacy Widget block using the block inserter and selecting the widget from the block’s dropdown.</p>
+<p>Third party widgets may also be added by searching for the name of the widget in the block inserter and selecting the widget. A variation of the Legacy Widget block will be inserted.</p>
+<h2 class="is-toc-heading" id="compatibility-with-the-legacy-widget-block" tabindex="-1"><a href="#compatibility-with-the-legacy-widget-block">Compatibility with the Legacy Widget block</a></h2>
+<h3 class="is-toc-heading" id="the-widget-added-event" tabindex="-1"><a href="#the-widget-added-event">The widget-added event</a></h3>
+<p>The Legacy Widget block will display the widget’s form in a way similar to the Customizer, and so is compatible with most third party widgets.</p>
+<p>If the widget uses JavaScript in its form, it is important that events are added to the DOM after the <code>'widget-added'</code> jQuery event is triggered on <code>document</code>.</p>
+<p>For example, a widget might want to show a “Password” field when the “Change password” checkbox is checked.</p>
+<pre><code class="language-js">( function ( $ ) {
+    $( document ).on( 'widget-added', function ( $event, $control ) {
+        $control.find( '.change-password' ).on( 'change', function () {
+            var isChecked = $( this ).prop( 'checked' );
+            $control.find( '.password' ).toggleClass( 'hidden', ! isChecked );
+        } );
+    } );
+} )( jQuery );
+</code></pre>
+<p>Note that all of the widget’s event handlers are added in the <code>widget-added</code> callback.</p>
+<h3 class="is-toc-heading" id="displaying-no-preview-available" tabindex="-1"><a href="#displaying-no-preview-available">Displaying “No preview available.”</a></h3>
+<p>The Legacy Widget block will display a preview of the widget when the Legacy Widget block is not selected.</p>
+<p>A “No preview available.” message is automatically shown by the Legacy Widget block when the widget’s <code>widget()</code> function does not render anything or only renders empty HTML elements.</p>
+<p>Widgets may take advantage of this by returning early from <code>widget()</code> when a preview should not be displayed.</p>
+<pre><code class="language-php">class ExampleWidget extends WP_Widget {
+    ...
+    public function widget( $instance ) {
+        if ( ! isset( $instance['name'] ) ) {
+            // Name is required, so display nothing if we don't have it.
+            return;
+        }
+        ?&gt;
+        &lt;h3&gt;Name: &lt;?php echo esc_html( $instance['name'] ); ?&gt;&lt;/h3&gt;
+        ...
+        &lt;?php
+    }
+    ...
+}
+</code></pre>
+<h3 class="is-toc-heading" id="allowing-migration-to-a-block" tabindex="-1"><a href="#allowing-migration-to-a-block">Allowing migration to a block</a></h3>
+<p>You can allow users to easily migrate a Legacy Widget block containing a specific widget to a block or multiple blocks. This allows plugin authors to phase out their widgets in favour of blocks which are more intuitive and can be used in more places.</p>
+<p>The following steps show how to do this.</p>
+<h4>1) Display the widget’s instance in the REST API</h4>
+<p>First, we need to tell WordPress that it is OK to display your widget’s instance array in the REST API.</p>
+<p>This can be safely done if:</p>
+<ul>
+<li>You know that all of the values stored by your widget in <code>$instance</code> can be represented as JSON; and</li>
+<li>You know that your widget does not store any private data in <code>$instance</code> that should be kept hidden from users that have permission to customize the site.</li>
+</ul>
+<p>If it is safe to do so, then include a widget option named <code>show_instance_in_rest</code> with its value set to <code>true</code> when registering your widget.</p>
+<pre><code class="language-php">class ExampleWidget extends WP_Widget {
+    ...
+    /**
+     * Sets up the widget
+     */
+    public function __construct() {
+        $widget_ops = array(
+            // ...other options here
+            'show_instance_in_rest' =&gt; true,
+            // ...other options here
+        );
+        parent::__construct( 'example_widget', 'ExampleWidget', $widget_ops );
+    }
+    ...
+}
+</code></pre>
+<p>This allows the block editor and other REST API clients to see your widget’s instance array by accessing <code>instance.raw</code> in the REST API response.</p>
+<p>Note that <a href="https://core.trac.wordpress.org/ticket/53332">versions of WordPress prior to 5.8.0 allowed you to enable this feature by setting <code>$show_instance_in_rest</code> to <code>true</code></a> in the class that extends <code>WP_Widget</code>.</p>
+<pre><code class="language-php">class ExampleWidget extends WP_Widget {
+    ...
+    public $show_instance_in_rest = true;
+    ...
+}
+</code></pre>
+<p>This is now deprecated in favour of the widget option method.</p>
+<h4>2) Add a block transform</h4>
+<p>Now, we can define a <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-transforms/">block transform</a> which tells the block editor what to replace the Legacy Widget block containing your widget with.</p>
+<p>This is done by adding JavaScript code to your block’s definition. In this example, we define a transform that turns a widget with ID <code>'example_widget'</code> into a block with name <code>'example/block'</code>.</p>
+<pre><code class="language-js">transforms: {
+    from: [
+        {
+            type: 'block',
+            blocks: [ 'core/legacy-widget' ],
+            isMatch: ( { idBase, instance } ) =&gt; {
+                if ( ! instance?.raw ) {
+                    // Can't transform if raw instance is not shown in REST API.
+                    return false;
+                }
+                return idBase === 'example_widget';
+            },
+            transform: ( { instance } ) =&gt; {
+                return createBlock( 'example/block', {
+                    name: instance.raw.name,
+                } );
+            },
+        },
+    ]
+},
+</code></pre>
+<h4>3) Hide the widget from the Legacy Widget block</h4>
+<p>As a final touch, we can tell the Legacy Widget block to hide your widget from the “Select widget” dropdown and from the block inserter. This encourages users to use the block that replaces your widget.</p>
+<p>This can be done using the <code>widget_types_to_hide_from_legacy_widget_block</code> filter.</p>
+<pre><code class="language-php">function hide_example_widget( $widget_types ) {
+    $widget_types[] = 'example_widget';
+    return $widget_types;
+}
+add_filter( 'widget_types_to_hide_from_legacy_widget_block', 'hide_example_widget' );
+</code></pre>
+<h2 class="is-toc-heading" id="using-the-legacy-widget-block-in-other-block-editors-advanced" tabindex="-1"><a href="#using-the-legacy-widget-block-in-other-block-editors-advanced">Using the Legacy Widget block in other block editors (Advanced)</a></h2>
+<p>You may optionally allow the Legacy Widget block in other block editors such as<br/>
+the WordPress post editor. This is not enabled by default.</p>
+<p>First, ensure that any styles and scripts required by the legacy widgets are<br/>
+loaded onto the page. A convenient way of doing this is to manually perform all<br/>
+of the hooks that ordinarily run when a user browses to the widgets WP Admin<br/>
+screen.</p>
+<pre><code class="language-php">add_action( 'admin_print_styles', function() {
+    if ( get_current_screen()-&gt;is_block_editor() ) {
+        do_action( 'admin_print_styles-widgets.php' );
+    }
+} );
+add_action( 'admin_print_scripts', function() {
+    if ( get_current_screen()-&gt;is_block_editor() ) {
+        do_action( 'load-widgets.php' );
+        do_action( 'widgets.php' );
+        do_action( 'sidebar_admin_setup' );
+        do_action( 'admin_print_scripts-widgets.php' );
+    }
+} );
+add_action( 'admin_print_footer_scripts', function() {
+    if ( get_current_screen()-&gt;is_block_editor() ) {
+        do_action( 'admin_print_footer_scripts-widgets.php' );
+    }
+} );
+add_action( 'admin_footer', function() {
+    if ( get_current_screen()-&gt;is_block_editor() ) {
+        do_action( 'admin_footer-widgets.php' );
+    }
+} );
+</code></pre>
+<p>Then, register the Legacy Widget block using <code>registerLegacyWidgetBlock</code> which<br/>
+is defined in the <code>@wordpress/widgets</code> package.</p>
+<pre><code class="language-php">add_action( 'enqueue_block_editor_assets', function() {
+    wp_enqueue_script( 'wp-widgets' );
+    wp_add_inline_script( 'wp-widgets', 'wp.widgets.registerLegacyWidgetBlock()' );
+} );
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

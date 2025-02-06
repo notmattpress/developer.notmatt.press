@@ -1,0 +1,339 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Transforms</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Transforms</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Block Transforms is the API that allows a block to be transformed <em>from</em> and <em>to</em> other blocks, as well as <em>from</em> other entities. Existing entities that work with this API include shortcodes, files, regular expressions, and raw DOM nodes.</p>
+<h2 class="is-toc-heading" id="transform-direction-to-and-from" tabindex="-1"><a href="#transform-direction-to-and-from">Transform direction: to and from</a></h2>
+<p>A block declares which transformations it supports via the optional <code>transforms</code> key of the block configuration, whose subkeys <code>to</code> and <code>from</code> hold an array of available transforms for every direction. Example:</p>
+<pre><code class="language-js">export const settings = {
+    title: 'My Block Title',
+    description: 'My block description',
+    /* ... */
+    transforms: {
+        from: [
+            /* supported from transforms */
+        ],
+        to: [
+            /* supported to transforms */
+        ],
+    },
+};
+</code></pre>
+<h2 class="is-toc-heading" id="transformations-types" tabindex="-1"><a href="#transformations-types">Transformations types</a></h2>
+<p>This section goes through the existing types of transformations blocks support:</p>
+<ul>
+<li>block</li>
+<li>enter</li>
+<li>files</li>
+<li>prefix</li>
+<li>raw</li>
+<li>shortcode</li>
+</ul>
+<h3 class="is-toc-heading" id="block" tabindex="-1"><a href="#block">Block</a></h3>
+<p>This type of transformations support both <em>from</em> and <em>to</em> directions, allowing blocks to be converted into a different one. It has a corresponding UI control within the block toolbar.</p>
+<p>A transformation of type <code>block</code> is an object that takes the following parameters:</p>
+<ul>
+<li><strong>type</strong> <em>(string)</em>: the value <code>block</code>.</li>
+<li><strong>blocks</strong> <em>(array)</em>: a list of known block types. It also accepts the wildcard value (<code>"*"</code>), meaning that the transform is available to <em>all</em> block types (eg: all blocks can transform into <code>core/group</code>).</li>
+<li><strong>transform</strong> <em>(function)</em>: a callback that receives the attributes and inner blocks of the block being processed. It should return a block object or an array of block objects.</li>
+<li><strong>isMatch</strong> <em>(function, optional)</em>: a callback that receives the block attributes as the first argument and the block object as the second argument and should return a boolean. Returning <code>false</code> from this function will prevent the transform from being available and displayed as an option to the user.</li>
+<li><strong>isMultiBlock</strong> <em>(boolean, optional)</em>: whether the transformation can be applied when multiple blocks are selected. If true, the <code>transform</code> function’s first parameter will be an array containing each selected block’s attributes, and the second an array of each selected block’s inner blocks. False by default.</li>
+<li><strong>priority</strong> <em>(number, optional)</em>: controls the priority with which a transformation is applied, where a lower value will take precedence over higher values. This behaves much like a <a href="https://developer.notmatt.press/reference/#Hook_to_WordPress">WordPress hook</a>. Like hooks, the default priority is <code>10</code> when not otherwise set.</li>
+</ul>
+<p><strong>Example: from Paragraph block to Heading block</strong></p>
+<p>To declare this transformation we add the following code into the heading block configuration, which uses the <code>createBlock</code> function from the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-blocks/#createBlock"><code>wp-blocks</code> package</a>.</p>
+<pre><code class="language-js">transforms: {
+    from: [
+        {
+            type: 'block',
+            blocks: [ 'core/paragraph' ],
+            transform: ( { content } ) =&gt; {
+                return createBlock( 'core/heading', {
+                    content,
+                } );
+            },
+        },
+    ]
+},
+</code></pre>
+<p><strong>Example: blocks that have InnerBlocks</strong></p>
+<p>A block with InnerBlocks can also be transformed from and to another block with InnerBlocks.</p>
+<pre><code class="language-js">transforms: {
+    to: [
+        {
+            type: 'block',
+            blocks: [ 'some/block-with-innerblocks' ],
+            transform: ( attributes, innerBlocks ) =&gt; {
+                return createBlock(
+                    'some/other-block-with-innerblocks',
+                    attributes,
+                    innerBlocks
+                );
+            },
+        },
+    ],
+},
+</code></pre>
+<h3 class="is-toc-heading" id="enter" tabindex="-1"><a href="#enter">Enter</a></h3>
+<p>This type of transformations support the <em>from</em> direction, allowing blocks to be created from some content introduced by the user. They’re applied in a new block line after the user has introduced some content and hit the ENTER key.</p>
+<p>A transformation of type <code>enter</code> is an object that takes the following parameters:</p>
+<ul>
+<li><strong>type</strong> <em>(string)</em>: the value <code>enter</code>.</li>
+<li><strong>regExp</strong> <em>(RegExp)</em>: the Regular Expression to use as a matcher. If the value matches, the transformation will be applied.</li>
+<li><strong>transform</strong> <em>(function)</em>: a callback that receives an object with a <code>content</code> field containing the value that has been entered. It should return a block object or an array of block objects.</li>
+<li><strong>priority</strong> <em>(number, optional)</em>: controls the priority with which a transform is applied, where a lower value will take precedence over higher values. This behaves much like a <a href="https://developer.notmatt.press/reference/#Hook_to_WordPress">WordPress hook</a>. Like hooks, the default priority is <code>10</code> when not otherwise set.</li>
+</ul>
+<p><strong>Example: from — to Separator block</strong></p>
+<p>To create a separator block when the user types the hyphen three times and then hits the ENTER key we can use the following code:</p>
+<pre><code class="language-js">transforms = {
+    from: [
+        {
+            type: 'enter',
+            regExp: /^-{3,}$/,
+            transform: () =&gt; createBlock( 'core/separator' ),
+        },
+    ],
+};
+</code></pre>
+<h3 class="is-toc-heading" id="files" tabindex="-1"><a href="#files">Files</a></h3>
+<p>This type of transformations support the <em>from</em> direction, allowing blocks to be created from files dropped into the editor.</p>
+<p>A transformation of type <code>files</code> is an object that takes the following parameters:</p>
+<ul>
+<li><strong>type</strong> <em>(string)</em>: the value <code>files</code>.</li>
+<li><strong>transform</strong> <em>(function)</em>: a callback that receives the array of files being processed. It should return a block object or an array of block objects.</li>
+<li><strong>isMatch</strong> <em>(function, optional)</em>: a callback that receives the array of files being processed and should return a boolean. Returning <code>false</code> from this function will prevent the transform from being applied.</li>
+<li><strong>priority</strong> <em>(number, optional)</em>: controls the priority with which a transform is applied, where a lower value will take precedence over higher values. This behaves much like a <a href="https://developer.notmatt.press/reference/#Hook_to_WordPress">WordPress hook</a>. Like hooks, the default priority is <code>10</code> when not otherwise set.</li>
+</ul>
+<p><strong>Example: from file to File block</strong></p>
+<p>To create a File block when the user drops a file into the editor we can use the following code:</p>
+<pre><code class="language-js">transforms: {
+    from: [
+        {
+            type: 'files',
+            isMatch: ( files ) =&gt; files.length === 1,
+            // By defining a lower priority than the default of 10,
+            // we make that the File block to be created as a fallback,
+            // if no other transform is found.
+            priority: 15,
+            transform: ( files ) =&gt; {
+                const file = files[ 0 ];
+                const blobURL = createBlobURL( file );
+                // File will be uploaded in componentDidMount()
+                return createBlock( 'core/file', {
+                    href: blobURL,
+                    fileName: file.name,
+                    textLinkHref: blobURL,
+                } );
+            },
+        },
+    ];
+}
+</code></pre>
+<h3 class="is-toc-heading" id="prefix" tabindex="-1"><a href="#prefix">Prefix</a></h3>
+<p>This type of transformations support the <em>from</em> direction, allowing blocks to be created from some text typed by the user. They’re applied when, in a new block line, the user types some text and then adds a trailing space.</p>
+<p>A transformation of type <code>prefix</code> is an object that takes the following parameters:</p>
+<ul>
+<li><strong>type</strong> <em>(string)</em>: the value <code>prefix</code>.</li>
+<li><strong>prefix</strong> <em>(string)</em>: the character or sequence of characters that match this transform.</li>
+<li><strong>transform</strong> <em>(function)</em>: a callback that receives the content introduced. It should return a block object or an array of block objects.</li>
+<li><strong>priority</strong> <em>(number, optional)</em>: controls the priority with which a transform is applied, where a lower value will take precedence over higher values. This behaves much like a <a href="https://developer.notmatt.press/reference/#Hook_to_WordPress">WordPress hook</a>. Like hooks, the default priority is <code>10</code> when not otherwise set.</li>
+</ul>
+<p><strong>Example: from text to custom block</strong></p>
+<p>If we want to create a custom block when the user types the question mark, we could use this code:</p>
+<pre><code class="language-js">transforms: {
+    from: [
+        {
+            type: 'prefix',
+            prefix: '?',
+            transform( content ) {
+                return createBlock( 'my-plugin/question', {
+                    content,
+                } );
+            },
+        },
+    ];
+}
+</code></pre>
+<h3 class="is-toc-heading" id="raw" tabindex="-1"><a href="#raw">Raw</a></h3>
+<p>This type of transformations support the <em>from</em> direction, allowing blocks to be created from raw HTML nodes. They’re applied when the user executes the “Convert to Blocks” action from within the block setting UI menu, as well as when some content is pasted or dropped into the editor.</p>
+<p>A transformation of type <code>raw</code> is an object that takes the following parameters:</p>
+<ul>
+<li><strong>type</strong> <em>(string)</em>: the value <code>raw</code>.</li>
+<li><strong>transform</strong> <em>(function, optional)</em>: a callback that receives the node being processed. It should return a block object or an array of block objects.</li>
+<li><strong>schema</strong> <em>(object|function, optional)</em>: defines an <a href="https://html.spec.whatwg.org/multipage/dom.html#content-models">HTML content model</a> used to detect and process pasted contents. See <a href="#schemas-and-content-models">below</a>.</li>
+<li><strong>selector</strong> <em>(string, optional)</em>: a CSS selector string to determine whether the element matches according to the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/matches">element.matches</a> method. The transform won’t be executed if the element doesn’t match. This is a shorthand and alternative to using <code>isMatch</code>, which, if present, will take precedence.</li>
+<li><strong>isMatch</strong> <em>(function, optional)</em>: a callback that receives the node being processed and should return a boolean. Returning <code>false</code> from this function will prevent the transform from being applied.</li>
+<li><strong>priority</strong> <em>(number, optional)</em>: controls the priority with which a transform is applied, where a lower value will take precedence over higher values. This behaves much like a <a href="https://developer.notmatt.press/reference/#Hook_to_WordPress">WordPress hook</a>. Like hooks, the default priority is <code>10</code> when not otherwise set.</li>
+</ul>
+<p><strong>Example: from URLs to Embed block</strong></p>
+<p>If we want to create an Embed block when the user pastes some URL in the editor, we could use this code:</p>
+<pre><code class="language-js">transforms: {
+    from: [
+        {
+            type: 'raw',
+            isMatch: ( node ) =&gt;
+                node.nodeName === 'P' &amp;&amp;
+                /^\s*(https?:\/\/\S+)\s*$/i.test( node.textContent ),
+            transform: ( node ) =&gt; {
+                return createBlock( 'core/embed', {
+                    url: node.textContent.trim(),
+                } );
+            },
+        },
+    ],
+}
+</code></pre>
+<h4 id="schemas-and-content-models">Schemas and Content Models</h4>
+<p>When pasting content it’s possible to define a <a href="https://html.spec.whatwg.org/multipage/dom.html#content-models">content model</a> that will be used to validate and process pasted content. It’s often the case that HTML pasted into the editor will contain a mixture of elements that <em>should</em> transfer as well as elements that <em>shouldn’t</em>. For example, consider pasting <code>&lt;span class="time"&gt;12:04 pm&lt;/span&gt;</code> into the editor. We want to copy <code>12:04 pm</code> and omit the <code>&lt;span&gt;</code> and its <code>class</code> attribute because those won’t carry the same meaning or structure as they originally did from where they were copied.</p>
+<p>When writing <code>raw</code> transforms you can control this by supplying a <code>schema</code> which describes allowable content and which will be applied to clean up the pasted content before attempting to match with your block. The schemas are passed into <a href="https://github.com/wordpress/gutenberg/blob/trunk/packages/dom/src/dom/clean-node-list.js"><code>cleanNodeList</code> from <code>@wordpress/dom</code></a>; check there for a <a href="https://github.com/wordpress/gutenberg/blob/trunk/packages/dom/src/phrasing-content.js">complete description of the schema</a>.</p>
+<pre><code class="language-js">schema = { span: { children: { '#text': {} } } };
+</code></pre>
+<p><strong>Example: a custom content model</strong></p>
+<p>Suppose we want to match the following HTML snippet and turn it into some kind of custom post preview block.</p>
+<pre><code class="language-html">&lt;div data-post-id="13"&gt;
+    &lt;h2&gt;The Post Title&lt;/h2&gt;
+    &lt;p&gt;Some &lt;em&gt;great&lt;/em&gt; content.&lt;/p&gt;
+&lt;/div&gt;
+</code></pre>
+<p>We want to tell the editor to allow the inner <code>h2</code> and <code>p</code> elements. We do this by supplying the following schema. In this example we’re using the function form, which accepts an argument supplying <code>phrasingContentSchema</code> (as well as a boolean <code>isPaste</code> indicating if the transformation operation started with pasting text). The <code>phrasingContentSchema</code> is pre-defined to match HTML phrasing elements, such as <code>&lt;strong&gt;</code> and <code>&lt;sup&gt;</code> and <code>&lt;kbd&gt;</code>. Anywhere we expect<br/>
+a <code>&lt;RichText /&gt;</code> component is a good place to allow phrasing content otherwise we’ll lose all text formatting on conversion.</p>
+<pre><code class="language-js">schema = ({ phrasingContentSchema }) =&gt; {
+    div: {
+        required: true,
+        attributes: [ 'data-post-id' ],
+        children: {
+            h2: { children: phrasingContentSchema },
+            p: { children: phrasingContentSchema }
+        }
+    }
+}
+</code></pre>
+<p>When we successfully match this content every HTML attribute will be stripped away except for <code>data-post-id</code> and if we have other arrangements of HTML inside of a given <code>div</code> then it won’t match our transformer. Likewise we’d fail to match if we found an <code>&lt;h3&gt;</code> in there instead of an <code>&lt;h2&gt;</code>.</p>
+<p>Schemas are most-important when wanting to match HTML snippets containing non-phrasing content, such as <code>&lt;details&gt;</code> with a <code>&lt;summary&gt;</code>. Without declaring the custom schema the editor will skip over these other constructions before attempting to run them through any block transforms.</p>
+<h3 class="is-toc-heading" id="shortcode" tabindex="-1"><a href="#shortcode">Shortcode</a></h3>
+<p>This type of transformations support the <em>from</em> direction, allowing blocks to be created from shortcodes. It’s applied as part of the <code>raw</code> transformation process.</p>
+<p>A transformation of type <code>shortcode</code> is an object that takes the following parameters:</p>
+<ul>
+<li><strong>type</strong> <em>(string)</em>: the value <code>shortcode</code>.</li>
+<li><strong>tag</strong> <em>(string|array)</em>: the shortcode tag or list of shortcode aliases this transform can work with.</li>
+<li><strong>transform</strong> <em>(function, optional)</em>: a callback that receives the shortcode attributes as the first argument and the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-shortcode/#next">WPShortcodeMatch</a> as the second. It should return a block object or an array of block objects. When this parameter is defined, it will take precedence over the <code>attributes</code> parameter.</li>
+<li><strong>attributes</strong> <em>(object, optional)</em>: object representing where the block attributes should be sourced from, according to the attributes shape defined by the <a href="./block-registration.md">block configuration object</a>. If a particular attribute contains a <code>shortcode</code> key, it should be a function that receives the shortcode attributes as the first arguments and the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-shortcode/#next">WPShortcodeMatch</a> as second, and returns a value for the attribute that will be sourced in the block’s comment.</li>
+<li><strong>isMatch</strong> <em>(function, optional)</em>: a callback that receives the shortcode attributes per the <a href="https://codex.wordpress.org/Shortcode_API">Shortcode API</a> and should return a boolean. Returning <code>false</code> from this function will prevent the shortcode to be transformed into this block.</li>
+<li><strong>priority</strong> <em>(number, optional)</em>: controls the priority with which a transform is applied, where a lower value will take precedence over higher values. This behaves much like a <a href="https://developer.notmatt.press/reference/#Hook_to_WordPress">WordPress hook</a>. Like hooks, the default priority is <code>10</code> when not otherwise set.</li>
+</ul>
+<p><strong>Example: from shortcode to block using <code>transform</code></strong></p>
+<p>An existing shortcode can be transformed into its block counterpart using the <code>transform</code> method.</p>
+<pre><code class="language-js">transforms: {
+    from: [
+        {
+            type: 'shortcode',
+            tag: 'video',
+            transform( { named: { src } } ) {
+                return createBlock( 'core/video', { src } );
+            },
+            // Prevent the shortcode to be converted
+            // into this block when it doesn't
+            // have the proper ID.
+            isMatch( { named: { id } } ) {
+                return id === 'my-id';
+            },
+        },
+    ],
+},
+</code></pre>
+<p><strong>Example: from shortcode to block using <code>attributes</code></strong></p>
+<p>An existing shortcode can be transformed into its block counterpart using the <code>attributes</code> parameters.</p>
+<pre><code class="language-js">transforms: {
+    from: [
+        {
+            type: 'shortcode',
+            tag: 'youtube',
+            attributes: {
+                url: {
+                    type: 'string',
+                    source: 'attribute',
+                    attribute: 'src',
+                    selector: 'img',
+                },
+                align: {
+                    type: 'string',
+                    // The shortcode function will extract
+                    // the shortcode atts into a value
+                    // to be sourced in the block's comment.
+                    shortcode: ( { named: { align = 'alignnone' } } ) =&gt; {
+                        return align.replace( 'align', '' );
+                    },
+                },
+            },
+            // Prevent the shortcode to be converted
+            // into this block when it doesn't
+            // have the proper ID.
+            isMatch( { named: { id } } ) {
+                return id === 'my-id';
+            },
+        },
+    ]
+},
+</code></pre>
+<h2 class="is-toc-heading" id="ungroup-blocks" tabindex="-1"><a href="#ungroup-blocks">ungroup blocks</a></h2>
+<p>Via the optional <code>transforms</code> key of the block configuration, blocks can use the <code>ungroup</code> subkey to define the blocks that will replace the block being processed. These new blocks will usually be a subset of the existing inner blocks, but could also include new blocks.</p>
+<p>If a block has an <code>ungroup</code> transform, it is eligible for ungrouping, without the requirement of being the default grouping block. The UI used to ungroup a block with this API is the same as the one used for the default grouping block. In order for the Ungroup button to be displayed, we must have a single grouping block selected, which also contains some inner blocks.</p>
+<p><strong>ungroup</strong> is a callback function that receives the attributes and inner blocks of the block being processed. It should return an array of block objects.</p>
+<p>Example:</p>
+<pre><code class="language-js">export const settings = {
+    title: 'My grouping Block Title',
+    description: 'My grouping block description',
+    /* ... */
+    transforms: {
+        ungroup: ( attributes, innerBlocks ) =&gt;
+            innerBlocks.flatMap( ( innerBlock ) =&gt; innerBlock.innerBlocks ),
+    },
+};
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

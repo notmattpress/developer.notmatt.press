@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_MatchesMapRegex</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_MatchesMapRegex</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_MatchesMapRegex {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Helper class to remove the need to use eval to replace $matches[] in query strings.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_matchesmapregex/__construct/">WP_MatchesMapRegex::__construct</a></td><td>constructor</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_matchesmapregex/_map/">WP_MatchesMapRegex::_map</a></td><td>do the actual mapping</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_matchesmapregex/apply/">WP_MatchesMapRegex::apply</a></td><td>Substitute substring matches in subject.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_matchesmapregex/callback/">WP_MatchesMapRegex::callback</a></td><td>preg_replace_callback hook</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="15"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_MatchesMapRegex {
+	/**
+	 * store for matches
+	 *
+	 * @var array
+	 */
+	private $_matches;
+
+	/**
+	 * store for mapping result
+	 *
+	 * @var string
+	 */
+	public $output;
+
+	/**
+	 * subject to perform mapping on (query string containing $matches[] references
+	 *
+	 * @var string
+	 */
+	private $_subject;
+
+	/**
+	 * regexp pattern to match $matches[] references
+	 *
+	 * @var string
+	 */
+	public $_pattern = '(\$matches\[[1-9]+[0-9]*\])'; // Magic number.
+
+	/**
+	 * constructor
+	 *
+	 * @param string $subject subject if regex
+	 * @param array  $matches data to use in map
+	 */
+	public function __construct( $subject, $matches ) {
+		$this-&gt;_subject = $subject;
+		$this-&gt;_matches = $matches;
+		$this-&gt;output   = $this-&gt;_map();
+	}
+
+	/**
+	 * Substitute substring matches in subject.
+	 *
+	 * static helper function to ease use
+	 *
+	 * @param string $subject subject
+	 * @param array  $matches data used for substitution
+	 * @return string
+	 */
+	public static function apply( $subject, $matches ) {
+		$result = new WP_MatchesMapRegex( $subject, $matches );
+		return $result-&gt;output;
+	}
+
+	/**
+	 * do the actual mapping
+	 *
+	 * @return string
+	 */
+	private function _map() {
+		$callback = array( $this, 'callback' );
+		return preg_replace_callback( $this-&gt;_pattern, $callback, $this-&gt;_subject );
+	}
+
+	/**
+	 * preg_replace_callback hook
+	 *
+	 * @param array $matches preg_replace regexp matches
+	 * @return string
+	 */
+	public function callback( $matches ) {
+		$index = (int) substr( $matches[0], 9, -1 );
+		return ( isset( $this-&gt;_matches[ $index ] ) ? urlencode( $this-&gt;_matches[ $index ] ) : '' );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-matchesmapregex.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-matchesmapregex.php#L15">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-matchesmapregex.php#L15-L90">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.9.0/">2.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

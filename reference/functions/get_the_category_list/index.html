@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_the_category_list()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_the_category_list()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_the_category_list( <span class="arg-type">string</span> <span class="arg-name">$separator</span> = <span class="arg-default">''</span>,  <span class="arg-type">string</span> <span class="arg-name">$parents</span> = <span class="arg-default">''</span>,  <span class="arg-type">int</span> <span class="arg-name">$post_id</span> = <span class="arg-default">false</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves category list for a post in either HTML list or custom format.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Generally used for quick, delimited (e.g. comma-separated) lists of categories, as part of a post entry meta.</p>
+<p>For a more powerful, list-based function, see <a href="https://developer.notmatt.press/reference/functions/wp_list_categories/" rel="function">wp_list_categories()</a> .</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/wp_list_categories">wp_list_categories()</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$separator</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Separator between the categories. By default, the links are placed                          in an unordered list. An empty string will result in the default behavior.</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$parents</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">How to display the parents. Accepts <code>'multiple'</code>, <code>'single'</code>, or empty.<br/>
+</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$post_id</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">ID of the post to retrieve categories for. Defaults to the current post.</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Category list for a post.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="141"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_the_category_list( $separator = '', $parents = '', $post_id = false ) {
+	global $wp_rewrite;
+
+	if ( ! is_object_in_taxonomy( get_post_type( $post_id ), 'category' ) ) {
+		/** This filter is documented in wp-includes/category-template.php */
+		return apply_filters( 'the_category', '', $separator, $parents );
+	}
+
+	/**
+	 * Filters the categories before building the category list.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param WP_Term[] $categories An array of the post's categories.
+	 * @param int|false $post_id    ID of the post to retrieve categories for.
+	 *                              When `false`, defaults to the current post in the loop.
+	 */
+	$categories = apply_filters( 'the_category_list', get_the_category( $post_id ), $post_id );
+
+	if ( empty( $categories ) ) {
+		/** This filter is documented in wp-includes/category-template.php */
+		return apply_filters( 'the_category', __( 'Uncategorized' ), $separator, $parents );
+	}
+
+	$rel = ( is_object( $wp_rewrite ) &amp;&amp; $wp_rewrite-&gt;using_permalinks() ) ? 'rel="category tag"' : 'rel="category"';
+
+	$thelist = '';
+	if ( '' === $separator ) {
+		$thelist .= '&lt;ul class="post-categories"&gt;';
+		foreach ( $categories as $category ) {
+			$thelist .= "\n\t&lt;li&gt;";
+			switch ( strtolower( $parents ) ) {
+				case 'multiple':
+					if ( $category-&gt;parent ) {
+						$thelist .= get_category_parents( $category-&gt;parent, true, $separator );
+					}
+					$thelist .= '&lt;a href="' . esc_url( get_category_link( $category-&gt;term_id ) ) . '" ' . $rel . '&gt;' . $category-&gt;name . '&lt;/a&gt;&lt;/li&gt;';
+					break;
+				case 'single':
+					$thelist .= '&lt;a href="' . esc_url( get_category_link( $category-&gt;term_id ) ) . '"  ' . $rel . '&gt;';
+					if ( $category-&gt;parent ) {
+						$thelist .= get_category_parents( $category-&gt;parent, false, $separator );
+					}
+					$thelist .= $category-&gt;name . '&lt;/a&gt;&lt;/li&gt;';
+					break;
+				case '':
+				default:
+					$thelist .= '&lt;a href="' . esc_url( get_category_link( $category-&gt;term_id ) ) . '" ' . $rel . '&gt;' . $category-&gt;name . '&lt;/a&gt;&lt;/li&gt;';
+			}
+		}
+		$thelist .= '&lt;/ul&gt;';
+	} else {
+		$i = 0;
+		foreach ( $categories as $category ) {
+			if ( 0 &lt; $i ) {
+				$thelist .= $separator;
+			}
+			switch ( strtolower( $parents ) ) {
+				case 'multiple':
+					if ( $category-&gt;parent ) {
+						$thelist .= get_category_parents( $category-&gt;parent, true, $separator );
+					}
+					$thelist .= '&lt;a href="' . esc_url( get_category_link( $category-&gt;term_id ) ) . '" ' . $rel . '&gt;' . $category-&gt;name . '&lt;/a&gt;';
+					break;
+				case 'single':
+					$thelist .= '&lt;a href="' . esc_url( get_category_link( $category-&gt;term_id ) ) . '" ' . $rel . '&gt;';
+					if ( $category-&gt;parent ) {
+						$thelist .= get_category_parents( $category-&gt;parent, false, $separator );
+					}
+					$thelist .= "$category-&gt;name&lt;/a&gt;";
+					break;
+				case '':
+				default:
+					$thelist .= '&lt;a href="' . esc_url( get_category_link( $category-&gt;term_id ) ) . '" ' . $rel . '&gt;' . $category-&gt;name . '&lt;/a&gt;';
+			}
+			++$i;
+		}
+	}
+
+	/**
+	 * Filters the category or list of categories.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $thelist   List of categories for the current post.
+	 * @param string $separator Separator used between the categories.
+	 * @param string $parents   How to display the category parents. Accepts 'multiple',
+	 *                          'single', or empty.
+	 */
+	return apply_filters( 'the_category', $thelist, $separator, $parents );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/category-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/category-template.php#L141">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/category-template.php#L141-L231">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/the_category/"><span class="hook-func">apply_filters</span>( ‘the_category’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$thelist</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$separator</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$parents</span></nobr> )</a></dt><dd><p>Filters the category or list of categories.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/the_category_list/"><span class="hook-func">apply_filters</span>( ‘the_category_list’,  <nobr><span class="arg-type">WP_Term[]</span> <span class="arg-name">$categories</span></nobr>,  <nobr><span class="arg-type">int|false</span> <span class="arg-name">$post_id</span></nobr> )</a></dt><dd><p>Filters the categories before building the category list.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_the_category/">get_the_category()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves post categories.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_category_parents/">get_category_parents()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves category parents with separator.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_category_link/">get_category_link()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves category link URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_object_in_taxonomy/">is_object_in_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Determines if the given object type is associated with the given taxonomy.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_type/">get_post_type()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the post type of the current post or of a given post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/using_permalinks/">WP_Rewrite::using_permalinks()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Determines whether permalinks are being used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/the_category/">the_category()</a><code>wp-includes/category-template.php</code></td><td><p>Displays category list for a post in either HTML list or custom format.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.1/">1.5.1</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="502" id="comment-502">
+<article class="comment-body" id="div-comment-502">
+<a class="screen-reader-text" href="#comment-content-502">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-502">
+<p><strong>Display as List Items</strong><br>
+By leaving the <code>$separator</code> value empty, it will generate an unordered list instead, complete with classes.</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo get_the_category_list(); ?&gt;</code></pre>
+<p>Result:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;ul class="post-categories"&gt;
+	&lt;li&gt;
+		&lt;a href="<a href="http://myblog.com/category/business&amp;quot" rel="nofollow ugc">http://myblog.com/category/business&amp;quot</a>; title="View all posts in Business" rel="category tag"&gt;Business&lt;/a&gt;
+	&lt;/li&gt;
+&lt;/ul&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-502">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="501" id="comment-501">
+<article class="comment-body" id="div-comment-501">
+<a class="screen-reader-text" href="#comment-content-501">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-501">
+<p><strong>Implementation in WordPress default Twenty Eleven theme</strong><br/>
+In <code>content-single.php</code>:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+/* translators: used between list items, there is a space after the comma */
+$categories_list = get_the_category_list( __( ', ', 'twentyeleven' ) );
+
+/* translators: used between list items, there is a space after the comma */
+$tag_list = get_the_tag_list( '', __( ', ', 'twentyeleven' ) );
+if ( '' != $tag_list ) {
+	$utility_text = __( 'This entry was posted in %1$s and tagged %2$s by &lt;a href="%6$s"&gt;%5$s&lt;/a&gt;. Bookmark the &lt;a href="%3$s" title="Permalink to %4$s" rel="bookmark"&gt;permalink&lt;/a&gt;.', 'twentyeleven' );
+} elseif ( '' != $categories_list ) {
+	$utility_text = __( 'This entry was posted in %1$s by &lt;a href="%6$s"&gt;%5$s&lt;/a&gt;. Bookmark the &lt;a href="%3$s" title="Permalink to %4$s" rel="bookmark"&gt;permalink&lt;/a&gt;.', 'twentyeleven' );
+} else {
+	$utility_text = __( 'This entry was posted by &lt;a href="%6$s"&gt;%5$s&lt;/a&gt;. Bookmark the &lt;a href="%3$s" title="Permalink to %4$s" rel="bookmark"&gt;permalink&lt;/a&gt;.', 'twentyeleven' );
+}
+
+printf(
+	$utility_text,
+	$categories_list,
+	$tag_list,
+	esc_url( get_permalink() ),
+	the_title_attribute( 'echo=0' ),
+	get_the_author(),
+	esc_url( get_author_posts_url( get_the_author_meta( 'ID' ) ) )
+);
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-501">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">Response</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Response</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> Response {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>HTTP response class</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Contains a response from \WpOrg\Requests\<a href="https://developer.notmatt.press/reference/classes/requests/request/" rel="method">Requests::request()</a></p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-response/__construct/">Response::__construct</a></td><td>Constructor</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-response/decode_body/">Response::decode_body</a></td><td>JSON decode the response body.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-response/is_redirect/">Response::is_redirect</a></td><td>Is the response a redirect?</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wporg-requests-response/throw_for_status/">Response::throw_for_status</a></td><td>Throws an exception if the request was not successful</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="24"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class Response {
+
+	/**
+	 * Response body
+	 *
+	 * @var string
+	 */
+	public $body = '';
+
+	/**
+	 * Raw HTTP data from the transport
+	 *
+	 * @var string
+	 */
+	public $raw = '';
+
+	/**
+	 * Headers, as an associative array
+	 *
+	 * @var \WpOrg\Requests\Response\Headers Array-like object representing headers
+	 */
+	public $headers = [];
+
+	/**
+	 * Status code, false if non-blocking
+	 *
+	 * @var integer|boolean
+	 */
+	public $status_code = false;
+
+	/**
+	 * Protocol version, false if non-blocking
+	 *
+	 * @var float|boolean
+	 */
+	public $protocol_version = false;
+
+	/**
+	 * Whether the request succeeded or not
+	 *
+	 * @var boolean
+	 */
+	public $success = false;
+
+	/**
+	 * Number of redirects the request used
+	 *
+	 * @var integer
+	 */
+	public $redirects = 0;
+
+	/**
+	 * URL requested
+	 *
+	 * @var string
+	 */
+	public $url = '';
+
+	/**
+	 * Previous requests (from redirects)
+	 *
+	 * @var array Array of \WpOrg\Requests\Response objects
+	 */
+	public $history = [];
+
+	/**
+	 * Cookies from the request
+	 *
+	 * @var \WpOrg\Requests\Cookie\Jar Array-like object representing a cookie jar
+	 */
+	public $cookies = [];
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$this-&gt;headers = new Headers();
+		$this-&gt;cookies = new Jar();
+	}
+
+	/**
+	 * Is the response a redirect?
+	 *
+	 * @return boolean True if redirect (3xx status), false if not.
+	 */
+	public function is_redirect() {
+		$code = $this-&gt;status_code;
+		return in_array($code, [300, 301, 302, 303, 307], true) || $code &gt; 307 &amp;&amp; $code &lt; 400;
+	}
+
+	/**
+	 * Throws an exception if the request was not successful
+	 *
+	 * @param boolean $allow_redirects Set to false to throw on a 3xx as well
+	 *
+	 * @throws \WpOrg\Requests\Exception If `$allow_redirects` is false, and code is 3xx (`response.no_redirects`)
+	 * @throws \WpOrg\Requests\Exception\Http On non-successful status code. Exception class corresponds to "Status" + code (e.g. <a href="https://developer.notmatt.press/reference/functions/wporgrequestsexceptionhttpstatus404">\WpOrg\Requests\Exception\Http\Status404</a>)
+	 */
+	public function throw_for_status($allow_redirects = true) {
+		if ($this-&gt;is_redirect()) {
+			if ($allow_redirects !== true) {
+				throw new Exception('Redirection not allowed', 'response.no_redirects', $this);
+			}
+		} elseif (!$this-&gt;success) {
+			$exception = Http::get_class($this-&gt;status_code);
+			throw new $exception(null, $this);
+		}
+	}
+
+	/**
+	 * JSON decode the response body.
+	 *
+	 * The method parameters are the same as those for the PHP native `json_decode()` function.
+	 *
+	 * @link https://php.net/json-decode
+	 *
+	 * @param bool|null $associative Optional. When `true`, JSON objects will be returned as associative arrays;
+	 *                               When `false`, JSON objects will be returned as objects.
+	 *                               When `null`, JSON objects will be returned as associative arrays
+	 *                               or objects depending on whether `JSON_OBJECT_AS_ARRAY` is set in the flags.
+	 *                               Defaults to `true` (in contrast to the PHP native default of `null`).
+	 * @param int       $depth       Optional. Maximum nesting depth of the structure being decoded.
+	 *                               Defaults to `512`.
+	 * @param int       $options     Optional. Bitmask of JSON_BIGINT_AS_STRING, JSON_INVALID_UTF8_IGNORE,
+	 *                               JSON_INVALID_UTF8_SUBSTITUTE, JSON_OBJECT_AS_ARRAY, JSON_THROW_ON_ERROR.
+	 *                               Defaults to `0` (no options set).
+	 *
+	 * @return array
+	 *
+	 * @throws \WpOrg\Requests\Exception If `$this-&gt;body` is not valid json.
+	 */
+	public function decode_body($associative = true, $depth = 512, $options = 0) {
+		$data = json_decode($this-&gt;body, $associative, $depth, $options);
+
+		if (json_last_error() !== JSON_ERROR_NONE) {
+			$last_error = json_last_error_msg();
+			throw new Exception('Unable to parse JSON data: ' . $last_error, 'response.invalid', $this);
+		}
+
+		return $data;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/requests/src/response.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/Requests/src/Response.php#L24">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/Requests/src/Response.php#L24-L165">View on GitHub</a></p></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

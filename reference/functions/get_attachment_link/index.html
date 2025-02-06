@@ -1,0 +1,212 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_attachment_link()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_attachment_link()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_attachment_link( <span class="arg-type">int|WP_Post</span> <span class="arg-name">$post</span> = <span class="arg-default">null</span>,  <span class="arg-type">bool</span> <span class="arg-name">$leavename</span> = <span class="arg-default">false</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the permalink for an attachment.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This can be used in the WordPress Loop or outside of it.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID or object. Default uses the global <code>$post</code>.</span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$leavename</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to keep the page name. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The attachment permalink.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>Under a <a href="https://wordpress.org/support/article/using-permalinks/" title="Using Permalinks">“pretty” permalink structure</a>, the function returns something like <tt>http://wp.example.net/<var>path_to_post</var>/<var>post_name</var>/<var>attachment_name</var></tt>.</p>
+<p>Under <a href="https://wordpress.org/support/article/using-permalinks/" title="Using Permalinks">the default permalink structure</a> — or if WordPress can’t construct a pretty URI — the function returns something like <tt>http://wp.example.net/?attachment_id=<var>n</var></tt>, where <var>n</var> is the attachment ID number.</p>
+<p>You can change the output of this function through the <tt><a href="https://developer.notmatt.press/reference/hooks/attachment_link/" title="Plugin API/Filter Reference">attachment_link</a></tt> filter.</p>
+<p>If you want a direct link to the attached file (instead of the attachment page), you can use the function <tt><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_url/" title="Function Reference/wp get attachment url">wp_get_attachment_url</a>(<var>id</var>)</tt> instead.</p>
+<p><b>Note</b>: that <tt>get_attachment_link</tt> actually returns an URI, whereas <tt><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_link/" title="Function Reference/wp get attachment link">wp_get_attachment_link()</a></tt> returns an HTML hyperlink.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="472"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_attachment_link( $post = null, $leavename = false ) {
+	global $wp_rewrite;
+
+	$link = false;
+
+	$post             = get_post( $post );
+	$force_plain_link = wp_force_plain_post_permalink( $post );
+	$parent_id        = $post-&gt;post_parent;
+	$parent           = $parent_id ? get_post( $parent_id ) : false;
+	$parent_valid     = true; // Default for no parent.
+	if (
+		$parent_id &amp;&amp;
+		(
+			$post-&gt;post_parent === $post-&gt;ID ||
+			! $parent ||
+			! is_post_type_viewable( get_post_type( $parent ) )
+		)
+	) {
+		// Post is either its own parent or parent post unavailable.
+		$parent_valid = false;
+	}
+
+	if ( $force_plain_link || ! $parent_valid ) {
+		$link = false;
+	} elseif ( $wp_rewrite-&gt;using_permalinks() &amp;&amp; $parent ) {
+		if ( 'page' === $parent-&gt;post_type ) {
+			$parentlink = _get_page_link( $post-&gt;post_parent ); // Ignores page_on_front.
+		} else {
+			$parentlink = get_permalink( $post-&gt;post_parent );
+		}
+
+		if ( is_numeric( $post-&gt;post_name ) || str_contains( get_option( 'permalink_structure' ), '%category%' ) ) {
+			$name = 'attachment/' . $post-&gt;post_name; // &lt;permalink&gt;/&lt;int&gt;/ is paged so we use the explicit attachment marker.
+		} else {
+			$name = $post-&gt;post_name;
+		}
+
+		if ( ! str_contains( $parentlink, '?' ) ) {
+			$link = user_trailingslashit( trailingslashit( $parentlink ) . '%postname%' );
+		}
+
+		if ( ! $leavename ) {
+			$link = str_replace( '%postname%', $name, $link );
+		}
+	} elseif ( $wp_rewrite-&gt;using_permalinks() &amp;&amp; ! $leavename ) {
+		$link = home_url( user_trailingslashit( $post-&gt;post_name ) );
+	}
+
+	if ( ! $link ) {
+		$link = home_url( '/?attachment_id=' . $post-&gt;ID );
+	}
+
+	/**
+	 * Filters the permalink for an attachment.
+	 *
+	 * @since 2.0.0
+	 * @since 5.6.0 Providing an empty string will now disable
+	 *              the view attachment page link on the media modal.
+	 *
+	 * @param string $link    The attachment's permalink.
+	 * @param int    $post_id Attachment ID.
+	 */
+	return apply_filters( 'attachment_link', $link, $post-&gt;ID );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/link-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/link-template.php#L472">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/link-template.php#L472-L535">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/attachment_link/"><span class="hook-func">apply_filters</span>( ‘attachment_link’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$link</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr> )</a></dt><dd><p>Filters the permalink for an attachment.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_force_plain_post_permalink/">wp_force_plain_post_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Determine whether post should always use a plain permalink structure.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_post_type_viewable/">is_post_type_viewable()</a><code>wp-includes/post.php</code></td><td><p>Determines whether a post type is considered “viewable”.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_get_page_link/">_get_page_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the page permalink.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/user_trailingslashit/">user_trailingslashit()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves a trailing-slashed string if the site is set for adding trailing slashes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_type/">get_post_type()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the post type of the current post or of a given post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/using_permalinks/">WP_Rewrite::using_permalinks()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Determines whether permalinks are being used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_permalink/">get_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the full permalink for the current post or post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_media_image/render_media/">WP_Widget_Media_Image::render_media()</a><code>wp-includes/widgets/class-wp-widget-media-image.php</code></td><td><p>Render the media on the frontend.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/image_media_send_to_editor/">image_media_send_to_editor()</a><code>wp-admin/includes/media.php</code></td><td><p>Retrieves the media element HTML to send to the editor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/media_upload_form_handler/">media_upload_form_handler()</a><code>wp-admin/includes/media.php</code></td><td><p>Handles form submissions for the legacy media uploader.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/image_link_input_fields/">image_link_input_fields()</a><code>wp-admin/includes/media.php</code></td><td><p>Retrieves HTML for the Link URL buttons with the default link type as specified.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_fix_attachment_links/">_fix_attachment_links()</a><code>wp-admin/includes/post.php</code></td><td><p>Replaces hrefs of attachment anchors with up-to-date permalinks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_send_attachment_to_editor/">wp_ajax_send_attachment_to_editor()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles sending an attachment to the editor via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_attachment_link/">get_the_attachment_link()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieve HTML content of attachment image with link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_permalink/">get_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the full permalink for the current post or post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_link/">wp_get_attachment_link()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves an attachment page link using an image or icon, if possible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/redirect_canonical/">redirect_canonical()</a><code>wp-includes/canonical.php</code></td><td><p>Redirects incoming links to the proper URL based on the site url.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.0/">2.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="648" id="comment-648">
+<article class="comment-body" id="div-comment-648">
+<a class="screen-reader-text" href="#comment-content-648">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-648">
+<p><strong>Default Usage</strong><br/>
+As the tag does not display the permalink, the example uses the PHP echo command.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+$attachment_id = 1; // ID of attachment
+$attachment_page = get_attachment_link( $attachment_id ); 
+?&gt;
+&lt;a href="&lt;?php echo esc_url( $attachment_page ); ?&gt;"&gt;&lt;?php echo get_the_title( $attachment_id ); ?&gt;&lt;/a&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-648">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="649" id="comment-649">
+<article class="comment-body" id="div-comment-649">
+<a class="screen-reader-text" href="#comment-content-649">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-649">
+<p><strong>Display attached images and titles as a list</strong><br/>
+To display the images attached to a certain page and display them as a list of bullets you can use the following:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;ul&gt;
+&lt;?php if ( have_posts() ) : while ( have_posts() ) : the_post();    
+
+	$args = array(
+		'post_type'   =&gt; 'attachment',
+		'numberposts' =&gt; -1,
+		'post_status' =&gt; null,
+		'post_parent' =&gt; $post-&gt;ID
+	);
+
+	$attachments = get_posts( $args );
+	if ( $attachments ) {
+		foreach ( $attachments as $attachment ) {
+			echo '&lt;li&gt;';
+			the_attachment_link( $attachment-&gt;ID, true );
+			echo '&lt;p&gt;';
+			echo apply_filters( 'the_title', $attachment-&gt;post_title );
+			echo '&lt;/p&gt;&lt;/li&gt;';
+		}
+	}
+endwhile; endif; ?&gt;
+&lt;/ul&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-649">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

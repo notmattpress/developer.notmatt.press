@@ -1,0 +1,256 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_notify_moderator()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_notify_moderator()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_notify_moderator( <span class="arg-type">int</span> <span class="arg-name">$comment_id</span> ): <span class="return-type">true</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Notifies the moderator of the site about a new comment that is awaiting approval.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$comment_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Comment ID.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">true</span> Always returns true.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1887"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_notify_moderator( $comment_id ) {
+	global $wpdb;
+
+	$maybe_notify = get_option( 'moderation_notify' );
+
+	/**
+	 * Filters whether to send the site moderator email notifications, overriding the site setting.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param bool $maybe_notify Whether to notify blog moderator.
+	 * @param int  $comment_id   The ID of the comment for the notification.
+	 */
+	$maybe_notify = apply_filters( 'notify_moderator', $maybe_notify, $comment_id );
+
+	if ( ! $maybe_notify ) {
+		return true;
+	}
+
+	$comment = get_comment( $comment_id );
+	$post    = get_post( $comment-&gt;comment_post_ID );
+	$user    = get_userdata( $post-&gt;post_author );
+	// Send to the administration and to the post author if the author can modify the comment.
+	$emails = array( get_option( 'admin_email' ) );
+	if ( $user &amp;&amp; user_can( $user-&gt;ID, 'edit_comment', $comment_id ) &amp;&amp; ! empty( $user-&gt;user_email ) ) {
+		if ( 0 !== strcasecmp( $user-&gt;user_email, get_option( 'admin_email' ) ) ) {
+			$emails[] = $user-&gt;user_email;
+		}
+	}
+
+	$comment_author_domain = '';
+	if ( WP_Http::is_ip_address( $comment-&gt;comment_author_IP ) ) {
+		$comment_author_domain = gethostbyaddr( $comment-&gt;comment_author_IP );
+	}
+
+	$comments_waiting = $wpdb-&gt;get_var( "SELECT COUNT(*) FROM $wpdb-&gt;comments WHERE comment_approved = '0'" );
+
+	/*
+	 * The blogname option is escaped with esc_html() on the way into the database in sanitize_option().
+	 * We want to reverse this for the plain text arena of emails.
+	 */
+	$blogname        = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	$comment_content = wp_specialchars_decode( $comment-&gt;comment_content );
+
+	$message_headers = '';
+
+	/**
+	 * Filters the list of recipients for comment moderation emails.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @param string[] $emails     List of email addresses to notify for comment moderation.
+	 * @param int      $comment_id Comment ID.
+	 */
+	$emails = apply_filters( 'comment_moderation_recipients', $emails, $comment_id );
+
+	/**
+	 * Filters the comment moderation email headers.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $message_headers Headers for the comment moderation email.
+	 * @param int    $comment_id      Comment ID.
+	 */
+	$message_headers = apply_filters( 'comment_moderation_headers', $message_headers, $comment_id );
+
+	foreach ( $emails as $email ) {
+		$user = get_user_by( 'email', $email );
+
+		if ( $user ) {
+			$switched_locale = switch_to_user_locale( $user-&gt;ID );
+		} else {
+			$switched_locale = switch_to_locale( get_locale() );
+		}
+
+		switch ( $comment-&gt;comment_type ) {
+			case 'trackback':
+				/* translators: %s: Post title. */
+				$notify_message  = sprintf( __( 'A new trackback on the post "%s" is waiting for your approval' ), $post-&gt;post_title ) . "\r\n";
+				$notify_message .= get_permalink( $comment-&gt;comment_post_ID ) . "\r\n\r\n";
+				/* translators: 1: Trackback/pingback website name, 2: Website IP address, 3: Website hostname. */
+				$notify_message .= sprintf( __( 'Website: %1$s (IP address: %2$s, %3$s)' ), $comment-&gt;comment_author, $comment-&gt;comment_author_IP, $comment_author_domain ) . "\r\n";
+				/* translators: %s: Trackback/pingback/comment author URL. */
+				$notify_message .= sprintf( __( 'URL: %s' ), $comment-&gt;comment_author_url ) . "\r\n";
+				$notify_message .= __( 'Trackback excerpt: ' ) . "\r\n" . $comment_content . "\r\n\r\n";
+				break;
+
+			case 'pingback':
+				/* translators: %s: Post title. */
+				$notify_message  = sprintf( __( 'A new pingback on the post "%s" is waiting for your approval' ), $post-&gt;post_title ) . "\r\n";
+				$notify_message .= get_permalink( $comment-&gt;comment_post_ID ) . "\r\n\r\n";
+				/* translators: 1: Trackback/pingback website name, 2: Website IP address, 3: Website hostname. */
+				$notify_message .= sprintf( __( 'Website: %1$s (IP address: %2$s, %3$s)' ), $comment-&gt;comment_author, $comment-&gt;comment_author_IP, $comment_author_domain ) . "\r\n";
+				/* translators: %s: Trackback/pingback/comment author URL. */
+				$notify_message .= sprintf( __( 'URL: %s' ), $comment-&gt;comment_author_url ) . "\r\n";
+				$notify_message .= __( 'Pingback excerpt: ' ) . "\r\n" . $comment_content . "\r\n\r\n";
+				break;
+
+			default: // Comments.
+				/* translators: %s: Post title. */
+				$notify_message  = sprintf( __( 'A new comment on the post "%s" is waiting for your approval' ), $post-&gt;post_title ) . "\r\n";
+				$notify_message .= get_permalink( $comment-&gt;comment_post_ID ) . "\r\n\r\n";
+				/* translators: 1: Comment author's name, 2: Comment author's IP address, 3: Comment author's hostname. */
+				$notify_message .= sprintf( __( 'Author: %1$s (IP address: %2$s, %3$s)' ), $comment-&gt;comment_author, $comment-&gt;comment_author_IP, $comment_author_domain ) . "\r\n";
+				/* translators: %s: Comment author email. */
+				$notify_message .= sprintf( __( 'Email: %s' ), $comment-&gt;comment_author_email ) . "\r\n";
+				/* translators: %s: Trackback/pingback/comment author URL. */
+				$notify_message .= sprintf( __( 'URL: %s' ), $comment-&gt;comment_author_url ) . "\r\n";
+
+				if ( $comment-&gt;comment_parent ) {
+					/* translators: Comment moderation. %s: Parent comment edit URL. */
+					$notify_message .= sprintf( __( 'In reply to: %s' ), admin_url( "comment.php?action=editcomment&amp;c={$comment-&gt;comment_parent}#wpbody-content" ) ) . "\r\n";
+				}
+
+				/* translators: %s: Comment text. */
+				$notify_message .= sprintf( __( 'Comment: %s' ), "\r\n" . $comment_content ) . "\r\n\r\n";
+				break;
+		}
+
+		/* translators: Comment moderation. %s: Comment action URL. */
+		$notify_message .= sprintf( __( 'Approve it: %s' ), admin_url( "comment.php?action=approve&amp;c={$comment_id}#wpbody-content" ) ) . "\r\n";
+
+		if ( EMPTY_TRASH_DAYS ) {
+			/* translators: Comment moderation. %s: Comment action URL. */
+			$notify_message .= sprintf( __( 'Trash it: %s' ), admin_url( "comment.php?action=trash&amp;c={$comment_id}#wpbody-content" ) ) . "\r\n";
+		} else {
+			/* translators: Comment moderation. %s: Comment action URL. */
+			$notify_message .= sprintf( __( 'Delete it: %s' ), admin_url( "comment.php?action=delete&amp;c={$comment_id}#wpbody-content" ) ) . "\r\n";
+		}
+
+		/* translators: Comment moderation. %s: Comment action URL. */
+		$notify_message .= sprintf( __( 'Spam it: %s' ), admin_url( "comment.php?action=spam&amp;c={$comment_id}#wpbody-content" ) ) . "\r\n";
+
+		$notify_message .= sprintf(
+			/* translators: Comment moderation. %s: Number of comments awaiting approval. */
+			_n(
+				'Currently %s comment is waiting for approval. Please visit the moderation panel:',
+				'Currently %s comments are waiting for approval. Please visit the moderation panel:',
+				$comments_waiting
+			),
+			number_format_i18n( $comments_waiting )
+		) . "\r\n";
+		$notify_message .= admin_url( 'edit-comments.php?comment_status=moderated#wpbody-content' ) . "\r\n";
+
+		/* translators: Comment moderation notification email subject. 1: Site title, 2: Post title. */
+		$subject = sprintf( __( '[%1$s] Please moderate: "%2$s"' ), $blogname, $post-&gt;post_title );
+
+		/**
+		 * Filters the comment moderation email text.
+		 *
+		 * @since 1.5.2
+		 *
+		 * @param string $notify_message Text of the comment moderation email.
+		 * @param int    $comment_id     Comment ID.
+		 */
+		$notify_message = apply_filters( 'comment_moderation_text', $notify_message, $comment_id );
+
+		/**
+		 * Filters the comment moderation email subject.
+		 *
+		 * @since 1.5.2
+		 *
+		 * @param string $subject    Subject of the comment moderation email.
+		 * @param int    $comment_id Comment ID.
+		 */
+		$subject = apply_filters( 'comment_moderation_subject', $subject, $comment_id );
+
+		wp_mail( $email, wp_specialchars_decode( $subject ), $notify_message, $message_headers );
+
+		if ( $switched_locale ) {
+			restore_previous_locale();
+		}
+	}
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/pluggable.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/pluggable.php#L1887">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/pluggable.php#L1887-L2062">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comment_moderation_headers/"><span class="hook-func">apply_filters</span>( ‘comment_moderation_headers’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$message_headers</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$comment_id</span></nobr> )</a></dt><dd><p>Filters the comment moderation email headers.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comment_moderation_recipients/"><span class="hook-func">apply_filters</span>( ‘comment_moderation_recipients’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$emails</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$comment_id</span></nobr> )</a></dt><dd><p>Filters the list of recipients for comment moderation emails.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comment_moderation_subject/"><span class="hook-func">apply_filters</span>( ‘comment_moderation_subject’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$subject</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$comment_id</span></nobr> )</a></dt><dd><p>Filters the comment moderation email subject.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/comment_moderation_text/"><span class="hook-func">apply_filters</span>( ‘comment_moderation_text’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$notify_message</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$comment_id</span></nobr> )</a></dt><dd><p>Filters the comment moderation email text.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/notify_moderator/"><span class="hook-func">apply_filters</span>( ‘notify_moderator’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$maybe_notify</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$comment_id</span></nobr> )</a></dt><dd><p>Filters whether to send the site moderator email notifications, overriding the site setting.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/user_can/">user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether a particular user has the specified capability.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_specialchars_decode/">wp_specialchars_decode()</a><code>wp-includes/formatting.php</code></td><td><p>Converts a number of HTML entities into their special characters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_user_by/">get_user_by()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves user info by a given field.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_mail/">wp_mail()</a><code>wp-includes/pluggable.php</code></td><td><p>Sends an email, similar to PHP’s mail function.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http/is_ip_address/">WP_Http::is_ip_address()</a><code>wp-includes/class-wp-http.php</code></td><td><p>Determines if a specified string represents an IP address or not.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_userdata/">get_userdata()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves user info by user ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/number_format_i18n/">number_format_i18n()</a><code>wp-includes/functions.php</code></td><td><p>Converts float number to format based on the locale.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_url/">admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_permalink/">get_permalink()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the full permalink for the current post or post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_var/">wpdb::get_var()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one value from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comment/">get_comment()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves comment data given a comment ID or comment object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 9 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_new_comment_notify_moderator/">wp_new_comment_notify_moderator()</a><code>wp-includes/comment.php</code></td><td><p>Sends a comment moderation notification to the comment moderator.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.0.0/">1.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

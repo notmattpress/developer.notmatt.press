@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/taxonomies/">Taxonomies</a></span><span class="is-current-page">Working with Custom Taxonomies</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Working with Custom Taxonomies</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="introduction-to-taxonomies" tabindex="-1"><a href="#introduction-to-taxonomies">Introduction to Taxonomies</a></h2>
+<p>To understand what Taxonomies are and what they do please read the <a href="https://developer.notmatt.press/plugins/taxonomies/">Taxonomy</a> introduction.</p>
+<h2 class="is-toc-heading wp-block-heading" id="custom-taxonomies" tabindex="-1"><a href="#custom-taxonomies">Custom Taxonomies</a></h2>
+<p>As classification systems go, “Categories” and “Tags” aren’t very structured, so it may be beneficial for a developer to create their own.</p>
+<p>WordPress allows developers to create <strong>Custom Taxonomies</strong>. Custom Taxonomies are useful when one wants to create distinct naming systems and make them accessible behind the scenes in a predictable way.</p>
+<h2 class="is-toc-heading wp-block-heading" id="why-use-custom-taxonomies" tabindex="-1"><a href="#why-use-custom-taxonomies">Why Use Custom Taxonomies?</a></h2>
+<p>You might ask, “Why bother creating a Custom Taxonomy, when I can organize by Categories and Tags?”</p>
+<p>Well… let’s use an example. Suppose we have a client that is a chef who wants you to create a website where she’ll feature original recipes.</p>
+<p>One way to organize the website might be to create a Custom Post Type called “Recipes” to store her recipes. Then create a Taxonomy “Courses” to separate “Appetizers” from “Desserts”, and finally a Taxonomy “Ingredients” to separate “Chicken” from “Chocolate” dishes.</p>
+<p>These groups <em>could</em> be defined using Categories or Tags, you could have a “Courses” Category with Subcategories for “Appetizers” and “Desserts”, and an “Ingredients” Category with Subcategories for each ingredient.</p>
+<p>The main advantage of using Custom Taxonomies is that you can reference “Courses” and “Ingredients” independently of Categories and Tags. They even get their own menus in the Administration area.</p>
+<p>In addition, creating Custom Taxonomies allows you to build custom interfaces which will ease the life of your client and make the process of inserting data intuitive to their business nature.</p>
+<p>Now imagine that these Custom Taxonomies and the interface is implemented inside a plugin; you’ve just built your own Recipes plugin that can be reused on any WordPress website.</p>
+<h2 class="is-toc-heading wp-block-heading" id="example-courses-taxonomy" tabindex="-1"><a href="#example-courses-taxonomy">Example: Courses Taxonomy</a></h2>
+<p>The following example will show you how to create a plugin which adds a Custom Taxonomy “Courses” to the default <code>post</code> Post Type. Note that the code to add custom taxonomies does not have to be in its own plugin; it can be included in a theme or as part of an existing plugin if desired.</p>
+<p>Please make sure to read the <a href="https://developer.notmatt.press/plugin/the-basics/" title="Plugin Basics">Plugin Basics</a> chapter before attempting to create your own plugin.</p>
+<h3 class="is-toc-heading wp-block-heading" id="step-1-before-you-begin" tabindex="-1"><a href="#step-1-before-you-begin">Step 1: Before You Begin</a></h3>
+<p>Go to <strong>Posts &gt; Add New</strong> page. You will notice that you only have Categories and Tags.</p>
+<div class="wp-block-image"><figure class="aligncenter"><a href="https://i0.wp.com/make.wordpress.org/docs/files/2014/02/no-custom-taxonomy-meta-box.png?ssl=1"><img alt="No Custom Taxonomy Meta Box (Yet)" class="wp-image-4951" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/make.wordpress.org/docs/files/2014/02/no-custom-taxonomy-meta-box.png?ssl=1"/></a></figure></div>
+<h3 class="is-toc-heading wp-block-heading" id="step-2-creating-a-new-plugin" tabindex="-1"><a href="#step-2-creating-a-new-plugin">Step 2: Creating a New Plugin</a></h3>
+<p>Register the Taxonomy “course” for the post type “post” using the <code>init</code> action hook.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">/*
+* Plugin Name: Course Taxonomy
+* Description: A short example showing how to add a taxonomy called Course.
+* Version: 1.0
+* Author: developer.wordpress.org
+* Author URI: https://codex.wordpress.org/User:Aternus
+*/
+
+function wporg_register_taxonomy_course() {
+	 $labels = array(
+		 'name'              =&gt; _x( 'Courses', 'taxonomy general name' ),
+		 'singular_name'     =&gt; _x( 'Course', 'taxonomy singular name' ),
+		 'search_items'      =&gt; __( 'Search Courses' ),
+		 'all_items'         =&gt; __( 'All Courses' ),
+		 'parent_item'       =&gt; __( 'Parent Course' ),
+		 'parent_item_colon' =&gt; __( 'Parent Course:' ),
+		 'edit_item'         =&gt; __( 'Edit Course' ),
+		 'update_item'       =&gt; __( 'Update Course' ),
+		 'add_new_item'      =&gt; __( 'Add New Course' ),
+		 'new_item_name'     =&gt; __( 'New Course Name' ),
+		 'menu_name'         =&gt; __( 'Course' ),
+	 );
+	 $args   = array(
+		 'hierarchical'      =&gt; true, // make it hierarchical (like categories)
+		 'labels'            =&gt; $labels,
+		 'show_ui'           =&gt; true,
+		 'show_admin_column' =&gt; true,
+		 'query_var'         =&gt; true,
+		 'rewrite'           =&gt; [ 'slug' =&gt; 'course' ],
+	 );
+	 register_taxonomy( 'course', [ 'post' ], $args );
+}
+add_action( 'init', 'wporg_register_taxonomy_course' );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="step-3-review-the-result" tabindex="-1"><a href="#step-3-review-the-result">Step 3: Review the Result</a></h3>
+<p>Activate your plugin, then go to <strong>Posts &gt; Add New</strong>. You should see a new meta box for your “Courses” Taxonomy.</p>
+<div class="wp-block-image"><figure class="aligncenter"><a href="https://i0.wp.com/make.wordpress.org/docs/files/2014/02/courses_taxonomy_post_screen.png?ssl=1"><img alt="courses_taxonomy_post_screen" class="wp-image-6278" data-recalc-dims="1" decoding="async" height="545" src="https://i0.wp.com/make.wordpress.org/docs/files/2014/02/courses_taxonomy_post_screen-1024x545.png?resize=1024%2C545&amp;ssl=1" width="1024"/></a></figure></div>
+<h3 class="is-toc-heading wp-block-heading" id="code-breakdown" tabindex="-1"><a href="#code-breakdown">Code Breakdown</a></h3>
+<p>The following discussion breaks down the code used above describing the functions and parameters.</p>
+<p>The function <code>wporg_register_taxonomy_course</code> contains all the steps necessary for registering a Custom Taxonomy.</p>
+<p>The <code>$labels</code> array holds the labels for the Custom Taxonomy.<br/>These labels will be used for displaying various information about the Taxonomy in the Administration area.</p>
+<p>The <code>$args</code> array holds the configuration options that will be used when creating our Custom Taxonomy.</p>
+<p>The function <a href="https://developer.notmatt.press/reference/functions/register_taxonomy/" rel="function">register_taxonomy()</a>  creates a new Taxonomy with the identifier <code>course</code> for the <code>post</code> Post Type using the <code>$args</code> array for configuration.</p>
+<p>The function <a href="https://developer.notmatt.press/reference/functions/add_action/" rel="function">add_action()</a>  ties the <code>wporg_register_taxonomy_course</code> function execution to the <code>init</code> action hook.</p>
+<h4 class="wp-block-heading" id="args">$args</h4>
+<p>The $args array holds important configuration for the Custom Taxonomy, it instructs WordPress how the Taxonomy should work.</p>
+<p>Take a look at <a href="https://developer.notmatt.press/reference/functions/register_taxonomy/" rel="function">register_taxonomy()</a>  function for a full list of accepted parameters and what each of these do.</p>
+<h3 class="is-toc-heading wp-block-heading" id="summary" tabindex="-1"><a href="#summary">Summary</a></h3>
+<p>With our Courses Taxonomy example, WordPress will automatically create an archive page and child pages for the <code>course</code> Taxonomy.</p>
+<p>The archive page will be at <code>/course/</code> with child pages spawning under it using the Term’s slug (<code>/course/%%term-slug%%/</code>).</p>
+<h2 class="is-toc-heading wp-block-heading" id="using-your-taxonomy" tabindex="-1"><a href="#using-your-taxonomy">Using Your Taxonomy</a></h2>
+<p>WordPress has <strong>many</strong> functions for interacting with your Custom Taxonomy and the Terms within it.</p>
+<p>Here are some examples:</p>
+<ul class="wp-block-list"><li><code>the_terms</code>: Takes a Taxonomy argument and renders the terms in a list.</li><li><code>wp_tag_cloud</code>: Takes a Taxonomy argument and renders a tag cloud of the terms.</li><li><code>is_taxonomy</code>: Allows you to determine if a given taxonomy exists.</li></ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

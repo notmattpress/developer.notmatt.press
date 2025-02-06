@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_wp_specialchars()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_wp_specialchars()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_wp_specialchars( <span class="arg-type">string</span> <span class="arg-name">$text</span>,  <span class="arg-type">int|string</span> <span class="arg-name">$quote_style</span> = <span class="arg-default">ENT_NOQUOTES</span>,  <span class="arg-type">false|string</span> <span class="arg-name">$charset</span> = <span class="arg-default">false</span>,  <span class="arg-type">bool</span> <span class="arg-name">$double_encode</span> = <span class="arg-default">false</span> ): <span class="return-type">string</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Converts a number of special characters into their HTML entities.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Specifically deals with: <code>&amp;</code>, <code>&lt;</code>, <code>&gt;</code>, <code>"</code>, and <code>'</code>.</p>
+<p><code>$quote_style</code> can be set to ENT_COMPAT to encode <code>"</code> to <code>&amp;quot;</code>, or ENT_QUOTES to do both. Default is ENT_NOQUOTES where no quotes are encoded.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$text</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The text which is to be encoded.</span></div></dd><dt><code>$quote_style</code><span class="type"><span class="int">int</span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Converts double quotes if set to ENT_COMPAT,                                    both single and double if set to ENT_QUOTES or none if set to ENT_NOQUOTES.<br/>
+Converts single and double quotes, as well as converting HTML                                    named entities (that are not also XML named entities) to their                                    code points if set to ENT_XML1. Also compatible with old values;                                    converting single quotes if set to <code>'single'</code>,                                    double if set to <code>'double'</code> or both if otherwise set.<br/>
+Default is ENT_NOQUOTES.</span></div><p class="default">Default:<code>ENT_NOQUOTES</code></p></dd><dt><code>$charset</code><span class="type"><span class="false">false</span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The character encoding of the string. </span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$double_encode</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to encode existing HTML entities. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The encoded text with HTML entities.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="942"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _wp_specialchars( $text, $quote_style = ENT_NOQUOTES, $charset = false, $double_encode = false ) {
+	$text = (string) $text;
+
+	if ( 0 === strlen( $text ) ) {
+		return '';
+	}
+
+	// Don't bother if there are no specialchars - saves some processing.
+	if ( ! preg_match( '/[&amp;&lt;&gt;"\']/', $text ) ) {
+		return $text;
+	}
+
+	// Account for the previous behavior of the function when the $quote_style is not an accepted value.
+	if ( empty( $quote_style ) ) {
+		$quote_style = ENT_NOQUOTES;
+	} elseif ( ENT_XML1 === $quote_style ) {
+		$quote_style = ENT_QUOTES | ENT_XML1;
+	} elseif ( ! in_array( $quote_style, array( ENT_NOQUOTES, ENT_COMPAT, ENT_QUOTES, 'single', 'double' ), true ) ) {
+		$quote_style = ENT_QUOTES;
+	}
+
+	$charset = _canonical_charset( $charset ? $charset : get_option( 'blog_charset' ) );
+
+	$_quote_style = $quote_style;
+
+	if ( 'double' === $quote_style ) {
+		$quote_style  = ENT_COMPAT;
+		$_quote_style = ENT_COMPAT;
+	} elseif ( 'single' === $quote_style ) {
+		$quote_style = ENT_NOQUOTES;
+	}
+
+	if ( ! $double_encode ) {
+		/*
+		 * Guarantee every &amp;entity; is valid, convert &amp;garbage; into &amp;amp;garbage;
+		 * This is required for PHP &lt; 5.4.0 because ENT_HTML401 flag is unavailable.
+		 */
+		$text = wp_kses_normalize_entities( $text, ( $quote_style &amp; ENT_XML1 ) ? 'xml' : 'html' );
+	}
+
+	$text = htmlspecialchars( $text, $quote_style, $charset, $double_encode );
+
+	// Back-compat.
+	if ( 'single' === $_quote_style ) {
+		$text = str_replace( "'", '&amp;#039;', $text );
+	}
+
+	return $text;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/formatting.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/formatting.php#L942">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/formatting.php#L942-L990">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_kses_normalize_entities/">wp_kses_normalize_entities()</a><code>wp-includes/kses.php</code></td><td><p>Converts and fixes HTML entities.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_canonical_charset/">_canonical_charset()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves a canonical form of the provided charset appropriate for passing to PHP functions such as htmlspecialchars() and charset HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_xml/">esc_xml()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for XML blocks.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_js/">esc_js()</a><code>wp-includes/formatting.php</code></td><td><p>Escapes single quotes, <code>"</code>, <code></code>, <code>&amp;amp;</code>, and fixes line endings.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_specialchars/">wp_specialchars()</a><code>wp-includes/deprecated.php</code></td><td><p>Legacy escaping for HTML blocks.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.5.0/">5.5.0</a></td><td><span class="since-description"><code>$quote_style</code> also accepts <code>ENT_XML1</code>.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.2.2/">1.2.2</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-mahdiyazdani odd alt thread-odd thread-alt depth-1" data-comment-id="6188" id="comment-6188">
+<article class="comment-body" id="div-comment-6188">
+<a class="screen-reader-text" href="#comment-content-6188">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6188">
+<p>Escape JSON for use on HTML or attribute text nodes.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Escape JSON for use on HTML or attribute text nodes.
+ *
+ * @param  string $json JSON to escape.
+ * @param  bool   $html True if escaping for HTML text node, false for attributes. Determines how quotes are handled.
+ * @return string Escaped JSON.
+ */
+function wpdocs_esc_json( $json, $html = false ) {
+	return _wp_specialchars(
+		$json,
+		$html ? ENT_NOQUOTES : ENT_QUOTES, // Escape quotes in attribute nodes only.
+		'UTF-8',                           // json_encode() outputs UTF-8 (really just ASCII), not the blog's charset.
+		true                               // Double escape entities: `&amp;` -&gt; `&amp;amp;`.
+	);
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6188">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

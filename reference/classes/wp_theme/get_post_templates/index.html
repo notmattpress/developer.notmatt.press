@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_theme/">WP_Theme</a></span><span class="is-current-page">WP_Theme::get_post_templates()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Theme::get_post_templates()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Theme::get_post_templates(): <span class="return-type">array[]</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns the theme’s post templates.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array[]</span> Array of page template arrays, keyed by post type and filename,                 with the value of the translated header name.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1319"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_post_templates() {
+	// If you screw up your active theme and we invalidate your parent, most things still work. Let it slide.
+	if ( $this-&gt;errors() &amp;&amp; $this-&gt;errors()-&gt;get_error_codes() !== array( 'theme_parent_invalid' ) ) {
+		return array();
+	}
+
+	$post_templates = $this-&gt;cache_get( 'post_templates' );
+
+	if ( ! is_array( $post_templates ) ) {
+		$post_templates = array();
+
+		$files = (array) $this-&gt;get_files( 'php', 1, true );
+
+		foreach ( $files as $file =&gt; $full_path ) {
+			if ( ! preg_match( '|Template Name:(.*)$|mi', file_get_contents( $full_path ), $header ) ) {
+				continue;
+			}
+
+			$types = array( 'page' );
+			if ( preg_match( '|Template Post Type:(.*)$|mi', file_get_contents( $full_path ), $type ) ) {
+				$types = explode( ',', _cleanup_header_comment( $type[1] ) );
+			}
+
+			foreach ( $types as $type ) {
+				$type = sanitize_key( $type );
+				if ( ! isset( $post_templates[ $type ] ) ) {
+					$post_templates[ $type ] = array();
+				}
+
+				$post_templates[ $type ][ $file ] = _cleanup_header_comment( $header[1] );
+			}
+		}
+
+		$this-&gt;cache_add( 'post_templates', $post_templates );
+	}
+
+	if ( current_theme_supports( 'block-templates' ) ) {
+		$block_templates = get_block_templates( array(), 'wp_template' );
+		foreach ( get_post_types( array( 'public' =&gt; true ) ) as $type ) {
+			foreach ( $block_templates as $block_template ) {
+				if ( ! $block_template-&gt;is_custom ) {
+					continue;
+				}
+
+				if ( isset( $block_template-&gt;post_types ) &amp;&amp; ! in_array( $type, $block_template-&gt;post_types, true ) ) {
+					continue;
+				}
+
+				$post_templates[ $type ][ $block_template-&gt;slug ] = $block_template-&gt;title;
+			}
+		}
+	}
+
+	if ( $this-&gt;load_textdomain() ) {
+		foreach ( $post_templates as &amp;$post_type ) {
+			foreach ( $post_type as &amp;$post_template ) {
+				$post_template = $this-&gt;translate_header( 'Template Name', $post_template );
+			}
+		}
+	}
+
+	return $post_templates;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-theme.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-theme.php#L1319">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-theme.php#L1319-L1381">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_block_templates/">get_block_templates()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Retrieves a list of unified template objects based on a query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_files/">WP_Theme::get_files()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns files in the theme’s directory.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/load_textdomain/">WP_Theme::load_textdomain()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Loads the theme’s textdomain.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/translate_header/">WP_Theme::translate_header()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Translates a theme header.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/errors/">WP_Theme::errors()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns errors property.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/cache_get/">WP_Theme::cache_get()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Gets theme data from cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/cache_add/">WP_Theme::cache_add()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Adds theme data to cache.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_cleanup_header_comment/">_cleanup_header_comment()</a><code>wp-includes/functions.php</code></td><td><p>Strips close comment and close php tags from file headers used by WP.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_theme_supports/">current_theme_supports()</a><code>wp-includes/theme.php</code></td><td><p>Checks a theme’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_key/">sanitize_key()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string key.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_types/">get_post_types()</a><code>wp-includes/post.php</code></td><td><p>Gets a list of all registered post type objects.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_page_templates/">WP_Theme::get_page_templates()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns the theme’s post templates for a given post type.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td><span class="since-description">Include block templates.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.7.0/">4.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-jonas-lundman odd alt thread-odd thread-alt depth-1" data-comment-id="2425" id="comment-2425">
+<article class="comment-body" id="div-comment-2425">
+<a class="screen-reader-text" href="#comment-content-2425">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2425">
+<p>As of 4.7 this method opens up a great world of the use template files for diffrent purposes. If you save a file within your Theme folder <code>templates/example.php</code> like this:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php 
+/**
+ * Template Name: No sidebar and no images
+ * Template Post Type: my_post_type
+ *</code></pre>
+<p>Then call:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$templates = wp_get_theme()-&gt;get_post_templates();</code></pre>
+<p>You got an array something like this:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">array(4) {
+  ["my_post_type"]=&gt;
+  array(1) {
+    ["templates/example.php"]=&gt;
+    string(18) "No sidebar and no images"
+  }
+  ["locations"]=&gt;
+  array(2) {
+    ["templates/locations-max.php"]=&gt;
+    string(21) "Locations, no sidebar",
+    ["templates/locations-no-maps.php"]=&gt;
+    string(21) "Locations, information only"
+  }
+  ["post"]=&gt;
+  array(1) {
+    ["templates/full-width.php"]=&gt;
+    string(21) "Full page, no sidebar"
+  }
+  ["page"]=&gt;
+  array(1) {
+    ["templates/full-width.php"]=&gt;
+    string(21) "Full page, no sidebar"
+  }
+}</code></pre>
+<p>If you <strong>only</strong> need an array of templates <strong>with specific post type</strong>, use <code>get_page_templates()</code> instead, as that function has a filter that many Themes and plugin gonna use with the 4.7 features.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2425">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

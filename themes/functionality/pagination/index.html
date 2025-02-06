@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/functionality/">Theme Functionality</a></span><span class="is-current-page">Pagination</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Pagination</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Pagination allows your user to <em>page</em> back and forth through multiple pages of content.</p>
+<p>WordPress can use pagination when:</p>
+<ul class="wp-block-list">
+<li>Viewing lists of posts when more posts exist than can fit on one page, or</li>
+<li>Breaking up longer posts by manually by using the following tag: <code>&lt;!--nextpage--&gt;</code></li>
+</ul>
+<h2 class="is-toc-heading wp-block-heading" id="using-pagination-to-navigate-post-lists" tabindex="-1"><a href="#using-pagination-to-navigate-post-lists">Using Pagination to Navigate Post Lists</a></h2>
+<p>The most common use for pagination in WordPress sites is to break up long lists of posts into separate pages. Whether you’re viewing a category, archive, or default index page for a blog or site, WordPress only shows 10 posts per page by default. Users can change the number of posts that appear on each page on the Reading screen: <strong>Admin &gt; Settings &gt; Reading</strong>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="examples" tabindex="-1"><a href="#examples">Examples</a></h2>
+<h3 class="is-toc-heading wp-block-heading" id="loop-with-pagination" tabindex="-1"><a href="#loop-with-pagination">Loop with Pagination</a></h3>
+<p>This simplified example shows where you can add pagination functions for the main loop. Add the functions just before or after the loop.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php if ( have_posts() ) : ?&gt;
+
+    &lt;!-- Start the pagination functions before the loop. --&gt;
+    &lt;div class="nav-previous alignleft"&gt;&lt;?php next_posts_link( 'Older posts' ); ?&gt;&lt;/div&gt;
+    &lt;div class="nav-next alignright"&gt;&lt;?php previous_posts_link( 'Newer posts' ); ?&gt;&lt;/div&gt;
+    &lt;!-- End the pagination functions before the loop. --&gt;
+
+	&lt;!-- Start of the main loop. --&gt;
+	&lt;?php while ( have_posts() ) : the_post();  ?&gt;
+
+	&lt;!-- the rest of your theme's main loop --&gt;
+
+    &lt;?php endwhile; ?&gt;
+    &lt;!-- End of the main loop --&gt;
+
+    &lt;!-- Start the pagination functions after the loop. --&gt;
+    &lt;div class="nav-previous alignleft"&gt;&lt;?php next_posts_link( 'Older posts' ); ?&gt;&lt;/div&gt;
+    &lt;div class="nav-next alignright"&gt;&lt;?php previous_posts_link( 'Newer posts' ); ?&gt;&lt;/div&gt;
+    &lt;!-- End the pagination functions after the loop. --&gt;
+
+&lt;?php else : ?&gt;
+
+	&lt;?php _e( 'Sorry, no posts matched your criteria.' ); ?&gt;
+
+&lt;?php endif; ?&gt;
+</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="methods-for-displaying-pagination-links" tabindex="-1"><a href="#methods-for-displaying-pagination-links">Methods for displaying pagination links</a></h3>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">When using any of these pagination functions outside the template file with the loop that is being paginated, you must call the global variable $wp_query.</div></div>
+<pre class="wp-block-code"><code class="language-php" lang="php">function your_themes_pagination() {
+	global $wp_query;
+	echo paginate_links();
+}</code></pre>
+<p>WordPress has numerous functions for displaying links to other pages in your loop. Some of these functions are only used in very specific contexts. You would use a different function on a single post page then you would on a archive page. The following section covers archive template pagination functions. The section after that cover single post pagination.</p>
+<h4 class="wp-block-heading">Simple Pagination</h4>
+<p><strong>posts_nav_link</strong></p>
+<p>One of the simplest methods is <a href="https://developer.notmatt.press/reference/functions/posts_nav_link/" rel="noopener" target="_blank">posts_nav_link()</a>. Simply place the function in your template after your loop. This generates both links to the next page of posts and previous page of posts where applicable. This function is ideal for themes that have simple pagination requirements.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">posts_nav_link();</code></pre>
+<p><strong>next_posts_link &amp; prev_posts_link</strong></p>
+<p>When building a theme, use <a href="https://developer.notmatt.press/reference/functions/next_posts_link/" rel="noopener" target="_blank">next_posts_link()</a> and <a href="https://developer.notmatt.press/reference/functions/previous_posts_link/" rel="noopener" target="_blank">prev_posts_link()</a>. to have control over where the previous and next posts page link appears.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">next_posts_link();
+previous_posts_link();</code></pre>
+<p>If you need to pass the pagination links to a PHP variable, you can use <a href="https://developer.notmatt.press/reference/functions/get_next_posts_link/" rel="noopener" target="_blank">get_next_posts_link()</a> and <a href="https://developer.notmatt.press/reference/functions/get_previous_posts_link/" rel="noopener" target="_blank">get_previous_posts_link()</a>.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$next_posts = get_next_posts_link();
+$prev_posts = get_previous_posts_link();</code></pre>
+<h4 class="wp-block-heading">Numerical Pagination</h4>
+<p>When you have many pages of content it is a better experience to display a list of page numbers so the user can click on any one of the page links rather then having to repeatedly click next or previous posts. WordPress provides several functions for automatically displaying a numerical pagination list.</p>
+<p><strong>For WordPress 4.1+</strong></p>
+<p>If you want more robust pagination options, you can use <a href="https://developer.notmatt.press/reference/functions/the_posts_pagination/" rel="noopener" target="_blank">the_posts_pagination()</a> for WordPress 4.1 and higher. This will output a set of page numbers with links to previous and next pages of posts.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">the_posts_pagination();</code></pre>
+<p><strong>For WordPress prior to 4.1</strong></p>
+<p>If you want your pagination to support older versions of WordPress, you must use <a href="https://developer.notmatt.press/reference/functions/paginate_links/" rel="noopener" target="_blank">paginate_links()</a>.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">echo paginate_links();</code></pre>
+<h4 class="wp-block-heading">Pagination Between Single Posts</h4>
+<p>All of the previous functions should be used on index and archive pages. When you are viewing a single blog post, you must use <a href="https://developer.notmatt.press/reference/functions/previous_post_link/">prev_post_link</a> and <a href="https://developer.notmatt.press/reference/functions/next_post_link/">next_post_link</a>. Place the following functions below the loop on your single.php.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">previous_post_link();
+next_post_link();</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="pagination-within-a-post" tabindex="-1"><a href="#pagination-within-a-post">Pagination within a post</a></h3>
+<p>WordPress gives you a tag that can be placed in post content to enable pagination for that post:<br/><code>&lt;!--nextpage--&gt;</code><br/>If you use that tag in the content, you need to ensure that the <a href="https://developer.notmatt.press/reference/functions/wp_link_pages/" rel="noopener" target="_blank">wp_link_pages</a> function is placed in your single.php template within the loop.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php if ( have_posts() ) : ?&gt;
+
+	&lt;!-- Start of the main loop. --&gt;
+	&lt;?php while ( have_posts() ) : the_post(); ?&gt;
+
+		&lt;?php the_content(); ?&gt;
+
+		&lt;?php wp_link_pages(); ?&gt;
+
+	&lt;?php endwhile; ?&gt;
+	&lt;!-- End of the main loop. --&gt;
+
+&lt;?php endif; ?&gt;
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

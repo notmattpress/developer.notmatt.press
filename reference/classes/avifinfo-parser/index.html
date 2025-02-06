@@ -1,0 +1,522 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">Parser</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Parser</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> Parser {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"></section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/__construct/">Parser::__construct</a></td><td>–</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/parse_file/">Parser::parse_file</a></td><td>Parses a file stream.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/parse_ftyp/">Parser::parse_ftyp</a></td><td>Parses a file stream.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/parse_ipco/">Parser::parse_ipco</a></td><td>Parses an “ipco” box.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/parse_iprp/">Parser::parse_iprp</a></td><td>Parses an “iprp” box.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/parse_iref/">Parser::parse_iref</a></td><td>Parses an “iref” box.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/avifinfo-parser/parse_meta/">Parser::parse_meta</a></td><td>Parses a “meta” box.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="315"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class Parser {
+  private $handle; // Input stream.
+  private $num_parsed_boxes = 0;
+  private $data_was_skipped = false;
+  public $features;
+
+  function __construct( $handle ) {
+    $this-&gt;handle   = $handle;
+    $this-&gt;features = new Features();
+  }
+
+  /**
+   * Parses an "ipco" box.
+   *
+   * "ispe" is used for width and height, "pixi" and "av1C" are used for bit depth
+   * and number of channels, and "auxC" is used for alpha.
+   *
+   * @param stream  $handle              The resource the box will be parsed from.
+   * @param int     $num_remaining_bytes The number of bytes that should be available from the resource.
+   * @return Status                      FOUND on success or an error on failure.
+   */
+  private function parse_ipco( $num_remaining_bytes ) {
+    $box_index = 1; // 1-based index. Used for iterating over properties.
+    do {
+      $box    = new Box();
+      $status = $box-&gt;parse( $this-&gt;handle, $this-&gt;num_parsed_boxes, $num_remaining_bytes );
+      if ( $status != FOUND ) {
+        return $status;
+      }
+
+      if ( $box-&gt;type == 'ispe' ) {
+        // See ISO/IEC 23008-12:2017(E) 6.5.3.2
+        if ( $box-&gt;content_size &lt; 8 ) {
+          return INVALID;
+        }
+        if ( !( $data = read( $this-&gt;handle, 8 ) ) ) {
+          return TRUNCATED;
+        }
+        $width  = read_big_endian( substr( $data, 0, 4 ), 4 );
+        $height = read_big_endian( substr( $data, 4, 4 ), 4 );
+        if ( $width == 0 || $height == 0 ) {
+          return INVALID;
+        }
+        if ( count( $this-&gt;features-&gt;dim_props ) &lt;= MAX_FEATURES &amp;&amp;
+             $box_index &lt;= MAX_VALUE ) {
+          $dim_prop_count = count( $this-&gt;features-&gt;dim_props );
+          $this-&gt;features-&gt;dim_props[$dim_prop_count]                 = new Dim_Prop();
+          $this-&gt;features-&gt;dim_props[$dim_prop_count]-&gt;property_index = $box_index;
+          $this-&gt;features-&gt;dim_props[$dim_prop_count]-&gt;width          = $width;
+          $this-&gt;features-&gt;dim_props[$dim_prop_count]-&gt;height         = $height;
+        } else {
+          $this-&gt;data_was_skipped = true;
+        }
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size - 8 ) ) {
+          return TRUNCATED;
+        }
+      } else if ( $box-&gt;type == 'pixi' ) {
+        // See ISO/IEC 23008-12:2017(E) 6.5.6.2
+        if ( $box-&gt;content_size &lt; 1 ) {
+          return INVALID;
+        }
+        if ( !( $data = read( $this-&gt;handle, 1 ) ) ) {
+          return TRUNCATED;
+        }
+        $num_channels = read_big_endian( $data, 1 );
+        if ( $num_channels &lt; 1 ) {
+          return INVALID;
+        }
+        if ( $box-&gt;content_size &lt; 1 + $num_channels ) {
+          return INVALID;
+        }
+        if ( !( $data = read( $this-&gt;handle, 1 ) ) ) {
+          return TRUNCATED;
+        }
+        $bit_depth = read_big_endian( $data, 1 );
+        if ( $bit_depth &lt; 1 ) {
+          return INVALID;
+        }
+        for ( $i = 1; $i &lt; $num_channels; ++$i ) {
+          if ( !( $data = read( $this-&gt;handle, 1 ) ) ) {
+            return TRUNCATED;
+          }
+          // Bit depth should be the same for all channels.
+          if ( read_big_endian( $data, 1 ) != $bit_depth ) {
+            return INVALID;
+          }
+          if ( $i &gt; 32 ) {
+            return ABORTED; // Be reasonable.
+          }
+        }
+        if ( count( $this-&gt;features-&gt;chan_props ) &lt;= MAX_FEATURES &amp;&amp;
+             $box_index &lt;= MAX_VALUE &amp;&amp; $bit_depth &lt;= MAX_VALUE &amp;&amp;
+             $num_channels &lt;= MAX_VALUE ) {
+          $chan_prop_count = count( $this-&gt;features-&gt;chan_props );
+          $this-&gt;features-&gt;chan_props[$chan_prop_count]                 = new Chan_Prop();
+          $this-&gt;features-&gt;chan_props[$chan_prop_count]-&gt;property_index = $box_index;
+          $this-&gt;features-&gt;chan_props[$chan_prop_count]-&gt;bit_depth      = $bit_depth;
+          $this-&gt;features-&gt;chan_props[$chan_prop_count]-&gt;num_channels   = $num_channels;
+        } else {
+          $this-&gt;data_was_skipped = true;
+        }
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size - ( 1 + $num_channels ) ) ) {
+          return TRUNCATED;
+        }
+      } else if ( $box-&gt;type == 'av1C' ) {
+        // See AV1 Codec ISO Media File Format Binding 2.3.1
+        // at https://aomediacodec.github.io/av1-isobmff/#av1c
+        // Only parse the necessary third byte. Assume that the others are valid.
+        if ( $box-&gt;content_size &lt; 3 ) {
+          return INVALID;
+        }
+        if ( !( $data = read( $this-&gt;handle, 3 ) ) ) {
+          return TRUNCATED;
+        }
+        $byte          = read_big_endian( substr( $data, 2, 1 ), 1 );
+        $high_bitdepth = ( $byte &amp; 0x40 ) != 0;
+        $twelve_bit    = ( $byte &amp; 0x20 ) != 0;
+        $monochrome    = ( $byte &amp; 0x10 ) != 0;
+        if ( $twelve_bit &amp;&amp; !$high_bitdepth ) {
+            return INVALID;
+        }
+        if ( count( $this-&gt;features-&gt;chan_props ) &lt;= MAX_FEATURES &amp;&amp;
+             $box_index &lt;= MAX_VALUE ) {
+          $chan_prop_count = count( $this-&gt;features-&gt;chan_props );
+          $this-&gt;features-&gt;chan_props[$chan_prop_count]                 = new Chan_Prop();
+          $this-&gt;features-&gt;chan_props[$chan_prop_count]-&gt;property_index = $box_index;
+          $this-&gt;features-&gt;chan_props[$chan_prop_count]-&gt;bit_depth      =
+              $high_bitdepth ? $twelve_bit ? 12 : 10 : 8;
+          $this-&gt;features-&gt;chan_props[$chan_prop_count]-&gt;num_channels   = $monochrome ? 1 : 3;
+        } else {
+          $this-&gt;data_was_skipped = true;
+        }
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size - 3 ) ) {
+          return TRUNCATED;
+        }
+      } else if ( $box-&gt;type == 'auxC' ) {
+        // See AV1 Image File Format (AVIF) 4
+        // at https://aomediacodec.github.io/av1-avif/#auxiliary-images
+        $kAlphaStr       = "urn:mpeg:mpegB:cicp:systems:auxiliary:alpha\0";
+        $kAlphaStrLength = 44; // Includes terminating character.
+        if ( $box-&gt;content_size &gt;= $kAlphaStrLength ) {
+          if ( !( $data = read( $this-&gt;handle, $kAlphaStrLength ) ) ) {
+            return TRUNCATED;
+          }
+          if ( substr( $data, 0, $kAlphaStrLength ) == $kAlphaStr ) {
+            // Note: It is unlikely but it is possible that this alpha plane does
+            //       not belong to the primary item or a tile. Ignore this issue.
+            $this-&gt;features-&gt;has_alpha = true;
+          }
+          if ( !skip( $this-&gt;handle, $box-&gt;content_size - $kAlphaStrLength ) ) {
+            return TRUNCATED;
+          }
+        } else {
+          if ( !skip( $this-&gt;handle, $box-&gt;content_size ) ) {
+            return TRUNCATED;
+          }
+        }
+      } else {
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size ) ) {
+          return TRUNCATED;
+        }
+      }
+      ++$box_index;
+      $num_remaining_bytes -= $box-&gt;size;
+    } while ( $num_remaining_bytes &gt; 0 );
+    return NOT_FOUND;
+  }
+
+  /**
+   * Parses an "iprp" box.
+   *
+   * The "ipco" box contain the properties which are linked to items by the "ipma" box.
+   *
+   * @param stream  $handle              The resource the box will be parsed from.
+   * @param int     $num_remaining_bytes The number of bytes that should be available from the resource.
+   * @return Status                      FOUND on success or an error on failure.
+   */
+  private function parse_iprp( $num_remaining_bytes ) {
+    do {
+      $box    = new Box();
+      $status = $box-&gt;parse( $this-&gt;handle, $this-&gt;num_parsed_boxes, $num_remaining_bytes );
+      if ( $status != FOUND ) {
+        return $status;
+      }
+
+      if ( $box-&gt;type == 'ipco' ) {
+        $status = $this-&gt;parse_ipco( $box-&gt;content_size );
+        if ( $status != NOT_FOUND ) {
+          return $status;
+        }
+      } else if ( $box-&gt;type == 'ipma' ) {
+        // See ISO/IEC 23008-12:2017(E) 9.3.2
+        $num_read_bytes = 4;
+        if ( $box-&gt;content_size &lt; $num_read_bytes ) {
+          return INVALID;
+        }
+        if ( !( $data = read( $this-&gt;handle, $num_read_bytes ) ) ) {
+          return TRUNCATED;
+        }
+        $entry_count        = read_big_endian( $data, 4 );
+        $id_num_bytes       = ( $box-&gt;version &lt; 1 ) ? 2 : 4;
+        $index_num_bytes    = ( $box-&gt;flags &amp; 1 ) ? 2 : 1;
+        $essential_bit_mask = ( $box-&gt;flags &amp; 1 ) ? 0x8000 : 0x80;
+
+        for ( $entry = 0; $entry &lt; $entry_count; ++$entry ) {
+          if ( $entry &gt;= MAX_PROPS ||
+               count( $this-&gt;features-&gt;props ) &gt;= MAX_PROPS ) {
+            $this-&gt;data_was_skipped = true;
+            break;
+          }
+          $num_read_bytes += $id_num_bytes + 1;
+          if ( $box-&gt;content_size &lt; $num_read_bytes ) {
+            return INVALID;
+          }
+          if ( !( $data = read( $this-&gt;handle, $id_num_bytes + 1 ) ) ) {
+            return TRUNCATED;
+          }
+          $item_id           = read_big_endian(
+              substr( $data, 0, $id_num_bytes ), $id_num_bytes );
+          $association_count = read_big_endian(
+              substr( $data, $id_num_bytes, 1 ), 1 );
+
+          for ( $property = 0; $property &lt; $association_count; ++$property ) {
+            if ( $property &gt;= MAX_PROPS ||
+                 count( $this-&gt;features-&gt;props ) &gt;= MAX_PROPS ) {
+              $this-&gt;data_was_skipped = true;
+              break;
+            }
+            $num_read_bytes += $index_num_bytes;
+            if ( $box-&gt;content_size &lt; $num_read_bytes ) {
+              return INVALID;
+            }
+            if ( !( $data = read( $this-&gt;handle, $index_num_bytes ) ) ) {
+              return TRUNCATED;
+            }
+            $value          = read_big_endian( $data, $index_num_bytes );
+            // $essential = ($value &amp; $essential_bit_mask);  // Unused.
+            $property_index = ( $value &amp; ~$essential_bit_mask );
+            if ( $property_index &lt;= MAX_VALUE &amp;&amp; $item_id &lt;= MAX_VALUE ) {
+              $prop_count = count( $this-&gt;features-&gt;props );
+              $this-&gt;features-&gt;props[$prop_count]                 = new Prop();
+              $this-&gt;features-&gt;props[$prop_count]-&gt;property_index = $property_index;
+              $this-&gt;features-&gt;props[$prop_count]-&gt;item_id        = $item_id;
+            } else {
+              $this-&gt;data_was_skipped = true;
+            }
+          }
+          if ( $property &lt; $association_count ) {
+            break; // Do not read garbage.
+          }
+        }
+
+        // If all features are available now, do not look further.
+        $status = $this-&gt;features-&gt;get_primary_item_features();
+        if ( $status != NOT_FOUND ) {
+          return $status;
+        }
+
+        // Mostly if 'data_was_skipped'.
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size - $num_read_bytes ) ) {
+          return TRUNCATED;
+        }
+      } else {
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size ) ) {
+          return TRUNCATED;
+        }
+      }
+      $num_remaining_bytes -= $box-&gt;size;
+    } while ( $num_remaining_bytes &gt; 0 );
+    return NOT_FOUND;
+  }
+
+  /**
+   * Parses an "iref" box.
+   *
+   * The "dimg" boxes contain links between tiles and their parent items, which
+   * can be used to infer bit depth and number of channels for the primary item
+   * when the latter does not have these properties.
+   *
+   * @param stream  $handle              The resource the box will be parsed from.
+   * @param int     $num_remaining_bytes The number of bytes that should be available from the resource.
+   * @return Status                      FOUND on success or an error on failure.
+   */
+  private function parse_iref( $num_remaining_bytes ) {
+    do {
+      $box    = new Box();
+      $status = $box-&gt;parse( $this-&gt;handle, $this-&gt;num_parsed_boxes, $num_remaining_bytes );
+      if ( $status != FOUND ) {
+        return $status;
+      }
+
+      if ( $box-&gt;type == 'dimg' ) {
+        // See ISO/IEC 14496-12:2015(E) 8.11.12.2
+        $num_bytes_per_id = ( $box-&gt;version == 0 ) ? 2 : 4;
+        $num_read_bytes   = $num_bytes_per_id + 2;
+        if ( $box-&gt;content_size &lt; $num_read_bytes ) {
+          return INVALID;
+        }
+        if ( !( $data = read( $this-&gt;handle, $num_read_bytes ) ) ) {
+          return TRUNCATED;
+        }
+        $from_item_id    = read_big_endian( $data, $num_bytes_per_id );
+        $reference_count = read_big_endian( substr( $data, $num_bytes_per_id, 2 ), 2 );
+
+        for ( $i = 0; $i &lt; $reference_count; ++$i ) {
+          if ( $i &gt;= MAX_TILES ) {
+            $this-&gt;data_was_skipped = true;
+            break;
+          }
+          $num_read_bytes += $num_bytes_per_id;
+          if ( $box-&gt;content_size &lt; $num_read_bytes ) {
+            return INVALID;
+          }
+          if ( !( $data = read( $this-&gt;handle, $num_bytes_per_id ) ) ) {
+            return TRUNCATED;
+          }
+          $to_item_id = read_big_endian( $data, $num_bytes_per_id );
+          $tile_count = count( $this-&gt;features-&gt;tiles );
+          if ( $from_item_id &lt;= MAX_VALUE &amp;&amp; $to_item_id &lt;= MAX_VALUE &amp;&amp;
+               $tile_count &lt; MAX_TILES ) {
+            $this-&gt;features-&gt;tiles[$tile_count]                 = new Tile();
+            $this-&gt;features-&gt;tiles[$tile_count]-&gt;tile_item_id   = $to_item_id;
+            $this-&gt;features-&gt;tiles[$tile_count]-&gt;parent_item_id = $from_item_id;
+          } else {
+            $this-&gt;data_was_skipped = true;
+          }
+        }
+
+        // If all features are available now, do not look further.
+        $status = $this-&gt;features-&gt;get_primary_item_features();
+        if ( $status != NOT_FOUND ) {
+          return $status;
+        }
+
+        // Mostly if 'data_was_skipped'.
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size - $num_read_bytes ) ) {
+          return TRUNCATED;
+        }
+      } else {
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size ) ) {
+          return TRUNCATED;
+        }
+      }
+      $num_remaining_bytes -= $box-&gt;size;
+    } while ( $num_remaining_bytes &gt; 0 );
+    return NOT_FOUND;
+  }
+
+  /**
+   * Parses a "meta" box.
+   *
+   * It looks for the primary item ID in the "pitm" box and recurses into other boxes
+   * to find its features.
+   *
+   * @param stream  $handle              The resource the box will be parsed from.
+   * @param int     $num_remaining_bytes The number of bytes that should be available from the resource.
+   * @return Status                      FOUND on success or an error on failure.
+   */
+  private function parse_meta( $num_remaining_bytes ) {
+    do {
+      $box    = new Box();
+      $status = $box-&gt;parse( $this-&gt;handle, $this-&gt;num_parsed_boxes, $num_remaining_bytes );
+      if ( $status != FOUND ) {
+        return $status;
+      }
+
+      if ( $box-&gt;type == 'pitm' ) {
+        // See ISO/IEC 14496-12:2015(E) 8.11.4.2
+        $num_bytes_per_id = ( $box-&gt;version == 0 ) ? 2 : 4;
+        if ( $num_bytes_per_id &gt; $num_remaining_bytes ) {
+          return INVALID;
+        }
+        if ( !( $data = read( $this-&gt;handle, $num_bytes_per_id ) ) ) {
+          return TRUNCATED;
+        }
+        $primary_item_id = read_big_endian( $data, $num_bytes_per_id );
+        if ( $primary_item_id &gt; MAX_VALUE ) {
+          return ABORTED;
+        }
+        $this-&gt;features-&gt;has_primary_item = true;
+        $this-&gt;features-&gt;primary_item_id  = $primary_item_id;
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size - $num_bytes_per_id ) ) {
+          return TRUNCATED;
+        }
+      } else if ( $box-&gt;type == 'iprp' ) {
+        $status = $this-&gt;parse_iprp( $box-&gt;content_size );
+        if ( $status != NOT_FOUND ) {
+          return $status;
+        }
+      } else if ( $box-&gt;type == 'iref' ) {
+        $status = $this-&gt;parse_iref( $box-&gt;content_size );
+        if ( $status != NOT_FOUND ) {
+          return $status;
+        }
+      } else {
+        if ( !skip( $this-&gt;handle, $box-&gt;content_size ) ) {
+          return TRUNCATED;
+        }
+      }
+      $num_remaining_bytes -= $box-&gt;size;
+    } while ( $num_remaining_bytes != 0 );
+    // According to ISO/IEC 14496-12:2012(E) 8.11.1.1 there is at most one "meta".
+    return INVALID;
+  }
+
+  /**
+   * Parses a file stream.
+   *
+   * The file type is checked through the "ftyp" box.
+   *
+   * @return bool True if the input stream is an AVIF bitstream or false.
+   */
+  public function parse_ftyp() {
+    $box    = new Box();
+    $status = $box-&gt;parse( $this-&gt;handle, $this-&gt;num_parsed_boxes );
+    if ( $status != FOUND ) {
+      return false;
+    }
+
+    if ( $box-&gt;type != 'ftyp' ) {
+      return false;
+    }
+    // Iterate over brands. See ISO/IEC 14496-12:2012(E) 4.3.1
+    if ( $box-&gt;content_size &lt; 8 ) {
+      return false;
+    }
+    for ( $i = 0; $i + 4 &lt;= $box-&gt;content_size; $i += 4 ) {
+      if ( !( $data = read( $this-&gt;handle, 4 ) ) ) {
+        return false;
+      }
+      if ( $i == 4 ) {
+        continue; // Skip minor_version.
+      }
+      if ( substr( $data, 0, 4 ) == 'avif' || substr( $data, 0, 4 ) == 'avis' ) {
+        return skip( $this-&gt;handle, $box-&gt;content_size - ( $i + 4 ) );
+      }
+      if ( $i &gt; 32 * 4 ) {
+        return false; // Be reasonable.
+      }
+
+    }
+    return false; // No AVIF brand no good.
+  }
+
+  /**
+   * Parses a file stream.
+   *
+   * Features are extracted from the "meta" box.
+   *
+   * @return bool True if the main features of the primary item were parsed or false.
+   */
+  public function parse_file() {
+    $box = new Box();
+    while ( $box-&gt;parse( $this-&gt;handle, $this-&gt;num_parsed_boxes ) == FOUND ) {
+      if ( $box-&gt;type === 'meta' ) {
+        if ( $this-&gt;parse_meta( $box-&gt;content_size ) != FOUND ) {
+          return false;
+        }
+        return true;
+      }
+      if ( !skip( $this-&gt;handle, $box-&gt;content_size ) ) {
+        return false;
+      }
+    }
+    return false; // No "meta" no good.
+  }
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-avif-info.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-avif-info.php#L315">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-avif-info.php#L315-L781">View on GitHub</a></p></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

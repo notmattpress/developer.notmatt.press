@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_users_list_table/">WP_Users_List_Table</a></span><span class="is-current-page">WP_Users_List_Table::prepare_items()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Users_List_Table::prepare_items()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Users_List_Table::prepare_items()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Prepares the users list for display.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="83"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function prepare_items() {
+	global $role, $usersearch;
+
+	$usersearch = isset( $_REQUEST['s'] ) ? wp_unslash( trim( $_REQUEST['s'] ) ) : '';
+
+	$role = isset( $_REQUEST['role'] ) ? $_REQUEST['role'] : '';
+
+	$per_page       = ( $this-&gt;is_site_users ) ? 'site_users_network_per_page' : 'users_per_page';
+	$users_per_page = $this-&gt;get_items_per_page( $per_page );
+
+	$paged = $this-&gt;get_pagenum();
+
+	if ( 'none' === $role ) {
+		$args = array(
+			'number'  =&gt; $users_per_page,
+			'offset'  =&gt; ( $paged - 1 ) * $users_per_page,
+			'include' =&gt; wp_get_users_with_no_role( $this-&gt;site_id ),
+			'search'  =&gt; $usersearch,
+			'fields'  =&gt; 'all_with_meta',
+		);
+	} else {
+		$args = array(
+			'number' =&gt; $users_per_page,
+			'offset' =&gt; ( $paged - 1 ) * $users_per_page,
+			'role'   =&gt; $role,
+			'search' =&gt; $usersearch,
+			'fields' =&gt; 'all_with_meta',
+		);
+	}
+
+	if ( '' !== $args['search'] ) {
+		$args['search'] = '*' . $args['search'] . '*';
+	}
+
+	if ( $this-&gt;is_site_users ) {
+		$args['blog_id'] = $this-&gt;site_id;
+	}
+
+	if ( isset( $_REQUEST['orderby'] ) ) {
+		$args['orderby'] = $_REQUEST['orderby'];
+	}
+
+	if ( isset( $_REQUEST['order'] ) ) {
+		$args['order'] = $_REQUEST['order'];
+	}
+
+	/**
+	 * Filters the query arguments used to retrieve users for the current users list table.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param array $args Arguments passed to WP_User_Query to retrieve items for the current
+	 *                    users list table.
+	 */
+	$args = apply_filters( 'users_list_table_query_args', $args );
+
+	// Query the user IDs for this page.
+	$wp_user_search = new WP_User_Query( $args );
+
+	$this-&gt;items = $wp_user_search-&gt;get_results();
+
+	$this-&gt;set_pagination_args(
+		array(
+			'total_items' =&gt; $wp_user_search-&gt;get_total(),
+			'per_page'    =&gt; $users_per_page,
+		)
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-users-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-users-list-table.php#L83">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-users-list-table.php#L83-L150">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/users_list_table_query_args/"><span class="hook-func">apply_filters</span>( ‘users_list_table_query_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the query arguments used to retrieve users for the current users list table.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_users_with_no_role/">wp_get_users_with_no_role()</a><code>wp-includes/user.php</code></td><td><p>Gets the user IDs of all users with no role on this site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_user_search/get_results/">WP_User_Search::get_results()</a><code>wp-admin/includes/deprecated.php</code></td><td><p>Retrieves the user search query results.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_user_query/__construct/">WP_User_Query::__construct()</a><code>wp-includes/class-wp-user-query.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.0/">3.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/template-files-section/">Template Files Section</a></span><span><a href="https://developer.wordpress.org/themes/template-files-section/partial-and-miscellaneous-template-files/">Partial and Miscellaneous Template Files</a></span><span class="is-current-page">Comment Template</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Comment Template</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>WordPress displays comments in your theme based on the settings and code in the <code>comments.php</code> file within your WordPress theme.</p>
+<h2 class="is-toc-heading wp-block-heading" id="simple-comments-loop" tabindex="-1"><a href="#simple-comments-loop">Simple comments loop</a></h2>
+<pre class="wp-block-code"><code class="language-php" lang="php">// Get only the approved comments
+$args = array(
+	'status' =&gt; 'approve',
+);
+
+// The comment Query
+$comments_query = new WP_Comment_Query();
+$comments       = $comments_query-&gt;query( $args );
+
+// Comment Loop
+if ( $comments ) {
+	foreach ( $comments as $comment ) {
+		echo '&lt;p&gt;' . $comment-&gt;comment_content . '&lt;/p&gt;';
+	}
+} else {
+	echo 'No comments found.';
+}</code></pre>
+<p>The <code>comments.php</code> template contains all the logic needed to pull comments out of the database and display them in your theme.</p>
+<p>Before we explore the template file you’ll want to know how to pull in the partial template file on the appropriate pages such as <code>single.php</code>. You’ll wrap the comment <a href="https://developer.notmatt.press/themes/basics/template-tags/">template tag</a> in a conditional statement so comments.php is only pulled in if it makes sense to do.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">// If comments are open or we have at least one comment, load up the comment template.
+if ( comments_open() || get_comments_number() ) :
+	comments_template();
+endif;</code></pre>
+<figure class="wp-block-image"><img alt="functionality-comments-01" class="wp-image-11358" data-recalc-dims="1" decoding="async" fetchpriority="high" height="257" sizes="(max-width: 350px) 100vw, 350px" src="https://i0.wp.com/developer.wordpress.org/files/2014/10/functionality-comments-01.png?resize=350%2C257&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2014/10/functionality-comments-01.png?w=350&amp;ssl=1 350w, https://i0.wp.com/developer.wordpress.org/files/2014/10/functionality-comments-01.png?resize=300%2C220&amp;ssl=1 300w" width="350"/></figure>
+<h2 class="is-toc-heading wp-block-heading" id="another-comments-php-example" tabindex="-1"><a href="#another-comments-php-example">Another comments.php Example</a></h2>
+<p>Here’s an example of the <code>comments.php</code> template included with the Twenty Thirteen theme:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * The template for displaying Comments.
+ *
+ * The area of the page that contains comments and the comment form.
+ *
+ * @package WordPress
+ * @subpackage Twenty_Thirteen
+ * @since Twenty Thirteen 1.0
+ */
+
+/*
+ * If the current post is protected by a password and the visitor has not yet
+ * entered the password we will return early without loading the comments.
+ */
+if ( post_password_required() ) {
+	return;
+}
+?&gt;
+
+&lt;div id="comments" class="comments-area"&gt;
+
+	&lt;?php if ( have_comments() ) : ?&gt;
+		&lt;h2 class="comments-title"&gt;
+			&lt;?php
+			printf(
+				_nx(
+					'One thought on "%2$s"',
+					'%1$s thoughts on "%2$s"',
+					get_comments_number(),
+					'comments title',
+					'twentythirteen'
+				),
+				number_format_i18n( get_comments_number() ),
+				'&lt;span&gt;' . get_the_title() . '&lt;/span&gt;'
+			);
+			?&gt;
+		&lt;/h2&gt;
+
+		&lt;ol class="comment-list"&gt;
+			&lt;?php
+			wp_list_comments( array(
+				'style'       =&gt; 'ol',
+				'short_ping'  =&gt; true,
+				'avatar_size' =&gt; 74,
+			) );
+			?&gt;
+		&lt;/ol&gt;&lt;!-- .comment-list --&gt;
+
+		&lt;?php if ( get_comment_pages_count() &gt; 1 &amp;&amp; get_option( 'page_comments' ) ) : ?&gt;
+			&lt;nav class="navigation comment-navigation" role="navigation"&gt;
+
+				&lt;h1 class="screen-reader-text section-heading"&gt;&lt;?php _e( 'Comment navigation', 'twentythirteen' ); ?&gt;&lt;/h1&gt;
+				&lt;div class="nav-previous"&gt;&lt;?php previous_comments_link( __( '&amp;larr; Older Comments', 'twentythirteen' ) ); ?&gt;&lt;/div&gt;
+				&lt;div class="nav-next"&gt;&lt;?php next_comments_link( __( 'Newer Comments &amp;rarr;', 'twentythirteen' ) ); ?&gt;&lt;/div&gt;
+			&lt;/nav&gt;&lt;!-- .comment-navigation --&gt;
+		&lt;?php endif; // Check for comment navigation ?&gt;
+
+		&lt;?php if ( ! comments_open() &amp;&amp; get_comments_number() ) : ?&gt;
+			&lt;p class="no-comments"&gt;&lt;?php _e( 'Comments are closed.', 'twentythirteen' ); ?&gt;&lt;/p&gt;
+		&lt;?php endif; ?&gt;
+
+	&lt;?php endif; // have_comments() ?&gt;
+
+	&lt;?php comment_form(); ?&gt;
+
+&lt;/div&gt;&lt;!-- #comments --&gt;
+</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="breaking-down-the-comments-php" tabindex="-1"><a href="#breaking-down-the-comments-php">Breaking down the comments.php</a></h2>
+<p>The above <code>comments.php</code> can be broken down to the below parts for better understanding.</p>
+<ol class="wp-block-list">
+<li><a href="#template-header">Template Header</a></li>
+<li><a href="#comments-title">Comments Title</a></li>
+<li><a href="#comment-listing">Comment Listing</a></li>
+<li><a href="#comment-pagination">Comment Pagination</a></li>
+<li><a href="#comments-are-closed-message">Comments are closed message</a>.</li>
+<li><a href="#the-end">The End</a></li>
+</ol>
+<h3 class="is-toc-heading wp-block-heading" id="template-header" tabindex="-1"><a href="#template-header">Template Header</a></h3>
+<p>This template begins by identifying the template.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/**
+ * The template for displaying Comments.
+ *
+ * The area of the page that contains comments and the comment form.
+ *
+ * @package WordPress
+ * @subpackage Twenty_Thirteen
+ * @since Twenty Thirteen 1.0
+ */</code></pre>
+<p>Next, there’s a test to see if the post is password protected and, if so, it stops processing the template.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">/*
+ * If the current post is protected by a password and the visitor has not yet
+ * entered the password we will return early without loading the comments.
+ */
+if ( post_password_required() )
+ return;
+?&gt;</code></pre>
+<p>Finally, there’s a test to see if there are comments associated with this post.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;div id="comments" class="comments-area"&gt;
+	&lt;?php if ( have_comments() ) : ?&gt;</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="comments-title" tabindex="-1"><a href="#comments-title">Comments Title</a></h3>
+<p>Prints out the header that appears above the comments.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">Uses the <a href="https://developer.notmatt.press/reference/functions/_nx/" rel="function">_nx()</a>  translation function so other developers can provide alternative language translations.</div></div>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;h2 class="comments-title"&gt;
+	&lt;?php
+	printf(
+		_nx(
+			'One thought on "%2$s"',
+			'%1$s thoughts on "%2$s"',
+			get_comments_number(),
+			'comments title',
+			'twentythirteen'
+		),
+		number_format_i18n( get_comments_number() ),
+		'&lt;span&gt;' . get_the_title() . '&lt;/span&gt;'
+	);
+	?&gt;
+&lt;/h2&gt;</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="comment-listing" tabindex="-1"><a href="#comment-listing">Comment Listing</a></h3>
+<p>The following snippet creates an ordered listing of comments using the <a href="https://developer.notmatt.press/reference/functions/wp_list_comments/" rel="function">wp_list_comments()</a>  function.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;ol class="comment-list"&gt;
+	&lt;?php
+	wp_list_comments( array(
+		'style'       =&gt; 'ol',
+		'short_ping'  =&gt; true,
+		'avatar_size' =&gt; 74,
+	) );
+	?&gt;
+&lt;/ol&gt;&lt;!-- .comment-list --&gt;</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="comment-pagination" tabindex="-1"><a href="#comment-pagination">Comment Pagination</a></h3>
+<p>Checks to see if there are enough comments to merit adding comment navigation and, if so, create comment navigation.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php if ( get_comment_pages_count() &gt; 1 &amp;&amp; get_option( 'page_comments' ) ) : ?&gt;
+
+	&lt;nav class="navigation comment-navigation" role="navigation"&gt;
+
+		&lt;h3 class="screen-reader-text section-heading"&gt;&lt;?php _e( 'Comment navigation', 'twentythirteen' ); ?&gt;&lt;/h3&gt;
+		&lt;div class="nav-previous"&gt;&lt;?php previous_comments_link( __( '&amp;larr; Older Comments', 'twentythirteen' ) ); ?&gt;&lt;/div&gt;
+		&lt;div class="nav-next"&gt;&lt;?php next_comments_link( __( 'Newer Comments &amp;rarr;', 'twentythirteen' ) ); ?&gt;&lt;/div&gt;
+
+	&lt;/nav&gt;&lt;!-- .comment-navigation --&gt;
+
+&lt;?php endif; // Check for comment navigation ?&gt;
+</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="comments-are-closed-message" tabindex="-1"><a href="#comments-are-closed-message">Comments are closed message.</a></h3>
+<p>If comments aren’t open, displays a line indicating that they’re closed.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php if ( ! comments_open() &amp;&amp; get_comments_number() ) : ?&gt;
+	&lt;p class="no-comments"&gt;&lt;?php _e( 'Comments are closed.', 'twentythirteen' ); ?&gt;&lt;/p&gt;
+&lt;?php endif; ?&gt;</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="the-end" tabindex="-1"><a href="#the-end">The End</a></h3>
+<p>This section ends the comments loop, includes the comment form, and closes the comment wrapper.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">	&lt;?php endif; // have_comments() ?&gt;
+
+	&lt;?php comment_form(); ?&gt;
+
+&lt;/div&gt;&lt;!-- #comments --&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="comments-pagination" tabindex="-1"><a href="#comments-pagination">Comments Pagination</a></h2>
+<p>If you have a lot of comments (which makes your page long), then there are a number of potential benefits to paginating your comments. Pagination helps improve page load speed, especially on mobile devices.<br/>Enabling comments pagination is done in two steps.</p>
+<ol class="wp-block-list">
+<li>Enable paged comments within WordPress by going to <em>Settings</em> &gt;<em> Discussion </em>, and checking the box “<em>Break comments into pages</em>” . You can enter any number for the “<em>top level comments per page</em>”.</li>
+<li>Open your <code>comments.php</code> template file and add the following line where you want the comment pagination to appear.</li>
+</ol>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;div class="pagination"&gt;
+	&lt;?php paginate_comments_links(); ?&gt;
+&lt;/div&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="alternative-comment-template" tabindex="-1"><a href="#alternative-comment-template">Alternative Comment Template</a></h2>
+<p>On some occasions you may want display your comments differently within your theme. For this you would build an alternate file (ex. short-comments.php) and call it as follows:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php comments_template( '/short-comments.php' );</code></pre>
+<p>The path to the file used for an alternative comments template should be relative to the current theme root directory, and include any subfolders. So if the custom comments template is in a folder inside the theme, it may look like this when called:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php comments_template( '/custom-templates/alternative-comments.php' );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="function-reference" tabindex="-1"><a href="#function-reference">Function Reference</a></h2>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/reference/functions/wp_list_comments/" rel="function">wp_list_comments()</a>  : Displays all comments for a post or Page based on a variety of parameters including ones set in the administration area.</li>
+<li><a href="https://developer.notmatt.press/reference/functions/comment_form/" rel="function">comment_form()</a>  : This tag outputs a complete commenting form for use within a template.</li>
+<li><a href="https://developer.notmatt.press/reference/functions/comments_template/" rel="function">comments_template()</a>  : Load the comment template specified in first argument</li>
+<li><a href="https://developer.notmatt.press/reference/functions/paginate_comments_links/" rel="function">paginate_comments_links()</a>  : Create pagination links for the comments on the current post.</li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_comments/" rel="function">get_comments()</a>  : Retrieve the comments with possible use of arguments</li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_approved_comments/" rel="function">get_approved_comments()</a>  : Retrieve the approved comments for post id provided.</li>
+</ul>
+<h2 class="is-toc-heading wp-block-heading" id="functions-reference-for-retrieving-comments-meta" tabindex="-1"><a href="#functions-reference-for-retrieving-comments-meta">Functions reference for retrieving comments meta</a></h2>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/reference/functions/get_comment_link/" rel="function">get_comment_link()</a> </li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_comment_author/" rel="function">get_comment_author()</a> </li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_comment_date/" rel="function">get_comment_date()</a> </li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_comment_time/" rel="function">get_comment_time()</a> </li>
+<li><a href="https://developer.notmatt.press/reference/functions/get_comment_text/" rel="function">get_comment_text()</a> </li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

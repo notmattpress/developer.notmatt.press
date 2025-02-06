@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/curating-the-editor-experience/">Curating the Editor Experience</a></span><span class="is-current-page">Block Locking API</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Block Locking API</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The Block Locking API allows you to restrict actions on specific blocks within the Editor. This API can be used to prevent users from moving, removing, or editing certain blocks, ensuring layout consistency and content integrity.</p>
+<h2 class="is-toc-heading" id="lock-the-ability-to-move-or-remove-specific-blocks" tabindex="-1"><a href="#lock-the-ability-to-move-or-remove-specific-blocks">Lock the ability to move or remove specific blocks</a></h2>
+<p>Users can lock and unlock blocks via the Editor. The locking UI has options for preventing blocks from being moved within the content canvas or removed:</p>
+<p><img alt="Image of locking interface" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/assets/Locking%2520interface.png?ssl=1"/></p>
+<p>Keep in mind that you can apply locking options to blocks nested inside of a containing block by turning on the “Apply to all blocks inside” option. However, you cannot mass lock blocks otherwise.</p>
+<h2 class="is-toc-heading" id="lock-the-ability-to-edit-certain-blocks" tabindex="-1"><a href="#lock-the-ability-to-edit-certain-blocks">Lock the ability to edit certain blocks</a></h2>
+<p>Alongside the ability to lock moving or removing blocks, the <a href="https://github.com/WordPress/gutenberg/pull/44739">Navigation Block</a> and <a href="https://github.com/WordPress/gutenberg/pull/39950">Reusable block</a> have an additional capability: lock the ability to edit the contents of the block. This locks the ability to make changes to any blocks inside of either block type.</p>
+<h2 class="is-toc-heading" id="apply-block-locking-to-patterns-or-templates" tabindex="-1"><a href="#apply-block-locking-to-patterns-or-templates">Apply block locking to patterns or templates</a></h2>
+<p>When building patterns or templates, theme authors can use these same UI tools to set the default locked state of blocks. For example, a theme author could lock various pieces of a header. Keep in mind that by default, users with editing access can unlock these blocks. <a href="https://gist.github.com/annezazu/acee30f8b6e8995e1b1a52796e6ef805">Here’s an example of a pattern</a> with various blocks locked in different ways and here’s more context on <a href="https://make.wordpress.org/core/2022/02/09/core-editor-improvement-curated-experiences-with-locking-apis-theme-json/">creating a template with locked blocks</a>. You can build these patterns in the Editor itself, including adding locking options, before following the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-patterns/">documentation to register them</a>.</p>
+<h2 class="is-toc-heading" id="apply-content-only-editing-in-patterns-or-templates" tabindex="-1"><a href="#apply-content-only-editing-in-patterns-or-templates">Apply content-only editing in patterns or templates</a></h2>
+<p>This functionality was introduced in WordPress 6.1. In contrast to block locking, which disables the ability to move or remove blocks, content-only editing is both designed for use at the pattern or template level and hides all design tools, while still allowing for the ability to edit the content of the blocks. This provides a great way to simplify the interface for users and preserve a design. When this option is added, the following changes occur:</p>
+<ul>
+<li>Non-content child blocks (containers, spacers, columns, etc) are hidden from list view, un-clickable on the canvas, and entirely un-editable.</li>
+<li>The Inspector will display a list of all child ‘content’ blocks. Clicking a block in this list reveals its settings panel. </li>
+<li>The main List View only shows content blocks, all at the same level regardless of actual nesting.</li>
+<li>Children blocks within the overall content locked container are automatically move / remove locked.</li>
+<li>Additional child blocks cannot be inserted, further preserving the design and layout.</li>
+<li>There is a link in the block toolbar to ‘Modify’ that a user can toggle on/off to have access to the broader design tools. Currently, it’s not possibly to programmatically remove this option.</li>
+</ul>
+<p>This option can be applied to Columns, Cover, and Group blocks as well as third-party blocks that have the templateLock attribute in its block.json. To adopt this functionality, you need to use <code>"templateLock":"contentOnly"</code>. <a href="https://gist.github.com/annezazu/d62acd2514cea558be6cea97fe28ff3c">Here’s an example of a pattern</a> with this functionality in place. For more information, please <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-templates/#locking">review the relevant documentation</a>.</p>
+<p>Note: There is no UI in place to manage content locking and it must be managed at the code level.</p>
+<h2 class="is-toc-heading" id="change-permissions-to-control-locking-ability" tabindex="-1"><a href="#change-permissions-to-control-locking-ability">Change permissions to control locking ability</a></h2>
+<p>Agencies and plugin authors can offer an even more curated experience by limiting which users have <a href="https://make.wordpress.org/core/2022/05/05/block-locking-settings-in-wordpress-6-0/">permission to lock and unlock blocks</a>. By default, anyone who is an administrator will have access to lock and unlock blocks.</p>
+<p>Developers can add a filter to the <a href="https://developer.notmatt.press/reference/hooks/block_editor_settings_all/">block_editor_settings_all</a> hook to configure permissions around locking blocks.  The hook passes two parameters to the callback function:</p>
+<ul>
+<li><code>$settings</code> – An array of configurable settings for the Editor.</li>
+<li><code>$context</code> – An instance of <a href="https://developer.notmatt.press/reference/classes/wp_block_editor_context/" rel="class">WP_Block_Editor_Context</a>, an object that contains information about the current Editor.</li>
+</ul>
+<p>Specifically, developers can alter the <code>$settings['canLockBlocks']</code> value by setting it to <code>true</code> or <code>false</code>, typically by running through one or more conditional checks.</p>
+<p>The following example disables block locking permissions for all users when editing a page:</p>
+<pre><code class="language-php">add_filter( 'block_editor_settings_all', function( $settings, $context ) {
+    if ( $context-&gt;post &amp;&amp; 'page' === $context-&gt;post-&gt;post_type ) {
+        $settings['canLockBlocks'] = false;
+    }
+
+    return $settings;
+}, 10, 2 );
+</code></pre>
+<p>Another common use case may be to only allow users who can edit the visual design of the site (theme editing) to lock or unlock blocks. Now, the best option would be to test against the <code>edit_theme_options</code> capability, as shown in the following code snippet:</p>
+<pre><code class="language-php">add_filter( 'block_editor_settings_all', function( $settings ) {
+    $settings['canLockBlocks'] = current_user_can( 'edit_theme_options' );
+
+    return $settings;
+} );
+</code></pre>
+<p>Developers may use any type of conditional check to determine who can lock/unlock blocks. This is merely a small sampling of what is possible via the filter hook.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

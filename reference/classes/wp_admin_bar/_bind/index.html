@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_admin_bar/">WP_Admin_Bar</a></span><span class="is-current-page">WP_Admin_Bar::_bind()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Admin_Bar::_bind()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Admin_Bar::_bind(): <span class="return-type">object|void</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">object|void</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="312"><code class="language-php line-numbers" id="wporg-source-code" lang="php">final protected function _bind() {
+	if ( $this-&gt;bound ) {
+		return;
+	}
+
+	/*
+	 * Add the root node.
+	 * Clear it first, just in case. Don't mess with The Root.
+	 */
+	$this-&gt;remove_node( 'root' );
+	$this-&gt;add_node(
+		array(
+			'id'    =&gt; 'root',
+			'group' =&gt; false,
+		)
+	);
+
+	// Normalize nodes: define internal 'children' and 'type' properties.
+	foreach ( $this-&gt;_get_nodes() as $node ) {
+		$node-&gt;children = array();
+		$node-&gt;type     = ( $node-&gt;group ) ? 'group' : 'item';
+		unset( $node-&gt;group );
+
+		// The Root wants your orphans. No lonely items allowed.
+		if ( ! $node-&gt;parent ) {
+			$node-&gt;parent = 'root';
+		}
+	}
+
+	foreach ( $this-&gt;_get_nodes() as $node ) {
+		if ( 'root' === $node-&gt;id ) {
+			continue;
+		}
+
+		// Fetch the parent node. If it isn't registered, ignore the node.
+		$parent = $this-&gt;_get_node( $node-&gt;parent );
+		if ( ! $parent ) {
+			continue;
+		}
+
+		// Generate the group class (we distinguish between top level and other level groups).
+		$group_class = ( 'root' === $node-&gt;parent ) ? 'ab-top-menu' : 'ab-submenu';
+
+		if ( 'group' === $node-&gt;type ) {
+			if ( empty( $node-&gt;meta['class'] ) ) {
+				$node-&gt;meta['class'] = $group_class;
+			} else {
+				$node-&gt;meta['class'] .= ' ' . $group_class;
+			}
+		}
+
+		// Items in items aren't allowed. Wrap nested items in 'default' groups.
+		if ( 'item' === $parent-&gt;type &amp;&amp; 'item' === $node-&gt;type ) {
+			$default_id = $parent-&gt;id . '-default';
+			$default    = $this-&gt;_get_node( $default_id );
+
+			/*
+			 * The default group is added here to allow groups that are
+			 * added before standard menu items to render first.
+			 */
+			if ( ! $default ) {
+				/*
+				 * Use _set_node because add_node can be overloaded.
+				 * Make sure to specify default settings for all properties.
+				 */
+				$this-&gt;_set_node(
+					array(
+						'id'       =&gt; $default_id,
+						'parent'   =&gt; $parent-&gt;id,
+						'type'     =&gt; 'group',
+						'children' =&gt; array(),
+						'meta'     =&gt; array(
+							'class' =&gt; $group_class,
+						),
+						'title'    =&gt; false,
+						'href'     =&gt; false,
+					)
+				);
+				$default            = $this-&gt;_get_node( $default_id );
+				$parent-&gt;children[] = $default;
+			}
+			$parent = $default;
+
+			/*
+			 * Groups in groups aren't allowed. Add a special 'container' node.
+			 * The container will invisibly wrap both groups.
+			 */
+		} elseif ( 'group' === $parent-&gt;type &amp;&amp; 'group' === $node-&gt;type ) {
+			$container_id = $parent-&gt;id . '-container';
+			$container    = $this-&gt;_get_node( $container_id );
+
+			// We need to create a container for this group, life is sad.
+			if ( ! $container ) {
+				/*
+				 * Use _set_node because add_node can be overloaded.
+				 * Make sure to specify default settings for all properties.
+				 */
+				$this-&gt;_set_node(
+					array(
+						'id'       =&gt; $container_id,
+						'type'     =&gt; 'container',
+						'children' =&gt; array( $parent ),
+						'parent'   =&gt; false,
+						'title'    =&gt; false,
+						'href'     =&gt; false,
+						'meta'     =&gt; array(),
+					)
+				);
+
+				$container = $this-&gt;_get_node( $container_id );
+
+				// Link the container node if a grandparent node exists.
+				$grandparent = $this-&gt;_get_node( $parent-&gt;parent );
+
+				if ( $grandparent ) {
+					$container-&gt;parent = $grandparent-&gt;id;
+
+					$index = array_search( $parent, $grandparent-&gt;children, true );
+					if ( false === $index ) {
+						$grandparent-&gt;children[] = $container;
+					} else {
+						array_splice( $grandparent-&gt;children, $index, 1, array( $container ) );
+					}
+				}
+
+				$parent-&gt;parent = $container-&gt;id;
+			}
+
+			$parent = $container;
+		}
+
+		// Update the parent ID (it might have changed).
+		$node-&gt;parent = $parent-&gt;id;
+
+		// Add the node to the tree.
+		$parent-&gt;children[] = $node;
+	}
+
+	$root        = $this-&gt;_get_node( 'root' );
+	$this-&gt;bound = true;
+	return $root;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-admin-bar.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-admin-bar.php#L312">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-admin-bar.php#L312-L453">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/remove_node/">WP_Admin_Bar::remove_node()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td><p>Remove a node.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/add_node/">WP_Admin_Bar::add_node()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td><p>Adds a node to the menu.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/_get_nodes/">WP_Admin_Bar::_get_nodes()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/_get_node/">WP_Admin_Bar::_get_node()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/_set_node/">WP_Admin_Bar::_set_node()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td></td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/render/">WP_Admin_Bar::render()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td></td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.3.0/">3.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

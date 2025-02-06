@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_ajax_wp_privacy_export_personal_data()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_ajax_wp_privacy_export_personal_data()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_ajax_wp_privacy_export_personal_data()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Handles exporting a user’s personal data via AJAX.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="4925"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_ajax_wp_privacy_export_personal_data() {
+
+	if ( empty( $_POST['id'] ) ) {
+		wp_send_json_error( __( 'Missing request ID.' ) );
+	}
+
+	$request_id = (int) $_POST['id'];
+
+	if ( $request_id &lt; 1 ) {
+		wp_send_json_error( __( 'Invalid request ID.' ) );
+	}
+
+	if ( ! current_user_can( 'export_others_personal_data' ) ) {
+		wp_send_json_error( __( 'Sorry, you are not allowed to perform this action.' ) );
+	}
+
+	check_ajax_referer( 'wp-privacy-export-personal-data-' . $request_id, 'security' );
+
+	// Get the request.
+	$request = wp_get_user_request( $request_id );
+
+	if ( ! $request || 'export_personal_data' !== $request-&gt;action_name ) {
+		wp_send_json_error( __( 'Invalid request type.' ) );
+	}
+
+	$email_address = $request-&gt;email;
+	if ( ! is_email( $email_address ) ) {
+		wp_send_json_error( __( 'A valid email address must be given.' ) );
+	}
+
+	if ( ! isset( $_POST['exporter'] ) ) {
+		wp_send_json_error( __( 'Missing exporter index.' ) );
+	}
+
+	$exporter_index = (int) $_POST['exporter'];
+
+	if ( ! isset( $_POST['page'] ) ) {
+		wp_send_json_error( __( 'Missing page index.' ) );
+	}
+
+	$page = (int) $_POST['page'];
+
+	$send_as_email = isset( $_POST['sendAsEmail'] ) ? ( 'true' === $_POST['sendAsEmail'] ) : false;
+
+	/**
+	 * Filters the array of exporter callbacks.
+	 *
+	 * @since 4.9.6
+	 *
+	 * @param array $args {
+	 *     An array of callable exporters of personal data. Default empty array.
+	 *
+	 *     @type array ...$0 {
+	 *         Array of personal data exporters.
+	 *
+	 *         @type callable $callback               Callable exporter function that accepts an
+	 *                                                email address and a page number and returns an
+	 *                                                array of name =&gt; value pairs of personal data.
+	 *         @type string   $exporter_friendly_name Translated user facing friendly name for the
+	 *                                                exporter.
+	 *     }
+	 * }
+	 */
+	$exporters = apply_filters( 'wp_privacy_personal_data_exporters', array() );
+
+	if ( ! is_array( $exporters ) ) {
+		wp_send_json_error( __( 'An exporter has improperly used the registration filter.' ) );
+	}
+
+	// Do we have any registered exporters?
+	if ( 0 &lt; count( $exporters ) ) {
+		if ( $exporter_index &lt; 1 ) {
+			wp_send_json_error( __( 'Exporter index cannot be negative.' ) );
+		}
+
+		if ( $exporter_index &gt; count( $exporters ) ) {
+			wp_send_json_error( __( 'Exporter index is out of range.' ) );
+		}
+
+		if ( $page &lt; 1 ) {
+			wp_send_json_error( __( 'Page index cannot be less than one.' ) );
+		}
+
+		$exporter_keys = array_keys( $exporters );
+		$exporter_key  = $exporter_keys[ $exporter_index - 1 ];
+		$exporter      = $exporters[ $exporter_key ];
+
+		if ( ! is_array( $exporter ) ) {
+			wp_send_json_error(
+				/* translators: %s: Exporter array index. */
+				sprintf( __( 'Expected an array describing the exporter at index %s.' ), $exporter_key )
+			);
+		}
+
+		if ( ! array_key_exists( 'exporter_friendly_name', $exporter ) ) {
+			wp_send_json_error(
+				/* translators: %s: Exporter array index. */
+				sprintf( __( 'Exporter array at index %s does not include a friendly name.' ), $exporter_key )
+			);
+		}
+
+		$exporter_friendly_name = $exporter['exporter_friendly_name'];
+
+		if ( ! array_key_exists( 'callback', $exporter ) ) {
+			wp_send_json_error(
+				/* translators: %s: Exporter friendly name. */
+				sprintf( __( 'Exporter does not include a callback: %s.' ), esc_html( $exporter_friendly_name ) )
+			);
+		}
+
+		if ( ! is_callable( $exporter['callback'] ) ) {
+			wp_send_json_error(
+				/* translators: %s: Exporter friendly name. */
+				sprintf( __( 'Exporter callback is not a valid callback: %s.' ), esc_html( $exporter_friendly_name ) )
+			);
+		}
+
+		$callback = $exporter['callback'];
+		$response = call_user_func( $callback, $email_address, $page );
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( $response );
+		}
+
+		if ( ! is_array( $response ) ) {
+			wp_send_json_error(
+				/* translators: %s: Exporter friendly name. */
+				sprintf( __( 'Expected response as an array from exporter: %s.' ), esc_html( $exporter_friendly_name ) )
+			);
+		}
+
+		if ( ! array_key_exists( 'data', $response ) ) {
+			wp_send_json_error(
+				/* translators: %s: Exporter friendly name. */
+				sprintf( __( 'Expected data in response array from exporter: %s.' ), esc_html( $exporter_friendly_name ) )
+			);
+		}
+
+		if ( ! is_array( $response['data'] ) ) {
+			wp_send_json_error(
+				/* translators: %s: Exporter friendly name. */
+				sprintf( __( 'Expected data array in response array from exporter: %s.' ), esc_html( $exporter_friendly_name ) )
+			);
+		}
+
+		if ( ! array_key_exists( 'done', $response ) ) {
+			wp_send_json_error(
+				/* translators: %s: Exporter friendly name. */
+				sprintf( __( 'Expected done (boolean) in response array from exporter: %s.' ), esc_html( $exporter_friendly_name ) )
+			);
+		}
+	} else {
+		// No exporters, so we're done.
+		$exporter_key = '';
+
+		$response = array(
+			'data' =&gt; array(),
+			'done' =&gt; true,
+		);
+	}
+
+	/**
+	 * Filters a page of personal data exporter data. Used to build the export report.
+	 *
+	 * Allows the export response to be consumed by destinations in addition to Ajax.
+	 *
+	 * @since 4.9.6
+	 *
+	 * @param array  $response        The personal data for the given exporter and page number.
+	 * @param int    $exporter_index  The index of the exporter that provided this data.
+	 * @param string $email_address   The email address associated with this personal data.
+	 * @param int    $page            The page number for this response.
+	 * @param int    $request_id      The privacy request post ID associated with this request.
+	 * @param bool   $send_as_email   Whether the final results of the export should be emailed to the user.
+	 * @param string $exporter_key    The key (slug) of the exporter that provided this data.
+	 */
+	$response = apply_filters( 'wp_privacy_personal_data_export_page', $response, $exporter_index, $email_address, $page, $request_id, $send_as_email, $exporter_key );
+
+	if ( is_wp_error( $response ) ) {
+		wp_send_json_error( $response );
+	}
+
+	wp_send_json_success( $response );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/ajax-actions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/ajax-actions.php#L4925">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/ajax-actions.php#L4925-L5108">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_exporters/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_personal_data_exporters’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the array of exporter callbacks.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_export_page/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_personal_data_export_page’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$response</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$exporter_index</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$email_address</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$page</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$request_id</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$send_as_email</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$exporter_key</span></nobr> )</a></dt><dd><p>Filters a page of personal data exporter data. Used to build the export report.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_user_request/">wp_get_user_request()</a><code>wp-includes/user.php</code></td><td><p>Returns the user request object for the specified request ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_email/">is_email()</a><code>wp-includes/formatting.php</code></td><td><p>Verifies that an email is valid.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_ajax_referer/">check_ajax_referer()</a><code>wp-includes/pluggable.php</code></td><td><p>Verifies the Ajax request to prevent processing requests external of the blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_error/">wp_send_json_error()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating failure.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_success/">wp_send_json_success()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating success.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.9.6/">4.9.6</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

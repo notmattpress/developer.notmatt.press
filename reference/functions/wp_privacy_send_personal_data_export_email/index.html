@@ -1,0 +1,240 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_privacy_send_personal_data_export_email()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_privacy_send_personal_data_export_email()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_privacy_send_personal_data_export_email( <span class="arg-type">int</span> <span class="arg-name">$request_id</span> ): <span class="return-type">true|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Send an email to the user with a link to the personal data export file</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$request_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The request ID for this personal data export.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">true|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> True on success or <code>WP_Error</code> on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="588"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_privacy_send_personal_data_export_email( $request_id ) {
+	// Get the request.
+	$request = wp_get_user_request( $request_id );
+
+	if ( ! $request || 'export_personal_data' !== $request-&gt;action_name ) {
+		return new WP_Error( 'invalid_request', __( 'Invalid request ID when sending personal data export email.' ) );
+	}
+
+	// Localize message content for user; fallback to site default for visitors.
+	if ( ! empty( $request-&gt;user_id ) ) {
+		$switched_locale = switch_to_user_locale( $request-&gt;user_id );
+	} else {
+		$switched_locale = switch_to_locale( get_locale() );
+	}
+
+	/** This filter is documented in wp-includes/functions.php */
+	$expiration      = apply_filters( 'wp_privacy_export_expiration', 3 * DAY_IN_SECONDS );
+	$expiration_date = date_i18n( get_option( 'date_format' ), time() + $expiration );
+
+	$exports_url      = wp_privacy_exports_url();
+	$export_file_name = get_post_meta( $request_id, '_export_file_name', true );
+	$export_file_url  = $exports_url . $export_file_name;
+
+	$site_name = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	$site_url  = home_url();
+
+	/**
+	 * Filters the recipient of the personal data export email notification.
+	 * Should be used with great caution to avoid sending the data export link to wrong emails.
+	 *
+	 * @since 5.3.0
+	 *
+	 * @param string          $request_email The email address of the notification recipient.
+	 * @param WP_User_Request $request       The request that is initiating the notification.
+	 */
+	$request_email = apply_filters( 'wp_privacy_personal_data_email_to', $request-&gt;email, $request );
+
+	$email_data = array(
+		'request'           =&gt; $request,
+		'expiration'        =&gt; $expiration,
+		'expiration_date'   =&gt; $expiration_date,
+		'message_recipient' =&gt; $request_email,
+		'export_file_url'   =&gt; $export_file_url,
+		'sitename'          =&gt; $site_name,
+		'siteurl'           =&gt; $site_url,
+	);
+
+	/* translators: Personal data export notification email subject. %s: Site title. */
+	$subject = sprintf( __( '[%s] Personal Data Export' ), $site_name );
+
+	/**
+	 * Filters the subject of the email sent when an export request is completed.
+	 *
+	 * @since 5.3.0
+	 *
+	 * @param string $subject    The email subject.
+	 * @param string $sitename   The name of the site.
+	 * @param array  $email_data {
+	 *     Data relating to the account action email.
+	 *
+	 *     @type WP_User_Request $request           User request object.
+	 *     @type int             $expiration        The time in seconds until the export file expires.
+	 *     @type string          $expiration_date   The localized date and time when the export file expires.
+	 *     @type string          $message_recipient The address that the email will be sent to. Defaults
+	 *                                              to the value of `$request-&gt;email`, but can be changed
+	 *                                              by the `wp_privacy_personal_data_email_to` filter.
+	 *     @type string          $export_file_url   The export file URL.
+	 *     @type string          $sitename          The site name sending the mail.
+	 *     @type string          $siteurl           The site URL sending the mail.
+	 * }
+	 */
+	$subject = apply_filters( 'wp_privacy_personal_data_email_subject', $subject, $site_name, $email_data );
+
+	/* translators: Do not translate EXPIRATION, LINK, SITENAME, SITEURL: those are placeholders. */
+	$email_text = __(
+		'Howdy,
+
+Your request for an export of personal data has been completed. You may
+download your personal data by clicking on the link below. For privacy
+and security, we will automatically delete the file on ###EXPIRATION###,
+so please download it before then.
+
+###LINK###
+
+Regards,
+All at ###SITENAME###
+###SITEURL###'
+	);
+
+	/**
+	 * Filters the text of the email sent with a personal data export file.
+	 *
+	 * The following strings have a special meaning and will get replaced dynamically:
+	 * ###EXPIRATION###         The date when the URL will be automatically deleted.
+	 * ###LINK###               URL of the personal data export file for the user.
+	 * ###SITENAME###           The name of the site.
+	 * ###SITEURL###            The URL to the site.
+	 *
+	 * @since 4.9.6
+	 * @since 5.3.0 Introduced the `$email_data` array.
+	 *
+	 * @param string $email_text Text in the email.
+	 * @param int    $request_id The request ID for this personal data export.
+	 * @param array  $email_data {
+	 *     Data relating to the account action email.
+	 *
+	 *     @type WP_User_Request $request           User request object.
+	 *     @type int             $expiration        The time in seconds until the export file expires.
+	 *     @type string          $expiration_date   The localized date and time when the export file expires.
+	 *     @type string          $message_recipient The address that the email will be sent to. Defaults
+	 *                                              to the value of `$request-&gt;email`, but can be changed
+	 *                                              by the `wp_privacy_personal_data_email_to` filter.
+	 *     @type string          $export_file_url   The export file URL.
+	 *     @type string          $sitename          The site name sending the mail.
+	 *     @type string          $siteurl           The site URL sending the mail.
+	 */
+	$content = apply_filters( 'wp_privacy_personal_data_email_content', $email_text, $request_id, $email_data );
+
+	$content = str_replace( '###EXPIRATION###', $expiration_date, $content );
+	$content = str_replace( '###LINK###', sanitize_url( $export_file_url ), $content );
+	$content = str_replace( '###EMAIL###', $request_email, $content );
+	$content = str_replace( '###SITENAME###', $site_name, $content );
+	$content = str_replace( '###SITEURL###', sanitize_url( $site_url ), $content );
+
+	$headers = '';
+
+	/**
+	 * Filters the headers of the email sent with a personal data export file.
+	 *
+	 * @since 5.4.0
+	 *
+	 * @param string|array $headers    The email headers.
+	 * @param string       $subject    The email subject.
+	 * @param string       $content    The email content.
+	 * @param int          $request_id The request ID.
+	 * @param array        $email_data {
+	 *     Data relating to the account action email.
+	 *
+	 *     @type WP_User_Request $request           User request object.
+	 *     @type int             $expiration        The time in seconds until the export file expires.
+	 *     @type string          $expiration_date   The localized date and time when the export file expires.
+	 *     @type string          $message_recipient The address that the email will be sent to. Defaults
+	 *                                              to the value of `$request-&gt;email`, but can be changed
+	 *                                              by the `wp_privacy_personal_data_email_to` filter.
+	 *     @type string          $export_file_url   The export file URL.
+	 *     @type string          $sitename          The site name sending the mail.
+	 *     @type string          $siteurl           The site URL sending the mail.
+	 * }
+	 */
+	$headers = apply_filters( 'wp_privacy_personal_data_email_headers', $headers, $subject, $content, $request_id, $email_data );
+
+	$mail_success = wp_mail( $request_email, $subject, $content, $headers );
+
+	if ( $switched_locale ) {
+		restore_previous_locale();
+	}
+
+	if ( ! $mail_success ) {
+		return new WP_Error( 'privacy_email_error', __( 'Unable to send personal data export email.' ) );
+	}
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/privacy-tools.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/privacy-tools.php#L588">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/privacy-tools.php#L588-L750">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_export_expiration/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_export_expiration’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$expiration</span></nobr> )</a></dt><dd><p>Filters the lifetime, in seconds, of a personal data export file.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_email_content/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_personal_data_email_content’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$email_text</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$request_id</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$email_data</span></nobr> )</a></dt><dd><p>Filters the text of the email sent with a personal data export file.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_email_headers/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_personal_data_email_headers’,  <nobr><span class="arg-type">string|array</span> <span class="arg-name">$headers</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$subject</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$content</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$request_id</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$email_data</span></nobr> )</a></dt><dd><p>Filters the headers of the email sent with a personal data export file.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_email_subject/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_personal_data_email_subject’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$subject</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$sitename</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$email_data</span></nobr> )</a></dt><dd><p>Filters the subject of the email sent when an export request is completed.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_email_to/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_personal_data_email_to’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$request_email</span></nobr>,  <nobr><span class="arg-type">WP_User_Request</span> <span class="arg-name">$request</span></nobr> )</a></dt><dd><p>Filters the recipient of the personal data export email notification.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_user_request/">wp_get_user_request()</a><code>wp-includes/user.php</code></td><td><p>Returns the user request object for the specified request ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_exports_url/">wp_privacy_exports_url()</a><code>wp-includes/functions.php</code></td><td><p>Returns the URL of the directory used to store personal data export files.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_specialchars_decode/">wp_specialchars_decode()</a><code>wp-includes/formatting.php</code></td><td><p>Converts a number of HTML entities into their special characters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_mail/">wp_mail()</a><code>wp-includes/pluggable.php</code></td><td><p>Sends an email, similar to PHP’s mail function.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_url/">sanitize_url()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a URL for database or redirect usage.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/date_i18n/">date_i18n()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the date in localized format, based on a sum of Unix timestamp and timezone offset in seconds.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_meta/">get_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_process_personal_data_export_page/">wp_privacy_process_personal_data_export_page()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Intercept personal data exporter page Ajax responses in order to assemble the personal data export file.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.9.6/">4.9.6</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

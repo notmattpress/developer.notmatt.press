@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/walker/">Walker</a></span><span class="is-current-page">Walker::walk()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Walker::walk()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">Walker::walk( <span class="arg-type">array</span> <span class="arg-name">$elements</span>,  <span class="arg-type">int</span> <span class="arg-name">$max_depth</span>,  <span class="arg-type">mixed</span> <span class="arg-name">$args</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Displays array of elements hierarchically.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Does not assume any existing order of elements.</p>
+<p>$max_depth = -1 means flatly display every element.<br/>$max_depth = 0 means display all levels.<br/>$max_depth &gt; 0 specifies the number of display levels.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$elements</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">An array of elements.</span></div></dd><dt><code>$max_depth</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The maximum hierarchical depth.</span></div></dd><dt><code>$args</code><span class="type"><span class="mixed">mixed</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Optional additional arguments.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The hierarchical item output.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>This method can be used to initialize the <tt><a href="https://developer.notmatt.press/reference/classes/walker/">Walker</a></tt> class. It takes an array of elements ordered so that children occur below their parents. The <tt>$max_depth</tt> parameter is an integer that specifies how deep into the tree structure the walker should render. By default, the <code>$max_depth</code> argument uses <code>0</code>, which will render every item in every branch, with no depth limit. You can also specify <b><tt>-1</tt></b> to render all objects as a “flattened” single-dimensional list. Any other number will limit the depth that <a href="https://developer.notmatt.press/reference/classes/walker/">Walker</a> will render in any branch. Any <i>additional</i> arguments passed to this method will be passed unchanged to the other methods.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="194"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function walk( $elements, $max_depth, ...$args ) {
+	$output = '';
+
+	$max_depth = (int) $max_depth;
+
+	// Invalid parameter or nothing to walk.
+	if ( $max_depth &lt; -1 || empty( $elements ) ) {
+		return $output;
+	}
+
+	$parent_field = $this-&gt;db_fields['parent'];
+
+	// Flat display.
+	if ( -1 === $max_depth ) {
+		$empty_array = array();
+		foreach ( $elements as $e ) {
+			$this-&gt;display_element( $e, $empty_array, 1, 0, $args, $output );
+		}
+		return $output;
+	}
+
+	/*
+	 * Need to display in hierarchical order.
+	 * Separate elements into two buckets: top level and children elements.
+	 * Children_elements is two dimensional array. Example:
+	 * Children_elements[10][] contains all sub-elements whose parent is 10.
+	 */
+	$top_level_elements = array();
+	$children_elements  = array();
+	foreach ( $elements as $e ) {
+		if ( empty( $e-&gt;$parent_field ) ) {
+			$top_level_elements[] = $e;
+		} else {
+			$children_elements[ $e-&gt;$parent_field ][] = $e;
+		}
+	}
+
+	/*
+	 * When none of the elements is top level.
+	 * Assume the first one must be root of the sub elements.
+	 */
+	if ( empty( $top_level_elements ) ) {
+
+		$first = array_slice( $elements, 0, 1 );
+		$root  = $first[0];
+
+		$top_level_elements = array();
+		$children_elements  = array();
+		foreach ( $elements as $e ) {
+			if ( $root-&gt;$parent_field === $e-&gt;$parent_field ) {
+				$top_level_elements[] = $e;
+			} else {
+				$children_elements[ $e-&gt;$parent_field ][] = $e;
+			}
+		}
+	}
+
+	foreach ( $top_level_elements as $e ) {
+		$this-&gt;display_element( $e, $children_elements, $max_depth, 0, $args, $output );
+	}
+
+	/*
+	 * If we are displaying all levels, and remaining children_elements is not empty,
+	 * then we got orphans, which should be displayed regardless.
+	 */
+	if ( ( 0 === $max_depth ) &amp;&amp; count( $children_elements ) &gt; 0 ) {
+		$empty_array = array();
+		foreach ( $children_elements as $orphans ) {
+			foreach ( $orphans as $op ) {
+				$this-&gt;display_element( $op, $empty_array, 1, 0, $args, $output );
+			}
+		}
+	}
+
+	return $output;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-walker.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-walker.php#L194">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-walker.php#L194-L269">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/walker/display_element/">Walker::display_element()</a><code>wp-includes/class-wp-walker.php</code></td><td><p>Traverses elements to create list from elements.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_terms_checklist/">wp_terms_checklist()</a><code>wp-admin/includes/template.php</code></td><td><p>Outputs an unordered list of checkbox input elements labelled with term names.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/walk_category_tree/">walk_category_tree()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves HTML list content for category list.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/walk_category_dropdown_tree/">walk_category_dropdown_tree()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves HTML dropdown (select) content for category list.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/walk_nav_menu_tree/">walk_nav_menu_tree()</a><code>wp-includes/nav-menu-template.php</code></td><td><p>Retrieves the HTML list content for nav menu items.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/walk_page_tree/">walk_page_tree()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves HTML list content for page list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/walk_page_dropdown_tree/">walk_page_dropdown_tree()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves HTML dropdown (select) content for page list.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.3.0/">5.3.0</a></td><td><span class="since-description">Formalized the existing <code>...$args</code> parameter by adding it              to the function signature.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

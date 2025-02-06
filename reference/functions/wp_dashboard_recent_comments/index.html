@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_dashboard_recent_comments()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_dashboard_recent_comments()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_dashboard_recent_comments( <span class="arg-type">int</span> <span class="arg-name">$total_items</span> = <span class="arg-default">5</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Show Comments section.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$total_items</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Number of comments to query. </span></div><p class="default">Default:<code>5</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> False if no comments were found. True otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1064"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_dashboard_recent_comments( $total_items = 5 ) {
+	// Select all comment types and filter out spam later for better query performance.
+	$comments = array();
+
+	$comments_query = array(
+		'number' =&gt; $total_items * 5,
+		'offset' =&gt; 0,
+	);
+
+	if ( ! current_user_can( 'edit_posts' ) ) {
+		$comments_query['status'] = 'approve';
+	}
+
+	while ( count( $comments ) &lt; $total_items &amp;&amp; $possible = get_comments( $comments_query ) ) {
+		if ( ! is_array( $possible ) ) {
+			break;
+		}
+
+		foreach ( $possible as $comment ) {
+			if ( ! current_user_can( 'edit_post', $comment-&gt;comment_post_ID )
+				&amp;&amp; ( post_password_required( $comment-&gt;comment_post_ID )
+					|| ! current_user_can( 'read_post', $comment-&gt;comment_post_ID ) )
+			) {
+				// The user has no access to the post and thus cannot see the comments.
+				continue;
+			}
+
+			$comments[] = $comment;
+
+			if ( count( $comments ) === $total_items ) {
+				break 2;
+			}
+		}
+
+		$comments_query['offset'] += $comments_query['number'];
+		$comments_query['number']  = $total_items * 10;
+	}
+
+	if ( $comments ) {
+		echo '&lt;div id="latest-comments" class="activity-block table-view-list"&gt;';
+		echo '&lt;h3&gt;' . __( 'Recent Comments' ) . '&lt;/h3&gt;';
+
+		echo '&lt;ul id="the-comment-list" data-wp-lists="list:comment"&gt;';
+		foreach ( $comments as $comment ) {
+			_wp_dashboard_recent_comments_row( $comment );
+		}
+		echo '&lt;/ul&gt;';
+
+		if ( current_user_can( 'edit_posts' ) ) {
+			echo '&lt;h3 class="screen-reader-text"&gt;' .
+				/* translators: Hidden accessibility text. */
+				__( 'View more comments' ) .
+			'&lt;/h3&gt;';
+			_get_list_table( 'WP_Comments_List_Table' )-&gt;views();
+		}
+
+		wp_comment_reply( -1, false, 'dashboard', false );
+		wp_comment_trashnotice();
+
+		echo '&lt;/div&gt;';
+	} else {
+		return false;
+	}
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/dashboard.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/dashboard.php#L1064">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/dashboard.php#L1064-L1128">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_dashboard_recent_comments_row/">_wp_dashboard_recent_comments_row()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Outputs a row for the Recent Comments widget.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_get_list_table/">_get_list_table()</a><code>wp-admin/includes/list-table.php</code></td><td><p>Fetches an instance of a <a href="https://developer.notmatt.press/reference/classes/wp_list_table/" rel="class">WP_List_Table</a> class.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_comment_reply/">wp_comment_reply()</a><code>wp-admin/includes/template.php</code></td><td><p>Outputs the in-line comment reply-to form in the Comments list table.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_comment_trashnotice/">wp_comment_trashnotice()</a><code>wp-admin/includes/template.php</code></td><td><p>Outputs ‘undo move to Trash’ text for comments.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/post_password_required/">post_password_required()</a><code>wp-includes/post-template.php</code></td><td><p>Determines whether the post requires password and whether a correct password has been provided.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comments/">get_comments()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves a list of comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_site_activity/">wp_dashboard_site_activity()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Outputs the Activity widget.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.8.0/">3.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

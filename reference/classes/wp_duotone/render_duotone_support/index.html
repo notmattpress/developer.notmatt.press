@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_duotone/">WP_Duotone</a></span><span class="is-current-page">WP_Duotone::render_duotone_support()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Duotone::render_duotone_support()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Duotone::render_duotone_support( <span class="arg-type">string</span> <span class="arg-name">$block_content</span>,  <span class="arg-type">array</span> <span class="arg-name">$block</span>,  <span class="arg-type">WP_Block</span> <span class="arg-name">$wp_block</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Render out the duotone CSS styles and SVG.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The hooks self::set_global_style_block_names and self::set_global_styles_presets must be called before this function.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$block_content</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Rendered block content.</span></div></dd><dt><code>$block</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Block object.</span></div></dd><dt><code>$wp_block</code><span class="type"><span class="WP_Block"><a href="https://developer.notmatt.press/reference/classes/wp_block/" rel="class">WP_Block</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The block instance.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Filtered block content.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1077"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function render_duotone_support( $block_content, $block, $wp_block ) {
+	if ( ! $block['blockName'] ) {
+		return $block_content;
+	}
+	$duotone_selector = self::get_selector( $wp_block-&gt;block_type );
+
+	if ( ! $duotone_selector ) {
+		return $block_content;
+	}
+
+	$global_styles_block_names = self::get_all_global_style_block_names();
+
+	// The block should have a duotone attribute or have duotone defined in its theme.json to be processed.
+	$has_duotone_attribute     = isset( $block['attrs']['style']['color']['duotone'] );
+	$has_global_styles_duotone = array_key_exists( $block['blockName'], $global_styles_block_names );
+
+	if ( ! $has_duotone_attribute &amp;&amp; ! $has_global_styles_duotone ) {
+		return $block_content;
+	}
+
+	// Generate the pieces needed for rendering a duotone to the page.
+	if ( $has_duotone_attribute ) {
+
+		/*
+		 * Possible values for duotone attribute:
+		 * 1. Array of colors - e.g. array('#000000', '#ffffff').
+		 * 2. Variable for an existing Duotone preset - e.g. 'var:preset|duotone|blue-orange' or 'var(--wp--preset--duotone--blue-orange)''
+		 * 3. A CSS string - e.g. 'unset' to remove globally applied duotone.
+		 */
+
+		$duotone_attr = $block['attrs']['style']['color']['duotone'];
+		$is_preset    = is_string( $duotone_attr ) &amp;&amp; self::is_preset( $duotone_attr );
+		$is_css       = is_string( $duotone_attr ) &amp;&amp; ! $is_preset;
+		$is_custom    = is_array( $duotone_attr );
+
+		if ( $is_preset ) {
+
+			$slug         = self::get_slug_from_attribute( $duotone_attr ); // e.g. 'blue-orange'.
+			$filter_id    = self::get_filter_id( $slug ); // e.g. 'wp-duotone-filter-blue-orange'.
+			$filter_value = self::get_css_var( $slug ); // e.g. 'var(--wp--preset--duotone--blue-orange)'.
+
+			// CSS custom property, SVG filter, and block CSS.
+			self::enqueue_global_styles_preset( $filter_id, $duotone_selector, $filter_value );
+
+		} elseif ( $is_css ) {
+			$slug         = wp_unique_id( sanitize_key( $duotone_attr . '-' ) ); // e.g. 'unset-1'.
+			$filter_id    = self::get_filter_id( $slug ); // e.g. 'wp-duotone-filter-unset-1'.
+			$filter_value = $duotone_attr; // e.g. 'unset'.
+
+			// Just block CSS.
+			self::enqueue_block_css( $filter_id, $duotone_selector, $filter_value );
+		} elseif ( $is_custom ) {
+			$slug         = wp_unique_id( sanitize_key( implode( '-', $duotone_attr ) . '-' ) ); // e.g. '000000-ffffff-2'.
+			$filter_id    = self::get_filter_id( $slug ); // e.g. 'wp-duotone-filter-000000-ffffff-2'.
+			$filter_value = self::get_filter_url( $filter_id ); // e.g. 'url(#wp-duotone-filter-000000-ffffff-2)'.
+			$filter_data  = array(
+				'slug'   =&gt; $slug,
+				'colors' =&gt; $duotone_attr,
+			);
+
+			// SVG filter and block CSS.
+			self::enqueue_custom_filter( $filter_id, $duotone_selector, $filter_value, $filter_data );
+		}
+	} elseif ( $has_global_styles_duotone ) {
+		$slug         = $global_styles_block_names[ $block['blockName'] ]; // e.g. 'blue-orange'.
+		$filter_id    = self::get_filter_id( $slug ); // e.g. 'wp-duotone-filter-blue-orange'.
+		$filter_value = self::get_css_var( $slug ); // e.g. 'var(--wp--preset--duotone--blue-orange)'.
+
+		// CSS custom property, SVG filter, and block CSS.
+		self::enqueue_global_styles_preset( $filter_id, $duotone_selector, $filter_value );
+	}
+
+	// Like the layout hook, this assumes the hook only applies to blocks with a single wrapper.
+	$tags = new WP_HTML_Tag_Processor( $block_content );
+	if ( $tags-&gt;next_tag() ) {
+		$tags-&gt;add_class( $filter_id );
+	}
+	return $tags-&gt;get_updated_html();
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-duotone.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-duotone.php#L1077">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-duotone.php#L1077-L1155">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/get_selector/">WP_Duotone::get_selector()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Get the CSS selector for a block type.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/get_all_global_style_block_names/">WP_Duotone::get_all_global_style_block_names()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Scrape all block names from global styles and store in self::$global_styles_block_names.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/enqueue_global_styles_preset/">WP_Duotone::enqueue_global_styles_preset()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Enqueue preset assets for the page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/enqueue_block_css/">WP_Duotone::enqueue_block_css()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Enqueue a block CSS declaration for the page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/enqueue_custom_filter/">WP_Duotone::enqueue_custom_filter()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Enqueue custom filter assets for the page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/is_preset/">WP_Duotone::is_preset()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Checks if we have a valid duotone preset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/get_slug_from_attribute/">WP_Duotone::get_slug_from_attribute()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Takes the inline CSS duotone variable from a block and return the slug.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/get_filter_id/">WP_Duotone::get_filter_id()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Get the ID of the duotone filter.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/get_css_var/">WP_Duotone::get_css_var()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Get the CSS variable for a duotone preset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/get_filter_url/">WP_Duotone::get_filter_url()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Get the URL for a duotone filter.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unique_id/">wp_unique_id()</a><code>wp-includes/functions.php</code></td><td><p>Gets unique ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_key/">sanitize_key()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string key.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_render_duotone_support/">wp_render_duotone_support()</a><code>wp-includes/deprecated.php</code></td><td><p>Renders out the duotone stylesheet and SVG.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/apis/">Common APIs Handbook</a></span><span><a href="https://developer.wordpress.org/apis/internationalization/">Internationalization</a></span><span class="is-current-page">Internationalization Guidelines</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Internationalization Guidelines</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>In this article, you will learn when and how to use all available i18n functions and the best practices for writing your strings.</p>
+<p>The recommendations in this article applies both for your PHP and your javascript code. You can see all the available functions for each language in the <a href="https://developer.notmatt.press/apis/handbook/internationalization/internationalization-functions/">I18n functions</a> page. The functions available for javascript will also be highlighted.</p>
+<h2 class="is-toc-heading wp-block-heading" id="basic-strings" tabindex="-1"><a href="#basic-strings">Basic strings</a></h2>
+<p>The most commonly used function is <code><a href="https://developer.notmatt.press/reference/functions/__/">__()</a></code>. It returns the translation of its argument:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">__( 'Blog Options', 'my-theme' );</code></pre>
+<p>Another simple one is <code><a href="https://developer.notmatt.press/reference/functions/_e/">_e()</a></code>, which outputs the translation of its argument. Instead of writing:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">echo __( 'WordPress is the best!', 'my-theme' );</code></pre>
+<p>you can use the shorter:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">_e( 'WordPress is the best!', 'my-theme' );</code></pre>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><code>__()</code>is also available for javascript</div></div>
+<h2 class="is-toc-heading wp-block-heading" id="variables" tabindex="-1"><a href="#variables">Variables</a></h2>
+<p>If you are using variables in strings, similar to the example below, you need to use placeholders.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">echo 'Your city is $city.'</code></pre>
+<p>Use the <code>printf</code> family of functions. Especially helpful are <code><a href="http://php.net/printf">printf</a></code> and <code><a href="http://php.net/sprintf">sprintf</a></code>. For example:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">printf(
+    /* translators: %s: Name of a city */
+    __( 'Your city is %s.', 'my-theme' ),
+    $city
+);</code></pre>
+<p>Notice that the string for translation is the template <code>"Your city is %s."</code>, which is the same in both the source and at run-time.</p>
+<p>If you have more than one placeholder in a string, it is recommended that you use <a href="http://www.php.net/manual/en/function.sprintf.php#example-4829">argument swapping</a>. In this case, single quotes <code>(')</code> are mandatory : double quotes <code>(")</code> tell php to interpret the <code>$s</code> as the <code>s</code> variable, which is not what we want.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">printf(
+    /* translators: 1: Name of a city 2: ZIP code */
+    __( 'Your city is %1$s, and your zip code is %2$s.', 'my-theme' ),
+    $city,
+    $zipcode
+);</code></pre>
+<p>Here the zip code is displayed after the city name. In some languages, displaying the zip code and city in opposite order is more appropriate. Using <var>%s</var> prefix, as in the above example, allows for this. A translation can be written:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">printf(
+    /* translators: 1:ZIP code 2:Name of a city */
+    __( 'Your zip code is %2$s, and your city is %1$s.', 'my-theme' ),
+    $city,
+    $zipcode
+);</code></pre>
+<p><code>sprintf</code> is also available for javascript translations:</p>
+<pre class="wp-block-code"><code class="language-js" lang="js">const zipCodeMessage = sprintf(
+    /* translators: 1:ZIP code 2:Name of a city */
+    __( 'Your zip code is %2$s, and your city is %1$s.', 'my-theme'),
+    city,
+    zipcode
+);</code></pre>
+<p>The following example tells you what not to do<br/>
+<div class="wp-block-wporg-notice is-warning-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">This is incorrect.</div></div>
+</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">// This is incorrect do not use.
+_e( "Your city is $city.", 'my-theme' );</code></pre>
+<p>The strings for translation are extracted from the source without executing the PHP associated with it. For example: The variable <code>$city</code> may be Vancouver, so your string will read <code>"Your city is Vancouver"</code> when the template is run but gettext won’t know what is inside the PHP variable in advance.</p>
+<p>As the value of the variable is unknown when your string is translated, it would require the translator to know every case for the variable <code>$country</code>. This is not ideal, and it is best to remove dynamic content and allow translators to focus on static content.</p>
+<h2 class="is-toc-heading wp-block-heading" id="plurals" tabindex="-1"><a href="#plurals">Plurals</a></h2>
+<h3 class="is-toc-heading wp-block-heading" id="basic-pluralization" tabindex="-1"><a href="#basic-pluralization">Basic Pluralization</a></h3>
+<p>If you have a string that changes when the number of items changes. In English you have <code>"One comment"</code> and <code>"Two comments"</code>. In other languages, you can have multiple plural forms. To handle this in WordPress, you can use the <code><a href="https://developer.notmatt.press/reference/functions/_n/">_n()</a></code> function.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">printf(
+    _n(
+        '%s comment',
+        '%s comments',
+        get_comments_number(),
+        'my-theme'
+    ),
+    number_format_i18n( get_comments_number() )
+);</code></pre>
+<p><code>_n()</code> accepts 4 arguments:</p>
+<ul class="wp-block-list"><li>singular – the singular form of the string (note that it can be used for numbers other than one in some languages, so <code>'%s item'</code> should be used instead of <code>'One item'</code>)</li><li>plural – the plural form of the string</li><li>count – the number of objects, which will determine whether the singular or the plural form should be returned (there are languages, which have far more than 2 forms)</li><li>text domain – the theme’s text domain</li></ul>
+<p>The return value of the functions is the correct translated form, corresponding to the given count.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">`<a href="https://developer.notmatt.press/reference/functions/_n/" rel="function">_n()</a>  is also available for javascript</div></div>
+<h3 class="is-toc-heading wp-block-heading" id="pluralization-done-later" tabindex="-1"><a href="#pluralization-done-later">Pluralization done later</a></h3>
+<p>You first set the plural strings with <code><a href="https://developer.notmatt.press/reference/functions/_n_noop/">_n_noop()</a></code> or <code><a href="https://developer.notmatt.press/reference/functions/_nx_noop/">_nx_noop()</a></code>.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$comments_plural = _n_noop(
+    '%s comment.',
+    '%s comments.'
+);</code></pre>
+<p>At a later point in the code, you can use <code><a href="https://developer.notmatt.press/reference/functions/translate_nooped_plural/">translate_nooped_plural()</a></code> to load the strings.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">printf(
+    translate_nooped_plural(
+        $comments_plural,
+        get_comments_number(),
+        'my-theme'
+    ),
+    number_format_i18n( get_comments_number() )
+);</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="disambiguation-by-context" tabindex="-1"><a href="#disambiguation-by-context">Disambiguation by context</a></h2>
+<p>Sometimes a term is used in more than one context and must be translated separately in other languages, even though the same word is used for each context in English. For example, the word <code>Post</code> can be used both as a verb <code>"Click here to post your comment"</code> and as a noun <code>"Edit this Post"</code>. In such cases the <code><a href="https://developer.notmatt.press/reference/functions/_x/">_x()</a></code> or <code><a href="https://developer.notmatt.press/reference/functions/_ex/">_ex</a>()</code> function should be used. It is similar to <code>__()</code> and <code>_e()</code>, but it has an additional argument — the context:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">_x( 'Post', 'noun', 'my-theme' );
+_x( 'post', 'verb', 'my-theme' );</code></pre>
+<p>Using this method in both cases, we get the string Comment for the original version. However, translators will see two Comment strings for translation, each in a different context.</p>
+<p>Taking an example from the German version of WordPress as an illustration: Post is Beiträge. The corresponding verb form in German is beitragen.</p>
+<p>Note that similar to <code>__()</code>, <code>_x()</code> has an <code>echo</code> version: <code>_ex()</code>. The previous example could be written as:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">_ex( 'Post', 'noun', 'my-theme' );
+_ex( 'post', 'verb', 'my-theme' );</code></pre>
+<p>Use the one you feel enhances legibility and ease of coding.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><code>_x() and _nx()</code>are also available for javascript</div></div>
+<h2 class="is-toc-heading wp-block-heading" id="descriptions" tabindex="-1"><a href="#descriptions">Descriptions</a></h2>
+<p>You can add a clarifying comment in the source code, so translators know how to translate a string like <code>__( 'g:i:s a' )</code> . It must start with the word <code>translators:</code>, in all lowercase, and be the last PHP comment before the gettext call. Here is an example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">/* translators: draft saved date format, see http://php.net/date */
+$saved_date_format = __( 'g:i:s a' );</code></pre>
+<p>Multi-line example:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/*
+ * translators: Replace with a city related to your locale.
+ * Test that it matches the expected location and has upcoming
+ * events before including it. If no cities related to your
+ * locale have events, then use a city related to your locale
+ * that would be recognizable to most users.
+ */
+?&gt;
+&lt;input placeholder="&lt;?php esc_attr_e( 'Cincinnati' ); ?&gt;" id="location" type="text" name="location" /&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="newline-characters" tabindex="-1"><a href="#newline-characters">Newline characters</a></h2>
+<p>Gettext doesn’t like <code>r</code> (ASCII code: 13) in translatable strings, so avoid it and use <code>n</code> instead.</p>
+<h2 class="is-toc-heading wp-block-heading" id="empty-strings" tabindex="-1"><a href="#empty-strings">Empty strings</a></h2>
+<p>The empty string is reserved for internal Gettext usage, and you must not try to internationalize the empty string. It also doesn’t make any sense because translators won’t have context.</p>
+<p>If you have a valid use-case to internationalize an empty string, add context to both help translators and be in peace with the Gettext system.</p>
+<h2 class="is-toc-heading wp-block-heading" id="escaping-strings" tabindex="-1"><a href="#escaping-strings">Escaping strings</a></h2>
+<p>It is good to escape all of your strings, preventing translators from running malicious code. There are a few escape functions that are integrated with internationalization functions.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;a title="&lt;?php esc_attr_e( 'Skip to content', 'my-theme' ); ?&gt;" class="screen-reader-text skip-link" href="#content" &gt;
+  &lt;?php _e( 'Skip to content', 'my-theme' ); ?&gt;
+&lt;/a&gt;</code></pre>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;label for="nav-menu"&gt;
+  &lt;?php esc_html_e( 'Select Menu:', 'my-theme' ); ?&gt;
+&lt;/label&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="best-practices-for-writing-strings" tabindex="-1"><a href="#best-practices-for-writing-strings">Best Practices for writing strings</a></h2>
+<p>Here are the best practices for writing strings</p>
+<ul class="wp-block-list"><li>Use decent English style – minimize slang and abbreviations.</li><li>Use entire sentences – in most languages, word order is different than English.</li><li>Split at paragraphs – merge related sentences, but do not include a whole page of text in one string.</li><li>Do not leave leading or trailing whitespace in a translatable phrase.</li><li>Assume strings can double in length when translated.</li><li>Avoid unusual markup and unusual control characters – do not include tags that surround your text.</li><li>Do not put unnecessary HTML markup into the translated string.</li><li>Do not leave URLs for translation, unless they could have a version in another language.</li><li>Add the variables as placeholders to the string as in some languages the placeholders change position.</li></ul>
+<pre class="wp-block-code"><code class="language-php" lang="php">printf(
+    __( 'Search results for: %s', 'my-theme' ),
+    get_search_query()
+);</code></pre>
+<ul class="wp-block-list"><li>Use format strings instead of string concatenation – translate phrases and not words – </li></ul>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">printf(
+    __( 'Your city is %1$s, and your zip code is %2$s.', 'my-theme' ),
+    $city,
+    $zipcode
+);</code></pre>
+<p>is always better than</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">__( 'Your city is ', 'my-theme' ) . $city . __( ', and your zip code is ', 'my-theme' ) . $zipcode;</code></pre>
+<ul class="wp-block-list"><li>Try to use the same words and symbols to prevent translating multiple similar strings (e.g. don’t do the following) </li></ul>
+<pre class="wp-block-code"><code class="language-php" lang="php">__( 'Posts:', 'my-theme' ); and __( 'Posts', 'my-theme' );</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

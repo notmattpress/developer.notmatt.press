@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/functionality/">Theme Functionality</a></span><span class="is-current-page">Sticky Posts</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Sticky Posts</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>A Sticky Post is the post will be placed at the top of the front page of posts. This feature is only available for the built-in post type post and not for custom post types.</p>
+<h2 class="is-toc-heading wp-block-heading" id="how-to-stick-a-post" tabindex="-1"><a href="#how-to-stick-a-post">How to stick a post</a></h2>
+<ol class="wp-block-list">
+<li>Go to <strong>Administration Screen &gt; Posts &gt; Add New</strong> or <strong>Edit</strong></li>
+<li>In the right side menu, Click Edit link of Visibility option in Publish group</li>
+<li>Click Stick this post to the front page option</li>
+</ol>
+<figure class="wp-block-image"><img alt="" class="wp-image-24975" data-recalc-dims="1" decoding="async" fetchpriority="high" height="449" sizes="(max-width: 307px) 100vw, 307px" src="https://i0.wp.com/developer.wordpress.org/files/2017/01/sticked_post.jpg?resize=307%2C449&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2017/01/sticked_post.jpg?w=307&amp;ssl=1 307w, https://i0.wp.com/developer.wordpress.org/files/2017/01/sticked_post.jpg?resize=205%2C300&amp;ssl=1 205w" width="307"/></figure>
+<h2 class="is-toc-heading wp-block-heading" id="display-sticky-posts" tabindex="-1"><a href="#display-sticky-posts">Display Sticky Posts</a></h2>
+<h3 class="is-toc-heading wp-block-heading" id="show-sticky-posts" tabindex="-1"><a href="#show-sticky-posts">Show Sticky Posts</a></h3>
+<p>Display just the first sticky post. At least one post must be designated as a “sticky post” or else the loop will display all posts:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$sticky = get_option( 'sticky_posts' );
+$query  = new WP_Query( 'p=' . $sticky[0] );</code></pre>
+<p>Display just the first sticky post, if none return the last post published:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$args  = array(
+	'posts_per_page'      =&gt; 1,
+	'post__in'            =&gt; get_option( 'sticky_posts' ),
+	'ignore_sticky_posts' =&gt; 1,
+);
+$query = new WP_Query( $args );</code></pre>
+<p>Display just the first sticky post, if none return nothing:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$args   = array(
+	'posts_per_page'      =&gt; 1,
+	'post__in'            =&gt; get_option( 'sticky_posts' ),
+	'ignore_sticky_posts' =&gt; 1,
+);
+$query  = new WP_Query( $args );
+if ( isset( $sticky[0] ) ) {
+	// Insert here your stuff...
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="dont-show-sticky-posts" tabindex="-1"><a href="#dont-show-sticky-posts">Don’t Show Sticky Posts</a></h3>
+<p>Exclude all sticky posts from the query:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$args  = array( 'post__not_in' =&gt; get_option( 'sticky_posts' ) );
+$query = new WP_Query( $args );</code></pre>
+<p>Exclude sticky posts from a category. Return ALL posts within the category, but don’t show sticky posts at the top. The ‘sticky posts’ will still show in their natural position (e.g. by date):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$args  = array(
+	'ignore_sticky_posts' =&gt; 1,
+	'posts_per_page'      =&gt; 3,
+	'cat'                 =&gt; 6,
+);
+$query = new WP_Query( $args );</code></pre>
+<p>Exclude sticky posts from a category. Return posts within the category, but exclude sticky posts completely, and adhere to paging rules:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$args  = array(
+	'cat'                 =&gt; 3,
+	'ignore_sticky_posts' =&gt; 1,
+	'post__not_in'        =&gt; get_option( 'sticky_posts' ),
+	'paged'               =&gt; get_query_var( 'paged' ) ? get_query_var( 'paged' ) : 1,
+);
+$query = new WP_Query( $args );</code></pre>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">Use get_query_var( ‘page’ ) if you want this query to work in a Page template that you’ve set as your static front page.</div></div>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+/* Get all Sticky Posts */
+$sticky = get_option( 'sticky_posts' );
+
+/* Sort Sticky Posts, newest at the top */
+rsort( $sticky );
+
+/* Get top 5 Sticky Posts */
+$sticky = array_slice( $sticky, 0, 5 );
+
+/* Query Sticky Posts */
+$query = new WP_Query( array(
+	'post__in'            =&gt; $sticky,
+	'ignore_sticky_posts' =&gt; 1,
+) );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="style-sticky-posts" tabindex="-1"><a href="#style-sticky-posts">Style Sticky Posts</a></h2>
+<p>To help theme authors perform simpler styling, the <a href="https://developer.notmatt.press/reference/functions/post_class/" rel="function">post_class()</a>  function is used to add class=”…” to DIV, just add:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;div id="post-&lt;?php the_ID(); ?&gt;" &lt;?php post_class(); ?&gt;&gt;</code></pre>
+<p>The <a href="https://developer.notmatt.press/reference/functions/post_class/" rel="function">post_class()</a>  outputs the class=”whatever” piece for that div. This includes several different classes of value: post, hentry (for hAtom microformat pages), category-X (where X is the slug of every category the post is in), and tag-X (similar, but with tags). It also adds “sticky” for posts marked as Sticky Posts.</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">.sticky { color: red; }</code></pre>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">The “sticky” class is only added for sticky posts on the first page of the home page (<a href="https://developer.notmatt.press/reference/functions/is_home/" rel="function">is_home()</a>  is true and <a href="https://developer.notmatt.press/reference/functions/is_paged/" rel="function">is_paged()</a>  is false)</div></div>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

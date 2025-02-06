@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_dashboard_plugins_output()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_dashboard_plugins_output()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_dashboard_plugins_output( <span class="arg-type">string</span> <span class="arg-name">$rss</span>,  <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Display plugins text for the WordPress news widget.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$rss</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The RSS feed URL.</span></div></dd><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Array of arguments for this RSS feed.</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1328"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_dashboard_plugins_output( $rss, $args = array() ) {
+	_deprecated_function( __FUNCTION__, '4.8.0' );
+
+	// Plugin feeds plus link to install them.
+	$popular = fetch_feed( $args['url']['popular'] );
+
+	if ( false === $plugin_slugs = get_transient( 'plugin_slugs' ) ) {
+		$plugin_slugs = array_keys( get_plugins() );
+		set_transient( 'plugin_slugs', $plugin_slugs, DAY_IN_SECONDS );
+	}
+
+	echo '&lt;ul&gt;';
+
+	foreach ( array( $popular ) as $feed ) {
+		if ( is_wp_error( $feed ) || ! $feed-&gt;get_item_quantity() )
+			continue;
+
+		$items = $feed-&gt;get_items(0, 5);
+
+		// Pick a random, non-installed plugin.
+		while ( true ) {
+			// Abort this foreach loop iteration if there's no plugins left of this type.
+			if ( 0 === count($items) )
+				continue 2;
+
+			$item_key = array_rand($items);
+			$item = $items[$item_key];
+
+			list($link, $frag) = explode( '#', $item-&gt;get_link() );
+
+			$link = esc_url($link);
+			if ( preg_match( '|/([^/]+?)/?$|', $link, $matches ) )
+				$slug = $matches[1];
+			else {
+				unset( $items[$item_key] );
+				continue;
+			}
+
+			// Is this random plugin's slug already installed? If so, try again.
+			reset( $plugin_slugs );
+			foreach ( $plugin_slugs as $plugin_slug ) {
+				if ( str_starts_with( $plugin_slug, $slug ) ) {
+					unset( $items[$item_key] );
+					continue 2;
+				}
+			}
+
+			// If we get to this point, then the random plugin isn't installed and we can stop the while().
+			break;
+		}
+
+		// Eliminate some common badly formed plugin descriptions.
+		while ( ( null !== $item_key = array_rand($items) ) &amp;&amp; str_contains( $items[$item_key]-&gt;get_description(), 'Plugin Name:' ) )
+			unset($items[$item_key]);
+
+		if ( !isset($items[$item_key]) )
+			continue;
+
+		$raw_title = $item-&gt;get_title();
+
+		$ilink = wp_nonce_url('plugin-install.php?tab=plugin-information&amp;plugin=' . $slug, 'install-plugin_' . $slug) . '&amp;amp;TB_iframe=true&amp;amp;width=600&amp;amp;height=800';
+		echo '&lt;li class="dashboard-news-plugin"&gt;&lt;span&gt;' . __( 'Popular Plugin' ) . ':&lt;/span&gt; ' . esc_html( $raw_title ) .
+			'&amp;nbsp;&lt;a href="' . $ilink . '" class="thickbox open-plugin-details-modal" aria-label="' .
+			/* translators: %s: Plugin name. */
+			esc_attr( sprintf( _x( 'Install %s', 'plugin' ), $raw_title ) ) . '"&gt;(' . __( 'Install' ) . ')&lt;/a&gt;&lt;/li&gt;';
+
+		$feed-&gt;__destruct();
+		unset( $feed );
+	}
+
+	echo '&lt;/ul&gt;';
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/deprecated.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/deprecated.php#L1328">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/deprecated.php#L1328-L1399">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_plugins/">get_plugins()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Checks the plugins directory and retrieve all plugin files with plugin data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/fetch_feed/">fetch_feed()</a><code>wp-includes/feed.php</code></td><td><p>Builds SimplePie object based on RSS or Atom feed from URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_transient/">get_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a transient.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_transient/">set_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_function/">_deprecated_function()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_url/">wp_nonce_url()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves URL with nonce added to URL query.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.8.0/">4.8.0</a></td><td>This function has been deprecated.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

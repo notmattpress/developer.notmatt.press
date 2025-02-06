@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_wp_to_kebab_case()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_wp_to_kebab_case()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_wp_to_kebab_case( <span class="arg-type">string</span> <span class="arg-name">$input_string</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>This function is trying to replicate what lodash’s kebabCase (JS library) does in the client.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The reason we need this function is that we do some processing in both the client and the server (e.g.: we generate preset classes from preset slugs) that needs to create the same output.</p>
+<p>We can’t remove or update the client’s library due to backward compatibility (some of the output of lodash’s kebabCase is saved in the post content).<br/>We have to make the server behave like the client.</p>
+<p>Changes to this function should follow updates in the client with the same logic.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$input_string</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The string to kebab-case.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> kebab-cased-string.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="5204"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _wp_to_kebab_case( $input_string ) {
+	// Ignore the camelCase names for variables so the names are the same as lodash so comparing and porting new changes is easier.
+	// phpcs:disable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
+
+	/*
+	 * Some notable things we've removed compared to the lodash version are:
+	 *
+	 * - non-alphanumeric characters: rsAstralRange, rsEmoji, etc
+	 * - the groups that processed the apostrophe, as it's removed before passing the string to preg_match: rsApos, rsOptContrLower, and rsOptContrUpper
+	 *
+	 */
+
+	/** Used to compose unicode character classes. */
+	$rsLowerRange       = 'a-z\\xdf-\\xf6\\xf8-\\xff';
+	$rsNonCharRange     = '\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf';
+	$rsPunctuationRange = '\\x{2000}-\\x{206f}';
+	$rsSpaceRange       = ' \\t\\x0b\\f\\xa0\\x{feff}\\n\\r\\x{2028}\\x{2029}\\x{1680}\\x{180e}\\x{2000}\\x{2001}\\x{2002}\\x{2003}\\x{2004}\\x{2005}\\x{2006}\\x{2007}\\x{2008}\\x{2009}\\x{200a}\\x{202f}\\x{205f}\\x{3000}';
+	$rsUpperRange       = 'A-Z\\xc0-\\xd6\\xd8-\\xde';
+	$rsBreakRange       = $rsNonCharRange . $rsPunctuationRange . $rsSpaceRange;
+
+	/** Used to compose unicode capture groups. */
+	$rsBreak  = '[' . $rsBreakRange . ']';
+	$rsDigits = '\\d+'; // The last lodash version in GitHub uses a single digit here and expands it when in use.
+	$rsLower  = '[' . $rsLowerRange . ']';
+	$rsMisc   = '[^' . $rsBreakRange . $rsDigits . $rsLowerRange . $rsUpperRange . ']';
+	$rsUpper  = '[' . $rsUpperRange . ']';
+
+	/** Used to compose unicode regexes. */
+	$rsMiscLower = '(?:' . $rsLower . '|' . $rsMisc . ')';
+	$rsMiscUpper = '(?:' . $rsUpper . '|' . $rsMisc . ')';
+	$rsOrdLower  = '\\d*(?:1st|2nd|3rd|(?![123])\\dth)(?=\\b|[A-Z_])';
+	$rsOrdUpper  = '\\d*(?:1ST|2ND|3RD|(?![123])\\dTH)(?=\\b|[a-z_])';
+
+	$regexp = '/' . implode(
+		'|',
+		array(
+			$rsUpper . '?' . $rsLower . '+' . '(?=' . implode( '|', array( $rsBreak, $rsUpper, '$' ) ) . ')',
+			$rsMiscUpper . '+' . '(?=' . implode( '|', array( $rsBreak, $rsUpper . $rsMiscLower, '$' ) ) . ')',
+			$rsUpper . '?' . $rsMiscLower . '+',
+			$rsUpper . '+',
+			$rsOrdUpper,
+			$rsOrdLower,
+			$rsDigits,
+		)
+	) . '/u';
+
+	preg_match_all( $regexp, str_replace( "'", '', $input_string ), $matches );
+	return strtolower( implode( '-', $matches[0] ) );
+	// phpcs:enable WordPress.NamingConventions.ValidVariableName.VariableNotSnakeCase
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L5204">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L5204-L5253">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/inject_variations_from_block_style_variation_files/">WP_Theme_JSON_Resolver::inject_variations_from_block_style_variation_files()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Adds variations sourced from block style variations files to the supplied theme.json data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_collection/get_sanitization_schema/">WP_Font_Collection::get_sanitization_schema()</a><code>wp-includes/fonts/class-wp-font-collection.php</code></td><td><p>Retrieves the font collection sanitization schema.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_face_resolver/to_kebab_case/">WP_Font_Face_Resolver::to_kebab_case()</a><code>wp-includes/fonts/class-wp-font-face-resolver.php</code></td><td><p>Converts all first dimension keys into kebab-case.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_duotone/get_all_global_styles_presets/">WP_Duotone::get_all_global_styles_presets()</a><code>wp-includes/class-wp-duotone.php</code></td><td><p>Scrape all possible duotone presets from global and theme styles and store them in self::$global_styles_presets.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_style_engine/get_css_declarations/">WP_Style_Engine::get_css_declarations()</a><code>wp-includes/style-engine/class-wp-style-engine.php</code></td><td><p>Returns an array of CSS declarations based on valid block style values.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_style_engine/get_slug_from_preset_value/">WP_Style_Engine::get_slug_from_preset_value()</a><code>wp-includes/style-engine/class-wp-style-engine.php</code></td><td><p>Util: Extracts the slug in kebab case from a preset string, e.g. <code>heavenly-blue</code> from <code>var:preset|color|heavenlyBlue</code>.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_theme_json_webfonts_handler/">_wp_theme_json_webfonts_handler()</a><code>wp-includes/deprecated.php</code></td><td><p>Runs the theme.json webfonts handler.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

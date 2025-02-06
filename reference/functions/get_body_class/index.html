@@ -1,0 +1,344 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_body_class()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_body_class()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_body_class( <span class="arg-type">string|string[]</span> <span class="arg-name">$css_class</span> = <span class="arg-default">''</span> ): <span class="return-type">string[]</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves an array of the class names for the body element.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$css_class</code><span class="type"><span class="string">string</span>|<span class="string[]">string[]</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Space-separated string or array of class names                                   to add to the class list. </span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string[]</span> Array of class names.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="636"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_body_class( $css_class = '' ) {
+	global $wp_query;
+
+	$classes = array();
+
+	if ( is_rtl() ) {
+		$classes[] = 'rtl';
+	}
+
+	if ( is_front_page() ) {
+		$classes[] = 'home';
+	}
+	if ( is_home() ) {
+		$classes[] = 'blog';
+	}
+	if ( is_privacy_policy() ) {
+		$classes[] = 'privacy-policy';
+	}
+	if ( is_archive() ) {
+		$classes[] = 'archive';
+	}
+	if ( is_date() ) {
+		$classes[] = 'date';
+	}
+	if ( is_search() ) {
+		$classes[] = 'search';
+		$classes[] = $wp_query-&gt;posts ? 'search-results' : 'search-no-results';
+	}
+	if ( is_paged() ) {
+		$classes[] = 'paged';
+	}
+	if ( is_attachment() ) {
+		$classes[] = 'attachment';
+	}
+	if ( is_404() ) {
+		$classes[] = 'error404';
+	}
+
+	if ( is_singular() ) {
+		$post      = $wp_query-&gt;get_queried_object();
+		$post_id   = $post-&gt;ID;
+		$post_type = $post-&gt;post_type;
+
+		if ( is_page_template() ) {
+			$classes[] = "{$post_type}-template";
+
+			$template_slug  = get_page_template_slug( $post_id );
+			$template_parts = explode( '/', $template_slug );
+
+			foreach ( $template_parts as $part ) {
+				$classes[] = "{$post_type}-template-" . sanitize_html_class( str_replace( array( '.', '/' ), '-', basename( $part, '.php' ) ) );
+			}
+			$classes[] = "{$post_type}-template-" . sanitize_html_class( str_replace( '.', '-', $template_slug ) );
+		} else {
+			$classes[] = "{$post_type}-template-default";
+		}
+
+		if ( is_single() ) {
+			$classes[] = 'single';
+			if ( isset( $post-&gt;post_type ) ) {
+				$classes[] = 'single-' . sanitize_html_class( $post-&gt;post_type, $post_id );
+				$classes[] = 'postid-' . $post_id;
+
+				// Post Format.
+				if ( post_type_supports( $post-&gt;post_type, 'post-formats' ) ) {
+					$post_format = get_post_format( $post-&gt;ID );
+
+					if ( $post_format &amp;&amp; ! is_wp_error( $post_format ) ) {
+						$classes[] = 'single-format-' . sanitize_html_class( $post_format );
+					} else {
+						$classes[] = 'single-format-standard';
+					}
+				}
+			}
+		}
+
+		if ( is_attachment() ) {
+			$mime_type   = get_post_mime_type( $post_id );
+			$mime_prefix = array( 'application/', 'image/', 'text/', 'audio/', 'video/', 'music/' );
+			$classes[]   = 'attachmentid-' . $post_id;
+			$classes[]   = 'attachment-' . str_replace( $mime_prefix, '', $mime_type );
+		} elseif ( is_page() ) {
+			$classes[] = 'page';
+			$classes[] = 'page-id-' . $post_id;
+
+			if ( get_pages(
+				array(
+					'parent' =&gt; $post_id,
+					'number' =&gt; 1,
+				)
+			) ) {
+				$classes[] = 'page-parent';
+			}
+
+			if ( $post-&gt;post_parent ) {
+				$classes[] = 'page-child';
+				$classes[] = 'parent-pageid-' . $post-&gt;post_parent;
+			}
+		}
+	} elseif ( is_archive() ) {
+		if ( is_post_type_archive() ) {
+			$classes[] = 'post-type-archive';
+			$post_type = get_query_var( 'post_type' );
+			if ( is_array( $post_type ) ) {
+				$post_type = reset( $post_type );
+			}
+			$classes[] = 'post-type-archive-' . sanitize_html_class( $post_type );
+		} elseif ( is_author() ) {
+			$author    = $wp_query-&gt;get_queried_object();
+			$classes[] = 'author';
+			if ( isset( $author-&gt;user_nicename ) ) {
+				$classes[] = 'author-' . sanitize_html_class( $author-&gt;user_nicename, $author-&gt;ID );
+				$classes[] = 'author-' . $author-&gt;ID;
+			}
+		} elseif ( is_category() ) {
+			$cat       = $wp_query-&gt;get_queried_object();
+			$classes[] = 'category';
+			if ( isset( $cat-&gt;term_id ) ) {
+				$cat_class = sanitize_html_class( $cat-&gt;slug, $cat-&gt;term_id );
+				if ( is_numeric( $cat_class ) || ! trim( $cat_class, '-' ) ) {
+					$cat_class = $cat-&gt;term_id;
+				}
+
+				$classes[] = 'category-' . $cat_class;
+				$classes[] = 'category-' . $cat-&gt;term_id;
+			}
+		} elseif ( is_tag() ) {
+			$tag       = $wp_query-&gt;get_queried_object();
+			$classes[] = 'tag';
+			if ( isset( $tag-&gt;term_id ) ) {
+				$tag_class = sanitize_html_class( $tag-&gt;slug, $tag-&gt;term_id );
+				if ( is_numeric( $tag_class ) || ! trim( $tag_class, '-' ) ) {
+					$tag_class = $tag-&gt;term_id;
+				}
+
+				$classes[] = 'tag-' . $tag_class;
+				$classes[] = 'tag-' . $tag-&gt;term_id;
+			}
+		} elseif ( is_tax() ) {
+			$term = $wp_query-&gt;get_queried_object();
+			if ( isset( $term-&gt;term_id ) ) {
+				$term_class = sanitize_html_class( $term-&gt;slug, $term-&gt;term_id );
+				if ( is_numeric( $term_class ) || ! trim( $term_class, '-' ) ) {
+					$term_class = $term-&gt;term_id;
+				}
+
+				$classes[] = 'tax-' . sanitize_html_class( $term-&gt;taxonomy );
+				$classes[] = 'term-' . $term_class;
+				$classes[] = 'term-' . $term-&gt;term_id;
+			}
+		}
+	}
+
+	if ( is_user_logged_in() ) {
+		$classes[] = 'logged-in';
+	}
+
+	if ( is_admin_bar_showing() ) {
+		$classes[] = 'admin-bar';
+		$classes[] = 'no-customize-support';
+	}
+
+	if ( current_theme_supports( 'custom-background' )
+		&amp;&amp; ( get_background_color() !== get_theme_support( 'custom-background', 'default-color' ) || get_background_image() ) ) {
+		$classes[] = 'custom-background';
+	}
+
+	if ( has_custom_logo() ) {
+		$classes[] = 'wp-custom-logo';
+	}
+
+	if ( current_theme_supports( 'responsive-embeds' ) ) {
+		$classes[] = 'wp-embed-responsive';
+	}
+
+	$page = $wp_query-&gt;get( 'page' );
+
+	if ( ! $page || $page &lt; 2 ) {
+		$page = $wp_query-&gt;get( 'paged' );
+	}
+
+	if ( $page &amp;&amp; $page &gt; 1 &amp;&amp; ! is_404() ) {
+		$classes[] = 'paged-' . $page;
+
+		if ( is_single() ) {
+			$classes[] = 'single-paged-' . $page;
+		} elseif ( is_page() ) {
+			$classes[] = 'page-paged-' . $page;
+		} elseif ( is_category() ) {
+			$classes[] = 'category-paged-' . $page;
+		} elseif ( is_tag() ) {
+			$classes[] = 'tag-paged-' . $page;
+		} elseif ( is_date() ) {
+			$classes[] = 'date-paged-' . $page;
+		} elseif ( is_author() ) {
+			$classes[] = 'author-paged-' . $page;
+		} elseif ( is_search() ) {
+			$classes[] = 'search-paged-' . $page;
+		} elseif ( is_post_type_archive() ) {
+			$classes[] = 'post-type-paged-' . $page;
+		}
+	}
+
+	if ( ! empty( $css_class ) ) {
+		if ( ! is_array( $css_class ) ) {
+			$css_class = preg_split( '#\s+#', $css_class );
+		}
+		$classes = array_merge( $classes, $css_class );
+	} else {
+		// Ensure that we always coerce class to being an array.
+		$css_class = array();
+	}
+
+	$classes = array_map( 'esc_attr', $classes );
+
+	/**
+	 * Filters the list of CSS body class names for the current post or page.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string[] $classes   An array of body class names.
+	 * @param string[] $css_class An array of additional class names added to the body.
+	 */
+	$classes = apply_filters( 'body_class', $classes, $css_class );
+
+	return array_unique( $classes );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/post-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/post-template.php#L636">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/post-template.php#L636-L862">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/body_class/"><span class="hook-func">apply_filters</span>( ‘body_class’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$classes</span></nobr>,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$css_class</span></nobr> )</a></dt><dd><p>Filters the list of CSS body class names for the current post or page.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_privacy_policy/">is_privacy_policy()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for the Privacy Policy page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/has_custom_logo/">has_custom_logo()</a><code>wp-includes/general-template.php</code></td><td><p>Determines whether the site has a custom logo.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_background_color/">get_background_color()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves value for custom background color.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_theme_support/">get_theme_support()</a><code>wp-includes/theme.php</code></td><td><p>Gets the theme support arguments passed when registering that support.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_background_image/">get_background_image()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves background image for custom background.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_html_class/">sanitize_html_class()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes an HTML classname to ensure it only contains valid characters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get_queried_object/">WP_Query::get_queried_object()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves the currently queried object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get/">WP_Query::get()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves the value of a query variable.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_search/">is_search()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for a search.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_404/">is_404()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query has resulted in a 404 (returns no results).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_singular/">is_singular()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing single post of any post type (post, attachment, page, custom post types).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_single/">is_single()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing single post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_front_page/">is_front_page()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for the front page of the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_home/">is_home()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for the blog homepage.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_date/">is_date()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing date archive.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_paged/">is_paged()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for a paged result and not for the first page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_attachment/">is_attachment()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing attachment page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_page/">is_page()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing single page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_author/">is_author()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing author archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_category/">is_category()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing category archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_tag/">is_tag()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing tag archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_tax/">is_tax()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing custom taxonomy archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_archive/">is_archive()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_post_type_archive/">is_post_type_archive()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing post type archive page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_query_var/">get_query_var()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the value of a query variable in the <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_admin_bar_showing/">is_admin_bar_showing()</a><code>wp-includes/admin-bar.php</code></td><td><p>Determines whether the admin bar should be showing.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_page_template_slug/">get_page_template_slug()</a><code>wp-includes/post-template.php</code></td><td><p>Gets the specific template filename for a given post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_page_template/">is_page_template()</a><code>wp-includes/post-template.php</code></td><td><p>Determines whether the current post uses a page template.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_pages/">get_pages()</a><code>wp-includes/post.php</code></td><td><p>Retrieves an array of pages (or hierarchical post type items).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_type_supports/">post_type_supports()</a><code>wp-includes/post.php</code></td><td><p>Checks a post type’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_mime_type/">get_post_mime_type()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the mime type of an attachment based on the ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_format/">get_post_format()</a><code>wp-includes/post-formats.php</code></td><td><p>Retrieve the format slug for a post</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_theme_supports/">current_theme_supports()</a><code>wp-includes/theme.php</code></td><td><p>Checks a theme’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 31 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/body_class/">body_class()</a><code>wp-includes/post-template.php</code></td><td><p>Displays the class names for the body element.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-fida02 odd alt thread-odd thread-alt depth-1" data-comment-id="5509" id="comment-5509">
+<article class="comment-body" id="div-comment-5509">
+<a class="screen-reader-text" href="#comment-content-5509">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5509">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// If has "home" class in the body
+if (in_array('home', get_body_class())) {
+    // Class is present
+} else {
+    // Class is not present
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5509">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

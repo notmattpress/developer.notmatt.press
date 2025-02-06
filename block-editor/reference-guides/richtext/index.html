@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span class="is-current-page">RichText Reference</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>RichText Reference</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>RichText is a component that allows developers to render a <a href="https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Editable_content"><code>contenteditable</code> input</a>, providing users with the option to format block content to make it bold, italics, linked, or use other formatting.</p>
+<p>The RichText component is extremely powerful because it provides built-in functionality you won’t find in other components:</p>
+<ul>
+<li><strong>Consistent Styling in the Admin and Frontend:</strong> The editable container can be set to any block-level element, such as a <code>div</code>, <code>h2</code> or <code>p</code> tag. This allows the styles you apply in style.css to more easily apply on the frontend and admin, without having to rewrite them in editor.css.</li>
+<li><strong>Cohesive Placeholder Text:</strong> Before the user writes their content, it’s easy to include placeholder text that’s already styled to match the rest of the block editor.</li>
+<li><strong>Control Over Formatting Options:</strong> It’s possible to dictate exactly which formatting options you want to allow for the RichText field. For example, you can dictate whether to allow the user to make text bold, italics or both.</li>
+</ul>
+<p>Unlike other components that exist in the <a href="https://developer.notmatt.press/block-editor/reference-guide/components/">Component Reference</a> section, RichText lives separately because it only makes sense within the block editor, and not within other areas of WordPress.</p>
+<h2 class="is-toc-heading" id="property-reference" tabindex="-1"><a href="#property-reference">Property reference</a></h2>
+<p>For a list of the possible properties to pass your RichText component, <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-editor/src/components/rich-text/README.md">check out the component documentation on GitHub</a>.</p>
+<h2 class="is-toc-heading" id="core-blocks-using-the-richtext-component" tabindex="-1"><a href="#core-blocks-using-the-richtext-component">Core blocks using the RichText component</a></h2>
+<p>There are a number of core blocks using the RichText component. The JavaScript edit function linked below for each block can be used as a best practice reference while creating your own blocks.</p>
+<ul>
+<li><strong><a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-library/src/button/edit.js">Button</a>:</strong> RichText is used to enter the button’s text.</li>
+<li><strong><a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-library/src/heading/edit.js">Heading</a>:</strong> RichText is used to enter the heading’s text.</li>
+<li><strong><a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-library/src/quote/edit.js">Quote</a>:</strong> RichText is used in two places, for both the quotation and citation text.</li>
+<li><strong><a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-library/src/search/edit.js">Search</a>:</strong> RichText is used in two places, for both the label above the search field and the submit button text.</li>
+</ul>
+<h2 class="is-toc-heading" id="example" tabindex="-1"><a href="#example">Example</a></h2>
+<pre><code class="language-jsx">import { registerBlockType } from '@wordpress/blocks';
+import { useBlockProps, RichText } from '@wordpress/block-editor';
+
+registerBlockType( /* ... */, {
+    // ...
+
+    attributes: {
+        content: {
+            type: 'string',
+            source: 'html',
+            selector: 'h2',
+        },
+    },
+
+    edit( { attributes, setAttributes } ) {
+        const blockProps = useBlockProps();
+
+        return (
+            &lt;RichText
+                { ...blockProps }
+                tagName="h2" // The tag here is the element output and editable in the admin
+                value={ attributes.content } // Any existing content, either from the database or an attribute default
+                allowedFormats={ [ 'core/bold', 'core/italic' ] } // Allow the content to be made bold or italic, but do not allow other formatting options
+                onChange={ ( content ) =&gt; setAttributes( { content } ) } // Store updated content as a block attribute
+                placeholder={ __( 'Heading...' ) } // Display this text before any content has been added by the user
+            /&gt;
+        );
+    },
+
+    save( { attributes } ) {
+        const blockProps = useBlockProps.save();
+
+        return &lt;RichText.Content { ...blockProps } tagName="h2" value={ attributes.content } /&gt;; // Saves &lt;h2&gt;Content added in the editor...&lt;/h2&gt; to the database for frontend display
+    }
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="common-issues-and-solutions" tabindex="-1"><a href="#common-issues-and-solutions">Common issues and solutions</a></h2>
+<p>While using the RichText component a number of common issues tend to appear.</p>
+<h3 class="is-toc-heading" id="html-formatting-tags-display-in-the-content" tabindex="-1"><a href="#html-formatting-tags-display-in-the-content">HTML formatting tags display in the content</a></h3>
+<p>If the HTML tags from text formatting such as <code>&lt;strong&gt;</code> or <code>&lt;em&gt;</code> are being escaped and displayed on the frontend of the site, this is likely due to an issue in your save function. Make sure your code looks something like <code>&lt;RichText.Content tagName="h2" value={ heading } /&gt;</code> (JSX) within your save function instead of simply outputting the value with <code>&lt;h2&gt;{ heading }&lt;/h2&gt;</code>.</p>
+<h3 class="is-toc-heading" id="unwanted-formatting-options-still-display" tabindex="-1"><a href="#unwanted-formatting-options-still-display">Unwanted formatting options still display</a></h3>
+<p>Before moving forward, consider if using the RichText component makes sense at all. Would it be better to use a basic <code>input</code> or <code>textarea</code> element? If you don’t think any formatting should be possible, these HTML tags may make more sense.</p>
+<p>If you’d still like to use RichText, you can eliminate all of the formatting options by specifying the <code>withoutInteractiveFormatting</code> property.</p>
+<p>If you want to limit the formats allowed, you can specify using <code>allowedFormats</code> property in your code, see the example above or <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-editor/src/components/rich-text/README.md#allowedformats-array">the component documentation</a> for details.</p>
+<h3 class="is-toc-heading" id="disable-specific-format-types-in-editor" tabindex="-1"><a href="#disable-specific-format-types-in-editor">Disable specific format types in Editor</a></h3>
+<p>The RichText component uses formats to display inline elements, for example images within the paragraph block. If you just want to disable a format from the editor, you can use the <code>unregisterFormatType</code> function. For example to disable inline images, use:</p>
+<pre><code>wp.richText.unregisterFormatType( 'core/image' );
+</code></pre>
+<p>To apply, you would need to enqueue the above script in your plugin or theme. See the JavaScript tutorial for <a href="https://developer.notmatt.press/block-editor/how-to-guides/javascript/loading-javascript/">how to load JavaScript in WordPress</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

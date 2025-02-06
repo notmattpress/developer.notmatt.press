@@ -1,0 +1,270 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_build_block_template_result_from_post()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_build_block_template_result_from_post()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_build_block_template_result_from_post( <span class="arg-type">WP_Post</span> <span class="arg-name">$post</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_block_template/" rel="class">WP_Block_Template</a>|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Builds a unified template object based a post Object.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post</code><span class="type"><span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Template post.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_block_template/" rel="class">WP_Block_Template</a>|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> Template or error object.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="871"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _build_block_template_result_from_post( $post ) {
+	$post_id = wp_is_post_revision( $post );
+	if ( ! $post_id ) {
+		$post_id = $post;
+	}
+	$parent_post     = get_post( $post_id );
+	$post-&gt;post_name = $parent_post-&gt;post_name;
+	$post-&gt;post_type = $parent_post-&gt;post_type;
+
+	$terms = get_the_terms( $parent_post, 'wp_theme' );
+
+	if ( is_wp_error( $terms ) ) {
+		return $terms;
+	}
+
+	if ( ! $terms ) {
+		return new WP_Error( 'template_missing_theme', __( 'No theme is defined for this template.' ) );
+	}
+
+	$terms = array(
+		'wp_theme' =&gt; $terms[0]-&gt;name,
+	);
+
+	if ( 'wp_template_part' === $parent_post-&gt;post_type ) {
+		$type_terms = get_the_terms( $parent_post, 'wp_template_part_area' );
+		if ( ! is_wp_error( $type_terms ) &amp;&amp; false !== $type_terms ) {
+			$terms['wp_template_part_area'] = $type_terms[0]-&gt;name;
+		}
+	}
+
+	$meta = array(
+		'origin'           =&gt; get_post_meta( $parent_post-&gt;ID, 'origin', true ),
+		'is_wp_suggestion' =&gt; get_post_meta( $parent_post-&gt;ID, 'is_wp_suggestion', true ),
+	);
+
+	$template = _build_block_template_object_from_post_object( $post, $terms, $meta );
+
+	if ( is_wp_error( $template ) ) {
+		return $template;
+	}
+
+	// Check for a block template without a description and title or with a title equal to the slug.
+	if ( 'wp_template' === $parent_post-&gt;post_type &amp;&amp; empty( $template-&gt;description ) &amp;&amp; ( empty( $template-&gt;title ) || $template-&gt;title === $template-&gt;slug ) ) {
+		$matches = array();
+
+		// Check for a block template for a single author, page, post, tag, category, custom post type, or custom taxonomy.
+		if ( preg_match( '/(author|page|single|tag|category|taxonomy)-(.+)/', $template-&gt;slug, $matches ) ) {
+			$type           = $matches[1];
+			$slug_remaining = $matches[2];
+
+			switch ( $type ) {
+				case 'author':
+					$nice_name = $slug_remaining;
+					$users     = get_users(
+						array(
+							'capability'     =&gt; 'edit_posts',
+							'search'         =&gt; $nice_name,
+							'search_columns' =&gt; array( 'user_nicename' ),
+							'fields'         =&gt; 'display_name',
+						)
+					);
+
+					if ( empty( $users ) ) {
+						$template-&gt;title = sprintf(
+							/* translators: Custom template title in the Site Editor, referencing a deleted author. %s: Author nicename. */
+							__( 'Deleted author: %s' ),
+							$nice_name
+						);
+					} else {
+						$author_name = $users[0];
+
+						$template-&gt;title = sprintf(
+							/* translators: Custom template title in the Site Editor. %s: Author name. */
+							__( 'Author: %s' ),
+							$author_name
+						);
+
+						$template-&gt;description = sprintf(
+							/* translators: Custom template description in the Site Editor. %s: Author name. */
+							__( 'Template for %s' ),
+							$author_name
+						);
+
+						$users_with_same_name = get_users(
+							array(
+								'capability'     =&gt; 'edit_posts',
+								'search'         =&gt; $author_name,
+								'search_columns' =&gt; array( 'display_name' ),
+								'fields'         =&gt; 'display_name',
+							)
+						);
+
+						if ( count( $users_with_same_name ) &gt; 1 ) {
+							$template-&gt;title = sprintf(
+								/* translators: Custom template title in the Site Editor. 1: Template title of an author template, 2: Author nicename. */
+								__( '%1$s (%2$s)' ),
+								$template-&gt;title,
+								$nice_name
+							);
+						}
+					}
+					break;
+				case 'page':
+					_wp_build_title_and_description_for_single_post_type_block_template( 'page', $slug_remaining, $template );
+					break;
+				case 'single':
+					$post_types = get_post_types();
+
+					foreach ( $post_types as $post_type ) {
+						$post_type_length = strlen( $post_type ) + 1;
+
+						// If $slug_remaining starts with $post_type followed by a hyphen.
+						if ( 0 === strncmp( $slug_remaining, $post_type . '-', $post_type_length ) ) {
+							$slug  = substr( $slug_remaining, $post_type_length, strlen( $slug_remaining ) );
+							$found = _wp_build_title_and_description_for_single_post_type_block_template( $post_type, $slug, $template );
+
+							if ( $found ) {
+								break;
+							}
+						}
+					}
+					break;
+				case 'tag':
+					_wp_build_title_and_description_for_taxonomy_block_template( 'post_tag', $slug_remaining, $template );
+					break;
+				case 'category':
+					_wp_build_title_and_description_for_taxonomy_block_template( 'category', $slug_remaining, $template );
+					break;
+				case 'taxonomy':
+					$taxonomies = get_taxonomies();
+
+					foreach ( $taxonomies as $taxonomy ) {
+						$taxonomy_length = strlen( $taxonomy ) + 1;
+
+						// If $slug_remaining starts with $taxonomy followed by a hyphen.
+						if ( 0 === strncmp( $slug_remaining, $taxonomy . '-', $taxonomy_length ) ) {
+							$slug  = substr( $slug_remaining, $taxonomy_length, strlen( $slug_remaining ) );
+							$found = _wp_build_title_and_description_for_taxonomy_block_template( $taxonomy, $slug, $template );
+
+							if ( $found ) {
+								break;
+							}
+						}
+					}
+					break;
+			}
+		}
+	}
+
+	if ( 'wp_template' === $post-&gt;post_type ) {
+		$registered_template = WP_Block_Templates_Registry::get_instance()-&gt;get_by_slug( $template-&gt;slug );
+		if ( $registered_template ) {
+			$template-&gt;plugin      = $registered_template-&gt;plugin;
+			$template-&gt;origin      =
+				'theme' !== $template-&gt;origin &amp;&amp; 'theme' !== $template-&gt;source ?
+				'plugin' :
+				$template-&gt;origin;
+			$template-&gt;title       = empty( $template-&gt;title ) || $template-&gt;title === $template-&gt;slug ? $registered_template-&gt;title : $template-&gt;title;
+			$template-&gt;description = empty( $template-&gt;description ) ? $registered_template-&gt;description : $template-&gt;description;
+		}
+	}
+
+	if ( 'wp_template_part' === $template-&gt;type ) {
+		$existing_ignored_hooked_blocks = get_post_meta( $post-&gt;ID, '_wp_ignored_hooked_blocks', true );
+		$attributes                     = ! empty( $existing_ignored_hooked_blocks ) ? array( 'metadata' =&gt; array( 'ignoredHookedBlocks' =&gt; json_decode( $existing_ignored_hooked_blocks, true ) ) ) : array();
+
+		/*
+		 * In order for hooked blocks to be inserted at positions first_child and last_child in a template part,
+		 * we need to wrap its content a mock template part block and traverse it.
+		 */
+		$content           = get_comment_delimited_block_content(
+			'core/template-part',
+			$attributes,
+			$template-&gt;content
+		);
+		$content           = apply_block_hooks_to_content(
+			$content,
+			$template,
+			'insert_hooked_blocks_and_set_ignored_hooked_blocks_metadata'
+		);
+		$template-&gt;content = remove_serialized_parent_block( $content );
+	} else {
+		$template-&gt;content = apply_block_hooks_to_content(
+			$template-&gt;content,
+			$template,
+			'insert_hooked_blocks_and_set_ignored_hooked_blocks_metadata'
+		);
+	}
+
+	return $template;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/block-template-utils.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/block-template-utils.php#L871">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/block-template-utils.php#L871-L1061">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_block_templates_registry/get_instance/">WP_Block_Templates_Registry::get_instance()</a><code>wp-includes/class-wp-block-templates-registry.php</code></td><td><p>Utility method to retrieve the main instance of the class.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_build_block_template_object_from_post_object/">_build_block_template_object_from_post_object()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Builds a block template object from a post object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_block_hooks_to_content/">apply_block_hooks_to_content()</a><code>wp-includes/blocks.php</code></td><td><p>Runs the hooked blocks algorithm on the given content.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/remove_serialized_parent_block/">remove_serialized_parent_block()</a><code>wp-includes/blocks.php</code></td><td><p>Accepts the serialized markup of a block and its inner blocks, and returns serialized markup of the inner blocks.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_build_title_and_description_for_single_post_type_block_template/">_wp_build_title_and_description_for_single_post_type_block_template()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Builds the title and description of a post-specific template based on the underlying referenced post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_build_title_and_description_for_taxonomy_block_template/">_wp_build_title_and_description_for_taxonomy_block_template()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Builds the title and description of a taxonomy-specific template based on the underlying entity referenced.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_comment_delimited_block_content/">get_comment_delimited_block_content()</a><code>wp-includes/blocks.php</code></td><td><p>Returns the content of a block, including comment delimiters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_the_terms/">get_the_terms()</a><code>wp-includes/category-template.php</code></td><td><p>Retrieves the terms of the taxonomy that are attached to the post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomies/">get_taxonomies()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves a list of registered taxonomy names or objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_users/">get_users()</a><code>wp-includes/user.php</code></td><td><p>Retrieves list of users matching criteria.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_is_post_revision/">wp_is_post_revision()</a><code>wp-includes/revision.php</code></td><td><p>Determines if the specified post is a revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_meta/">get_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_types/">get_post_types()</a><code>wp-includes/post.php</code></td><td><p>Gets a list of all registered post type objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 11 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_template_autosaves_controller/prepare_item_for_response/">WP_REST_Template_Autosaves_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-template-autosaves-controller.php</code></td><td><p>Prepares the item for the REST response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_template_revisions_controller/prepare_item_for_response/">WP_REST_Template_Revisions_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-template-revisions-controller.php</code></td><td><p>Prepares the item for the REST response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_block_templates/">get_block_templates()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Retrieves a list of unified template objects based on a query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_block_template/">get_block_template()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Retrieves a single unified template object using its id.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.4.0/">6.4.0</a></td><td><span class="since-description">Added support for a revision post to be passed to this function.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td><span class="since-description">Added <code>modified</code> property to template objects.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.9.0/">5.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

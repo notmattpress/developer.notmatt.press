@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_posts_list_table/">WP_Posts_List_Table</a></span><span class="is-current-page">WP_Posts_List_Table::__construct()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Posts_List_Table::__construct()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Posts_List_Table::__construct( <span class="arg-type">array</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Constructor.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/classes/WP_List_Table/__construct">WP_List_Table::__construct()</a>: for more information on default arguments.</li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">An associative array of arguments.</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="73"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function __construct( $args = array() ) {
+	global $post_type_object, $wpdb;
+
+	parent::__construct(
+		array(
+			'plural' =&gt; 'posts',
+			'screen' =&gt; isset( $args['screen'] ) ? $args['screen'] : null,
+		)
+	);
+
+	$post_type        = $this-&gt;screen-&gt;post_type;
+	$post_type_object = get_post_type_object( $post_type );
+
+	$exclude_states = get_post_stati(
+		array(
+			'show_in_admin_all_list' =&gt; false,
+		)
+	);
+
+	$this-&gt;user_posts_count = (int) $wpdb-&gt;get_var(
+		$wpdb-&gt;prepare(
+			"SELECT COUNT( 1 )
+			FROM $wpdb-&gt;posts
+			WHERE post_type = %s
+			AND post_status NOT IN ( '" . implode( "','", $exclude_states ) . "' )
+			AND post_author = %d",
+			$post_type,
+			get_current_user_id()
+		)
+	);
+
+	if ( $this-&gt;user_posts_count
+		&amp;&amp; ! current_user_can( $post_type_object-&gt;cap-&gt;edit_others_posts )
+		&amp;&amp; empty( $_REQUEST['post_status'] ) &amp;&amp; empty( $_REQUEST['all_posts'] )
+		&amp;&amp; empty( $_REQUEST['author'] ) &amp;&amp; empty( $_REQUEST['show_sticky'] )
+	) {
+		$_GET['author'] = get_current_user_id();
+	}
+
+	$sticky_posts = get_option( 'sticky_posts' );
+
+	if ( 'post' === $post_type &amp;&amp; $sticky_posts ) {
+		$sticky_posts = implode( ', ', array_map( 'absint', (array) $sticky_posts ) );
+
+		$this-&gt;sticky_posts_count = (int) $wpdb-&gt;get_var(
+			$wpdb-&gt;prepare(
+				"SELECT COUNT( 1 )
+				FROM $wpdb-&gt;posts
+				WHERE post_type = %s
+				AND post_status NOT IN ('trash', 'auto-draft')
+				AND ID IN ($sticky_posts)",
+				$post_type
+			)
+		);
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-posts-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-posts-list-table.php#L73">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-posts-list-table.php#L73-L128">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_list_table/__construct/">WP_List_Table::__construct()</a><code>wp-admin/includes/class-wp-list-table.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_stati/">get_post_stati()</a><code>wp-includes/post.php</code></td><td><p>Gets a list of post statuses.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_user_id/">get_current_user_id()</a><code>wp-includes/user.php</code></td><td><p>Gets the current user’s ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_object/">get_post_type_object()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post type object by name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_var/">wpdb::get_var()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one value from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.0/">3.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

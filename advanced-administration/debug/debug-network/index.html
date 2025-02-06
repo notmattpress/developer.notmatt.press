@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/advanced-administration/">Advanced Administration Handbook</a></span><span><a href="https://developer.wordpress.org/advanced-administration/debug/">Debugging WordPress</a></span><span class="is-current-page">Debugging a WordPress Network</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Debugging a WordPress Network</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="debugging-a-wordpress-network" tabindex="-1"><a href="#debugging-a-wordpress-network">Debugging a WordPress Network</a></h2>
+<p>If you have reached this page, chances are you have received an error in your <a href="https://wordpress.org/documentation/article/multisite-network-administration/">WordPress network</a>. This failure occurs when WordPress cannot find one or more of the global tables for the network in the database.</p>
+<p>On some shared web hosts, the host has disabled the functionality from running. It is always best to check with your web host <strong>before</strong> <a href="https://developer.notmatt.press/advanced-administration/multisite/create-network/">creating a network</a> to make sure your web host account fulfills the technical requirements.</p>
+<h2 class="is-toc-heading" id="if-you-just-installed-your-network" tabindex="-1"><a href="#if-you-just-installed-your-network">If You just installed your network</a></h2>
+<p>Check your <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">wp-config.php</a> file for:</p>
+<ul>
+<li>correct database details</li>
+<li><code>SUBDOMAIN_INSTALL</code> constant</li>
+<li><code>MULTISITE</code> constant</li>
+<li><code>$base</code> variable</li>
+<li>table prefix</li>
+</ul>
+<p>You should not have anything after</p>
+<pre><code>/* That's all, stop editing! Happy blogging. */
+
+/** Absolute path to the WordPress directory. */
+if ( !defined('ABSPATH') )
+    define('ABSPATH', dirname(__FILE__) . '/');
+
+/** Sets up WordPress vars and included files. */
+require_once(ABSPATH . 'wp-settings.php');
+</code></pre>
+<p>Move any code that is after</p>
+<pre><code>require_once(ABSPATH . 'wp-settings.php');
+</code></pre>
+<p>to above the stop editing line.</p>
+<h3 class="is-toc-heading" id="mod_rewrite-not-working" tabindex="-1"><a href="#mod_rewrite-not-working">Mod_rewrite not working</a></h3>
+<p>The main site works, but 404 errors show up when trying to access added child subdomain sites. An Ubuntu with Apache HTTPD installation needs these steps:</p>
+<pre><code>sudo a2enmod rewrite
+sudo nano /etc/apache2/sites-avail/default
+</code></pre>
+<p>and change in two places the ‘AllowOverride None’ to ‘AllowOverride all’</p>
+<pre><code>/etc/init.d/apache2 restart
+</code></pre>
+<p>to restart apache2. Note that on more modern versions of Ubuntu the following syntax is preferred (for restarting services such as Apache – also note that in either case you may need to use prepend <em>sudo</em>):</p>
+<pre><code>service apache2 restart
+</code></pre>
+<h3 class="is-toc-heading" id="check-the-database" tabindex="-1"><a href="#check-the-database">Check the database</a></h3>
+<p>Assuming all that is correct, check the database itself and see if <a href="https://codex.wordpress.org/Database_Description#Multisite_Table_Overview">all the extra network tables</a> were created. The tables are:</p>
+<ul>
+<li>wp_blogs</li>
+<li>wp_blogmeta</li>
+<li>wp_blog_versions</li>
+<li>wp_registration_log</li>
+<li>wp_signups</li>
+<li>wp_site</li>
+<li>wp_sitemeta</li>
+</ul>
+<p>If you have these DB tables or added them manually but wp_site and/or wp_blogs is empty, you may have to run some SQL queries to insert rows for your main site. Be sure to adjust the table prefixes, domains, dates, username, and other parts of the queries below to match your installation.</p>
+<pre><code>INSERT INTO wp_site VALUES ( 1, 'domain.com', '/' );
+# change domain.com to the full domain of your original site and / to the path
+
+INSERT INTO wp_blogs VALUES( 1, 1, 'domain.com', '/', '2015-01-01', '2015-01-01', 1, 0, 0, 0, 0, 0 );
+# change domains.com and / to domain and path of your site. Change dates if you want.
+
+INSERT INTO wp_sitemeta VALUES( 1, 1, 'site_admins', 'a:1:{i:1;s:5:"admin";}' );
+# Sets the admin user as a Super Admin. Change "admin" to your user_login. 
+# Change "s:5" to "s:#" where # is the number of characters in user_login.
+</code></pre>
+<h2 class="is-toc-heading" id="if-new-site-creation-suddenly-stopped-working" tabindex="-1"><a href="#if-new-site-creation-suddenly-stopped-working">If new site creation suddenly stopped working</a></h2>
+<p>Please take a look at your database as above. Double-check that the location of the database server hasn’t changed, or is so, that you’ve updated your <code>wp-config.php</code> file.</p>
+<h2 class="is-toc-heading" id="other-lesser-known-issues" tabindex="-1"><a href="#other-lesser-known-issues">Other lesser-known issues</a></h2>
+<p>Check that the database user has ALL permissions on the database.</p>
+<p>Also, on very few upgrades from WordPressMU to 3.0 and up, a few users experienced a problem with creating new sites and receiving errors. This turned out to be a database collation issue.</p>
+<p>Check that the <code>.htaccess</code> instructions are not throwing up errors in the Apache logs.</p>
+<p>Like this one:</p>
+<pre><code>Options FollowSymLinks or SymLinksIfOwnerMatch is off which implies that RewriteRule directive is forbidden:
+
+This will result in a Network install appearing to fail and may show WP errors like
+
+One or more database tables are unavailable. The database may need to be repaired.
+</code></pre>
+<h2 class="is-toc-heading" id="related-articles" tabindex="-1"><a href="#related-articles">Related Articles</a></h2>
+<ul>
+<li><a href="https://multilingualpress.org/wordpress-multisite-network/">WordPress Multisite Network: A Complete Guide</a></li>
+</ul>
+<h2 class="is-toc-heading" id="external-links" tabindex="-1"><a href="#external-links">External Links</a></h2>
+<ul>
+<li><a href="https://wordpress.org/support/forum/multisite/">WordPress <span aria-hidden="true" class="wp-exclude-emoji">→</span> Support <span aria-hidden="true" class="wp-exclude-emoji">→</span> Multisite</a></li>
+</ul>
+<h2 class="is-toc-heading" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2>
+<ul>
+<li>2023-02-17: Updated original content</li>
+<li>2022-10-21: Original content from <a href="https://wordpress.org/documentation/article/debugging-a-wordpress-network/">Debugging a WordPress Network</a>.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

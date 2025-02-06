@@ -1,0 +1,446 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/advanced-administration/">Advanced Administration Handbook</a></span><span><a href="https://developer.wordpress.org/advanced-administration/wordpress/">WordPress configuration</a></span><span class="is-current-page">Editing wp-config.php</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Editing wp-config.php</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>One of the most important files in your WordPress installation is the <code>wp-config.php</code> file. This file is located in the root of your WordPress file directory and contains your website’s base configuration details, such as database connection information.</p>
+<p>When you first download WordPress, the <code>wp-config.php</code> file isn’t included. The WordPress setup process will create a <code>wp-config.php</code> file for you based on the information you provide in the <a href="https://developer.notmatt.press/advanced-administration/before-install/howto-install/">installation</a> process.</p>
+<p>It is unlikely that a non-developer would have to edit the wp-config.php file, in the case you are acting on trouble shooting steps provided by a technical person or by your webhost, this <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">page</a> should help.</p>
+<h1 class="is-toc-heading" id="wp-config-php" tabindex="-1"><a href="#wp-config-php">wp-config.php</a></h1>
+<p>TEMPORALLY NOTE: this may link for the simple part, to:<br/>
+* https://developer.notmatt.press/advanced-administration/wordpress/wp-config/<br/>
+* https://developer.notmatt.press/advanced-administration/debug/debug-wordpress/</p>
+<h2 class="is-toc-heading" id="advanced-options" tabindex="-1"><a href="#advanced-options">Advanced Options</a></h2>
+<p>The following sections may contain advanced information and some changes might result in unforeseen issues. Please make sure you practice <a href="https://developer.notmatt.press/advanced-administration/security/backup/">regular backups</a> and know how to restore them before modifying these settings.</p>
+<h3 class="is-toc-heading" id="table-prefix" tabindex="-1"><a href="#table-prefix">table_prefix</a></h3>
+<p>The <strong>$table_prefix</strong> is the value placed in the front of your database tables. Change the value if you want to use something other than <strong>wp_</strong> for your database prefix. Typically this is changed if you are <a href="https://developer.notmatt.press/advanced-administration/before-install/multiple-instances/">installing multiple WordPress blogs</a> in the same database, as is done with the multisite feature.</p>
+<p>It is possible to have multiple installations in one database if you give each a unique prefix. Keep security in mind if you choose to do this.</p>
+<pre><code>$table_prefix = 'example123_'; // Only numbers, letters, and underscores please!
+</code></pre>
+<h3 class="is-toc-heading" id="wp-siteurl" tabindex="-1"><a href="#wp-siteurl">WP_SITEURL</a></h3>
+<p>WP_SITEURL allows the WordPress address (URL) to be defined. The value defined is the address where your WordPress core files reside. It should include the https:// part too. Do not put a slash “<strong>/</strong>” at the end. Setting this value in <code>wp-config.php</code> overrides the <a href="https://codex.wordpress.org/Database_Description#Table:_wp_options">wp_options table</a> value for <strong>siteurl</strong>. Adding this in can reduce the number of database calls when loading your site. <strong>Note:</strong> This will <strong>not</strong> change the database stored value. The URL will revert to the old database value if this line is ever removed from <code>wp-config</code>. <a href="https://developer.notmatt.press/advanced-administration/upgrade/migrating/">Use the <strong>RELOCATE</strong> constant</a> to change the <strong>siteurl</strong> value in the database.</p>
+<p>If WordPress is installed into a directory called “wordpress” for the <a href="https://en.wikipedia.org/wiki/Domain_name_system">domain</a> example.com, define <code>WP_SITEURL</code> like this:</p>
+<pre><code>define( 'WP_SITEURL', 'https://example.com/wordpress' );
+</code></pre>
+<p>Dynamically set WP_SITEURL based on $_SERVER[‘HTTP_HOST’]</p>
+<pre><code>define( 'WP_SITEURL', 'https://' . $_SERVER['HTTP_HOST'] . '/path/to/wordpress' );
+</code></pre>
+<p><strong>Note:</strong> HTTP_HOST is created dynamically by PHP based on the value of the HTTP HOST Header in the request, thus possibly allowing for <a href="https://en.wikipedia.org/wiki/File_inclusion_vulnerability">file inclusion vulnerabilities</a>. SERVER_NAME may also be created dynamically. However, when Apache is configured as UseCanonicalName “on”, SERVER_NAME is set by the server configuration, instead of dynamically. In that case, it is safer to user SERVER_NAME than HTTP_HOST.</p>
+<p>Dynamically set <code>WP_SITEURL</code> based on <code>$_SERVER['SERVER_NAME']</code></p>
+<pre><code>define( 'WP_SITEURL', 'https://' . $_SERVER['SERVER_NAME'] . '/path/to/wordpress' );
+</code></pre>
+<h3 class="is-toc-heading" id="blog-address-url" tabindex="-1"><a href="#blog-address-url">Blog address (URL)</a></h3>
+<p>Similar to WP_SITEURL, WP_HOME <em>overrides the <a href="https://codex.wordpress.org/Database_Description#Table:_wp_options">wp_options table</a> value for</em> home <em>but does not change it in the database.</em> <strong>home</strong> is the address you want people to type in their browser to reach your WordPress blog. It should include the https:// part and should not have a slash “<strong>/</strong>” at the end. Adding this in can reduce the number of database calls when loading your site.</p>
+<pre><code>define( 'WP_HOME', 'https://example.com/wordpress' );
+</code></pre>
+<p>If you are using the technique described in <a href="https://developer.notmatt.press/advanced-administration/server/wordpress-in-directory/">Giving WordPress Its Own Directory</a> then follow the example below. Remember, you will also be placing an <code>index.php</code> in your web-root directory if you use a setting like this.</p>
+<pre><code>define( 'WP_HOME', 'https://example.com' );
+</code></pre>
+<p>Dynamically set <code>WP_HOME</code> based on <code>$_SERVER['HTTP_HOST']</code></p>
+<pre><code>define( 'WP_HOME', 'https://' . $_SERVER['HTTP_HOST'] . '/path/to/wordpress' );
+</code></pre>
+<h3 class="is-toc-heading" id="moving-wp-content-folder" tabindex="-1"><a href="#moving-wp-content-folder">Moving wp-content folder</a></h3>
+<p>You can move the <code>wp-content</code> directory, which holds your themes, plugins, and uploads, outside of the WordPress application directory.</p>
+<p>Set WP_CONTENT_DIR to the full <strong>local path</strong> of this directory (no trailing slash), e.g.</p>
+<pre><code>define( 'WP_CONTENT_DIR', dirname(__FILE__) . '/blog/wp-content' );
+</code></pre>
+<p>Set WP_CONTENT_URL to the full <strong>URL</strong> of this directory (no trailing slash), e.g.</p>
+<pre><code>define( 'WP_CONTENT_URL', 'https://example/blog/wp-content' );
+</code></pre>
+<h3 class="is-toc-heading" id="moving-plugin-folder" tabindex="-1"><a href="#moving-plugin-folder">Moving plugin folder</a></h3>
+<p>Set WP_PLUGIN_DIR to the full <strong>local path</strong> of this directory (no trailing slash), e.g.</p>
+<pre><code>define( 'WP_PLUGIN_DIR', dirname(__FILE__) . '/blog/wp-content/plugins' );
+</code></pre>
+<p>Set WP_PLUGIN_URL to the full <strong>URI</strong> of this directory (no trailing slash), e.g.</p>
+<pre><code>define( 'WP_PLUGIN_URL', 'https://example/blog/wp-content/plugins' );
+</code></pre>
+<p>If you have compability issues with plugins Set PLUGINDIR to the full <strong>local path</strong> of this directory (no trailing slash), e.g.</p>
+<pre><code>define( 'PLUGINDIR', dirname(__FILE__) . '/blog/wp-content/plugins' );
+</code></pre>
+<h3 class="is-toc-heading" id="moving-themes-folder" tabindex="-1"><a href="#moving-themes-folder">Moving themes folder</a></h3>
+<p>You cannot move the themes folder because its path is hardcoded relative to the <code>wp-content</code> folder:</p>
+<pre><code>$theme_root = WP_CONTENT_DIR . '/themes';
+</code></pre>
+<p>However, you can register additional theme directories using <a href="https://developer.notmatt.press/reference/functions/register_theme_directory/">register_theme_directory</a>.</p>
+<p>See how to <a href="https://developer.notmatt.press/advanced-administration/wordpress/wp-config/">move the wp-content</a> folder. For more details how the themes folder is determined, see <code>wp-includes/theme.php</code>.</p>
+<h3 class="is-toc-heading" id="moving-uploads-folder" tabindex="-1"><a href="#moving-uploads-folder">Moving uploads folder</a></h3>
+<p>Set UPLOADS to:</p>
+<pre><code>define( 'UPLOADS', 'blog/wp-content/uploads' );
+</code></pre>
+<p>This path can not be absolute. It is always relative to ABSPATH, therefore does not require a leading slash.</p>
+<h3 class="is-toc-heading" id="modify-autosave-interval" tabindex="-1"><a href="#modify-autosave-interval">Modify AutoSave Interval</a></h3>
+<p>When editing a post, WordPress uses Ajax to auto-save revisions to the post as you edit. You may want to increase this setting for longer delays in between auto-saves, or decrease the setting to make sure you never lose changes. The default is 60 seconds.</p>
+<pre><code>define( 'AUTOSAVE_INTERVAL', 180 ); // Seconds
+</code></pre>
+<h3 class="is-toc-heading" id="post-revisions" tabindex="-1"><a href="#post-revisions">Post Revisions</a></h3>
+<p>WordPress, by default, will save copies of each edit made to a post or page, allowing the possibility of reverting to a previous version of that post or page. The saving of revisions can be disabled, or a maximum number of revisions per post or page can be specified.</p>
+<h4 id="disable-post-revisions">Disable Post Revisions</h4>
+<p>If you do <strong>not</strong> set this value, WordPress defaults WP_POST_REVISIONS to <em>true</em> (enable post revisions). If you want to disable the awesome revisions feature, use this setting:</p>
+<pre><code>define( 'WP_POST_REVISIONS', false );
+</code></pre>
+<p>Note: Some users could not get this to function until moving the command to the first line under the initial block comment in <code>wp-config.php</code>.</p>
+<h4 id="specify-the-number-of-post-revisions">Specify the Number of Post Revisions</h4>
+<p>If you want to specify a maximum number of revisions that WordPress stores, change <em>false</em> to an integer/number (<em>e.g.</em>, 3 or 12).</p>
+<pre><code>define( 'WP_POST_REVISIONS', 3 );
+</code></pre>
+<p>Note: Some users could not get this to function until moving the command to the first line under the initial block comment in <code>wp-config.php</code>.</p>
+<h3 class="is-toc-heading" id="set-cookie-domain" tabindex="-1"><a href="#set-cookie-domain">Set Cookie Domain</a></h3>
+<p>The domain set in the cookies for WordPress can be specified for those with unusual domain setups. For example, if subdomains are used to serve static content, you can set the cookie domain to only your non-static domain to prevent WordPress cookies from being sent with each request to static content on your subdomain .</p>
+<pre><code>define( 'COOKIE_DOMAIN', 'www.example.com' );
+</code></pre>
+<h3 class="is-toc-heading" id="enable-multisite-network-ability" tabindex="-1"><a href="#enable-multisite-network-ability">Enable Multisite / Network Ability</a></h3>
+<p>WP_ALLOW_MULTISITE is a feature enable multisite functionality. If this setting is absent from <code>wp-config.php</code> it defaults to false.</p>
+<pre><code>define( 'WP_ALLOW_MULTISITE', true );
+</code></pre>
+<h3 class="is-toc-heading" id="redirect-nonexistent-blogs" tabindex="-1"><a href="#redirect-nonexistent-blogs">Redirect Nonexistent Blogs</a></h3>
+<p>NOBLOGREDIRECT can be used to redirect the browser if the visitor tries to access a nonexistent subdomain or a subfolder.</p>
+<pre><code>define( 'NOBLOGREDIRECT', 'https://example.com' );
+</code></pre>
+<h3 class="is-toc-heading" id="wp-disable-fatal-error-handler" tabindex="-1"><a href="#wp-disable-fatal-error-handler">Fatal Error Handler</a></h3>
+<p>WordPress 5.2 introduced <a href="https://make.wordpress.org/core/2019/04/16/fatal-error-recovery-mode-in-5-2/">Recovery Mode</a> which displays error message instead of white screen when plugins causes fatal error.</p>
+<p><em>The site is experiencing technical difficulties. Please check your site admin email inbox for instructions.</em></p>
+<p>White screens and PHP error messages are not displayed to users any more. But in a development environment, if you want to enable WP_DEBUG_DISPLAY, you have to disable recovery mode by set true to WP_DISABLE_FATAL_ERROR_HANDLER.</p>
+<pre><code>define( 'WP_DISABLE_FATAL_ERROR_HANDLER', true ); // 5.2 and later
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_DISPLAY', true );
+</code></pre>
+<h3 class="is-toc-heading" id="wp-debug" tabindex="-1"><a href="#wp-debug">WP_DEBUG</a></h3>
+<p>The <a href="https://developer.notmatt.press/advanced-administration/debug/debug-wordpress/">WP_DEBUG</a> option controls the reporting of some errors and warnings and enables use of the WP_DEBUG_DISPLAY and WP_DEBUG_LOG settings. The default boolean value is false.</p>
+<pre><code>define( 'WP_DISABLE_FATAL_ERROR_HANDLER', true ); // 5.2 and later
+define( 'WP_DEBUG', true );
+</code></pre>
+<p><a href="https://trac.wordpress.org/ticket/5473">Database errors are printed only if WP_DEBUG is set to true</a>. Database errors are handled by the <a href="https://developer.notmatt.press/reference/classes/wpdb/">wpdb</a> class and are not affected by <a href="https://www.php.net/errorfunc">PHP’s error settings</a>.</p>
+<p>Setting WP_DEBUG to true also raises the <a href="https://www.php.net/manual/en/errorfunc.configuration.php#ini.error-reporting">error reporting level</a> to E_ALL and activates warnings when deprecated functions or files are used; otherwise, WordPress sets the error reporting level to E_ALL ^ E_NOTICE ^ E_USER_NOTICE.</p>
+<h3 class="is-toc-heading" id="wp-environment-type" tabindex="-1"><a href="#wp-environment-type">WP_ENVIRONMENT_TYPE</a></h3>
+<p>The WP_ENVIRONMENT_TYPE option controls the environment type for a site: <code>local</code>, <code>development</code>, <code>staging</code>, and <code>production</code>.</p>
+<p>The values of environment types are processed in the following order with each sequential method overriding any previous values: the WP_ENVIRONMENT_TYPE <a href="https://www.php.net/manual/en/reserved.variables.environment.php">PHP environment variable</a> and the WP_ENVIRONMENT_TYPE constant.</p>
+<p>For both methods, if the value of an environment type provided is not in the list of allowed environment types, the default <code>production</code> value will be returned.</p>
+<p>The simplest way to set the value is probably through defining the constant:</p>
+<pre><code>define( 'WP_ENVIRONMENT_TYPE', 'staging' );
+</code></pre>
+<p>Note: When <code>development</code> is returned by <a href="https://developer.notmatt.press/reference/functions/wp_get_environment_type/">wp_get_environment_type()</a>, WP_DEBUG will be set to <code>true</code> if it is not defined in the <code>wp-config.php</code> file of the site.</p>
+<h3 class="is-toc-heading" id="script-debug" tabindex="-1"><a href="#script-debug">SCRIPT_DEBUG</a></h3>
+<p><a href="https://developer.notmatt.press/advanced-administration/debug/debug-wordpress/">SCRIPT_DEBUG</a> is a related constant that will force WordPress to use the “dev” versions of scripts and stylesheets in <code>wp-includes/js</code>, <code>wp-includes/css</code>, <code>wp-admin/js</code>, and <code>wp-admin/css</code> will be loaded instead of the <code>.min.css</code> and <code>.min.js</code> versions. If you are planning on modifying some of WordPress’ built-in JavaScript or Cascading Style Sheets, you should add the following code to your config file:</p>
+<pre><code>define( 'SCRIPT_DEBUG', true );
+</code></pre>
+<h3 class="is-toc-heading" id="disable-javascript-concatenation" tabindex="-1"><a href="#disable-javascript-concatenation">Disable Javascript Concatenation</a></h3>
+<p>To result in faster administration screens, all JavaScript files are <a href="https://en.wikipedia.org/wiki/Concatenation">concatenated</a> into one URL. If JavaScript is failing to work in an administration screen, you can try disabling this feature:</p>
+<pre><code>define( 'CONCATENATE_SCRIPTS', false );
+</code></pre>
+<h3 class="is-toc-heading" id="configure-error-logging" tabindex="-1"><a href="#configure-error-logging">Configure Error Logging</a></h3>
+<p>Configuring error logging can be a bit tricky. First of all, default PHP error log and display settings are set in the php.ini file, which you may or may not have access to. If you do, they should be set to the desired settings for live PHP pages served to the public. It’s strongly recommended that no error messages are displayed to the public and instead routed to an error log. Further more, error logs should not be located in the publicly accessible portion of your server. Sample recommended php.ini error settings:</p>
+<pre><code>error_reporting = 4339
+display_errors = Off
+display_startup_errors = Off
+log_errors = On
+error_log = /home/example.com/logs/php_error.log
+log_errors_max_len = 1024
+ignore_repeated_errors = On
+ignore_repeated_source = Off
+html_errors = Off
+</code></pre>
+<p><strong>About Error Reporting 4339</strong> This is a custom value that only logs issues that affect the functioning of your site, and ignores things like notices that may not even be errors. See <a href="https://www.php.net/manual/en/errorfunc.constants.php">PHP Error Constants</a> for the meaning of each binary position for 1000011110011, which is the binary number equal to 4339. The far left 1 means report any E_RECOVERABLE_ERROR. The next 0 means do not report E_STRICT, (which is thrown when sloppy but functional coding is used) and so on. Feel free to determine your own custom error reporting number to use in place of 4339.</p>
+<p>Obviously, you will want different settings for your development environment. If your staging copy is on the same server, or you don’t have access to <code>php.ini</code>, you will need to override the default settings at run time. It’s a matter of personal preference whether you prefer errors to go to a log file, or you prefer to be notified immediately of any error, or perhaps both. Here’s an example that reports all errors immediately that you could insert into your <code>wp-config.php</code> file:</p>
+<pre><code>@ini_set( 'log_errors', 'Off' );
+@ini_set( 'display_errors', 'On' );
+define( 'WP_DISABLE_FATAL_ERROR_HANDLER', true ); // 5.2 and later
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', false );
+define( 'WP_DEBUG_DISPLAY', true );
+</code></pre>
+<p>Because <code>wp-config.php</code> is loaded for every page view not loaded from a cache file, it is an excellent location to set <code>php.ini</code> settings that control your PHP installation. This is useful if you don’t have access to a <code>php.ini</code> file, or if you just want to change some settings on the fly. One exception is ‘error_reporting’. When WP_DEBUG is defined as true, ‘error_reporting’ will be set to E_ALL by WordPress regardless of anything you try to set in wp-config.php. If you really have a need to set ‘error_reporting’ to something else, it must be done after <code>wp-settings.php</code> is loaded, such as in a plugin file.</p>
+<p>If you turn on error logging, remember to delete the file afterwards, as it will often be in a publicly accessible location, where anyone could gain access to your log.</p>
+<p>Here is an example that turns PHP error_logging on and logs them to a specific file. If WP_DEBUG is defined to true, the errors will also be saved to this file. Just place this above any <em>require_once</em> or <em>include</em> commands.</p>
+<pre><code>@ini_set( 'log_errors', 'On' );
+@ini_set( 'display_errors', 'Off' );
+@ini_set( 'error_log', '/home/example.com/logs/php_error.log' );
+/* That's all, stop editing! Happy blogging. */
+</code></pre>
+<p>Another example of logging errors, as suggested by Mike Little on the <a href="https://lists.automattic.com/pipermail/wp-hackers/2010-September/034830.html">wp-hackers email list</a>:</p>
+<pre><code>/**
+ * This will log all errors notices and warnings to a file called debug.log in
+ * wp-content (if Apache does not have write permission, you may need to create
+ * the file first and set the appropriate permissions (i.e. use 666) )
+ */
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', true );
+define( 'WP_DEBUG_DISPLAY', false );
+@ini_set( 'display_errors', 0 );
+</code></pre>
+<p>A refined version from Mike Little on the <a href="https://groups.google.com/g/manchester-wordpress-user-group/c/tHJxMGhcnZs/m/dn-8yjYIq9wJ">Manchester WordPress User Group</a>:</p>
+<pre><code>/**
+ * This will log all errors notices and warnings to a file called debug.log in
+ * wp-content only when WP_DEBUG is true. if Apache does not have write permission,
+ * you may need to create the file first and set the appropriate permissions (i.e. use 666).
+ */
+define( 'WP_DEBUG', true ); // Or false
+if ( WP_DEBUG ) {
+    define( 'WP_DEBUG_LOG', true );
+    define( 'WP_DEBUG_DISPLAY', false );
+    @ini_set( 'display_errors', 0 );
+}
+</code></pre>
+<p>Confusing the issue is that WordPress has three (3) constants that look like they could do the same thing. First off, remember that if WP_DEBUG is false, it and the other two WordPress DEBUG constants do not do anything. The PHP directives, whatever they are, will prevail. Except for ‘error_reporting’, WordPress will set this to 4983 if WP_DEBUG is defined as false. Second, even if WP_DEBUG is true, the other constants only do something if they too are set to true. If they are set to false, the PHP directives remain unchanged. For example, if your <code>php.ini</code> file has the directive (‘display_errors’ = ‘On’); but you have the statement define( ‘WP_DEBUG_DISPLAY’, false ); in your <code>wp-config.php</code> file, errors will still be displayed on screen even though you tried to prevent it by setting WP_DEBUG_DISPLAY to false because that is the PHP configured behavior. This is why it’s very important to set the PHP directives to what you need in case any of the related WP constants are set to false. To be safe, explicitly set/define both types. More detailed descriptions of the WP constants is available at <a href="https://developer.notmatt.press/advanced-administration/debug/debug-wordpress/">Debugging in WordPress</a>.</p>
+<p>For your public, production WordPress installation, you might consider placing the following in your <code>wp-config.php</code> file, even though it may be partly redundant:</p>
+<pre><code>@ini_set( 'log_errors', 'On' );
+@ini_set( 'display_errors', 'Off' );
+define( 'WP_DISABLE_FATAL_ERROR_HANDLER', false ); // 5.2 and later
+define( 'WP_DEBUG', false );
+define( 'WP_DEBUG_LOG', false );
+define( 'WP_DEBUG_DISPLAY', false );
+</code></pre>
+<p>The default debug log file is <code>/wp-content/debug.log</code>. Placing error logs in publicly accessible locations is a security risk. Ideally, your log files should be placed above you site’s public root directory. If you can’t do this, at the very least, set the log file permissions to 600 and add this entry to the <code>.htaccess</code> file in the root directory of your WordPress installation:</p>
+<pre><code>&lt;Files debug.log&gt;
+  Order allow,deny
+  Deny from all
+&lt;/Files&gt;
+</code></pre>
+<p>This prevents anyone from accessing the file via HTTP. You can always view the log file by retrieving it from your server via FTP.</p>
+<h3 class="is-toc-heading" id="increasing-memory-allocated-to-php" tabindex="-1"><a href="#increasing-memory-allocated-to-php">Increasing memory allocated to PHP</a></h3>
+<p><strong>WP_MEMORY_LIMIT</strong> option allows you to specify the maximum amount of memory that can be consumed by PHP. This setting may be necessary in the event you receive a message such as “Allowed memory size of xxxxxx bytes exhausted”.</p>
+<p>This setting increases PHP Memory only for WordPress, not other applications. By default, WordPress will attempt to increase memory allocated to PHP to 40MB (code is at the beginning of <code>/wp-includes/default-constants.php</code>) for single site and 64MB for multisite, so the setting in <code>wp-config.php</code> should reflect something higher than 40MB or 64MB depending on your setup.</p>
+<p>WordPress will automatically check if PHP has been allocated less memory than the entered value before utilizing this function. For example, if PHP has been allocated 64MB, there is no need to set this value to 64M as WordPress will automatically use all 64MB if need be.</p>
+<p>Note: Some hosts do not allow for increasing the PHP memory limit automatically. In that event, contact your host to increase the PHP memory limit. Also, many hosts set the PHP limit at 8MB.</p>
+<p>Adjusting the WordPress memory limit potentially creates problems as well. You might end up hiding the root of the issue for it to happen later down the line as you add in more plugins or functionalities.</p>
+<p>If you are facing Out of Memory issues even with an elevated memory limit, you should properly debug your installation. Chances are you have too many memory intensive functions tied to a specific action and should move these functions to a cronjob.</p>
+<p>Increase PHP Memory to 64MB</p>
+<pre><code>define( 'WP_MEMORY_LIMIT', '64M' );
+</code></pre>
+<p>Increase PHP Memory to 96MB</p>
+<pre><code>define( 'WP_MEMORY_LIMIT', '96M' );
+</code></pre>
+<p>Administration tasks require may require memory than usual operation. When in the administration area, the memory can be increased or decreased from the WP_MEMORY_LIMIT by defining WP_MAX_MEMORY_LIMIT.</p>
+<pre><code>define( 'WP_MAX_MEMORY_LIMIT', '128M' );
+</code></pre>
+<p>Note: this has to be put before wp-settings.php inclusion.</p>
+<h3 class="is-toc-heading" id="cache" tabindex="-1"><a href="#cache">Cache</a></h3>
+<p>The <strong>WP_CACHE</strong> setting, if true, includes the <code>wp-content/advanced-cache.php</code> script, when executing <code>wp-settings.php</code>.</p>
+<pre><code>define( 'WP_CACHE', true );
+</code></pre>
+<h3 class="is-toc-heading" id="custom-user-and-usermeta-tables" tabindex="-1"><a href="#custom-user-and-usermeta-tables">Custom User and Usermeta Tables</a></h3>
+<p><strong>CUSTOM_USER_TABLE</strong> and <strong>CUSTOM_USER_META_TABLE</strong> are used to designate that the user and usermeta tables normally utilized by WordPress are not used, instead these values/tables are used to store your user information.</p>
+<pre><code>define( 'CUSTOM_USER_TABLE', $table_prefix.'my_users' );
+define( 'CUSTOM_USER_META_TABLE', $table_prefix.'my_usermeta' );
+</code></pre>
+<p>Note: Even if ‘CUSTOM_USER_META_TABLE’ is manually set, a usermeta table is still created for each database with the corresponding permissions for each instance. By default, the WordPress installer will add permissions for the first user (ID #1). You also need to manage permissions to each of the site via a plugin or custom function. If this isn’t setup you will experience permission errors and log-in issues.</p>
+<p>CUSTOM_USER_TABLE is easiest to adopt during initial Setup your first instance of WordPress. The define statements of the <code>wp-config.php</code> on the first instance point to where <code>wp_users</code> data will be stored by default. After the first site setup, copying the working <code>wp-config.php</code> to your next instance will only require a change the <code>$table_prefix</code> variable. Do not use an e-mail address that is already in use by your original install. Once you have finished the setup process log in with the auto generated admin account and password. Next, promote your normal account to the administrator level and Log out of admin. Log back in as yourself, delete the admin account and promote the other user accounts as is needed.</p>
+<h3 class="is-toc-heading" id="language-and-language-directory" tabindex="-1"><a href="#language-and-language-directory">Language and Language Directory</a></h3>
+<p>WordPress <a href="https://wordpress.org/documentation/wordpress-version/version-4-0/">Version 4.0</a> allows you to change the language in your WordPress <a href="https://wordpress.org/documentation/article/administration-screens/">Administration Screens</a>. To change the language in the admin settings screen. Go to <a href="https://wordpress.org/documentation/article/administration-screens/#settings-configuration-settings">Settings</a> &gt; <a href="https://wordpress.org/documentation/article/settings-general-screen/">General</a> and select Site Language.</p>
+<h4 id="wordpress-v3-9-6-and-below">WordPress v3.9.6 and below</h4>
+<p><strong>WPLANG</strong> defines the name of the language translation (.mo) file. <strong>WP_LANG_DIR</strong> defines what directory the WPLANG .mo file resides. If WP_LANG_DIR is not defined WordPress looks first to wp-content/languages and then <code>wp-includes/languages</code> for the .mo defined by WPLANG file.</p>
+<pre><code>define( 'WPLANG', 'de_DE' );
+define( 'WP_LANG_DIR', dirname(__FILE__) . 'wordpress/languages' );
+</code></pre>
+<p>To find out the WPLANG language code, please <a href="https://make.wordpress.org/polyglots/teams/">refer here</a>. The code in WP Local column is what you need.</p>
+<h3 class="is-toc-heading" id="save-queries-for-analysis" tabindex="-1"><a href="#save-queries-for-analysis">Save queries for analysis</a></h3>
+<p>The <strong>SAVEQUERIES</strong> definition saves the database queries to an array and that array can be displayed to help analyze those queries. The information saves each query, what function called it, and how long that query took to execute. <strong>Note:</strong> This will have a performance impact on your site, so make sure to turn this off when you aren’t debugging.</p>
+<p>First, add this to the <code>wp-config.php</code> file:</p>
+<pre><code>define( 'SAVEQUERIES', true );
+</code></pre>
+<p>Then in the footer of your theme put this:</p>
+<pre><code>if ( current_user_can( 'administrator' ) ) {
+  global $wpdb;
+  echo "&lt;pre&gt;";
+  print_r( $wpdb-&gt;queries );
+  echo "&lt;/pre&gt;";
+}
+</code></pre>
+<p>Alternatively, consider using <a href="https://wordpress.org/plugins/query-monitor/">Query Monitor</a></p>
+<h3 class="is-toc-heading" id="override-of-default-file-permissions" tabindex="-1"><a href="#override-of-default-file-permissions">Override of default file permissions</a></h3>
+<p>The <strong>FS_CHMOD_DIR</strong> and <strong>FS_CHMOD_FILE</strong> define statements allow override of default file permissions. These two variables were developed in response to the problem of the core update function failing with hosts running under <a href="https://en.wikipedia.org/wiki/SuEXEC">suexec</a>. If a host uses restrictive file permissions (e.g. 400) for all user files, and refuses to access files which have group or world permissions set, these definitions could solve the problem.</p>
+<pre><code>define( 'FS_CHMOD_DIR', ( 0755 &amp; ~ umask() ) );
+define( 'FS_CHMOD_FILE', ( 0644 &amp; ~ umask() ) );
+</code></pre>
+<p>Example to provide setgid:</p>
+<pre><code>define( 'FS_CHMOD_DIR', ( 02755 &amp; ~umask() ) );
+</code></pre>
+<p>Note: ‘<strong>0755′</strong> and ‘<strong>02755</strong>‘ are octal values. Octal values must be prefixed with a 0 and are not delineated with single quotes (‘). See Also: <a href="https://developer.notmatt.press/advanced-administration/server/file-permissions/">Changing File Permissions</a></p>
+<h3 class="is-toc-heading" id="wordpress-upgrade-constants" tabindex="-1"><a href="#wordpress-upgrade-constants">WordPress Upgrade Constants</a></h3>
+<p><strong>Note: Define as few of the below constants as needed to correct your update issues.</strong></p>
+<p>The most common causes of needing to define these are:</p>
+<p>Host running with a special installation setup involving symlinks. You may need to define the path-related constants (FTP_BASE, FTP_CONTENT_DIR, and FTP_PLUGIN_DIR). Often defining simply the base will be enough.</p>
+<p>Certain PHP installations shipped with a PHP FTP extension which is incompatible with certain FTP servers. Under these rare situations, you may need to define FS_METHOD to “ftpsockets”.</p>
+<p>The following are valid constants for WordPress updates:</p>
+<ul>
+<li><strong>FS_METHOD</strong> forces the filesystem method. It should only be “direct”, “ssh2”, “ftpext”, or “ftpsockets”. Generally, you should only change this if you are experiencing update problems. If you change it and it doesn’t help, <strong>change it back/remove it</strong>. Under most circumstances, setting it to ‘ftpsockets’ will work if the automatically chosen method does not.
+<ul>
+<li><strong>(Primary Preference) “direct”</strong> forces it to use Direct File I/O requests from within PHP, this is fraught with opening up security issues on poorly configured hosts, This is chosen automatically when appropriate.</li>
+<li><strong>(Secondary Preference) “ssh2”</strong> is to force the usage of the SSH PHP Extension if installed</li>
+<li><strong>(3rd Preference) “ftpext”</strong> is to force the usage of the FTP PHP Extension for FTP Access, and finally</li>
+<li><strong>(4th Preference) “ftpsockets”</strong> utilises the PHP Sockets Class for FTP Access.</li>
+</ul>
+</li>
+<li><strong>FTP_BASE</strong> is the full path to the “base”(ABSPATH) folder of the WordPress installation.</li>
+<li><strong>FTP_CONTENT_DIR</strong> is the full path to the wp-content folder of the WordPress installation.</li>
+<li><strong>FTP_PLUGIN_DIR</strong> is the full path to the plugins folder of the WordPress installation.</li>
+<li><strong>FTP_PUBKEY</strong> is the full path to your SSH public key.</li>
+<li><strong>FTP_PRIKEY</strong> is the full path to your SSH private key.</li>
+<li><strong>FTP_USER</strong> is either user FTP or SSH username. Most likely these are the same, but use the appropriate one for the type of update you wish to do.</li>
+<li><strong>FTP_PASS</strong> is the password for the username entered for <strong>FTP_USER</strong>. If you are using SSH public key authentication this can be omitted.</li>
+<li><strong>FTP_HOST</strong> is the hostname:port combination for your SSH/FTP server. The default FTP port is 21 and the default SSH port is 22. These do not need to be mentioned.</li>
+<li><strong>FTP_SSL</strong> TRUE for SSL-connection <em>if supported by the underlying transport</em> (not available on all servers). This is for “Secure FTP” not for SSH SFTP.</li>
+</ul>
+<pre><code>define( 'FS_METHOD', 'ftpext' );
+define( 'FTP_BASE', '/path/to/wordpress/' );
+define( 'FTP_CONTENT_DIR', '/path/to/wordpress/wp-content/' );
+define( 'FTP_PLUGIN_DIR ', '/path/to/wordpress/wp-content/plugins/' );
+define( 'FTP_PUBKEY', '/home/username/.ssh/id_rsa.pub' );
+define( 'FTP_PRIKEY', '/home/username/.ssh/id_rsa' );
+define( 'FTP_USER', 'username' );
+define( 'FTP_PASS', 'password' );
+define( 'FTP_HOST', 'ftp.example.org' );
+define( 'FTP_SSL', false );
+</code></pre>
+<p>Some configurations should set FTP_HOST to localhost to avoid 503 problems when trying to update plugins or WP itself.</p>
+<h4 id="enabling-ssh-upgrade-access">Enabling SSH Upgrade Access</h4>
+<p>There are two ways to upgrade using SSH2.</p>
+<p>The first is to use the <a href="https://wordpress.org/plugins/ssh-sftp-updater-support/">SSH SFTP Updater Support plugin</a>. The second is to use the built-in SSH2 upgrader, which requires the pecl SSH2 extension be installed.</p>
+<p>To install the pecl SSH2 extension you will need to issue a command similar to the following or talk to your web hosting provider to get this installed:</p>
+<pre><code>pecl install ssh2
+</code></pre>
+<p>After installing the pecl ssh2 extension you will need to modify your PHP configuration to automatically load this extension.</p>
+<p>pecl is provided by the pear package in most linux distributions. To install pecl in Redhat/Fedora/CentOS:</p>
+<pre><code>yum -y install php-pear
+</code></pre>
+<p>To install pecl in Debian/Ubuntu:</p>
+<pre><code>apt-get install php-pear
+</code></pre>
+<p>It is recommended to use a private key that is not pass-phrase protected. There have been numerous reports that pass phrase protected private keys do not work properly. If you decide to try a pass phrase protected private key you will need to enter the pass phrase for the private key as FTP_PASS, or entering it in the “Password” field in the presented credential field when installing updates.</p>
+<h3 class="is-toc-heading" id="alternative-cron" tabindex="-1"><a href="#alternative-cron">Alternative Cron</a></h3>
+<p>There might be reason to use an alternative Cron with WP. Most commonly this is done if scheduled posts are not getting published as predicted. This alternative method uses a redirection approach. The users’ browser get a redirect when the cron needs to run, so that they come back to the site immediately while cron continues to run in the connection they just dropped. This method has certain risks, since it depends on a non-native WordPress service.</p>
+<pre><code>define( 'ALTERNATE_WP_CRON', true );
+</code></pre>
+<h3 class="is-toc-heading" id="disable-cron-and-cron-timeout" tabindex="-1"><a href="#disable-cron-and-cron-timeout">Disable Cron and Cron Timeout</a></h3>
+<p>Disable cron entirely by setting DISABLE_WP_CRON to true.</p>
+<pre><code>define( 'DISABLE_WP_CRON', true );
+</code></pre>
+<p>Make sure a cron process cannot run more than once every WP_CRON_LOCK_TIMEOUT seconds.</p>
+<pre><code>define( 'WP_CRON_LOCK_TIMEOUT', 60 );
+</code></pre>
+<h3 class="is-toc-heading" id="additional-defined-constants" tabindex="-1"><a href="#additional-defined-constants">Additional Defined Constants</a></h3>
+<p>Here are additional constants that can be defined. These probably shouldn’t be set unless other methodologies have been attempted first. The Cookie definitions can be particularly useful if you have an unusual domain setup.</p>
+<pre><code>define( 'COOKIEPATH', preg_replace( '|https?://[^/]+|i', '', get_option( 'home' ) . '/' ) );
+define( 'SITECOOKIEPATH', preg_replace( '|https?://[^/]+|i', '', get_option( 'siteurl' ) . '/' ) );
+define( 'ADMIN_COOKIE_PATH', SITECOOKIEPATH . 'wp-admin' );
+define( 'PLUGINS_COOKIE_PATH', preg_replace( '|https?://[^/]+|i', '', WP_PLUGIN_URL ) );
+define( 'TEMPLATEPATH', get_template_directory() );
+define( 'STYLESHEETPATH', get_stylesheet_directory() );
+</code></pre>
+<h3 class="is-toc-heading" id="empty-trash" tabindex="-1"><a href="#empty-trash">Empty Trash</a></h3>
+<p>This constant controls the number of days before WordPress permanently deletes posts, pages, attachments, and comments, from the trash bin. The default is 30 days:</p>
+<pre><code>define( 'EMPTY_TRASH_DAYS', 30 ); // 30 days
+</code></pre>
+<p>To disable trash set the number of days to zero.</p>
+<pre><code>define( 'EMPTY_TRASH_DAYS', 0 ); // Zero days
+</code></pre>
+<p><strong>Note:</strong> WordPress will not ask for confirmation when someone clicks on “Delete Permanently” using this setting.</p>
+<h3 class="is-toc-heading" id="automatic-database-optimizing" tabindex="-1"><a href="#automatic-database-optimizing">Automatic Database Optimizing</a></h3>
+<p>There is automatic database repair support, which you can enable by adding the following define to your <code>wp-config.php</code> file.</p>
+<p>Note: This should only be enabled if needed and disabled once the issue is solved. When enabled, a user does not need to be logged in to access the functionality, since its main intent is to repair a corrupted database and users can often not login when the database is corrupt.</p>
+<pre><code>define( 'WP_ALLOW_REPAIR', true );
+</code></pre>
+<p>The script can be found at <code>{$your_site}/wp-admin/maint/repair.php</code>.</p>
+<h3 class="is-toc-heading" id="do-not-upgrade-global-tables" tabindex="-1"><a href="#do-not-upgrade-global-tables">DO_NOT_UPGRADE_GLOBAL_TABLES</a></h3>
+<p>A <strong>DO_NOT_UPGRADE_GLOBAL_TABLES</strong> define prevents <a href="https://developer.notmatt.press/reference/functions/dbdelta/">dbDelta()</a> and the upgrade functions from doing expensive queries against global tables.</p>
+<p>Sites that have large global tables (particularly users and usermeta), as well as sites that share user tables with bbPress and other WordPress installs, can prevent the upgrade from changing those tables during upgrade by defining <strong>DO_NOT_UPGRADE_GLOBAL_TABLES</strong> to true. Since an ALTER, or an unbounded DELETE or UPDATE, can take a long time to complete, large sites usually want to avoid these being run as part of the upgrade so they can handle it themselves. Further, if installations are sharing user tables between multiple bbPress and WordPress installs you may to want one site to be the upgrade master.</p>
+<pre><code>define( 'DO_NOT_UPGRADE_GLOBAL_TABLES', true );
+</code></pre>
+<h3 class="is-toc-heading" id="view-all-defined-constants" tabindex="-1"><a href="#view-all-defined-constants">View All Defined Constants</a></h3>
+<p>PHP has a function that returns an array of all the currently defined constants with their values.</p>
+<pre><code>print_r( @get_defined_constants() );
+</code></pre>
+<h3 class="is-toc-heading" id="disable-the-plugin-and-theme-file-editor" tabindex="-1"><a href="#disable-the-plugin-and-theme-file-editor">Disable the Plugin and Theme File Editor</a></h3>
+<p>Occasionally you may wish to disable the plugin or theme file editor to prevent overzealous users from being able to edit sensitive files and potentially crash the site. Disabling these also provides an additional layer of security if a hacker gains access to a well-privileged user account.</p>
+<pre><code>define( 'DISALLOW_FILE_EDIT', true );
+</code></pre>
+<p><strong>Note</strong>: The functionality of some plugins may be affected by the use of <code>current_user_can('edit_plugins')</code> in their code. Plugin authors should avoid checking for this capability, or at least check if this constant is set and display an appropriate error message. Be aware that if a plugin is not working this may be the cause.</p>
+<h3 class="is-toc-heading" id="disable-plugin-and-theme-update-and-installation" tabindex="-1"><a href="#disable-plugin-and-theme-update-and-installation">Disable Plugin and Theme Update and Installation</a></h3>
+<p>This will block users being able to use the plugin and theme installation/update functionality from the WordPress admin area. Setting this constant also disables the Plugin and Theme File editor (i.e. you don’t need to set DISALLOW_FILE_MODS and DISALLOW_FILE_EDIT, as on its own DISALLOW_FILE_MODS will have the same effect).</p>
+<pre><code>define( 'DISALLOW_FILE_MODS', true );
+</code></pre>
+<h3 class="is-toc-heading" id="require-ssl-for-admin-and-logins" tabindex="-1"><a href="#require-ssl-for-admin-and-logins">Require SSL for Admin and Logins</a></h3>
+<p><strong>Note:</strong> WordPress <a href="https://wordpress.org/documentation/wordpress-version/version-4-0/">Version 4.0</a> deprecated FORCE_SSL_LOGIN. Please use FORCE_SSL_ADMIN.</p>
+<p>FORCE_SSL_ADMIN is for when you want to secure logins and the admin area so that both passwords and cookies are never sent in the clear. See also <a href="https://developer.notmatt.press/advanced-administration/security/https/">HTTPS</a> for more details.</p>
+<pre><code>define( 'FORCE_SSL_ADMIN', true );
+</code></pre>
+<h3 class="is-toc-heading" id="block-external-url-requests" tabindex="-1"><a href="#block-external-url-requests">Block External URL Requests</a></h3>
+<p>Block external URL requests by defining WP_HTTP_BLOCK_EXTERNAL as true and this will only allow localhost and your blog to make requests. The constant WP_ACCESSIBLE_HOSTS will allow additional hosts to go through for requests. The format of the WP_ACCESSIBLE_HOSTS constant is a comma separated list of hostnames to allow, wildcard domains are supported, eg <code>*.wordpress.org</code> will allow for all subdomains of wordpress.org to be contacted.</p>
+<pre><code>define( 'WP_HTTP_BLOCK_EXTERNAL', true );
+define( 'WP_ACCESSIBLE_HOSTS', 'api.wordpress.org,*.github.com' );
+</code></pre>
+<h3 class="is-toc-heading" id="disable-wordpress-auto-updates" tabindex="-1"><a href="#disable-wordpress-auto-updates">Disable WordPress Auto Updates</a></h3>
+<p>There might be reason for a site to not auto-update, such as customizations or host supplied updates. It can also be done before a major release to allow time for testing on a development or staging environment before allowing the update on a production site.</p>
+<pre><code>define( 'AUTOMATIC_UPDATER_DISABLED', true );
+</code></pre>
+<h3 class="is-toc-heading" id="disable-wordpress-core-updates" tabindex="-1"><a href="#disable-wordpress-core-updates">Disable WordPress Core Updates</a></h3>
+<p>The easiest way to manipulate core updates is with the WP_AUTO_UPDATE_CORE constant:</p>
+<p><strong>Disable all core updates:</strong></p>
+<pre><code>define( 'WP_AUTO_UPDATE_CORE', false );
+</code></pre>
+<p><strong>Enable all core updates, including minor and major:</strong></p>
+<pre><code>define( 'WP_AUTO_UPDATE_CORE', true );
+</code></pre>
+<p><strong>Enable core updates for minor releases (default):</strong></p>
+<pre><code>define( 'WP_AUTO_UPDATE_CORE', 'minor' );
+</code></pre>
+<p>Reference: <a href="https://make.wordpress.org/core/2013/10/25/the-definitive-guide-to-disabling-auto-updates-in-wordpress-3-7/">Disabling Auto Updates in WordPress 3.7</a></p>
+<h3 class="is-toc-heading" id="cleanup-image-edits" tabindex="-1"><a href="#cleanup-image-edits">Cleanup Image Edits</a></h3>
+<p>By default, WordPress creates a new set of images every time you edit an image and when you restore the original, it leaves all the edits on the server. Defining IMAGE_EDIT_OVERWRITE as true changes this behavior. Only one set of image edits are ever created and when you restore the original, the edits are removed from the server.</p>
+<pre><code>define( 'IMAGE_EDIT_OVERWRITE', true );
+</code></pre>
+<h2 class="is-toc-heading" id="double-check-before-saving" tabindex="-1"><a href="#double-check-before-saving">Double Check Before Saving</a></h2>
+<p><em><strong>Be sure to check for leading and/or trailing spaces around any of the above values you entered, and DON’T delete the single quotes!</strong></em></p>
+<p>Before you save the file, be sure to <strong>double-check</strong> that you have not accidentally deleted any of the single quotes around the parameter values. Be sure there is nothing after the closing PHP tag in the file. The last thing in the file should be <strong>?&gt;</strong> and nothing else. No spaces.</p>
+<p>To save the file, choose <strong>File &gt; Save As &gt; wp-config.php</strong> and save the file in the root of your WordPress install. Upload the file to your web server and you’re ready to install WordPress!</p>
+<h2 class="is-toc-heading" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2>
+<ul>
+<li>2022-10-25: Fix content and links.</li>
+<li>2022-09-04: Original content from <a href="https://developer.notmatt.press/apis/wp-config-php/">wp-config.php</a>; ticket <a href="https://github.com/WordPress/Documentation-Issue-Tracker/issues/349">Github</a>.</li>
+<li>2023-01-20: Add content to the start from <a href="https://wordpress.org/documentation/article/editing-wp-config-php/">documentation</a> ticket <a href="https://github.com/WordPress/Advanced-administration-handbook/issues/89">Github</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

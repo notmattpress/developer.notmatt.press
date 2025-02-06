@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/getting-started/">Getting Started</a></span><span><a href="https://developer.wordpress.org/block-editor/getting-started/fundamentals/">Fundamentals of Block Development</a></span><span class="is-current-page">Markup representation of a block</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Markup representation of a block</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Blocks are stored in the database or within HTML templates using a unique <a href="https://developer.notmatt.press/block-editor/explanations/architecture/key-concepts/#data-and-attributes">HTML-based syntax</a>, distinguished by HTML comments that serve as clear block delimiters. This ensures that block markup is technically valid HTML.</p>
+<p>Here are a few guidelines for the markup that defines a block:</p>
+<ul>
+<li>Core blocks begin with the <code>wp:</code> prefix, followed by the block name (e.g., <code>wp:image</code>). Notably, the <code>core</code> namespace is omitted.</li>
+<li>Custom blocks begin with the <code>wp:</code> prefix, followed by the block namespace and name (e.g., <code>wp:namespace/name</code>).</li>
+<li>The comment can be a single line, self-closing, or wrapper for HTML content.</li>
+<li>Block settings and attributes are stored as a JSON object inside the block comment.</li>
+</ul>
+<p>The following is the simplified markup representation of an Image block:</p>
+<pre><code class="language-html">&lt;!-- wp:image {"sizeSlug":"large"} --&gt;
+&lt;figure class="wp-block-image size-large"&gt;
+    &lt;img src="source.jpg" alt="" /&gt;
+&lt;/figure&gt;
+&lt;!-- /wp:image --&gt;
+</code></pre>
+<p>The markup for a block is crucial both in the Block Editor and for displaying the block on the front end:</p>
+<ul>
+<li>WordPress analyzes the block’s markup within the Editor to extract its data and present the editable version to the user.</li>
+<li>On the front end, WordPress again parses the markup to extract data and render the final HTML output.</li>
+</ul>
+<div class="callout callout-tip">
+    Refer to the <a href="https://developer.notmatt.press/block-editor/explanations/architecture/data-flow/">Data Flow</a> article for a more in-depth look at how block data is parsed in WordPress.
+</div>
+<p>When a block is saved, the <code>save</code> function—defined when the <a href="https://developer.notmatt.press/block-editor/getting-started/fundamentals/registration-of-a-block/#registration-of-the-block-with-javascript-client-side">block is registered in the client</a>—is executed to generate the markup stored in the database, wrapped in block delimiter comments. For dynamically rendered blocks, which typically set <code>save</code> to <code>null</code>, only a placeholder comment with block attributes is saved.</p>
+<p>Here is the markup representation of a dynamically rendered block (<code>save</code> = <code>null</code>). Notice there is no HTML markup besides the comment.</p>
+<pre><code class="language-html">&lt;!-- wp:latest-posts {"postsToShow":4,"displayPostDate":true} /--&gt;
+</code></pre>
+<p>When a block has a <code>save</code> function, the Block Editor checks that the markup created by the <code>save</code> function is identical to the block’s markup saved to the database:</p>
+<ul>
+<li>Discrepancies will trigger a <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-edit-save/#validation">validation error</a>, often due to changes in the <code>save</code> function’s output.</li>
+<li>Developers can address potential validation issues by implementing <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-deprecation/">block deprecations</a> to account for changes.</li>
+</ul>
+<p>As the example above shows, the stored markup is minimal for dynamically rendered blocks. Generally, this is just a delimiter comment containing block attributes, which is not subject to the Block Editor’s validation. This approach reflects the dynamic nature of these blocks, where the actual HTML is generated server-side and is not stored in the database.</p>
+<h2>Additional resources</h2>
+<ul>
+<li><a href="https://developer.notmatt.press/block-editor/explanations/architecture/data-flow/">Data Flow and Data Format</a></li>
+<li><a href="https://developer.notmatt.press/news/2023/02/27/static-vs-dynamic-blocks-whats-the-difference/">Static vs. dynamic blocks: What’s the difference?</a> | Developer Blog</li>
+<li><a href="https://developer.notmatt.press/news/2023/03/10/block-deprecation-a-tutorial/">Block deprecation – a tutorial</a> | Developer Blog</li>
+<li><a href="https://developer.notmatt.press/themes/templates/introduction-to-templates/#block-markup">Introduction to Templates &gt; Block markup</a> | Theme Handbook</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

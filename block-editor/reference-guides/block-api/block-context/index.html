@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Context</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Context</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Block context is a feature which enables ancestor blocks to provide values which can be consumed by descendent blocks within its own hierarchy. Those descendent blocks can inherit these values without resorting to hard-coded values and without an explicit awareness of the block which provides those values.</p>
+<p>This is especially useful in full-site editing where, for example, the contents of a block may depend on the context of the post in which it is displayed. A blogroll template may show excerpts of many different posts. Using block context, there can still be one single “Post Excerpt” block which displays the contents of the post based on an inherited post ID.</p>
+<p>If you are familiar with <a href="https://react.dev/learn/passing-data-deeply-with-context">React Context</a>, block context adopts many of the same ideas. In fact, the client-side block editor implementation of block context is a very simple application of React Context. Block context is also supported in server-side <code>render_callback</code> implementations, demonstrated in the examples below.</p>
+<h2 class="is-toc-heading" id="defining-block-context" tabindex="-1"><a href="#defining-block-context">Defining block context</a></h2>
+<p>Block context is defined in the registered settings of a block. A block can provide a context value, or consume a value it seeks to inherit.</p>
+<h3 class="is-toc-heading" id="providing-block-context" tabindex="-1"><a href="#providing-block-context">Providing block context</a></h3>
+<p>A block can provide a context value by assigning a <code>providesContext</code> property in its registered settings. This is an object which maps a context name to one of the block’s own attributes. The value corresponding to that attribute value is made available to descendent blocks and can be referenced by the same context name. Currently, block context only supports values derived from the block’s own attributes. This could be enhanced in the future to support additional sources of context values.</p>
+<pre><code class="language-js">    attributes: {
+        recordId: {
+            type: 'number',
+        },
+    },
+
+    providesContext: {
+        'my-plugin/recordId': 'recordId',
+    },
+</code></pre>
+<p>For a complete example, refer to the section below.</p>
+<h4>Include a namespace</h4>
+<p>As seen in the above example, it is recommended that you include a namespace as part of the name of the context key so as to avoid potential conflicts with other plugins or default context values provided by WordPress. The context namespace should be specific to your plugin, and in most cases can be the same as used in the name of the block itself.</p>
+<h3 class="is-toc-heading" id="consuming-block-context" tabindex="-1"><a href="#consuming-block-context">Consuming block context</a></h3>
+<p>A block can inherit a context value from an ancestor provider by assigning a <code>usesContext</code> property in its registered settings. This should be assigned as an array of the context names the block seeks to inherit.</p>
+<pre><code class="language-js">registerBlockType('my-plugin/record-title', {
+    title: 'Record Title',
+    category: 'widgets',
+
+    usesContext: ['my-plugin/recordId'],
+
+</code></pre>
+<h2 class="is-toc-heading" id="using-block-context" tabindex="-1"><a href="#using-block-context">Using block context</a></h2>
+<p>Once a block has defined the context it seeks to inherit, this can be accessed in the implementation of <code>edit</code> (JavaScript) and <code>render_callback</code> (PHP). It is provided as an object (JavaScript) or associative array (PHP) of the context values which have been defined for the block. Note that a context value will only be made available if the block explicitly defines a desire to inherit that value.</p>
+<p>Note: Block Context is not available to <code>save</code>.</p>
+<h3 class="is-toc-heading" id="javascript" tabindex="-1"><a href="#javascript">JavaScript</a></h3>
+<pre><code class="language-js">registerBlockType('my-plugin/record-title', {
+
+    edit({ context }) {
+        return 'The record ID: ' + context['my-plugin/recordId'];
+    },
+
+</code></pre>
+<h3 class="is-toc-heading" id="php" tabindex="-1"><a href="#php">PHP</a></h3>
+<p>A block’s context values are available from the <code>context</code> property of the <code>$block</code> argument passed as the third argument to the <code>render_callback</code> function.</p>
+<pre><code class="language-php">register_block_type( 'my-plugin/record-title', array(
+    'render_callback' =&gt; function( $attributes, $content, $block ) {
+        return 'The current record ID is: ' . $block-&gt;context['my-plugin/recordId'];
+    },
+) );
+</code></pre>
+<h2 class="is-toc-heading" id="example" tabindex="-1"><a href="#example">Example</a></h2>
+<ol>
+<li>Create a <code>record</code> block.</li>
+</ol>
+<pre><code>npm init @wordpress/block --namespace my-plugin record
+cd record
+</code></pre>
+<ol>
+<li>Edit <code>src/index.js</code>. Insert the <code>recordId</code> attribute and <code>providesContext</code> property in the <code>registerBlockType</code> function and add the registration of the <code>record-title</code> block at the bottom:</li>
+</ol>
+<pre><code class="language-js">registerBlockType( 'my-plugin/record', {
+    // ... cut ...
+
+    attributes: {
+        recordId: {
+            type: 'number',
+        },
+    },
+
+    providesContext: {
+        'my-plugin/recordId': 'recordId',
+    },
+
+    /**
+     * @see ./edit.js
+     */
+    edit: Edit,
+
+    /**
+     * @see ./save.js
+     */
+    save,
+} );
+
+registerBlockType( 'my-plugin/record-title', {
+    title: 'Record Title',
+    category: 'widgets',
+
+    usesContext: [ 'my-plugin/recordId' ],
+
+    edit( { context } ) {
+        return 'The record ID: ' + context[ 'my-plugin/recordId' ];
+    },
+
+    save() {
+        return null;
+    },
+} );
+</code></pre>
+<ol>
+<li>Edit <code>src/edit.js</code> for the <code>record</code> block. Replace the <code>Edit</code> function with the following code:</li>
+</ol>
+<pre><code class="language-js">import { TextControl } from '@wordpress/components';
+import { InnerBlocks } from '@wordpress/block-editor';
+
+export default function Edit( props ) {
+    const MY_TEMPLATE = [ [ 'my-plugin/record-title', {} ] ];
+    const {
+        attributes: { recordId },
+        setAttributes,
+    } = props;
+    return (
+        &lt;div&gt;
+            &lt;TextControl
+                __nextHasNoMarginBottom
+                __next40pxDefaultSize
+                label={ __( 'Record ID' ) }
+                value={ recordId }
+                onChange={ ( val ) =&gt;
+                    setAttributes( { recordId: Number( val ) } )
+                }
+            /&gt;
+            &lt;InnerBlocks template={ MY_TEMPLATE } templateLock="all" /&gt;
+        &lt;/div&gt;
+    );
+}
+</code></pre>
+<ol>
+<li>Edit <code>src/save.js</code> for the <code>record</code> block. Replace the <code>save</code> function with the following code:</li>
+</ol>
+<pre><code class="language-js">export default function save( props ) {
+    return &lt;p&gt;The record ID: { props.attributes.recordId }&lt;/p&gt;;
+}
+</code></pre>
+<ol>
+<li>Create a new post and add the <code>record</code> block. If you type a number in the text box, you’ll see the same number is shown in the <code>record-title</code> block below it.</li>
+</ol>
+<p><img alt="Block Context Example" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/user-images.githubusercontent.com/8876600/93000215-c8570380-f561-11ea-9bd0-0b2bd0ca1752.png?ssl=1"/></p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

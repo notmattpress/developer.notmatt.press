@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_default_packages_vendor()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_default_packages_vendor()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_default_packages_vendor( <span class="arg-type">WP_Scripts</span> <span class="arg-name">$scripts</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Registers all the WordPress vendor scripts that are in the standardized <code>js/dist/vendor/</code> location.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>For the order of <code>$scripts-&gt;add</code> see <code>wp_default_scripts</code>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$scripts</code><span class="type"><span class="WP_Scripts"><a href="https://developer.notmatt.press/reference/classes/wp_scripts/" rel="class">WP_Scripts</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description"><a href="https://developer.notmatt.press/reference/classes/wp_scripts/" rel="class">WP_Scripts</a> object.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="85"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_default_packages_vendor( $scripts ) {
+	global $wp_locale;
+
+	$suffix = wp_scripts_get_suffix();
+
+	$vendor_scripts = array(
+		'react',
+		'react-dom'         =&gt; array( 'react' ),
+		'react-jsx-runtime' =&gt; array( 'react' ),
+		'regenerator-runtime',
+		'moment',
+		'lodash',
+		'wp-polyfill-fetch',
+		'wp-polyfill-formdata',
+		'wp-polyfill-node-contains',
+		'wp-polyfill-url',
+		'wp-polyfill-dom-rect',
+		'wp-polyfill-element-closest',
+		'wp-polyfill-object-fit',
+		'wp-polyfill-inert',
+		'wp-polyfill',
+	);
+
+	$vendor_scripts_versions = array(
+		'react'                       =&gt; '18.3.1',
+		'react-dom'                   =&gt; '18.3.1',
+		'react-jsx-runtime'           =&gt; '18.3.1',
+		'regenerator-runtime'         =&gt; '0.14.1',
+		'moment'                      =&gt; '2.30.1',
+		'lodash'                      =&gt; '4.17.21',
+		'wp-polyfill-fetch'           =&gt; '3.6.20',
+		'wp-polyfill-formdata'        =&gt; '4.0.10',
+		'wp-polyfill-node-contains'   =&gt; '4.8.0',
+		'wp-polyfill-url'             =&gt; '3.6.4',
+		'wp-polyfill-dom-rect'        =&gt; '4.8.0',
+		'wp-polyfill-element-closest' =&gt; '3.0.2',
+		'wp-polyfill-object-fit'      =&gt; '2.3.5',
+		'wp-polyfill-inert'           =&gt; '3.1.3',
+		'wp-polyfill'                 =&gt; '3.15.0',
+	);
+
+	foreach ( $vendor_scripts as $handle =&gt; $dependencies ) {
+		if ( is_string( $dependencies ) ) {
+			$handle       = $dependencies;
+			$dependencies = array();
+		}
+
+		$path    = "/wp-includes/js/dist/vendor/$handle$suffix.js";
+		$version = $vendor_scripts_versions[ $handle ];
+
+		$scripts-&gt;add( $handle, $path, $dependencies, $version, 1 );
+	}
+
+	did_action( 'init' ) &amp;&amp; $scripts-&gt;add_inline_script( 'lodash', 'window.lodash = _.noConflict();' );
+
+	did_action( 'init' ) &amp;&amp; $scripts-&gt;add_inline_script(
+		'moment',
+		sprintf(
+			"moment.updateLocale( '%s', %s );",
+			esc_js( get_user_locale() ),
+			wp_json_encode(
+				array(
+					'months'         =&gt; array_values( $wp_locale-&gt;month ),
+					'monthsShort'    =&gt; array_values( $wp_locale-&gt;month_abbrev ),
+					'weekdays'       =&gt; array_values( $wp_locale-&gt;weekday ),
+					'weekdaysShort'  =&gt; array_values( $wp_locale-&gt;weekday_abbrev ),
+					'week'           =&gt; array(
+						'dow' =&gt; (int) get_option( 'start_of_week', 0 ),
+					),
+					'longDateFormat' =&gt; array(
+						'LT'   =&gt; get_option( 'time_format', __( 'g:i a' ) ),
+						'LTS'  =&gt; null,
+						'L'    =&gt; null,
+						'LL'   =&gt; get_option( 'date_format', __( 'F j, Y' ) ),
+						'LLL'  =&gt; __( 'F j, Y g:i a' ),
+						'LLLL' =&gt; null,
+					),
+				)
+			)
+		),
+		'after'
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/script-loader.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/script-loader.php#L85">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/script-loader.php#L85-L167">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_scripts_get_suffix/">wp_scripts_get_suffix()</a><code>wp-includes/script-loader.php</code></td><td><p>Returns the suffix that can be used for the scripts.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_js/">esc_js()</a><code>wp-includes/formatting.php</code></td><td><p>Escapes single quotes, <code>"</code>, <code></code>, <code>&amp;amp;</code>, and fixes line endings.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/did_action/">did_action()</a><code>wp-includes/plugin.php</code></td><td><p>Retrieves the number of times an action has been fired during the current request.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_json_encode/">wp_json_encode()</a><code>wp-includes/functions.php</code></td><td><p>Encodes a variable into JSON, with some confidence checks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_default_packages/">wp_default_packages()</a><code>wp-includes/script-loader.php</code></td><td><p>Registers all the WordPress packages scripts.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.0.0/">5.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

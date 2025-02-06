@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/cron/">Cron</a></span><span class="is-current-page">Hooking WP-Cron Into the System Task Scheduler</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Hooking WP-Cron Into the System Task Scheduler</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>As previously mentioned, WP-Cron does not run continuously, which can be an issue if there are critical tasks that must run on time. There is an easy solution for this. Simply set up your system’s task scheduler to run on the intervals you desire (or at the specific time needed). The easiest solution is to use a tool to make a web request to the <code>wp-cron.php</code> file.</p>
+<p>After scheduling the task on your system, there is one more step to complete. WordPress will continue to run WP-Cron on each page load. This is no longer necessary and will contribute to extra resource usage on your server. WP-Cron can be disabled in the <code>wp-config.php</code> file. Open the <code>wp-config.php</code> file for editing and add the following line:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">define( 'DISABLE_WP_CRON', true );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="windows" tabindex="-1"><a href="#windows">Windows</a></h2>
+<p>Windows calls their time based scheduling system the Task Scheduler. It can be accessed via the <strong>Administrative Tools</strong> in the control panel.</p>
+<p>How you setup the task varies with server setup. One method is to use PowerShell and a Basic Task. After creating a Basic Task the following command can be used to call the WordPress Cron script.</p>
+<pre class="wp-block-code"><code class="language-powershell" lang="powershell">powershell "Invoke-WebRequest http://YOUR_SITE_URL/wp-cron.php"</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="macos-and-linux" tabindex="-1"><a href="#macos-and-linux">MacOS and Linux</a></h2>
+<p>Mac OS X and Linux both use cron as their time based scheduling system. It is typically access from the terminal with the <code>crontab -e</code> command. It should be noted that tasks will be run as a regular user or as root depending on the system user running the command.</p>
+<p>Cron has a specific syntax that needs to be followed and contains the following parts:</p>
+<ul class="wp-block-list">
+<li>Minute</li>
+<li>Hour</li>
+<li>Day of month</li>
+<li>Month</li>
+<li>Day of week</li>
+<li>Command to execute</li>
+</ul>
+<figure class="wp-block-image size-large"><img alt="" class="wp-image-11813" data-recalc-dims="1" decoding="async" fetchpriority="high" height="250" sizes="(max-width: 500px) 100vw, 500px" src="https://i0.wp.com/developer.wordpress.org/files/2014/10/plugin-wp-cron-cron-scheduling.png?resize=500%2C250&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2014/10/plugin-wp-cron-cron-scheduling.png?w=500&amp;ssl=1 500w, https://i0.wp.com/developer.wordpress.org/files/2014/10/plugin-wp-cron-cron-scheduling.png?resize=300%2C150&amp;ssl=1 300w" width="500"/></figure>
+<p>If a command should be run regardless of one of the time sections an asterisk (*) should be used. For example if you wanted to run a command every 15 minutes regardless of the hour, day, or month it would look like:</p>
+<pre class="wp-block-code"><code class="language-bash" lang="bash">*/15 * * * * command</code></pre>
+<p>Many servers have <code>wget</code> installed and this is an easy tool to call the WordPress Cron script.</p>
+<pre class="wp-block-code"><code class="language-bash" lang="bash">wget --delete-after http://YOUR_SITE_URL/wp-cron.php</code></pre>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">Note: without –delete-after option, wget would save the output of the HTTP GET request.</div></div>
+<p>A daily call to your site’s WordPress Cron that triggers at midnight every night could look similar to:</p>
+<pre class="wp-block-code"><code class="language-bash" lang="bash">0 0 * * * wget --delete-after http://YOUR_SITE_URL/wp-cron.php</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

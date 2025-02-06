@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/rest-api/">REST API Handbook</a></span><span class="is-current-page">Frequently Asked Questions</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Frequently Asked Questions</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>This page provides solutions to some common questions and problems that may arise while using the API. If your question is not explained here it may have been answered in the <a href="https://wordpress.org/support/topic-tag/rest-api">WordPress support forums</a>.</p>
+<h2 class="is-toc-heading" id="can-i-disable-the-rest-api" tabindex="-1"><a href="#can-i-disable-the-rest-api">Can I disable the REST API?</a></h2>
+<p>You should not disable the REST API; doing so will break WordPress Admin functionality that depends on the API being active. However, you may use a filter to require that API consumers be authenticated, which effectively prevents anonymous external access. See below for more information.</p>
+<h2 class="is-toc-heading" id="require-authentication-for-all-requests" tabindex="-1"><a href="#require-authentication-for-all-requests">Require Authentication for All Requests</a></h2>
+<p>You can require authentication for all REST API requests by adding an <code>is_user_logged_in</code> check to the <a href="https://developer.notmatt.press/reference/hooks/rest_authentication_errors/"><code>rest_authentication_errors</code></a> filter.</p>
+<p>Note: The incoming callback parameter can be either <code>null</code>, a <code>WP_Error</code>, or a boolean. The type of the parameter indicates the state of authentication:</p>
+<ul>
+<li><code>null</code>: no authentication check has yet been performed, and the hook callback may apply custom authentication logic.</li>
+<li>boolean: indicates a previous authentication method check was performed. Boolean <code>true</code> indicates the request was successfully authenticated, and boolean <code>false</code> indicates authentication failed.</li>
+<li><code>WP_Error</code>: Some kind of error was encountered.</li>
+</ul>
+<pre><code class="language-php">add_filter( 'rest_authentication_errors', function( $result ) {
+    // If a previous authentication check was applied,
+    // pass that result along without modification.
+    if ( true === $result || is_wp_error( $result ) ) {
+        return $result;
+    }
+
+    // No authentication has been performed yet.
+    // Return an error if user is not logged in.
+    if ( ! is_user_logged_in() ) {
+        return new WP_Error(
+            'rest_not_logged_in',
+            __( 'You are not currently logged in.' ),
+            array( 'status' =&gt; 401 )
+        );
+    }
+
+    // Our custom authentication check should have no effect
+    // on logged-in requests
+    return $result;
+});
+</code></pre>
+<h2 class="is-toc-heading" id="can-i-make-api-requests-from-php-within-a-plugin" tabindex="-1"><a href="#can-i-make-api-requests-from-php-within-a-plugin">Can I make API requests from PHP within a plugin?</a></h2>
+<p>Yes, you can! Use <a href="https://developer.notmatt.press/reference/functions/rest_do_request/">rest_do_request</a> to make API requests internally within other WordPress code:</p>
+<pre><code class="language-php">$request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
+// Set one or more request query parameters
+$request-&gt;set_param( 'per_page', 20 );
+$response = rest_do_request( $request );
+</code></pre>
+<h2 class="is-toc-heading" id="how-do-i-use-the-_embed-parameter-on-internal-requests" tabindex="-1"><a href="#how-do-i-use-the-_embed-parameter-on-internal-requests">How do I use the _embed parameter on internal requests?</a></h2>
+<p>Setting the <code>_embed</code> param on the request object won’t work.</p>
+<pre><code class="language-php">$request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
+$request-&gt;set_param( '_embed', 1 );
+$response = rest_do_request( $request );
+</code></pre>
+<p>Instead, manually call the <a href="https://developer.notmatt.press/reference/classes/wp_rest_server/"><code>WP_REST_Server::response_to_data</code></a> function.</p>
+<pre><code class="language-php">$request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
+$response = rest_do_request( $request );
+$data = rest_get_server()-&gt;response_to_data( $response, true );
+var_dump( $data['_embedded'] );
+</code></pre>
+<h2 class="is-toc-heading" id="what-happened-to-the-filter-query-parameter" tabindex="-1"><a href="#what-happened-to-the-filter-query-parameter">What happened to the ?filter= query parameter?</a></h2>
+<p>When the REST API was merged into WordPress core the <code>?filter</code> query parameter was removed to prevent future compatibility and maintenance issues. The ability to pass arbitrary <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> arguments to the API using a <code>?filter</code> query parameter was necessary at the genesis of the REST API project, but most API response filtering functionality has been superseded by more robust query parameters like <code>?categories=</code>, <code>?slug=</code> and <code>?per_page=</code>.</p>
+<p>First-party query parameters should be used whenever possible. However, the <a href="https://github.com/wp-api/rest-filter">rest-filter</a> plugin restores the ability to pass arbitrary <code>?filter</code> values in API request if needed.</p>
+<h2 class="is-toc-heading" id="query-parameters-are-not-working" tabindex="-1"><a href="#query-parameters-are-not-working">Query parameters are not working</a></h2>
+<p>If you find that query parameters such as <code>?page=2</code> or <code>?_embed</code> are not having any effect, your server may not be properly configured to detect them. If you are using Nginx to serve your website, look for a <code>try_files</code> line in your site configuration. If it looks like this:</p>
+<pre><code>try_files $uri $uri/ /index.php$args;
+</code></pre>
+<p>change it to this:</p>
+<pre><code>try_files $uri $uri/ /index.php$is_args$args;
+</code></pre>
+<p>Adding <code>$is_args</code> (which will print a ? character if query arguments are found) will allow WordPress to properly receive and interpret the query parameters.</p>
+<h2 class="is-toc-heading" id="why-is-authentication-not-working" tabindex="-1"><a href="#why-is-authentication-not-working">Why is Authentication not working?</a></h2>
+<p>If you’re finding that you are sending Authentication headers but the request is not being accepted, and you are using a CGI environment, your webserver may be stripping the headers. Please try adding the appropriate configuration below to remedy this.</p>
+<h3 class="is-toc-heading" id="apache" tabindex="-1"><a href="#apache">Apache</a></h3>
+<p>Add the following to a configuration file or .htaccess:</p>
+<pre><code>&lt;IfModule mod_setenvif&gt;
+  SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+&lt;/IfModule&gt;
+</code></pre>
+<h3 class="is-toc-heading" id="nginx" tabindex="-1"><a href="#nginx">Nginx</a></h3>
+<p>Add the following to your server configurations fastcgi section:</p>
+<pre><code>fastcgi_pass_header Authorization;
+</code></pre>
+<h2 class="is-toc-heading" id="why-is-the-rest-api-not-verifying-the-incoming-origin-header-does-this-expose-my-site-to-csrf-attacks" tabindex="-1"><a href="#why-is-the-rest-api-not-verifying-the-incoming-origin-header-does-this-expose-my-site-to-csrf-attacks">Why is the REST API not verifying the incoming Origin header? Does this expose my site to CSRF attacks?</a></h2>
+<p>Cross-Origin Resource Sharing (CORS) is a mechanism which allows a website to control which Origins (originating external sites) are allowed to access your site’s data. CORS prevents against a particular type of attack known as Cross-Site Request Forgery, or CSRF. However, WordPress has an existing CSRF protection mechanism which uses <a href="https://developer.notmatt.press/plugins/security/nonces/">nonces</a>. Tightening CORS restrictions would prevent some authentication methods, so the WordPress REST API uses nonces for CSRF protection instead of CORS.</p>
+<p>Because the WordPress REST API does not verify the Origin header of incoming requests, public REST API endpoints may therefore be accessed from any site.</p>
+<p>This is an <a href="https://core.trac.wordpress.org/changeset/40600">intentional design decision</a>, but if you wish to prevent your site from being accessed from unknown origins you may unhook the default <a href="https://developer.notmatt.press/reference/functions/rest_send_cors_headers/"><code>rest_send_cors_headers</code> function</a> from the <a href="https://developer.notmatt.press/reference/hooks/rest_pre_serve_request/"><code>rest_pre_serve_request</code> filter hook</a>, then hook in your own function to that same filter to specify stricter CORS headers.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

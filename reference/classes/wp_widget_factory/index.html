@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Widget_Factory</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Widget_Factory</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Widget_Factory {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Singleton that registers and instantiates <a href="https://developer.notmatt.press/reference/classes/wp_widget/" rel="class">WP_Widget</a> classes.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_factory/__construct/">WP_Widget_Factory::__construct</a></td><td>PHP5 constructor.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_factory/_register_widgets/">WP_Widget_Factory::_register_widgets</a></td><td>Serves as a utility method for adding widgets to the registered widgets global.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_factory/get_widget_key/">WP_Widget_Factory::get_widget_key</a></td><td>Returns the registered key for the given widget type.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_factory/get_widget_object/">WP_Widget_Factory::get_widget_object</a></td><td>Returns the registered <a href="https://developer.notmatt.press/reference/classes/wp_widget/" rel="class">WP_Widget</a> object for the given widget type.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_factory/register/">WP_Widget_Factory::register</a></td><td>Registers a widget subclass.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_factory/unregister/">WP_Widget_Factory::unregister</a></td><td>Un-registers a widget subclass.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_factory/wp_widget_factory/">WP_Widget_Factory::WP_Widget_Factory</a></td><td>PHP4 constructor. — <span class="deprecated-method">deprecated</span></td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="17"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Widget_Factory {
+
+	/**
+	 * Widgets array.
+	 *
+	 * @since 2.8.0
+	 * @var array
+	 */
+	public $widgets = array();
+
+	/**
+	 * PHP5 constructor.
+	 *
+	 * @since 4.3.0
+	 */
+	public function __construct() {
+		add_action( 'widgets_init', array( $this, '_register_widgets' ), 100 );
+	}
+
+	/**
+	 * PHP4 constructor.
+	 *
+	 * @since 2.8.0
+	 * @deprecated 4.3.0 Use __construct() instead.
+	 *
+	 * @see WP_Widget_Factory::__construct()
+	 */
+	public function WP_Widget_Factory() {
+		_deprecated_constructor( 'WP_Widget_Factory', '4.3.0' );
+		self::__construct();
+	}
+
+	/**
+	 * Registers a widget subclass.
+	 *
+	 * @since 2.8.0
+	 * @since 4.6.0 Updated the `$widget` parameter to also accept a WP_Widget instance object
+	 *              instead of simply a `WP_Widget` subclass name.
+	 *
+	 * @param string|WP_Widget $widget Either the name of a `WP_Widget` subclass or an instance of a `WP_Widget` subclass.
+	 */
+	public function register( $widget ) {
+		if ( $widget instanceof WP_Widget ) {
+			$this-&gt;widgets[ spl_object_hash( $widget ) ] = $widget;
+		} else {
+			$this-&gt;widgets[ $widget ] = new $widget();
+		}
+	}
+
+	/**
+	 * Un-registers a widget subclass.
+	 *
+	 * @since 2.8.0
+	 * @since 4.6.0 Updated the `$widget` parameter to also accept a WP_Widget instance object
+	 *              instead of simply a `WP_Widget` subclass name.
+	 *
+	 * @param string|WP_Widget $widget Either the name of a `WP_Widget` subclass or an instance of a `WP_Widget` subclass.
+	 */
+	public function unregister( $widget ) {
+		if ( $widget instanceof WP_Widget ) {
+			unset( $this-&gt;widgets[ spl_object_hash( $widget ) ] );
+		} else {
+			unset( $this-&gt;widgets[ $widget ] );
+		}
+	}
+
+	/**
+	 * Serves as a utility method for adding widgets to the registered widgets global.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @global array $wp_registered_widgets
+	 */
+	public function _register_widgets() {
+		global $wp_registered_widgets;
+		$keys       = array_keys( $this-&gt;widgets );
+		$registered = array_keys( $wp_registered_widgets );
+		$registered = array_map( '_get_widget_id_base', $registered );
+
+		foreach ( $keys as $key ) {
+			// Don't register new widget if old widget with the same id is already registered.
+			if ( in_array( $this-&gt;widgets[ $key ]-&gt;id_base, $registered, true ) ) {
+				unset( $this-&gt;widgets[ $key ] );
+				continue;
+			}
+
+			$this-&gt;widgets[ $key ]-&gt;_register();
+		}
+	}
+
+	/**
+	 * Returns the registered WP_Widget object for the given widget type.
+	 *
+	 * @since 5.8.0
+	 *
+	 * @param string $id_base Widget type ID.
+	 * @return WP_Widget|null
+	 */
+	public function get_widget_object( $id_base ) {
+		$key = $this-&gt;get_widget_key( $id_base );
+		if ( '' === $key ) {
+			return null;
+		}
+
+		return $this-&gt;widgets[ $key ];
+	}
+
+	/**
+	 * Returns the registered key for the given widget type.
+	 *
+	 * @since 5.8.0
+	 *
+	 * @param string $id_base Widget type ID.
+	 * @return string
+	 */
+	public function get_widget_key( $id_base ) {
+		foreach ( $this-&gt;widgets as $key =&gt; $widget_object ) {
+			if ( $widget_object-&gt;id_base === $id_base ) {
+				return $key;
+			}
+		}
+
+		return '';
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-widget-factory.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-widget-factory.php#L17">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-widget-factory.php#L17-L141">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.4.0/">4.4.0</a></td><td><span class="since-description">Moved to its own file from wp-includes/widgets.php</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-charlestonsw odd alt thread-odd thread-alt depth-1" data-comment-id="993" id="comment-993">
+<article class="comment-body" id="div-comment-993">
+<a class="screen-reader-text" href="#comment-content-993">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-993">
+<p>Until it gets ported over, here is the Widgets API docs in Codex:<br/>
+<a href="https://codex.wordpress.org/Widgets_API" rel="nofollow ugc">https://codex.wordpress.org/Widgets_API</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-993">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

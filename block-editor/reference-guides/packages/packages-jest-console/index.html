@@ -1,0 +1,129 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/jest-console</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/jest-console</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Custom <a href="https://jestjs.io/">Jest</a> matchers for the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Console">Console</a><br/>
+object to test JavaScript code in WordPress.</p>
+<p>This package converts <code>console.error</code>, <code>console.info</code>, <code>console.log</code> and <code>console.warn</code> functions into mocks and tracks their calls.<br/>
+It also enforces usage of one of the related matchers whenever tested code calls one of the mentioned <code>console</code> methods.<br/>
+It means that you need to assert with <code>.toHaveErrored()</code> or <code>.toHaveErroredWith( arg1, arg2, ... )</code> when <code>console.error</code><br/>
+gets executed, and use the corresponding methods when <code>console.info</code>, <code>console.log</code> or <code>console.warn</code> are called.<br/>
+Your test will fail otherwise! This is a conscious design decision which helps to detect deprecation warnings when<br/>
+upgrading dependent libraries or smaller errors when refactoring code.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module:</p>
+<pre><code class="language-bash">npm install @wordpress/jest-console --save-dev
+</code></pre>
+<p><strong>Note</strong>: This package requires Node.js version with long-term support status (check <a href="https://nodejs.org/en/about/previous-releases">Active LTS or Maintenance LTS releases</a>). It is not compatible with older versions.</p>
+<h3 class="is-toc-heading" id="setup" tabindex="-1"><a href="#setup">Setup</a></h3>
+<p>The simplest setup is to use Jest’s <code>setupFilesAfterEnv</code> config option:</p>
+<pre><code class="language-js">"jest": {
+  "setupFilesAfterEnv": [
+    "@wordpress/jest-console"
+  ]
+},
+</code></pre>
+<h3 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h3>
+<h3 class="is-toc-heading" id="tohaveerrored" tabindex="-1"><a href="#tohaveerrored">.toHaveErrored()</a></h3>
+<p>Use <code>.toHaveErrored</code> to ensure that <code>console.error</code> function was called.</p>
+<p>For example, let’s say you have a <code>drinkAll( flavor )</code> function that makes you drink all available beverages.<br/>
+You might want to check if function calls <code>console.error</code> for <code>'octopus'</code> instead, because <code>'octopus'</code> flavor is really<br/>
+weird and why would anything be octopus-flavored? You can do that with this test suite:</p>
+<pre><code class="language-js">describe( 'drinkAll', () =&gt; {
+    test( 'drinks something lemon-flavored', () =&gt; {
+        drinkAll( 'lemon' );
+        expect( console ).not.toHaveErrored();
+    } );
+
+    test( 'errors when something is octopus-flavored', () =&gt; {
+        drinkAll( 'octopus' );
+        expect( console ).toHaveErrored();
+    } );
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="tohaveerroredwith-arg1-arg2" tabindex="-1"><a href="#tohaveerroredwith-arg1-arg2">.toHaveErroredWith( arg1, arg2, … )</a></h3>
+<p>Use <code>.toHaveErroredWith</code> to ensure that <code>console.error</code> function was called with<br/>
+specific arguments.</p>
+<p>For example, let’s say you have a <code>drinkAll( flavor )</code> function again makes you drink all available beverages.<br/>
+You might want to check if function calls <code>console.error</code> with a specific message for <code>'octopus'</code> instead, because<br/>
+<code>'octopus'</code> flavor is really weird and why would anything be octopus-flavored? To make sure this works, you could write:</p>
+<pre><code class="language-js">describe( 'drinkAll', () =&gt; {
+    test( 'errors with message when something is octopus-flavored', () =&gt; {
+        drinkAll( 'octopus' );
+        expect( console ).toHaveErroredWith(
+            'Should I really drink something that is octopus-flavored?'
+        );
+    } );
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="tohaveinformed" tabindex="-1"><a href="#tohaveinformed">.toHaveInformed()</a></h3>
+<p>Use <code>.toHaveInformed</code> to ensure that <code>console.info</code> function was called.</p>
+<p>Almost identical usage as <code>.toHaveErrored()</code>.</p>
+<h3 class="is-toc-heading" id="tohaveinformedwith-arg1-arg2" tabindex="-1"><a href="#tohaveinformedwith-arg1-arg2">.toHaveInformedWith( arg1, arg2, … )</a></h3>
+<p>Use <code>.toHaveInformedWith</code> to ensure that <code>console.info</code> function was called with<br/>
+specific arguments.</p>
+<p>Almost identical usage as <code>.toHaveErroredWith()</code>.</p>
+<h3 class="is-toc-heading" id="tohavelogged" tabindex="-1"><a href="#tohavelogged">.toHaveLogged()</a></h3>
+<p>Use <code>.toHaveLogged</code> to ensure that <code>console.log</code> function was called.</p>
+<p>Almost identical usage as <code>.toHaveErrored()</code>.</p>
+<h3 class="is-toc-heading" id="tohaveloggedwith-arg1-arg2" tabindex="-1"><a href="#tohaveloggedwith-arg1-arg2">.toHaveLoggedWith( arg1, arg2, … )</a></h3>
+<p>Use <code>.toHaveLoggedWith</code> to ensure that <code>console.log</code> function was called with<br/>
+specific arguments.</p>
+<p>Almost identical usage as <code>.toHaveErroredWith()</code>.</p>
+<h3 class="is-toc-heading" id="tohavewarned" tabindex="-1"><a href="#tohavewarned">.toHaveWarned()</a></h3>
+<p>Use <code>.toHaveWarned</code> to ensure that <code>console.warn</code> function was called.</p>
+<p>Almost identical usage as <code>.toHaveErrored()</code>.</p>
+<h3 class="is-toc-heading" id="tohavewarnedwith-arg1-arg2" tabindex="-1"><a href="#tohavewarnedwith-arg1-arg2">.toHaveWarnedWith( arg1, arg2, … )</a></h3>
+<p>Use <code>.toHaveWarneddWith</code> to ensure that <code>console.warn</code> function was called with<br/>
+specific arguments.</p>
+<p>Almost identical usage as <code>.toHaveErroredWith()</code>.</p>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

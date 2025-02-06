@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_plupload_default_settings()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_plupload_default_settings()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_plupload_default_settings()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Prints default Plupload arguments.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="4170"><code class="language-php line-numbers" id="wporg-source-code" lang="php">/**
+ * Tests which editors are capable of supporting the request.
+ *
+ * @ignore
+ * @since 3.5.0
+ *
+ * @param array $args Optional. Array of arguments for choosing a capable editor. Default empty array.
+ * @return string|false Class name for the first editor that claims to support the request.
+ *                      False if no editor claims to support the request.
+ */
+function _wp_image_editor_choose( $args = array() ) {
+	require_once ABSPATH . WPINC . '/class-wp-image-editor.php';
+	require_once ABSPATH . WPINC . '/class-wp-image-editor-gd.php';
+	require_once ABSPATH . WPINC . '/class-wp-image-editor-imagick.php';
+	require_once ABSPATH . WPINC . '/class-avif-info.php';
+	/**
+	 * Filters the list of image editing library classes.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @param string[] $image_editors Array of available image editor class names. Defaults are
+	 *                                'WP_Image_Editor_Imagick', 'WP_Image_Editor_GD'.
+	 */
+	$implementations = apply_filters( 'wp_image_editors', array( 'WP_Image_Editor_Imagick', 'WP_Image_Editor_GD' ) );
+
+	$editors = wp_cache_get( 'wp_image_editor_choose', 'image_editor' );
+
+	if ( ! is_array( $editors ) ) {
+		$editors = array();
+	}
+
+	// Cache the chosen editor implementation based on specific args and available implementations.
+	$cache_key = md5( serialize( array( $args, $implementations ) ) );
+
+	if ( isset( $editors[ $cache_key ] ) ) {
+		return $editors[ $cache_key ];
+	}
+
+	// Assume no support until a capable implementation is identified.
+	$editor = false;
+
+	foreach ( $implementations as $implementation ) {
+		if ( ! call_user_func( array( $implementation, 'test' ), $args ) ) {
+			continue;
+		}
+
+		// Implementation should support the passed mime type.
+		if ( isset( $args['mime_type'] ) &amp;&amp;
+			! call_user_func(
+				array( $implementation, 'supports_mime_type' ),
+				$args['mime_type']
+			) ) {
+			continue;
+		}
+
+		// Implementation should support requested methods.
+		if ( isset( $args['methods'] ) &amp;&amp;
+			array_diff( $args['methods'], get_class_methods( $implementation ) ) ) {
+
+			continue;
+		}
+
+		// Implementation should ideally support the output mime type as well if set and different than the passed type.
+		if (
+			isset( $args['mime_type'] ) &amp;&amp;
+			isset( $args['output_mime_type'] ) &amp;&amp;
+			$args['mime_type'] !== $args['output_mime_type'] &amp;&amp;
+			! call_user_func( array( $implementation, 'supports_mime_type' ), $args['output_mime_type'] )
+		) {
+			/*
+			 * This implementation supports the input type but not the output type.
+			 * Keep looking to see if we can find an implementation that supports both.
+			 */
+			$editor = $implementation;
+			continue;
+		}
+
+		// Favor the implementation that supports both input and output mime types.
+		$editor = $implementation;
+		break;
+	}
+
+	$editors[ $cache_key ] = $editor;
+
+	wp_cache_set( 'wp_image_editor_choose', $editors, 'image_editor', DAY_IN_SECONDS );
+
+	return $editor;
+}
+
+/**
+ * Prints default Plupload arguments.
+ *
+ * @since 3.4.0
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/media.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/media.php#L4170">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/media.php#L4170-L4262">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.4.0/">3.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

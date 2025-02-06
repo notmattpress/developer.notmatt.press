@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_date_query/">WP_Date_Query</a></span><span class="is-current-page">WP_Date_Query::sanitize_query()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Date_Query::sanitize_query()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Date_Query::sanitize_query( <span class="arg-type">array</span> <span class="arg-name">$queries</span>,  <span class="arg-type">array</span> <span class="arg-name">$parent_query</span> = <span class="arg-default">null</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Recursive-friendly query sanitizer.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Ensures that each query-level clause has a ‘relation’ key, and that each first-order clause contains all the necessary keys from <code>$defaults</code>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$queries</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"></div></dd><dt><code>$parent_query</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Sanitized queries.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="189"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function sanitize_query( $queries, $parent_query = null ) {
+	$cleaned_query = array();
+
+	$defaults = array(
+		'column'   =&gt; 'post_date',
+		'compare'  =&gt; '=',
+		'relation' =&gt; 'AND',
+	);
+
+	// Numeric keys should always have array values.
+	foreach ( $queries as $qkey =&gt; $qvalue ) {
+		if ( is_numeric( $qkey ) &amp;&amp; ! is_array( $qvalue ) ) {
+			unset( $queries[ $qkey ] );
+		}
+	}
+
+	// Each query should have a value for each default key. Inherit from the parent when possible.
+	foreach ( $defaults as $dkey =&gt; $dvalue ) {
+		if ( isset( $queries[ $dkey ] ) ) {
+			continue;
+		}
+
+		if ( isset( $parent_query[ $dkey ] ) ) {
+			$queries[ $dkey ] = $parent_query[ $dkey ];
+		} else {
+			$queries[ $dkey ] = $dvalue;
+		}
+	}
+
+	// Validate the dates passed in the query.
+	if ( $this-&gt;is_first_order_clause( $queries ) ) {
+		$this-&gt;validate_date_values( $queries );
+	}
+
+	// Sanitize the relation parameter.
+	$queries['relation'] = $this-&gt;sanitize_relation( $queries['relation'] );
+
+	foreach ( $queries as $key =&gt; $q ) {
+		if ( ! is_array( $q ) || in_array( $key, $this-&gt;time_keys, true ) ) {
+			// This is a first-order query. Trust the values and sanitize when building SQL.
+			$cleaned_query[ $key ] = $q;
+		} else {
+			// Any array without a time key is another query, so we recurse.
+			$cleaned_query[] = $this-&gt;sanitize_query( $q, $queries );
+		}
+	}
+
+	return $cleaned_query;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-date-query.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-date-query.php#L189">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-date-query.php#L189-L237">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_date_query/sanitize_relation/">WP_Date_Query::sanitize_relation()</a><code>wp-includes/class-wp-date-query.php</code></td><td><p>Sanitizes a ‘relation’ operator.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_date_query/is_first_order_clause/">WP_Date_Query::is_first_order_clause()</a><code>wp-includes/class-wp-date-query.php</code></td><td><p>Determines whether this is a first-order clause.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_date_query/validate_date_values/">WP_Date_Query::validate_date_values()</a><code>wp-includes/class-wp-date-query.php</code></td><td><p>Validates the given date_query values and triggers errors if something is not valid.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_date_query/sanitize_query/">WP_Date_Query::sanitize_query()</a><code>wp-includes/class-wp-date-query.php</code></td><td><p>Recursive-friendly query sanitizer.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_date_query/sanitize_query/">WP_Date_Query::sanitize_query()</a><code>wp-includes/class-wp-date-query.php</code></td><td><p>Recursive-friendly query sanitizer.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_date_query/__construct/">WP_Date_Query::__construct()</a><code>wp-includes/class-wp-date-query.php</code></td><td><p>Constructor.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.1.0/">4.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

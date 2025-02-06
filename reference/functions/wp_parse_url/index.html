@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_parse_url()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_parse_url()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_parse_url( <span class="arg-type">string</span> <span class="arg-name">$url</span>,  <span class="arg-type">int</span> <span class="arg-name">$component</span> = <span class="arg-default">-1</span> ): <span class="return-type">mixed</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>A wrapper for PHP’s parse_url() function that handles consistency in the return values across PHP versions.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Across various PHP versions, schemeless URLs containing a ":" in the query are being handled inconsistently. This function works around those differences.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$url</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The URL to parse.</span></div></dd><dt><code>$component</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The specific component to retrieve. Use one of the PHP                          predefined constants to specify which one.<br/>
+Defaults to -1 (= return all parts as an array).</span></div><p class="default">Default:<code>-1</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">mixed</span> False on parse failure; Array of URL components on success;               When a specific component has been requested: null if the component               doesn’t exist in the given URL; a string or – in the case of               PHP_URL_PORT – integer when it does. See parse_url()’s return values.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="712"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_parse_url( $url, $component = -1 ) {
+	$to_unset = array();
+	$url      = (string) $url;
+
+	if ( str_starts_with( $url, '//' ) ) {
+		$to_unset[] = 'scheme';
+		$url        = 'placeholder:' . $url;
+	} elseif ( str_starts_with( $url, '/' ) ) {
+		$to_unset[] = 'scheme';
+		$to_unset[] = 'host';
+		$url        = 'placeholder://placeholder' . $url;
+	}
+
+	$parts = parse_url( $url );
+
+	if ( false === $parts ) {
+		// Parsing failure.
+		return $parts;
+	}
+
+	// Remove the placeholder values.
+	foreach ( $to_unset as $key ) {
+		unset( $parts[ $key ] );
+	}
+
+	return _get_component_from_parsed_url_array( $parts, $component );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/http.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/http.php#L712">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/http.php#L712-L738">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_get_component_from_parsed_url_array/">_get_component_from_parsed_url_array()</a><code>wp-includes/http.php</code></td><td><p>Retrieves a specific component from a parsed URL array.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_authorize_application_redirect_url_valid/">wp_is_authorize_application_redirect_url_valid()</a><code>wp-admin/includes/user.php</code></td><td><p>Validates the redirect URL protocol scheme. The protocol can be anything except <code>http</code> and <code>javascript</code>.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_make_clickable_rel_attr/">_make_clickable_rel_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Helper function used to build the “rel” attribute for a URL when creating an anchor using <a href="https://developer.notmatt.press/reference/functions/make_clickable/" rel="function">make_clickable()</a> .</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_internal_link/">wp_is_internal_link()</a><code>wp-includes/link-template.php</code></td><td><p>Determines whether or not the specified URL is of a host included in the internal hosts list.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_internal_hosts/">wp_internal_hosts()</a><code>wp-includes/link-template.php</code></td><td><p>Returns an array of URL hosts which are considered to be internal hosts.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_home_url_using_https/">wp_is_home_url_using_https()</a><code>wp-includes/https-detection.php</code></td><td><p>Checks whether the current site URL is using HTTPS.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_is_site_url_using_https/">wp_is_site_url_using_https()</a><code>wp-includes/https-detection.php</code></td><td><p>Checks whether the current site’s URL where WordPress is stored is using HTTPS.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_should_replace_insecure_home_url/">wp_should_replace_insecure_home_url()</a><code>wp-includes/https-migration.php</code></td><td><p>Checks whether WordPress should replace old HTTP URLs to the site with their HTTPS counterpart.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/serve_batch_request_v1/">WP_REST_Server::serve_batch_request_v1()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Serves the batch/v1 request.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_oembed_response_data_for_url/">get_oembed_response_data_for_url()</a><code>wp-includes/embed.php</code></td><td><p>Retrieves the oEmbed response data for a given URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/is_cross_domain/">WP_Customize_Manager::is_cross_domain()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Determines whether the admin and the frontend are on different domains.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/add_state_query_params/">WP_Customize_Manager::add_state_query_params()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Adds customize state query params to a given URL if preview is allowed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_resource_hints/">wp_resource_hints()</a><code>wp-includes/general-template.php</code></td><td><p>Prints resource hints to browsers for pre-fetching, pre-rendering and pre-connecting to websites.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dependencies_unique_hosts/">wp_dependencies_unique_hosts()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves a list of unique hosts of all enqueued scripts and styles.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/strip_fragment_from_url/">strip_fragment_from_url()</a><code>wp-includes/canonical.php</code></td><td><p>Strips the #fragment from a URL, if one is present.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_http/parse_url/">WP_Http::parse_url()</a><code>wp-includes/class-wp-http.php</code></td><td><p>Used as a wrapper for PHP’s parse_url() function that handles edgecases in &lt; PHP 5.4.7.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/customize_preview_settings/">WP_Customize_Manager::customize_preview_settings()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Prints JavaScript settings for preview frame.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_notify_postauthor/">wp_notify_postauthor()</a><code>wp-includes/pluggable.php</code></td><td><p>Notifies an author (and/or others) of a comment/trackback/pingback on a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_mail/">wp_mail()</a><code>wp-includes/pluggable.php</code></td><td><p>Sends an email, similar to PHP’s mail function.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_http/make_absolute_url/">WP_Http::make_absolute_url()</a><code>wp-includes/class-wp-http.php</code></td><td><p>Converts a relative URL to an absolute URL relative to a given URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_plugins/">wp_update_plugins()</a><code>wp-includes/update.php</code></td><td><p>Checks for available updates to plugins based on the latest versions hosted on WordPress.org.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_themes/">wp_update_themes()</a><code>wp-includes/update.php</code></td><td><p>Checks for available updates to themes based on the latest versions hosted on WordPress.org.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_welcome_user_notification/">wpmu_welcome_user_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Notifies a user that their account activation has been successful.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_welcome_notification/">wpmu_welcome_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Notifies the site administrator that their site activation was successful.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_signup_blog_notification/">wpmu_signup_blog_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends a confirmation request email to a user when they sign up for a new site. The new site will not become active until the confirmation link is clicked.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_signup_user_notification/">wpmu_signup_user_notification()</a><code>wp-includes/ms-functions.php</code></td><td><p>Sends a confirmation request email to a user when they sign up for a new user account (without signing up for a site at the same time). The user account will not become active until the confirmation link is clicked.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 21 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.7.0/">4.7.0</a></td><td><span class="since-description">The <code>$component</code> parameter was added for parity with PHP’s <code>parse_url()</code>.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.4.0/">4.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-hearvox even thread-even depth-1" data-comment-id="2057" id="comment-2057">
+<article class="comment-body" id="div-comment-2057">
+<a class="screen-reader-text" href="#comment-content-2057">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2057">
+<p><strong>Example return array</strong></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Get array of URL 'scheme', 'host', and 'path'.
+$url_parse = wp_parse_url( 'https://developer.notmatt.press/reference/functions/wp_parse_url/' );
+
+// Output URL's path.
+echo $url_parse['path'];
+
+/*
+Array
+(
+    [scheme] =&gt; https
+    [host] =&gt; developer.wordpress.org
+    [path] =&gt; /reference/functions/wp_parse_url/
+)
+*/</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2057">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-strackerphil-1 odd alt thread-odd thread-alt depth-1" data-comment-id="6145" id="comment-6145">
+<article class="comment-body" id="div-comment-6145">
+<a class="screen-reader-text" href="#comment-content-6145">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6145">
+<p>For reference, here’s a sample that shows URL parts that are returned by <a href="https://www.php.net/manual/en/function.parse-url.php" rel="nofollow ugc">parse_url</a>:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$url = 'https://user:pass@example.org:8080/path/to/file.min.js?param=value&amp;int=1#anchor';
+print_r( wp_parse_url( $url ) );
+
+/*
+Array
+(
+    [scheme] =&gt; https
+    [host] =&gt; example.org
+    [port] =&gt; 8080
+    [user] =&gt; user
+    [pass] =&gt; pass
+    [path] =&gt; /path/to/file.min.js
+    [query] =&gt; param=value&amp;int=1
+    [fragment] =&gt; anchor
+)
+*/</code></pre>
+<p>And here’s a list of valid <code>$component</code> values:</p>
+<p>* <code>PHP_URL_SCHEME</code><br>
+* <code>PHP_URL_HOST</code><br/>
+* <code>PHP_URL_PORT</code><br/>
+* <code>PHP_URL_USER</code><br/>
+* <code>PHP_URL_PASS</code><br/>
+* <code>PHP_URL_PATH</code><br/>
+* <code>PHP_URL_QUERY</code><br/>
+* <code>PHP_URL_FRAGMENT</code></br></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6145">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-rebasaurus even thread-even depth-1" data-comment-id="4798" id="comment-4798">
+<article class="comment-body" id="div-comment-4798">
+<a class="screen-reader-text" href="#comment-content-4798">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4798">
+<p><code>wp_parse_url()</code> seems to fix a bug of <code>parse_url()</code>, where port-like string in URL is incorrectly parsed as a port:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">wp_parse_url( '//example.com/foo:1234' );
+
+/* Output:
+array(2) {
+  "host" =&gt; string(11) "example.com"
+  "path" =&gt; string(9) "/foo:1234"
+} */</code></pre>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">parse_url( '//example.com/foo:1234' );
+
+/* Output:
+array(3) {
+  "host" =&gt; string(11) "example.com"
+  "port" =&gt; int( 1234 )
+  "path" =&gt; string(9) "/foo:1234"
+} */</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4798">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-joho68 odd alt thread-odd thread-alt depth-1" data-comment-id="4525" id="comment-4525">
+<article class="comment-body" id="div-comment-4525">
+<a class="screen-reader-text" href="#comment-content-4525">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4525">
+<p>Given an URL as <strong>scheme://hostname.</strong> (i.e. <em>not</em> a FDQN), the parsed [‘host’] array member will contain an invalid hostname (‘hostname.’).</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4525">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

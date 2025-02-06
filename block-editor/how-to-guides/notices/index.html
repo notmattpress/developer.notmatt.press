@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span class="is-current-page">Notices</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Notices</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Notices are informational UI displayed near the top of admin pages. WordPress core, themes, and plugins all use notices to indicate the result of an action, or to draw the user’s attention to necessary information.</p>
+<p>In the classic editor, notices hooked onto the <code>admin_notices</code> action can render whatever HTML they’d like. In the block editor, notices are restricted to a more formal API.</p>
+<h2 class="is-toc-heading" id="notices-in-the-classic-editor" tabindex="-1"><a href="#notices-in-the-classic-editor">Notices in the Classic Editor</a></h2>
+<p>In the classic editor, here’s an example of the “Post draft updated” notice:</p>
+<p><img alt="Post draft updated in the classic editor" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/notices/classic-editor-notice.png?ssl=1"/></p>
+<p>Producing an equivalent “Post draft updated” notice would require code like this:</p>
+<pre><code class="language-php">/**
+ * Hook into the 'admin_notices' action to render
+ * a generic HTML notice.
+ */
+function myguten_admin_notice() {
+    $screen = get_current_screen();
+    // Only render this notice in the post editor.
+    if ( ! $screen || 'post' !== $screen-&gt;base ) {
+        return;
+    }
+    // Render the notice's HTML.
+    // Each notice should be wrapped in a &lt;div&gt;
+    // with a 'notice' class.
+    echo '&lt;div class="notice notice-success is-dismissible"&gt;&lt;p&gt;';
+    echo sprintf( __( 'Post draft updated. &lt;a href="%s" target="_blank"&gt;Preview post&lt;/a&gt;' ), get_preview_post_link() );
+    echo '&lt;/p&gt;&lt;/div&gt;';
+};
+add_action( 'admin_notices', 'myguten_admin_notice' );
+</code></pre>
+<p>Importantly, the <code>admin_notices</code> hook allows a developer to render whatever HTML they’d like. One advantage is that the developer has a great amount of flexibility. The key disadvantage is that arbitrary HTML makes future iterations on notices more difficult, if not possible, because the iterations need to accommodate for arbitrary HTML. This is why the block editor has a formal API.</p>
+<h2 class="is-toc-heading" id="notices-in-the-block-editor" tabindex="-1"><a href="#notices-in-the-block-editor">Notices in the Block Editor</a></h2>
+<p>In the block editor, here’s an example of the “Post published” notice:</p>
+<p><img alt="Post published in the block editor" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/notices/block-editor-notice.png?ssl=1"/></p>
+<p>Producing an equivalent “Post published” notice would require code like this:</p>
+<pre><code class="language-js">( function ( wp ) {
+    wp.data.dispatch( 'core/notices' ).createNotice(
+        'success', // Can be one of: success, info, warning, error.
+        'Post published.', // Text string to display.
+        {
+            isDismissible: true, // Whether the user can dismiss the notice.
+            // Any actions the user can perform.
+            actions: [
+                {
+                    url: '#',
+                    label: 'View post',
+                },
+            ],
+        }
+    );
+} )( window.wp );
+</code></pre>
+<p>You’ll want to use this <em>Notices Data API</em> when producing a notice from within the JavaScript application lifecycle.</p>
+<p>To better understand the specific code example above:</p>
+<ul>
+<li><code>wp</code> is WordPress global window variable.</li>
+<li><code>wp.data</code> is an object provided by the block editor for accessing the block editor data store.</li>
+<li><code>wp.data.dispatch('core/notices')</code> accesses functionality registered to the block editor data store by the Notices package.</li>
+<li><code>createNotice()</code> is a function offered by the Notices package to register a new notice. The block editor reads from the notice data store in order to know which notices to display.</li>
+</ul>
+<p>Check out the <a href="https://developer.notmatt.press/block-editor/how-to-guides/enqueueing-assets-in-the-editor/"><em>Enqueueing assets in the Editor</em></a> tutorial for a primer on how to load your custom JavaScript into the block editor.</p>
+<h2 class="is-toc-heading" id="learn-more" tabindex="-1"><a href="#learn-more">Learn more</a></h2>
+<p>The block editor offers a complete API for generating notices. The official documentation is a great place to review what’s possible.</p>
+<p>For a full list of the available actions and selectors, refer to the <a href="https://developer.notmatt.press/block-editor/reference-guides/data/data-core-notices/">Notices Data Handbook</a> page.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_blog_details()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_blog_details()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_blog_details( <span class="arg-type">int|string|array</span> <span class="arg-name">$fields</span> = <span class="arg-default">null</span>,  <span class="arg-type">bool</span> <span class="arg-name">$get_all</span> = <span class="arg-default">true</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_site/" rel="class">WP_Site</a>|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the details for a blog from the blogs table and blog options.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$fields</code><span class="type"><span class="int">int</span>|<span class="string">string</span>|<span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A blog ID, a blog slug, or an array of fields to query against.<br/>
+Defaults to the current blog ID.</span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$get_all</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to retrieve all details or only the details in the blogs table.<br/>
+Default is true.</span></div><p class="default">Default:<code>true</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_site/" rel="class">WP_Site</a>|false</span> Blog details on success. False on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="128"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_blog_details( $fields = null, $get_all = true ) {
+	global $wpdb;
+
+	if ( is_array( $fields ) ) {
+		if ( isset( $fields['blog_id'] ) ) {
+			$blog_id = $fields['blog_id'];
+		} elseif ( isset( $fields['domain'] ) &amp;&amp; isset( $fields['path'] ) ) {
+			$key  = md5( $fields['domain'] . $fields['path'] );
+			$blog = wp_cache_get( $key, 'blog-lookup' );
+			if ( false !== $blog ) {
+				return $blog;
+			}
+			if ( str_starts_with( $fields['domain'], 'www.' ) ) {
+				$nowww = substr( $fields['domain'], 4 );
+				$blog  = $wpdb-&gt;get_row( $wpdb-&gt;prepare( "SELECT * FROM $wpdb-&gt;blogs WHERE domain IN (%s,%s) AND path = %s ORDER BY CHAR_LENGTH(domain) DESC", $nowww, $fields['domain'], $fields['path'] ) );
+			} else {
+				$blog = $wpdb-&gt;get_row( $wpdb-&gt;prepare( "SELECT * FROM $wpdb-&gt;blogs WHERE domain = %s AND path = %s", $fields['domain'], $fields['path'] ) );
+			}
+			if ( $blog ) {
+				wp_cache_set( $blog-&gt;blog_id . 'short', $blog, 'blog-details' );
+				$blog_id = $blog-&gt;blog_id;
+			} else {
+				return false;
+			}
+		} elseif ( isset( $fields['domain'] ) &amp;&amp; is_subdomain_install() ) {
+			$key  = md5( $fields['domain'] );
+			$blog = wp_cache_get( $key, 'blog-lookup' );
+			if ( false !== $blog ) {
+				return $blog;
+			}
+			if ( str_starts_with( $fields['domain'], 'www.' ) ) {
+				$nowww = substr( $fields['domain'], 4 );
+				$blog  = $wpdb-&gt;get_row( $wpdb-&gt;prepare( "SELECT * FROM $wpdb-&gt;blogs WHERE domain IN (%s,%s) ORDER BY CHAR_LENGTH(domain) DESC", $nowww, $fields['domain'] ) );
+			} else {
+				$blog = $wpdb-&gt;get_row( $wpdb-&gt;prepare( "SELECT * FROM $wpdb-&gt;blogs WHERE domain = %s", $fields['domain'] ) );
+			}
+			if ( $blog ) {
+				wp_cache_set( $blog-&gt;blog_id . 'short', $blog, 'blog-details' );
+				$blog_id = $blog-&gt;blog_id;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	} else {
+		if ( ! $fields ) {
+			$blog_id = get_current_blog_id();
+		} elseif ( ! is_numeric( $fields ) ) {
+			$blog_id = get_id_from_blogname( $fields );
+		} else {
+			$blog_id = $fields;
+		}
+	}
+
+	$blog_id = (int) $blog_id;
+
+	$all     = $get_all ? '' : 'short';
+	$details = wp_cache_get( $blog_id . $all, 'blog-details' );
+
+	if ( $details ) {
+		if ( ! is_object( $details ) ) {
+			if ( -1 === $details ) {
+				return false;
+			} else {
+				// Clear old pre-serialized objects. Cache clients do better with that.
+				wp_cache_delete( $blog_id . $all, 'blog-details' );
+				unset( $details );
+			}
+		} else {
+			return $details;
+		}
+	}
+
+	// Try the other cache.
+	if ( $get_all ) {
+		$details = wp_cache_get( $blog_id . 'short', 'blog-details' );
+	} else {
+		$details = wp_cache_get( $blog_id, 'blog-details' );
+		// If short was requested and full cache is set, we can return.
+		if ( $details ) {
+			if ( ! is_object( $details ) ) {
+				if ( -1 === $details ) {
+					return false;
+				} else {
+					// Clear old pre-serialized objects. Cache clients do better with that.
+					wp_cache_delete( $blog_id, 'blog-details' );
+					unset( $details );
+				}
+			} else {
+				return $details;
+			}
+		}
+	}
+
+	if ( empty( $details ) ) {
+		$details = WP_Site::get_instance( $blog_id );
+		if ( ! $details ) {
+			// Set the full cache.
+			wp_cache_set( $blog_id, -1, 'blog-details' );
+			return false;
+		}
+	}
+
+	if ( ! $details instanceof WP_Site ) {
+		$details = new WP_Site( $details );
+	}
+
+	if ( ! $get_all ) {
+		wp_cache_set( $blog_id . $all, $details, 'blog-details' );
+		return $details;
+	}
+
+	$switched_blog = false;
+
+	if ( get_current_blog_id() !== $blog_id ) {
+		switch_to_blog( $blog_id );
+		$switched_blog = true;
+	}
+
+	$details-&gt;blogname   = get_option( 'blogname' );
+	$details-&gt;siteurl    = get_option( 'siteurl' );
+	$details-&gt;post_count = get_option( 'post_count' );
+	$details-&gt;home       = get_option( 'home' );
+
+	if ( $switched_blog ) {
+		restore_current_blog();
+	}
+
+	/**
+	 * Filters a blog's details.
+	 *
+	 * @since MU (3.0.0)
+	 * @deprecated 4.7.0 Use <a href="https://developer.notmatt.press/reference/functions/site_details">'site_details'</a> instead.
+	 *
+	 * @param WP_Site $details The blog details.
+	 */
+	$details = apply_filters_deprecated( 'blog_details', array( $details ), '4.7.0', 'site_details' );
+
+	wp_cache_set( $blog_id . $all, $details, 'blog-details' );
+
+	$key = md5( $details-&gt;domain . $details-&gt;path );
+	wp_cache_set( $key, $details, 'blog-lookup' );
+
+	return $details;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/ms-blogs.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/ms-blogs.php#L128">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/ms-blogs.php#L128-L273">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/blog_details/"><span class="hook-func">apply_filters_deprecated</span>( ‘blog_details’,  <nobr><span class="arg-type">WP_Site</span> <span class="arg-name">$details</span></nobr> )</a></dt><dd><p>Filters a blog’s details.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters_deprecated/">apply_filters_deprecated()</a><code>wp-includes/plugin.php</code></td><td><p>Fires functions attached to a deprecated filter hook.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site/get_instance/">WP_Site::get_instance()</a><code>wp-includes/class-wp-site.php</code></td><td><p>Retrieves a site from the database by its ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site/__construct/">WP_Site::__construct()</a><code>wp-includes/class-wp-site.php</code></td><td><p>Creates a new <a href="https://developer.notmatt.press/reference/classes/wp_site/" rel="class">WP_Site</a> object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set/">wp_cache_set()</a><code>wp-includes/cache.php</code></td><td><p>Saves the data to the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_delete/">wp_cache_delete()</a><code>wp-includes/cache.php</code></td><td><p>Removes the cache contents matching key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_subdomain_install/">is_subdomain_install()</a><code>wp-includes/ms-load.php</code></td><td><p>Whether a subdomain configuration is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/switch_to_blog/">switch_to_blog()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Switches the current blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/restore_current_blog/">restore_current_blog()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Restores the current blog, after calling <a href="https://developer.notmatt.press/reference/functions/switch_to_blog/" rel="function">switch_to_blog()</a> .</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_id_from_blogname/">get_id_from_blogname()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Retrieves a site’s ID given its (subdomain or directory) slug.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_row/">wpdb::get_row()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one row from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_blog_id/">get_current_blog_id()</a><code>wp-includes/load.php</code></td><td><p>Retrieves the current site ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 9 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/mu.3.0.0/">MU (3.0.0)</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-simongcc even thread-even depth-1" data-comment-id="3856" id="comment-3856">
+<article class="comment-body" id="div-comment-3856">
+<a class="screen-reader-text" href="#comment-content-3856">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3856">
+<p>Since there is practical needs about getting additional information from multisite like <a href="https://wordpress.stackexchange.com/questions/366126/display-site-description-instead-of-site-name" rel="nofollow ugc">this post</a>, it might worth to note here of what <a href="https://developer.notmatt.press/reference/functions/get_blog_details/" rel="function">get_blog_details()</a>  is returning. It could save people, who is not familiar with WordPress, the time from trying.</p>
+<p>By default, the <a href="https://developer.notmatt.press/reference/functions/get_blog_details/" rel="function">get_blog_details()</a>  only returns the following details of the site.</p>
+<ul>
+<li>blogname</li>
+<li>siteurl</li>
+<li>post_count</li>
+<li>home</li>
+</ul>
+<p>If in case, need to get other information such as <strong>blog description</strong> of one of the sites. May achieve by using</p>
+<p><code>get_blog_option( $blog_id, 'blogdescription' );</code></p>
+<p>Reference: <a href="https://developer.notmatt.press/reference/functions/get_blog_option/">get_blog_option()</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3856">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-pagelab odd alt thread-odd thread-alt depth-1" data-comment-id="5666" id="comment-5666">
+<article class="comment-body" id="div-comment-5666">
+<a class="screen-reader-text" href="#comment-content-5666">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5666">
+<p>Note that <code> get_blog_details </code> was deprecated in favor of <code>get_site</code>. <a href="https://make.wordpress.org/core/2016/11/04/multisite-focused-changes-in-4-7/" rel="nofollow ugc">Reference</a>.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5666">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

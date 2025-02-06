@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">register_sidebars()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>register_sidebars()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">register_sidebars( <span class="arg-type">int</span> <span class="arg-name">$number</span> = <span class="arg-default">1</span>,  <span class="arg-type">array|string</span> <span class="arg-name">$args</span> = <span class="arg-default">array()</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Creates multiple sidebars.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If you wanted to quickly create multiple sidebars for a theme or internally.<br/>This function will allow you to do so. If you don’t pass the ‘name’ and/or ‘id’ in <code>$args</code>, then they will be built for you.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/register_sidebar">register_sidebar()</a>: The second parameter is documented by <a href="https://developer.notmatt.press/reference/functions/register_sidebar/" rel="function">register_sidebar()</a>  and is the same here.</li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$number</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Number of sidebars to create. </span></div><p class="default">Default:<code>1</code></p></dd><dt><code>$args</code><span class="type"><span class="array">array</span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Array or string of arguments for building a sidebar.<br/>
+<ul class="param-hash"><li><code>id</code> <span class="type">string</span><div class="desc">The base string of the unique identifier for each sidebar. If provided, and multiple sidebars are being defined, the ID will have "-2" appended, and so on.<br/>
+Default <code>'sidebar-'</code> followed by the number the sidebar creation is currently at.</div></li>
+<li><code>name</code> <span class="type">string</span><div class="desc">The name or title for the sidebars displayed in the admin dashboard. If registering more than one sidebar, include <code>'%d'</code> in the string as a placeholder for the uniquely assigned number for each sidebar.<br/>
+Default <code>'Sidebar'</code> for the first sidebar, otherwise ‘Sidebar %d’.</div></li>
+</ul>
+</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="174"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function register_sidebars( $number = 1, $args = array() ) {
+	global $wp_registered_sidebars;
+	$number = (int) $number;
+
+	if ( is_string( $args ) ) {
+		parse_str( $args, $args );
+	}
+
+	for ( $i = 1; $i &lt;= $number; $i++ ) {
+		$_args = $args;
+
+		if ( $number &gt; 1 ) {
+			if ( isset( $args['name'] ) ) {
+				$_args['name'] = sprintf( $args['name'], $i );
+			} else {
+				/* translators: %d: Sidebar number. */
+				$_args['name'] = sprintf( __( 'Sidebar %d' ), $i );
+			}
+		} else {
+			$_args['name'] = isset( $args['name'] ) ? $args['name'] : __( 'Sidebar' );
+		}
+
+		/*
+		 * Custom specified ID's are suffixed if they exist already.
+		 * Automatically generated sidebar names need to be suffixed regardless starting at -0.
+		 */
+		if ( isset( $args['id'] ) ) {
+			$_args['id'] = $args['id'];
+			$n           = 2; // Start at -2 for conflicting custom IDs.
+			while ( is_registered_sidebar( $_args['id'] ) ) {
+				$_args['id'] = $args['id'] . '-' . $n++;
+			}
+		} else {
+			$n = count( $wp_registered_sidebars );
+			do {
+				$_args['id'] = 'sidebar-' . ++$n;
+			} while ( is_registered_sidebar( $_args['id'] ) );
+		}
+		register_sidebar( $_args );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/widgets.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/widgets.php#L174">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/widgets.php#L174-L214">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_registered_sidebar/">is_registered_sidebar()</a><code>wp-includes/widgets.php</code></td><td><p>Checks if a sidebar is registered.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/register_sidebar/">register_sidebar()</a><code>wp-includes/widgets.php</code></td><td><p>Builds the definition for a single sidebar and returns the ID.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.2.0/">2.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="641" id="comment-641">
+<article class="comment-body" id="div-comment-641">
+<a class="screen-reader-text" href="#comment-content-641">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-641">
+<p>Examples<br>
+This will register 1 sidebar named Sidebar:</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_sidebars();</code></pre>
+<p>This will create 2 sidebars named “Foobar 1″ and “Foobar 2″:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_sidebars( 2, array( 'name' =&gt; 'Foobar %d' ) );</code></pre>
+<p>This will create 2 sidebars with the title wrapped in &lt;h1&gt; and &lt;/h1&gt;</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">register_sidebars( 2, array(
+	'before_title' =&gt; '&lt;h1&gt;',
+	'after_title'  =&gt; '&lt;/h1&gt;'
+) );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-641">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

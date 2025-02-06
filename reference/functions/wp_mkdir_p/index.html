@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_mkdir_p()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_mkdir_p()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_mkdir_p( <span class="arg-type">string</span> <span class="arg-name">$target</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Recursive directory creation based on full path.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Will attempt to set permissions on folders.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$target</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Full path to attempt to create.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> Whether the path was created. True if path already exists.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2036"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_mkdir_p( $target ) {
+	$wrapper = null;
+
+	// Strip the protocol.
+	if ( wp_is_stream( $target ) ) {
+		list( $wrapper, $target ) = explode( '://', $target, 2 );
+	}
+
+	// From php.net/mkdir user contributed notes.
+	$target = str_replace( '//', '/', $target );
+
+	// Put the wrapper back on the target.
+	if ( null !== $wrapper ) {
+		$target = $wrapper . '://' . $target;
+	}
+
+	/*
+	 * Safe mode fails with a trailing slash under certain PHP versions.
+	 * Use rtrim() instead of untrailingslashit to avoid formatting.php dependency.
+	 */
+	$target = rtrim( $target, '/' );
+	if ( empty( $target ) ) {
+		$target = '/';
+	}
+
+	if ( file_exists( $target ) ) {
+		return @is_dir( $target );
+	}
+
+	// Do not allow path traversals.
+	if ( str_contains( $target, '../' ) || str_contains( $target, '..' . DIRECTORY_SEPARATOR ) ) {
+		return false;
+	}
+
+	// We need to find the permissions of the parent folder that exists and inherit that.
+	$target_parent = dirname( $target );
+	while ( '.' !== $target_parent &amp;&amp; ! is_dir( $target_parent ) &amp;&amp; dirname( $target_parent ) !== $target_parent ) {
+		$target_parent = dirname( $target_parent );
+	}
+
+	// Get the permission bits.
+	$stat = @stat( $target_parent );
+	if ( $stat ) {
+		$dir_perms = $stat['mode'] &amp; 0007777;
+	} else {
+		$dir_perms = 0777;
+	}
+
+	if ( @mkdir( $target, $dir_perms, true ) ) {
+
+		/*
+		 * If a umask is set that modifies $dir_perms, we'll have to re-set
+		 * the $dir_perms correctly with chmod()
+		 */
+		if ( ( $dir_perms &amp; ~umask() ) !== $dir_perms ) {
+			$folder_parts = explode( '/', substr( $target, strlen( $target_parent ) + 1 ) );
+			for ( $i = 1, $c = count( $folder_parts ); $i &lt;= $c; $i++ ) {
+				chmod( $target_parent . '/' . implode( '/', array_slice( $folder_parts, 0, $i ) ), $dir_perms );
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/functions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/functions.php#L2036">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/functions.php#L2036-L2101">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_stream/">wp_is_stream()</a><code>wp-includes/functions.php</code></td><td><p>Tests if a given path is a stream URL</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor_imagick/write_image/">WP_Image_Editor_Imagick::write_image()</a><code>wp-includes/class-wp-image-editor-imagick.php</code></td><td><p>Writes an image to a file or stream.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_privacy_generate_personal_data_export_file/">wp_privacy_generate_personal_data_export_file()</a><code>wp-admin/includes/privacy-tools.php</code></td><td><p>Generate the personal data export file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_copy_image_file/">_copy_image_file()</a><code>wp-admin/includes/image.php</code></td><td><p>Copies an existing image file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_crop_image/">wp_crop_image()</a><code>wp-admin/includes/image.php</code></td><td><p>Crops an image to a given size.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_upload_bits/">wp_upload_bits()</a><code>wp-includes/functions.php</code></td><td><p>Creates a file in the upload folder with given content.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_upload_dir/">wp_upload_dir()</a><code>wp-includes/functions.php</code></td><td><p>Returns an array containing the current upload directory’s path and URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor/make_image/">WP_Image_Editor::make_image()</a><code>wp-includes/class-wp-image-editor.php</code></td><td><p>Either calls editor’s save function or handles file as a stream.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.1/">2.0.1</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1355" id="comment-1355">
+<article class="comment-body" id="div-comment-1355">
+<a class="screen-reader-text" href="#comment-content-1355">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1355">
+<p><strong>Basic Example</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( wp_mkdir_p( '/a/really/deep/sub/directory' ) ) {
+  echo __( 'It worked! Now look for a directory named "a".', 'textdomain' );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1355">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-psykonevro even thread-even depth-1" data-comment-id="5059" id="comment-5059">
+<article class="comment-body" id="div-comment-5059">
+<a class="screen-reader-text" href="#comment-content-5059">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5059">
+<p>Should you need to create a folder with 777 permission (i.e. usefull for a cache folder), just do:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$cache_folder = ABSPATH . 'cache';
+if ( ! is_dir( $cache_folder ) ) {
+		wp_mkdir_p( $cache_folder );
+		chmod( $cache_folder, 0777 );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5059">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-syedusmanahmed odd alt thread-odd thread-alt depth-1" data-comment-id="4862" id="comment-4862">
+<article class="comment-body" id="div-comment-4862">
+<a class="screen-reader-text" href="#comment-content-4862">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4862">
+<p>Creating a directory if doesn’t already exist.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( ! is_dir( ABSPATH . 'my-folder' ) ) {
+    wp_mkdir_p( ABSPATH . 'my-folder' );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4862">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

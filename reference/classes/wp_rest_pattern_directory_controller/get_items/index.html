@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_pattern_directory_controller/">WP_REST_Pattern_Directory_Controller</a></span><span class="is-current-page">WP_REST_Pattern_Directory_Controller::get_items()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_Pattern_Directory_Controller::get_items()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_Pattern_Directory_Controller::get_items( <span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_rest_response/" rel="class">WP_REST_Response</a>|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Search and retrieve block patterns metadata</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$request</code><span class="type"><span class="WP_REST_Request"><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/" rel="class">WP_REST_Request</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Full details about the request.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_rest_response/" rel="class">WP_REST_Response</a>|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> Response object on success, or <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> object on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="89"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_items( $request ) {
+	$valid_query_args = array(
+		'offset'   =&gt; true,
+		'order'    =&gt; true,
+		'orderby'  =&gt; true,
+		'page'     =&gt; true,
+		'per_page' =&gt; true,
+		'search'   =&gt; true,
+		'slug'     =&gt; true,
+	);
+	$query_args       = array_intersect_key( $request-&gt;get_params(), $valid_query_args );
+
+	$query_args['locale']             = get_user_locale();
+	$query_args['wp-version']         = wp_get_wp_version();
+	$query_args['pattern-categories'] = isset( $request['category'] ) ? $request['category'] : false;
+	$query_args['pattern-keywords']   = isset( $request['keyword'] ) ? $request['keyword'] : false;
+
+	$query_args = array_filter( $query_args );
+
+	$transient_key = $this-&gt;get_transient_key( $query_args );
+
+	/*
+	 * Use network-wide transient to improve performance. The locale is the only site
+	 * configuration that affects the response, and it's included in the transient key.
+	 */
+	$raw_patterns = get_site_transient( $transient_key );
+
+	if ( ! $raw_patterns ) {
+		$api_url = 'https://api.wordpress.org/patterns/1.0/?' . build_query( $query_args );
+		if ( wp_http_supports( array( 'ssl' ) ) ) {
+			$api_url = set_url_scheme( $api_url, 'https' );
+		}
+
+		/*
+		 * Default to a short TTL, to mitigate cache stampedes on high-traffic sites.
+		 * This assumes that most errors will be short-lived, e.g., packet loss that causes the
+		 * first request to fail, but a follow-up one will succeed. The value should be high
+		 * enough to avoid stampedes, but low enough to not interfere with users manually
+		 * re-trying a failed request.
+		 */
+		$cache_ttl      = 5;
+		$wporg_response = wp_remote_get( $api_url );
+		$raw_patterns   = json_decode( wp_remote_retrieve_body( $wporg_response ) );
+
+		if ( is_wp_error( $wporg_response ) ) {
+			$raw_patterns = $wporg_response;
+
+		} elseif ( ! is_array( $raw_patterns ) ) {
+			// HTTP request succeeded, but response data is invalid.
+			$raw_patterns = new WP_Error(
+				'pattern_api_failed',
+				sprintf(
+					/* translators: %s: Support forums URL. */
+					__( 'An unexpected error occurred. Something may be wrong with WordPress.org or this server&amp;#8217;s configuration. If you continue to have problems, please try the &lt;a href="%s"&gt;support forums&lt;/a&gt;.' ),
+					__( 'https://wordpress.org/support/forums/' )
+				),
+				array(
+					'response' =&gt; wp_remote_retrieve_body( $wporg_response ),
+				)
+			);
+
+		} else {
+			// Response has valid data.
+			$cache_ttl = HOUR_IN_SECONDS;
+		}
+
+		set_site_transient( $transient_key, $raw_patterns, $cache_ttl );
+	}
+
+	if ( is_wp_error( $raw_patterns ) ) {
+		$raw_patterns-&gt;add_data( array( 'status' =&gt; 500 ) );
+
+		return $raw_patterns;
+	}
+
+	$response = array();
+
+	if ( $raw_patterns ) {
+		foreach ( $raw_patterns as $pattern ) {
+			$response[] = $this-&gt;prepare_response_for_collection(
+				$this-&gt;prepare_item_for_response( $pattern, $request )
+			);
+		}
+	}
+
+	return new WP_REST_Response( $response );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/endpoints/class-wp-rest-pattern-directory-controller.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-pattern-directory-controller.php#L89">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/endpoints/class-wp-rest-pattern-directory-controller.php#L89-L175">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_wp_version/">wp_get_wp_version()</a><code>wp-includes/functions.php</code></td><td><p>Returns the current WordPress version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_pattern_directory_controller/get_transient_key/">WP_REST_Pattern_Directory_Controller::get_transient_key()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-pattern-directory-controller.php</code></td><td><p>Include a hash of the query args, so that different requests are stored in separate caches.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_pattern_directory_controller/prepare_item_for_response/">WP_REST_Pattern_Directory_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-pattern-directory-controller.php</code></td><td><p>Prepare a raw block pattern before it gets output in a REST API response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/build_query/">build_query()</a><code>wp-includes/functions.php</code></td><td><p>Builds URL query based on an associative and, or indexed array.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_url_scheme/">set_url_scheme()</a><code>wp-includes/link-template.php</code></td><td><p>Sets the scheme for a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_http_supports/">wp_http_supports()</a><code>wp-includes/http.php</code></td><td><p>Determines if there is an HTTP Transport that can process this request.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_remote_get/">wp_remote_get()</a><code>wp-includes/http.php</code></td><td><p>Performs an HTTP request using the GET method and returns its response.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_remote_retrieve_body/">wp_remote_retrieve_body()</a><code>wp-includes/http.php</code></td><td><p>Retrieves only the body from the raw response.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_site_transient/">set_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_site_transient/">get_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.2.0/">6.2.0</a></td><td><span class="since-description">Added <code>'per_page'</code>, <code>'page'</code>, <code>'offset'</code>, <code>'order'</code>, and <code>'orderby'</code> to request.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.0.0/">6.0.0</a></td><td><span class="since-description">Added <code>'slug'</code> to request.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.8.0/">5.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

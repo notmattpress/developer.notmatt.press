@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/release/">Gutenberg Release Process</a></span><span class="is-current-page">Cherry-picking automation</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Cherry-picking automation</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p><code>npm run other:cherry-pick</code> automates cherry-picking Pull Requests with a specific label into the <strong>current branch</strong>.</p>
+<p>It’s especially useful for major WordPress releases as by default the script looks for merged Pull Requests with the <code>Backport to WP Beta/RC</code> label.</p>
+<p>You can also use it in different scenarios by passing a custom label as the first argument. See the Gutenberg plugin release example at the end of this document.</p>
+<p>Running <code>npm run other:cherry-pick</code> yields the following prompt:</p>
+<pre><code>You are on branch "wp/6.2".
+This script will:
+• Cherry-pick the merged PRs labeled as "Backport to WP Beta/RC" to this branch
+• Ask whether you want to push this branch
+• Comment on each PR
+• Remove the label from each PR
+
+The last two actions will be performed USING YOUR GITHUB ACCOUNT that you've
+linked to your GitHub CLI (gh command)
+
+Do you want to proceed? (Y/n)
+</code></pre>
+<p>Here’s what happens once you agree:</p>
+<pre><code>Trying to cherry-pick one by one..
+
+$ git pull origin wp/6.2 --rebase...
+$ git fetch origin trunk...
+
+Found the following PRs to cherry-pick:
+   #41198 – Site Editor: Set min-width for styles preview
+
+Fetching commit IDs... Done!
+   #41198 – 860a39665c318d33027d – Site Editor: Set min-width for...
+
+Trying to cherry-pick one by one...
+
+Cherry-picking round 1:
+    cherry-pick commit: afe9b757b4  for PR: #41198 – Site Editor: Set min-width for...
+Cherry-picking finished!
+
+Summary:
+    1 PRs got cherry-picked cleanly
+    0 PRs failed
+
+About to push to origin/wp/6.2
+Do you want to proceed? (Y/n)
+</code></pre>
+<p>This run was successful, yay! You can use this moment to confirm the correct PRs were cherry-picked.</p>
+<p>What if the cherry-picks didn’t apply cleanly? The script would apply the rest and retry.<br/>
+If some cherry-picks still failed, the script would skip them and let you know which conflicts require a manual resolution.</p>
+<p>Either way, here’s what happens once you proceed past the cherry-picking stage:</p>
+<pre><code>Pushing to origin/wp/6.2
+Commenting and removing labels...
+  41198: I just cherry-picked this PR to the wp/6.2 branch to get it included in the next release: afe9b757b4
+Done!
+</code></pre>
+<p>The commenting part is optional and only possible if you have the <a href="https://cli.github.com/"><code>gh</code> console utility</a> installed.</p>
+<h3 class="is-toc-heading" id="can-i-use-a-different-label-than-backport-to-wp-beta-rc" tabindex="-1"><a href="#can-i-use-a-different-label-than-backport-to-wp-beta-rc">Can I use a different label than Backport to WP Beta/RC?</a></h3>
+<p>Yes! Pass it as the first argument:</p>
+<pre><code>npm run other:cherry-pick "Another Label"
+</code></pre>
+<h3 class="is-toc-heading" id="how-can-i-use-it-for-a-gutenberg-plugin-release" tabindex="-1"><a href="#how-can-i-use-it-for-a-gutenberg-plugin-release">How can I use it for a Gutenberg plugin release?</a></h3>
+<pre><code># Switch to the release branch
+git checkout release/X.Y
+
+# Cherry-pick all the merged PRs with a relevant backport label
+npm run other:cherry-pick "Backport to Gutenberg RC"
+</code></pre>
+<h3 class="is-toc-heading" id="future-improvements" tabindex="-1"><a href="#future-improvements">Future improvements</a></h3>
+<p>In the future, it would be great if the script automatically selected the<br/>
+relevant label based on the currently selected branch:</p>
+<ul>
+<li>release/X.Y – plugin release – “Backport to Gutenberg RC”</li>
+<li>wp/X.Y – WP release – “Backport to WP Beta/RC”</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_count_comments()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_count_comments()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_count_comments( <span class="arg-type">int</span> <span class="arg-name">$post_id</span> ): <span class="return-type">stdClass</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the total comment counts for the whole site or a single post.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The comment stats are cached and then retrieved, if they already exist in the cache.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/get_comment_count">get_comment_count()</a>: Which handles fetching the live comment counts.</li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post_id</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Restrict the comment counts to the given post. Default 0, which indicates that                     comment counts for the whole site will be retrieved.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">stdClass</span> The number of comments keyed by their status.<br/>
+<ul class="param-hash"><li><code>approved</code> <span class="type">int</span><div class="desc">The number of approved comments.</div></li>
+<li><code>moderated</code> <span class="type">int</span><div class="desc">The number of comments awaiting moderation (a.k.a. pending).</div></li>
+<li><code>spam</code> <span class="type">int</span><div class="desc">The number of spam comments.</div></li>
+<li><code>trash</code> <span class="type">int</span><div class="desc">The number of trashed comments.</div></li>
+<li><code>post-trashed</code> <span class="type">int</span><div class="desc">The number of comments for posts that are in the trash.</div></li>
+<li><code>total_comments</code> <span class="type">int</span><div class="desc">The total number of non-trashed comments, including spam.</div></li>
+<li><code>all</code> <span class="type">int</span><div class="desc">The total number of pending or approved comments.</div></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1420"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_count_comments( $post_id = 0 ) {
+	$post_id = (int) $post_id;
+
+	/**
+	 * Filters the comments count for a given post or the whole site.
+	 *
+	 * @since 2.7.0
+	 *
+	 * @param array|stdClass $count   An empty array or an object containing comment counts.
+	 * @param int            $post_id The post ID. Can be 0 to represent the whole site.
+	 */
+	$filtered = apply_filters( 'wp_count_comments', array(), $post_id );
+	if ( ! empty( $filtered ) ) {
+		return $filtered;
+	}
+
+	$count = wp_cache_get( "comments-{$post_id}", 'counts' );
+	if ( false !== $count ) {
+		return $count;
+	}
+
+	$stats              = get_comment_count( $post_id );
+	$stats['moderated'] = $stats['awaiting_moderation'];
+	unset( $stats['awaiting_moderation'] );
+
+	$stats_object = (object) $stats;
+	wp_cache_set( "comments-{$post_id}", $stats_object, 'counts' );
+
+	return $stats_object;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/comment.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/comment.php#L1420">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/comment.php#L1420-L1449">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_count_comments/"><span class="hook-func">apply_filters</span>( ‘wp_count_comments’,  <nobr><span class="arg-type">array|stdClass</span> <span class="arg-name">$count</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr> )</a></dt><dd><p>Filters the comments count for a given post or the whole site.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set/">wp_cache_set()</a><code>wp-includes/cache.php</code></td><td><p>Saves the data to the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_comment_count/">get_comment_count()</a><code>wp-includes/comment.php</code></td><td><p>Retrieves the total comment counts for the whole site or a single post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_right_now/">wp_dashboard_right_now()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Dashboard widget that displays some basic stats about the site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_ajax_delete_comment_response/">_wp_ajax_delete_comment_response()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Sends back current comment total and new page links if they need to be updated.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_replyto_comment/">wp_ajax_replyto_comment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles replying to a comment via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_comments_list_table/get_views/">WP_Comments_List_Table::get_views()</a><code>wp-admin/includes/class-wp-comments-list-table.php</code></td><td></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_bar_comments_menu/">wp_admin_bar_comments_menu()</a><code>wp-includes/admin-bar.php</code></td><td><p>Adds edit comments link with awaiting moderation count bubble.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_getcommentcount/">wp_xmlrpc_server::wp_getCommentCount()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Retrieves comment counts.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="693" id="comment-693">
+<article class="comment-body" id="div-comment-693">
+<a class="screen-reader-text" href="#comment-content-693">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-693">
+<p>Retrieve comment count for a post</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+$comments_count = wp_count_comments( 2492 );
+echo "Comments for post 2492 &lt;br /&gt;";
+echo "Comments in moderation: " . $comments_count-&gt;moderated . "&lt;br /&gt;"; 
+echo "Comments approved: " . $comments_count-&gt;approved . "&lt;br /&gt;";
+echo "Comments in Spam: " . $comments_count-&gt;spam . "&lt;br /&gt;";
+echo "Comments in Trash: " . $comments_count-&gt;trash . "&lt;br /&gt;";
+echo "Total Comments: " . $comments_count-&gt;total_comments . "&lt;br /&gt;";
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-693">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="692" id="comment-692">
+<article class="comment-body" id="div-comment-692">
+<a class="screen-reader-text" href="#comment-content-692">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-692">
+<p><strong>Default usage</strong><br>
+Retrieve comment count for a site.</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+$comments_count = wp_count_comments();
+echo "Comments for site &lt;br /&gt;";
+echo "Comments in moderation: " . $comments_count-&gt;moderated . "&lt;br /&gt;"; 
+echo "Comments approved: " . $comments_count-&gt;approved . "&lt;br /&gt;";
+echo "Comments in Spam: " . $comments_count-&gt;spam . "&lt;br /&gt;";
+echo "Comments in Trash: " . $comments_count-&gt;trash . "&lt;br /&gt;";
+echo "Total Comments: " . $comments_count-&gt;total_comments . "&lt;br /&gt;";
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-692">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

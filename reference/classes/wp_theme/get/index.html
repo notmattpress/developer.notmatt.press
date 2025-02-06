@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_theme/">WP_Theme</a></span><span class="is-current-page">WP_Theme::get()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Theme::get()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Theme::get( <span class="arg-type">string</span> <span class="arg-name">$header</span> ): <span class="return-type">string|array|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Gets a raw, unformatted theme header.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The header is sanitized, but is not translated, and is not marked up for display.<br/>To get a theme header for display, use the display() method.</p>
+<p>Use the <a href="https://developer.notmatt.press/reference/functions/get_template/" rel="function">get_template()</a>  method, not the ‘Template’ header, for finding the template.<br/>The ‘Template’ header is only good for what was written in the style.css, while <a href="https://developer.notmatt.press/reference/functions/get_template/" rel="function">get_template()</a>  takes into account where WordPress actually located the theme and whether it is actually valid.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$header</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Theme header. Name, Description, Author, Version, ThemeURI, AuthorURI, Status, Tags.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|array|false</span> String or array (for Tags header) on success, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="870"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get( $header ) {
+	if ( ! isset( $this-&gt;headers[ $header ] ) ) {
+		return false;
+	}
+
+	if ( ! isset( $this-&gt;headers_sanitized ) ) {
+		$this-&gt;headers_sanitized = $this-&gt;cache_get( 'headers' );
+		if ( ! is_array( $this-&gt;headers_sanitized ) ) {
+			$this-&gt;headers_sanitized = array();
+		}
+	}
+
+	if ( isset( $this-&gt;headers_sanitized[ $header ] ) ) {
+		return $this-&gt;headers_sanitized[ $header ];
+	}
+
+	// If themes are a persistent group, sanitize everything and cache it. One cache add is better than many cache sets.
+	if ( self::$persistently_cache ) {
+		foreach ( array_keys( $this-&gt;headers ) as $_header ) {
+			$this-&gt;headers_sanitized[ $_header ] = $this-&gt;sanitize_header( $_header, $this-&gt;headers[ $_header ] );
+		}
+		$this-&gt;cache_add( 'headers', $this-&gt;headers_sanitized );
+	} else {
+		$this-&gt;headers_sanitized[ $header ] = $this-&gt;sanitize_header( $header, $this-&gt;headers[ $header ] );
+	}
+
+	return $this-&gt;headers_sanitized[ $header ];
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-theme.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-theme.php#L870">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-theme.php#L870-L897">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/cache_get/">WP_Theme::cache_get()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Gets theme data from cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/sanitize_header/">WP_Theme::sanitize_header()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Sanitizes a theme header.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/cache_add/">WP_Theme::cache_add()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Adds theme data to cache.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_pattern_cache/">WP_Theme::get_pattern_cache()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Gets block pattern cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/set_pattern_cache/">WP_Theme::set_pattern_cache()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Sets block pattern cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/get_style_variations/">WP_Theme_JSON_Resolver::get_style_variations()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Returns the style variations defined by the theme.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme_json_resolver/get_theme_data/">WP_Theme_JSON_Resolver::get_theme_data()</a><code>wp-includes/class-wp-theme-json-resolver.php</code></td><td><p>Returns the theme’s data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/remove_theme_mods/">remove_theme_mods()</a><code>wp-includes/theme.php</code></td><td><p>Removes theme modifications option for the active theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_theme_mods/">get_theme_mods()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves all theme modifications.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_theme/">get_current_theme()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieve current theme name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/markup_header/">WP_Theme::markup_header()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Marks up a theme header.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/translate_header/">WP_Theme::translate_header()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Translates a theme header.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/load_textdomain/">WP_Theme::load_textdomain()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Loads the theme’s textdomain.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/__get/">WP_Theme::__get()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>__get() magic method for properties formerly returned by <a href="https://developer.notmatt.press/reference/functions/current_theme_info/" rel="function">current_theme_info()</a> </p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/offsetget/">WP_Theme::offsetGet()</a><code>wp-includes/class-wp-theme.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/display/">WP_Theme::display()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Gets a theme header, formatted and translated for display.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 8 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.4.0/">3.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-chifarol odd alt thread-odd thread-alt depth-1" data-comment-id="5991" id="comment-5991">
+<article class="comment-body" id="div-comment-5991">
+<a class="screen-reader-text" href="#comment-content-5991">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5991">
+<p>get current theme’s version<br/>
+<code>$version = wp_get_theme()-&gt;get( 'version' )</code></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5991">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

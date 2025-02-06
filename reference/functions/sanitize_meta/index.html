@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">sanitize_meta()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>sanitize_meta()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">sanitize_meta( <span class="arg-type">string</span> <span class="arg-name">$meta_key</span>,  <span class="arg-type">mixed</span> <span class="arg-name">$meta_value</span>,  <span class="arg-type">string</span> <span class="arg-name">$object_type</span>,  <span class="arg-type">string</span> <span class="arg-name">$object_subtype</span> = <span class="arg-default">''</span> ): <span class="return-type">mixed</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sanitizes meta value.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$meta_key</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Metadata key.</span></div></dd><dt><code>$meta_value</code><span class="type"><span class="mixed">mixed</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Metadata value to sanitize.</span></div></dd><dt><code>$object_type</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Type of object metadata is for. Accepts <code>'post'</code>, <code>'comment'</code>, <code>'term'</code>, <code>'user'</code>,                               or any other object type with an associated meta table.</span></div></dd><dt><code>$object_subtype</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The subtype of the object type. </span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">mixed</span> Sanitized $meta_value.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<ul class="wp-block-list">
+<li>This function applies filters that can be hooked to perform specific sanitization procedures for the particular metadata type and key. Does not sanitize anything on its own. Custom filters must be hooked in to do the work. The filter hook tag has the form “<code>sanitize_{$meta_type}_meta_{$meta_key}</code>“.</li>
+<li>This function is called by <a href="https://developer.notmatt.press/reference/functions/add_metadata/" rel="function">add_metadata()</a>  and <a href="https://developer.notmatt.press/reference/functions/update_metadata/" rel="function">update_metadata()</a>  WordPress functions.</li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1316"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function sanitize_meta( $meta_key, $meta_value, $object_type, $object_subtype = '' ) {
+	if ( ! empty( $object_subtype ) &amp;&amp; has_filter( "sanitize_{$object_type}_meta_{$meta_key}_for_{$object_subtype}" ) ) {
+
+		/**
+		 * Filters the sanitization of a specific meta key of a specific meta type and subtype.
+		 *
+		 * The dynamic portions of the hook name, `$object_type`, `$meta_key`,
+		 * and `$object_subtype`, refer to the metadata object type (comment, post, term, or user),
+		 * the meta key value, and the object subtype respectively.
+		 *
+		 * @since 4.9.8
+		 *
+		 * @param mixed  $meta_value     Metadata value to sanitize.
+		 * @param string $meta_key       Metadata key.
+		 * @param string $object_type    Type of object metadata is for. Accepts 'post', 'comment', 'term', 'user',
+		 *                               or any other object type with an associated meta table.
+		 * @param string $object_subtype Object subtype.
+		 */
+		return apply_filters( "sanitize_{$object_type}_meta_{$meta_key}_for_{$object_subtype}", $meta_value, $meta_key, $object_type, $object_subtype );
+	}
+
+	/**
+	 * Filters the sanitization of a specific meta key of a specific meta type.
+	 *
+	 * The dynamic portions of the hook name, `$meta_type`, and `$meta_key`,
+	 * refer to the metadata object type (comment, post, term, or user) and the meta
+	 * key value, respectively.
+	 *
+	 * @since 3.3.0
+	 *
+	 * @param mixed  $meta_value  Metadata value to sanitize.
+	 * @param string $meta_key    Metadata key.
+	 * @param string $object_type Type of object metadata is for. Accepts 'post', 'comment', 'term', 'user',
+	 *                            or any other object type with an associated meta table.
+	 */
+	return apply_filters( "sanitize_{$object_type}_meta_{$meta_key}", $meta_value, $meta_key, $object_type );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/meta.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/meta.php#L1316">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/meta.php#L1316-L1352">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/sanitize_object_type_meta_meta_key/"><span class="hook-func">apply_filters</span>( “sanitize_{$object_type}_meta_{$meta_key}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$meta_value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$meta_key</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$object_type</span></nobr> )</a></dt><dd><p>Filters the sanitization of a specific meta key of a specific meta type.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/sanitize_object_type_meta_meta_key_for_object_subtype/"><span class="hook-func">apply_filters</span>( “sanitize_{$object_type}_meta_{$meta_key}_for_{$object_subtype}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$meta_value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$meta_key</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$object_type</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$object_subtype</span></nobr> )</a></dt><dd><p>Filters the sanitization of a specific meta key of a specific meta type and subtype.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/has_filter/">has_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Checks if any filter has been registered for a hook.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_meta_fields/is_meta_value_same_as_stored_value/">WP_REST_Meta_Fields::is_meta_value_same_as_stored_value()</a><code>wp-includes/rest-api/fields/class-wp-rest-meta-fields.php</code></td><td><p>Checks if the user provided value is equivalent to a stored value for the given meta key.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/update_metadata_by_mid/">update_metadata_by_mid()</a><code>wp-includes/meta.php</code></td><td><p>Updates metadata by meta ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/add_metadata/">add_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Adds metadata for the specified object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/update_metadata/">update_metadata()</a><code>wp-includes/meta.php</code></td><td><p>Updates metadata for the specified object. If no value already exists for the specified object ID and metadata key, the metadata will be added.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.9.8/">4.9.8</a></td><td><span class="since-description">The <code>$object_subtype</code> parameter was added.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.3/">3.1.3</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1324" id="comment-1324">
+<article class="comment-body" id="div-comment-1324">
+<a class="screen-reader-text" href="#comment-content-1324">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1324">
+<p><strong>Example</strong></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$clean_value = sanitize_meta( 'birth-year', $user_input, 'user' );
+
+function wpdocs_sanitize_birth_year_meta( $year ) {
+
+	$now  = date( 'Y' );
+	$then = $now - 115; // No users older than 115.
+
+	if ( $then &gt; $year || $year &gt; $now ) {
+		wp_die( __( 'Invalid entry, go back and try again.', 'textdomain' ) );
+	}
+	return $year;
+}
+add_filter( 'sanitize_user_meta_birth-year', 'wpdocs_sanitize_birth_year_meta' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1324">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

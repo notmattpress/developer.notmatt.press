@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/customize-api/">Theme Options – The Customize API</a></span><span class="is-current-page">The Customizer JavaScript API</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>The Customizer JavaScript API</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>In WordPress 4.1, newly-expanded JavaScript APIs were introduced for all customizer objects. The entire JavaScript API is currently located in a single file, <a href="https://core.trac.wordpress.org/browser/trunk/src/js/_enqueues/wp/customize/controls.js">wp-admin/js/customize-controls.js</a>, which contains models for all objects, core custom controls, and more.</p>
+<h2 class="is-toc-heading wp-block-heading" id="preview-js-and-controls-js" tabindex="-1"><a href="#preview-js-and-controls-js">Preview JS and Controls JS</a></h2>
+<p>The customizer app is currently split into two distinct areas: the customizer controls “pane” and the customize preview. The preview is currently in an iframe, meaning that all JS runs either in the controls pane or in the preview. The postMessage API is used to communicate between the preview and the controls.</p>
+<p>Most themes only implement JavaScript in the customize preview, and use it to implement instant previewing of settings via postMessage. However, JS on the controls side can be used for many things, such as dynamically showing and hiding controls based on the values of other settings, changing the previewed URL, focusing parts of the preview, and more. Here’s an example from core of controls-side JS that interacts with the preview, in this case changing the previewed URL when the page for posts changes:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">// Change the previewed URL to the selected page when changing the page_for_posts.
+wp.customize(
+	'page_for_posts',
+	function( setting ) {
+		setting.bind( function( pageId ) {
+			pageId = parseInt( pageId, 10 );
+			if ( pageId &gt; 0 ) {
+				api.previewer.previewUrl.set( api.settings.url.home + '?page_id=' + pageId );
+			}
+		});
+	}
+);</code></pre>
+<p>Similar logic can be used to <code>activate</code> UI objects based on the value of a setting. The Twenty Seventeen theme includes some useful examples for leveraging the customize JS API for improved user experience. Note that there is one JS file for the controls pane, named <code>customize-controls.js</code> and one file for the customize preview, named customize-preview.js. For clarity, all themes and plugins are recommended to follow this naming convention, even if customize JS is only provided in the controls or preview but not both.</p>
+<p>The rest of this page is dedicated primarily to the controls-side JS API that was built-out in WordPress 4.1.</p>
+<h2 class="is-toc-heading wp-block-heading" id="models-for-controls-sections-and-panels" tabindex="-1"><a href="#models-for-controls-sections-and-panels">Models for Controls, Sections, and Panels</a></h2>
+<p>As in PHP, each Customizer object type has a corresponding object in JavaScript. There are <code>wp.customize.Control,</code> <code>wp.customize.Panel,</code> and <code>wp.customize.Section </code>models, as well as <code>wp.customize.panel,</code> <code>wp.customize.section, and </code><code>wp.customize.control</code> collections (yes, they are singular) that store all control instances. You can iterate over panels, sections, and controls via:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">wp.customize.panel.each( function ( panel ) { /* ... */ } );
+wp.customize.section.each( function ( section ) { /* ... */ } );
+wp.customize.control.each( function ( control ) { /* ... */ } );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="relating-controls-sections-and-panels-together" tabindex="-1"><a href="#relating-controls-sections-and-panels-together">Relating Controls, Sections, and Panels together</a></h2>
+<p>When registering a new control in PHP, you pass in the parent section ID:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php
+$wp_customize-&gt;add_control(
+	'blogname',
+	array(
+		'label'   =&gt; __( 'Site Title' ),
+		'section' =&gt; 'title_tagline',
+	)
+);
+?&gt;</code></pre>
+<p>In the JavaScript API, a control’s section can be obtained predictably:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">id = wp.customize.control( 'blogname' ).section(); // returns title_tagline by default</code></pre>
+<p>To get the section object from the ID, look up the section by the ID as normal: <code>wp.customize.section( id )</code>.</p>
+<p>You can move a control to another section using this <code>section</code> state as well, here moving it to the Navigation section:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">wp.customize.control( 'blogname' ).section( 'nav' );</code></pre>
+<p>Likewise, you can get a section’s panel ID in the same way:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">id = wp.customize.section( 'sidebar-widgets-sidebar-1' ).panel(); // returns widgets by default</code></pre>
+<p>You can go the other way as well, to get the children of panels and sections:<br/></p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">sections = wp.customize.panel( 'widgets' ).sections();controls = wp.customize.section( 'title_tagline' ).controls();</code></pre>
+<p>You can use these to move all controls from one section to another:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">_.each( wp.customize.section( 'title_tagline' ).controls(), function ( control ) {  
+    control.section( 'nav' );
+} );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="contextual-panels-sections-and-controls" tabindex="-1"><a href="#contextual-panels-sections-and-controls">Contextual Panels, Sections, and Controls</a></h2>
+<p><code>Control,</code> <code>Panel,</code> and <code>Section</code> instances have an <code>active</code> state (a <code>wp.customize.Value</code> instance). When the <code>active</code> state changes, the panel, section, and control instances invoke their respective <code>onChangeActive</code> method, which by default slides the container element up and down, if <code>false</code> and <code>true</code> respectively. There are also <code>activate()</code> and <code>deactivate()</code> methods now for manipulating this <code>active</code> state, for panels, sections, and controls. The primary purpose of these states is to show or hide the object without removing it entirely from the Customizer.</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">wp.customize.section( 'nav' ).deactivate(); // slide up
+wp.customize.section( 'nav' ).activate({ duration: 1000 }); // slide down slowly
+wp.customize.section( 'colors' ).deactivate({ duration: 0 }); // hide immediately
+wp.customize.section( 'nav' ).deactivate({ completeCallback:
+function () {  
+    wp.customize.section( 'colors' ).activate(); // show after nav hides completely
+} } );</code></pre>
+<p>Note that manually changing the <code>active</code> state would only stick until the preview refreshes or loads another URL. The <code>activate()</code>/<code>deactivate()</code> methods are designed to follow the pattern of the new <code>expanded</code> state.</p>
+<h2 class="is-toc-heading wp-block-heading" id="focusing-ui-objects" tabindex="-1"><a href="#focusing-ui-objects">Focusing UI Objects</a></h2>
+<p>Building upon the <code>expand()</code>/<code>collapse()</code> methods for panels, sections, and controls, these models also support a <code>focus()</code> method which not only expands all of the necessary elements, but also scrolls the target container into view and puts the browser focus on the first focusable element in the container. For instance, to expand the “Static Front Page” section and focus on select dropdown for the “Front page”:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">wp.customize.control( 'page_on_front' ).focus()</code></pre>
+<p>The focus functionality is used to implement <a href="https://core.trac.wordpress.org/ticket/28650" title="#28650: Allow Customizer elements (controls, sections, and panels) to be deep-linked">autofocus</a>: deep-linking to panels, sections, and controls inside of the customizer. Consider these URLs:</p>
+<ul class="wp-block-list">
+<li>…/wp-admin/customize.php?autofocus[panel]=widgets</li>
+<li>…/wp-admin/customize.php?autofocus[section]=colors</li>
+<li>…/wp-admin/customize.php?autofocus[control]=blogname</li>
+</ul>
+<p>This is used in WordPress core to <a href="https://core.trac.wordpress.org/ticket/28032" title="#28032: Headers, Backgrounds, and Widgets in the Customizer are not discoverable from their separate admin screens.">add a link</a> on the widgets admin page to link directly to the widgets panel within the customizer, as well as to connect visible edit shortcuts in the customize preview with the associated controls in the customize pane.</p>
+<h2 class="is-toc-heading wp-block-heading" id="priorities" tabindex="-1"><a href="#priorities">Priorities</a></h2>
+<p>When registering a panel, section, or control in PHP, you can supply a <code>priority</code> parameter. This value is stored in a <code>wp.customize.Value</code> instance for each respective <code>Panel</code>, <code>Section</code>, and <code>Control</code> instance. For example, you can obtain the priority for the widgets panel via:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">priority = wp.customize.panel( 'widgets' ).priority(); // returns 110 by default</code></pre>
+<p>You can then dynamically change the priority and the Customizer UI will automatically re-arrange to reflect the new priorities:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">wp.customize.panel( 'widgets' ).priority( 1 ); // move Widgets to the top</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="custom-controls-panels-and-sections" tabindex="-1"><a href="#custom-controls-panels-and-sections">Custom Controls, Panels, and Sections</a></h2>
+<p>When working with custom Customizer objects in JS, it is usually easiest to examine the custom objects in WordPress core to understand the code structure. See <a href="https://core.trac.wordpress.org/browser/trunk/src/js/_enqueues/wp/customize/controls.js">wp-admin/js/customize-controls.js</a>, particularly the wp.customize.Panel|Section|Control models. Note several examples in the core code, particularly in the media controls, which build on each others’ functionality though object hierarchy.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

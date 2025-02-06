@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/language_pack_upgrader/">Language_Pack_Upgrader</a></span><span class="is-current-page">Language_Pack_Upgrader::clear_destination()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Language_Pack_Upgrader::clear_destination()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">Language_Pack_Upgrader::clear_destination( <span class="arg-type">string</span> <span class="arg-name">$remote_destination</span> ): <span class="return-type">bool|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Clears existing translations where this item is going to be installed into.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$remote_destination</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The location on the remote filesystem to be cleared.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> True upon success, <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="410"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function clear_destination( $remote_destination ) {
+	global $wp_filesystem;
+
+	$language_update    = $this-&gt;skin-&gt;language_update;
+	$language_directory = WP_LANG_DIR . '/'; // Local path for use with glob().
+
+	if ( 'core' === $language_update-&gt;type ) {
+		$files = array(
+			$remote_destination . $language_update-&gt;language . '.po',
+			$remote_destination . $language_update-&gt;language . '.mo',
+			$remote_destination . $language_update-&gt;language . '.l10n.php',
+			$remote_destination . 'admin-' . $language_update-&gt;language . '.po',
+			$remote_destination . 'admin-' . $language_update-&gt;language . '.mo',
+			$remote_destination . 'admin-' . $language_update-&gt;language . '.l10n.php',
+			$remote_destination . 'admin-network-' . $language_update-&gt;language . '.po',
+			$remote_destination . 'admin-network-' . $language_update-&gt;language . '.mo',
+			$remote_destination . 'admin-network-' . $language_update-&gt;language . '.l10n.php',
+			$remote_destination . 'continents-cities-' . $language_update-&gt;language . '.po',
+			$remote_destination . 'continents-cities-' . $language_update-&gt;language . '.mo',
+			$remote_destination . 'continents-cities-' . $language_update-&gt;language . '.l10n.php',
+		);
+
+		$json_translation_files = glob( $language_directory . $language_update-&gt;language . '-*.json' );
+		if ( $json_translation_files ) {
+			foreach ( $json_translation_files as $json_translation_file ) {
+				$files[] = str_replace( $language_directory, $remote_destination, $json_translation_file );
+			}
+		}
+	} else {
+		$files = array(
+			$remote_destination . $language_update-&gt;slug . '-' . $language_update-&gt;language . '.po',
+			$remote_destination . $language_update-&gt;slug . '-' . $language_update-&gt;language . '.mo',
+			$remote_destination . $language_update-&gt;slug . '-' . $language_update-&gt;language . '.l10n.php',
+		);
+
+		$language_directory     = $language_directory . $language_update-&gt;type . 's/';
+		$json_translation_files = glob( $language_directory . $language_update-&gt;slug . '-' . $language_update-&gt;language . '-*.json' );
+		if ( $json_translation_files ) {
+			foreach ( $json_translation_files as $json_translation_file ) {
+				$files[] = str_replace( $language_directory, $remote_destination, $json_translation_file );
+			}
+		}
+	}
+
+	$files = array_filter( $files, array( $wp_filesystem, 'exists' ) );
+
+	// No files to delete.
+	if ( ! $files ) {
+		return true;
+	}
+
+	// Check all files are writable before attempting to clear the destination.
+	$unwritable_files = array();
+
+	// Check writability.
+	foreach ( $files as $file ) {
+		if ( ! $wp_filesystem-&gt;is_writable( $file ) ) {
+			// Attempt to alter permissions to allow writes and try again.
+			$wp_filesystem-&gt;chmod( $file, FS_CHMOD_FILE );
+			if ( ! $wp_filesystem-&gt;is_writable( $file ) ) {
+				$unwritable_files[] = $file;
+			}
+		}
+	}
+
+	if ( ! empty( $unwritable_files ) ) {
+		return new WP_Error( 'files_not_writable', $this-&gt;strings['files_not_writable'], implode( ', ', $unwritable_files ) );
+	}
+
+	foreach ( $files as $file ) {
+		if ( ! $wp_filesystem-&gt;delete( $file ) ) {
+			return new WP_Error( 'remove_old_failed', $this-&gt;strings['remove_old_failed'] );
+		}
+	}
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-language-pack-upgrader.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-language-pack-upgrader.php#L410">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-language-pack-upgrader.php#L410-L486">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.1.0/">5.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,172 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_create_nonce()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_create_nonce()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_create_nonce( <span class="arg-type">string|int</span> <span class="arg-name">$action</span> = <span class="arg-default">-1</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Creates a cryptographic token tied to a specific action, user, user session, and window of time.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$action</code><span class="type"><span class="string">string</span>|<span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Scalar value to add context to the nonce.</span></div><p class="default">Default:<code>-1</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The token.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>The function should be called using the <a href="https://codex.wordpress.org/Plugin_API/Action_Reference/init" title="Plugin API/Action Reference/init">init</a> or any subsequent action <a href="https://wordpress.org/support/article/glossary/" title="Glossary">hook</a>. Calling it outside of an action hook can lead to problems, see the <a class="external text" href="https://core.trac.wordpress.org/ticket/14024" rel="nofollow">ticket #14024</a> for details.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2417"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_create_nonce( $action = -1 ) {
+	$user = wp_get_current_user();
+	$uid  = (int) $user-&gt;ID;
+	if ( ! $uid ) {
+		/** This filter is documented in wp-includes/pluggable.php */
+		$uid = apply_filters( 'nonce_user_logged_out', $uid, $action );
+	}
+
+	$token = wp_get_session_token();
+	$i     = wp_nonce_tick( $action );
+
+	return substr( wp_hash( $i . '|' . $action . '|' . $uid . '|' . $token, 'nonce' ), -12, 10 );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/pluggable.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/pluggable.php#L2417">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/pluggable.php#L2417-L2429">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/nonce_user_logged_out/"><span class="hook-func">apply_filters</span>( ‘nonce_user_logged_out’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$uid</span></nobr>,  <nobr><span class="arg-type">string|int</span> <span class="arg-name">$action</span></nobr> )</a></dt><dd><p>Filters whether the user who generated the nonce is logged out.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_session_token/">wp_get_session_token()</a><code>wp-includes/user.php</code></td><td><p>Retrieves the current session token from the logged_in cookie.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_tick/">wp_nonce_tick()</a><code>wp-includes/pluggable.php</code></td><td><p>Returns the time-dependent variable for nonce creation.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_hash/">wp_hash()</a><code>wp-includes/pluggable.php</code></td><td><p>Gets hash of given string.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_current_user/">wp_get_current_user()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves the current user object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/check_plugin_dependencies_during_ajax/">WP_Plugin_Dependencies::check_plugin_dependencies_during_ajax()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Checks plugin dependencies after a plugin is installed via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_plugin_action_button/">wp_get_plugin_action_button()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Gets the markup for the plugin install action button.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_block_theme_activate_nonce/">wp_block_theme_activate_nonce()</a><code>wp-includes/theme-previews.php</code></td><td><p>Set a JavaScript constant for theme activation.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_refresh_metabox_loader_nonces/">wp_refresh_metabox_loader_nonces()</a><code>wp-admin/includes/misc.php</code></td><td><p>Refresh nonces used with meta boxes in the block editor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/wp_cron_scheduled_check/">WP_Site_Health::wp_cron_scheduled_check()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Runs the scheduled event to check and update the latest site health status for the website.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_data_removal_requests_list_table/column_email/">WP_Privacy_Data_Removal_Requests_List_Table::column_email()</a><code>wp-admin/includes/class-wp-privacy-data-removal-requests-list-table.php</code></td><td><p>Outputs the Actions column.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_data_removal_requests_list_table/column_next_steps/">WP_Privacy_Data_Removal_Requests_List_Table::column_next_steps()</a><code>wp-admin/includes/class-wp-privacy-data-removal-requests-list-table.php</code></td><td><p>Outputs the Next steps column.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_rest_nonce/">wp_ajax_rest_nonce()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles renewing the REST API nonce via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_data_export_requests_list_table/column_email/">WP_Privacy_Data_Export_Requests_List_Table::column_email()</a><code>wp-admin/includes/class-wp-privacy-data-export-requests-list-table.php</code></td><td><p>Actions column.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_data_export_requests_list_table/column_next_steps/">WP_Privacy_Data_Export_Requests_List_Table::column_next_steps()</a><code>wp-admin/includes/class-wp-privacy-data-export-requests-list-table.php</code></td><td><p>Displays the next steps column.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/resume_theme/">resume_theme()</a><code>wp-admin/includes/theme.php</code></td><td><p>Tries to resume a single theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_test_rest_availability/">WP_Site_Health::get_test_rest_availability()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Tests if the REST API is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/enqueue_scripts/">WP_Site_Health::enqueue_scripts()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Enqueues the site health scripts.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/resume_plugin/">resume_plugin()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Tries to resume a single plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_autosaves_controller/prepare_item_for_response/">WP_REST_Autosaves_Controller::prepare_item_for_response()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-autosaves-controller.php</code></td><td><p>Prepares the revision for the REST response.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_default_packages_inline_scripts/">wp_default_packages_inline_scripts()</a><code>wp-includes/script-loader.php</code></td><td><p>Adds inline scripts required for the WordPress JavaScript packages.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_refresh_heartbeat_nonces/">wp_refresh_heartbeat_nonces()</a><code>wp-admin/includes/misc.php</code></td><td><p>Adds the latest Heartbeat and REST API nonce to the Heartbeat response.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/handle_load_themes_request/">WP_Customize_Manager::handle_load_themes_request()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Loads themes into the theme browsing/installation UI.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_localize_community_events/">wp_localize_community_events()</a><code>wp-includes/script-loader.php</code></td><td><p>Localizes community events data that needs to be passed to dashboard.js.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_install_theme/">wp_ajax_install_theme()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles installing a theme via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_install_plugin/">wp_ajax_install_plugin()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles installing a plugin via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/get_nonces/">WP_Customize_Manager::get_nonces()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Gets nonces for the Customizer.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/filter_nonces/">WP_Customize_Nav_Menus::filter_nonces()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Adds a nonce for customizing menus.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/rest_cookie_check_errors/">rest_cookie_check_errors()</a><code>wp-includes/rest-api.php</code></td><td><p>Checks for errors when using cookie-based authentication.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_comments_list_table/handle_row_actions/">WP_Comments_List_Table::handle_row_actions()</a><code>wp-admin/includes/class-wp-comments-list-table.php</code></td><td><p>Generates and displays row actions links.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_media_list_table/column_parent/">WP_Media_List_Table::column_parent()</a><code>wp-admin/includes/class-wp-media-list-table.php</code></td><td><p>Handles the parent column output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/refresh_nonces/">WP_Customize_Widgets::refresh_nonces()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Refreshes the nonce for widget updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_background_image_control/enqueue/">WP_Customize_Background_Image_Control::enqueue()</a><code>wp-includes/customize/class-wp-customize-background-image-control.php</code></td><td><p>Enqueue control related scripts/styles.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_image_editor/">wp_image_editor()</a><code>wp-admin/includes/image-edit.php</code></td><td><p>Loads the WP image-editing interface.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_refresh_post_nonces/">wp_refresh_post_nonces()</a><code>wp-admin/includes/misc.php</code></td><td><p>Checks nonce expiration on the New/Edit Post screen and refresh if needed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/install_plugins_favorites_form/">install_plugins_favorites_form()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Shows a username form for the favorites page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_dashboard_recent_comments_row/">_wp_dashboard_recent_comments_row()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Outputs a row for the Recent Comments widget.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/activate_plugin/">activate_plugin()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Attempts activation of plugin in a “sandbox” and redirects on success.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/compression_test/">compression_test()</a><code>wp-admin/includes/template.php</code></td><td><p>Tests support for compressing JavaScript from PHP.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_list_meta_row/">_list_meta_row()</a><code>wp-admin/includes/template.php</code></td><td><p>Outputs a single row of public meta data in the Custom Fields meta box.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/edit_form_image_editor/">edit_form_image_editor()</a><code>wp-admin/includes/media.php</code></td><td><p>Displays the image and editor in the post editor</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_media_item/">get_media_item()</a><code>wp-admin/includes/media.php</code></td><td><p>Retrieves HTML form for modifying the image attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/media_upload_form/">media_upload_form()</a><code>wp-admin/includes/media.php</code></td><td><p>Outputs the legacy media upload form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_admin_notice_post_locked/">_admin_notice_post_locked()</a><code>wp-admin/includes/post.php</code></td><td><p>Outputs the HTML for the notice to say that someone else is editing or has taken over editing of this post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_preview/">post_preview()</a><code>wp-admin/includes/post.php</code></td><td><p>Saves a draft or manually autosaves for the purpose of showing a post preview.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_query_themes/">wp_ajax_query_themes()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles getting themes from <a href="https://developer.notmatt.press/reference/functions/themes_api/" rel="function">themes_api()</a>  via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_replyto_comment/">wp_ajax_replyto_comment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles replying to a comment via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_prepare_revisions_for_js/">wp_prepare_revisions_for_js()</a><code>wp-admin/includes/revision.php</code></td><td><p>Prepare revisions for JavaScript.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/custom_image_header/step_1/">Custom_Image_Header::step_1()</a><code>wp-admin/includes/class-custom-image-header.php</code></td><td><p>Displays first step of custom header image page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_heartbeat_settings/">wp_heartbeat_settings()</a><code>wp-includes/general-template.php</code></td><td><p>Default settings for heartbeat.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_url/">wp_nonce_url()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves URL with nonce added to URL query.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_field/">wp_nonce_field()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves or display nonce hidden field for forms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_header_image_control/enqueue/">WP_Customize_Header_Image_Control::enqueue()</a><code>wp-includes/customize/class-wp-customize-header-image-control.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_default_scripts/">wp_default_scripts()</a><code>wp-includes/script-loader.php</code></td><td><p>Registers all WordPress scripts.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 44 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.0.0/">4.0.0</a></td><td><span class="since-description">Session tokens were integrated with nonce creation.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.3/">2.0.3</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="689" id="comment-689">
+<article class="comment-body" id="div-comment-689">
+<a class="screen-reader-text" href="#comment-content-689">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-689">
+<p><strong>Example</strong><br/>
+In this simple example, we create an nonce and use it as one of the <code>GET</code> query parameters in a URL for a link. When the user clicks the link they are directed to a page where a certain action will be performed (for example, a post might be deleted). On the target page the nonce is verified to insure that the request was valid (this user really clicked the link and really wants to perform this action).</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/*
+ * Step A: Create an nonce for a link.
+ * We pass it as a GET parameter.
+ * The target page will perform some action based on the 'do_something' parameter.
+ */
+$nonce = wp_create_nonce( 'my-nonce' );
+?&gt;
+&lt;a href='myplugin.php?do_something=some_action&amp;_wpnonce=&lt;?php echo esc_attr( $nonce ); ?&gt;'&gt;&lt;?php esc_html_e( 'Do some action', 'textdomain' ); ?&gt;&lt;/a&gt;
+
+<pre class="wp-block-code"><code class="language-php" lang="php"></code></pre>
+/*
+ * Step B: This code would go in the target page.
+ * We need to verify the nonce.
+ */
+$nonce = $_REQUEST['_wpnonce'];
+if ( ! wp_verify_nonce( $nonce, 'my-nonce' ) ) {
+	// This nonce is not valid.
+	die( __( 'Security check', 'textdomain' ) ); 
+} else {
+	// The nonce was valid.
+	// Do stuff here.
+}</code></pre>
+<p>In the above example we simply called our nonce <code>my-nonce</code>. It is best to choose a name for the nonce that is specific to the action. For example, if we were to create an nonce that would be part of a request to delete a post, we might call it <code>delete_post</code>. Then to make it more specific, we could append the ID of the particular post that the nonce was for. For example <code>delete_post-5</code> for the post with ID 5.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_create_nonce( 'delete_post-' . $post_id );</code></pre>
+<p>Then we would verify the nonce like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_verify_nonce( $nonce, "delete_post-{$_REQUEST['post_id']}" );</code></pre>
+<p>In general, it is best to make the name for the action as specific as possible.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-689">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

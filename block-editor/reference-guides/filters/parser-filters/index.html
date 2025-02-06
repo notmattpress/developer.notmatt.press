@@ -1,0 +1,76 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/filters/">Hooks Reference</a></span><span class="is-current-page">Parser Filters</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Parser Filters</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>When the editor is interacting with blocks, these are stored in memory as data structures comprising a few basic properties and attributes. Upon saving a working post we serialize these data structures into a specific HTML structure and save the resultant string into the <code>post_content</code> property of the post in the WordPress database. When we load that post back into the editor we have to make the reverse transformation to build those data structures from the serialized format in HTML.</p>
+<p>The process of loading the serialized HTML into the editor is performed by the <em>block parser</em>. The formal specification for this transformation is encoded in the parsing expression grammar (PEG) inside the <code>@wordpress/block-serialization-spec-parser</code> package. The editor provides a default parser implementation of this grammar but there may be various reasons for replacing that implementation with a custom implementation. We can inject our own custom parser implementation through the appropriate filter.</p>
+<h2 class="is-toc-heading" id="server-side-parser" tabindex="-1"><a href="#server-side-parser">Server-side parser</a></h2>
+<p>Plugins have access to the parser if they want to process posts in their structured form instead of a plain HTML-as-string representation.</p>
+<h2 class="is-toc-heading" id="client-side-parser" tabindex="-1"><a href="#client-side-parser">Client-side parser</a></h2>
+<p>The editor uses the client-side parser while interactively working in a post. The plain HTML-as-string representation is sent to the browser by the backend and then the editor performs the first parse to initialize itself.</p>
+<h2 class="is-toc-heading" id="filters" tabindex="-1"><a href="#filters">Filters</a></h2>
+<p>To replace the server-side parser, use the <code>block_parser_class</code> filter. The filter transforms the string class name of a parser class. This class is expected to expose a <code>parse</code> method.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-php">class EmptyParser {
+  public function parse( $post_content ) {
+    // return an empty document
+    return array();
+  }
+}
+
+function wpdocs_select_empty_parser( $prev_parser_class ) {
+    return 'EmptyParser';
+}
+
+add_filter( 'block_parser_class', 'wpdocs_select_empty_parser', 10, 1 );
+</code></pre>
+<blockquote><p>
+<strong>Note</strong>: At the present time it’s not possible to replace the client-side parser.
+</p></blockquote>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

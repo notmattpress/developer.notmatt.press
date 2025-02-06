@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/filters/">Hooks Reference</a></span><span class="is-current-page">Global Styles Filters</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Global Styles Filters</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>WordPress 6.1 has introduced some server-side filters to hook into the <code>theme.json</code> data provided at the different data layers:</p>
+<ul>
+<li><code>wp_theme_json_data_default</code>: hooks into the default data provided by WordPress</li>
+<li><code>wp_theme_json_data_blocks</code>: hooks into the data provided by the blocks</li>
+<li><code>wp_theme_json_data_theme</code>: hooks into the data provided by the theme</li>
+<li><code>wp_theme_json_data_user</code>: hooks into the data provided by the user</li>
+</ul>
+<p>Each filter receives an instance of the <code>WP_Theme_JSON_Data</code> class with the data for the respective layer. To provide new data, the filter callback needs to use the <code>update_with( $new_data )</code> method, where <code>$new_data</code> is a valid <code>theme.json</code>-like structure. As with any <code>theme.json</code>, the new data needs to declare which <code>version</code> of the <code>theme.json</code> is using, so it can correctly be migrated to the runtime one, should it be different.</p>
+<p><em>Example:</em></p>
+<p>This is how to pass a new color palette for the theme and disable the text color UI:</p>
+<pre><code class="language-php">function wpdocs_filter_theme_json_theme( $theme_json ){
+    $new_data = array(
+        'version'  =&gt; 2,
+        'settings' =&gt; array(
+            'color' =&gt; array(
+                'text'       =&gt; false,
+                'palette'    =&gt; array( /* New palette */
+                    array(
+                        'slug'  =&gt; 'foreground',
+                        'color' =&gt; 'black',
+                        'name'  =&gt; __( 'Foreground', 'theme-domain' ),
+                    ),
+                    array(
+                        'slug'  =&gt; 'background',
+                        'color' =&gt; 'white',
+                        'name'  =&gt; __( 'Background', 'theme-domain' ),
+                    ),
+                ),
+            ),
+        ),
+    );
+
+    return $theme_json-&gt;update_with( $new_data );
+}
+add_filter( 'wp_theme_json_data_theme', 'wpdocs_filter_theme_json_theme' );
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

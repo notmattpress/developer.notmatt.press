@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_theme_json/">WP_Theme_JSON</a></span><span class="is-current-page">WP_Theme_JSON::remove_insecure_settings()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Theme_JSON::remove_insecure_settings()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Theme_JSON::remove_insecure_settings( <span class="arg-type">array</span> <span class="arg-name">$input</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Processes a setting node and returns the same node without the insecure settings.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$input</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Node to process.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2952"><code class="language-php line-numbers" id="wporg-source-code" lang="php">if ( $should_set_root_min_height ) {
+	$block_rules .= static::to_ruleset(
+		'html',
+		array(
+			array(
+				'name'  =&gt; 'min-height',
+				'value' =&gt; 'calc(100% - var(--wp-admin--admin-bar--height, 0px))',
+			),
+		)
+	);
+}
+
+// Update declarations if there are separators with only background color defined.
+if ( '.wp-block-separator' === $selector ) {
+	$declarations = static::update_separator_declarations( $declarations );
+}
+
+/*
+ * Root selector (body) styles should not be wrapped in `:root where()` to keep
+ * specificity at (0,0,1) and maintain backwards compatibility.
+ *
+ * Top-level element styles using element-only specificity selectors should
+ * not get wrapped in `:root :where()` to maintain backwards compatibility.
+ *
+ * Pseudo classes, e.g. :hover, :focus etc., are a class-level selector so
+ * still need to be wrapped in `:root :where` to cap specificity for nested
+ * variations etc. Pseudo selectors won't match the ELEMENTS selector exactly.
+ */
+$element_only_selector = $is_root_selector || (
+	$current_element &amp;&amp;
+	isset( static::ELEMENTS[ $current_element ] ) &amp;&amp;
+	// buttons, captions etc. still need `:root :where()` as they are class based selectors.
+	! isset( static::__EXPERIMENTAL_ELEMENT_CLASS_NAMES[ $current_element ] ) &amp;&amp;
+	static::ELEMENTS[ $current_element ] === $selector
+);
+
+// 2. Generate and append the rules that use the general selector.
+$general_selector = $element_only_selector ? $selector : ":root :where($selector)";
+$block_rules     .= static::to_ruleset( $general_selector, $declarations );
+
+// 3. Generate and append the rules that use the duotone selector.
+if ( isset( $block_metadata['duotone'] ) &amp;&amp; ! empty( $declarations_duotone ) ) {
+	$block_rules .= static::to_ruleset( $block_metadata['duotone'], $declarations_duotone );
+}
+
+// 4. Generate Layout block gap styles.
+if (
+	! $is_root_selector &amp;&amp;
+	! empty( $block_metadata['name'] )
+) {
+	$block_rules .= $this-&gt;get_layout_styles( $block_metadata );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-theme-json.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-theme-json.php#L2952">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-theme-json.php#L2952-L3003">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.9.0/">5.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

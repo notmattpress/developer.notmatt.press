@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_ajax_ajax_tag_search()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_ajax_ajax_tag_search()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_ajax_ajax_tag_search()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Handles tag search via AJAX.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="106"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_ajax_ajax_tag_search() {
+	if ( ! isset( $_GET['tax'] ) ) {
+		wp_die( 0 );
+	}
+
+	$taxonomy        = sanitize_key( $_GET['tax'] );
+	$taxonomy_object = get_taxonomy( $taxonomy );
+
+	if ( ! $taxonomy_object ) {
+		wp_die( 0 );
+	}
+
+	if ( ! current_user_can( $taxonomy_object-&gt;cap-&gt;assign_terms ) ) {
+		wp_die( -1 );
+	}
+
+	$search = wp_unslash( $_GET['q'] );
+
+	$comma = _x( ',', 'tag delimiter' );
+	if ( ',' !== $comma ) {
+		$search = str_replace( $comma, ',', $search );
+	}
+
+	if ( str_contains( $search, ',' ) ) {
+		$search = explode( ',', $search );
+		$search = $search[ count( $search ) - 1 ];
+	}
+
+	$search = trim( $search );
+
+	/**
+	 * Filters the minimum number of characters required to fire a tag search via Ajax.
+	 *
+	 * @since 4.0.0
+	 *
+	 * @param int         $characters      The minimum number of characters required. Default 2.
+	 * @param WP_Taxonomy $taxonomy_object The taxonomy object.
+	 * @param string      $search          The search term.
+	 */
+	$term_search_min_chars = (int) apply_filters( 'term_search_min_chars', 2, $taxonomy_object, $search );
+
+	/*
+	 * Require $term_search_min_chars chars for matching (default: 2)
+	 * ensure it's a non-negative, non-zero integer.
+	 */
+	if ( ( 0 === $term_search_min_chars ) || ( strlen( $search ) &lt; $term_search_min_chars ) ) {
+		wp_die();
+	}
+
+	$results = get_terms(
+		array(
+			'taxonomy'   =&gt; $taxonomy,
+			'name__like' =&gt; $search,
+			'fields'     =&gt; 'names',
+			'hide_empty' =&gt; false,
+			'number'     =&gt; isset( $_GET['number'] ) ? (int) $_GET['number'] : 0,
+		)
+	);
+
+	/**
+	 * Filters the Ajax term search results.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param string[]    $results         Array of term names.
+	 * @param WP_Taxonomy $taxonomy_object The taxonomy object.
+	 * @param string      $search          The search term.
+	 */
+	$results = apply_filters( 'ajax_term_search_results', $results, $taxonomy_object, $search );
+
+	echo implode( "\n", $results );
+	wp_die();
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/ajax-actions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/ajax-actions.php#L106">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/ajax-actions.php#L106-L178">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/ajax_term_search_results/"><span class="hook-func">apply_filters</span>( ‘ajax_term_search_results’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$results</span></nobr>,  <nobr><span class="arg-type">WP_Taxonomy</span> <span class="arg-name">$taxonomy_object</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$search</span></nobr> )</a></dt><dd><p>Filters the Ajax term search results.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/term_search_min_chars/"><span class="hook-func">apply_filters</span>( ‘term_search_min_chars’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$characters</span></nobr>,  <nobr><span class="arg-type">WP_Taxonomy</span> <span class="arg-name">$taxonomy_object</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$search</span></nobr> )</a></dt><dd><p>Filters the minimum number of characters required to fire a tag search via Ajax.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_terms/">get_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the terms in a given taxonomy or list of taxonomies.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_key/">sanitize_key()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string key.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_die/">wp_die()</a><code>wp-includes/functions.php</code></td><td><p>Kills WordPress execution and displays HTML page with an error message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomy/">get_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the taxonomy object of $taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.0/">3.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

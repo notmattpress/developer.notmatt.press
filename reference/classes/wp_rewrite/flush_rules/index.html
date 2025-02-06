@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rewrite/">WP_Rewrite</a></span><span class="is-current-page">WP_Rewrite::flush_rules()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Rewrite::flush_rules()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Rewrite::flush_rules( <span class="arg-type">bool</span> <span class="arg-name">$hard</span> = <span class="arg-default">true</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Removes rewrite rules and then recreate rewrite rules.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Calls <a href="https://developer.notmatt.press/reference/classes/wp_rewrite/wp_rewrite_rules/" rel="method">WP_Rewrite::wp_rewrite_rules()</a> after removing the ‘rewrite_rules’ option.<br/>If the function named ‘save_mod_rewrite_rules’ exists, it will be called.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$hard</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to update .htaccess (hard flush) or just update rewrite_rules option (soft flush). Default is true (hard).</span></div><p class="default">Default:<code>true</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>This method can be used to refresh WordPress’ rewrite rule cache. Generally, this should be used after programmatically adding one or more custom rewrite rules.</p>
+<p>Because this function can be extremely costly in terms of performance, it should be used as sparingly as possible – such as during activation or deactivation of plugins or themes. Every attempt should be made to avoid using it in hooks that execute on each page load, such as <a href="https://developer.notmatt.press/reference/hooks/init/" title="Plugin API/Action Reference/init">init</a>.</p>
+<h2 class="is-toc-heading wp-block-heading" id="what-it-does" tabindex="-1"><a href="#what-it-does">What it does</a></h2>
+<p>WordPress keeps a cache of all custom rewrite rules. Sometimes plugins or themes make modifications to those rules, however WordPress will not actually recognize the changes until the cache is regenerated.</p>
+<p>This is not a procedural function, but a non-static method of the <a href="https://developer.notmatt.press/reference/classes/wp_rewrite/" rel="class">WP_Rewrite</a> class. To call <tt>flush_rules()</tt>, you must first ensure you are using WordPress’ <tt>$wp_rewrite</tt> global, and call it as a method (see “Usage” above for an example).</p>
+<p><b>Note:</b> This same method is called whenever permalink settings are changed or saved in the WordPress admin, so rewrite rules can be manually refreshed by visiting the Settings &gt; Permalinks screen in WordPress’s admin.</p>
+<p><b>WARNING:</b> If this function is called without a parameter or with a parameter of <tt>true</tt>, your <tt>.htaccess</tt> will be overwritten and any custom rules will be lost!</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1873"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function flush_rules( $hard = true ) {
+	static $do_hard_later = null;
+
+	// Prevent this action from running before everyone has registered their rewrites.
+	if ( ! did_action( 'wp_loaded' ) ) {
+		add_action( 'wp_loaded', array( $this, 'flush_rules' ) );
+		$do_hard_later = ( isset( $do_hard_later ) ) ? $do_hard_later || $hard : $hard;
+		return;
+	}
+
+	if ( isset( $do_hard_later ) ) {
+		$hard = $do_hard_later;
+		unset( $do_hard_later );
+	}
+
+	$this-&gt;refresh_rewrite_rules();
+
+	/**
+	 * Filters whether a "hard" rewrite rule flush should be performed when requested.
+	 *
+	 * A "hard" flush updates .htaccess (Apache) or web.config (IIS).
+	 *
+	 * @since 3.7.0
+	 *
+	 * @param bool $hard Whether to flush rewrite rules "hard". Default true.
+	 */
+	if ( ! $hard || ! apply_filters( 'flush_rewrite_rules_hard', true ) ) {
+		return;
+	}
+	if ( function_exists( 'save_mod_rewrite_rules' ) ) {
+		save_mod_rewrite_rules();
+	}
+	if ( function_exists( 'iis7_save_url_rewrite_rules' ) ) {
+		iis7_save_url_rewrite_rules();
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-rewrite.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-rewrite.php#L1873">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-rewrite.php#L1873-L1908">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/flush_rewrite_rules_hard/"><span class="hook-func">apply_filters</span>( ‘flush_rewrite_rules_hard’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$hard</span></nobr> )</a></dt><dd><p>Filters whether a “hard” rewrite rule flush should be performed when requested.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/refresh_rewrite_rules/">WP_Rewrite::refresh_rewrite_rules()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Refreshes the rewrite rules, saving the fresh value to the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/save_mod_rewrite_rules/">save_mod_rewrite_rules()</a><code>wp-admin/includes/misc.php</code></td><td><p>Updates the htaccess file with the current rules if it is writable.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/iis7_save_url_rewrite_rules/">iis7_save_url_rewrite_rules()</a><code>wp-admin/includes/misc.php</code></td><td><p>Updates the IIS web.config file with the current rules if it is writable.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/did_action/">did_action()</a><code>wp-includes/plugin.php</code></td><td><p>Retrieves the number of times an action has been fired during the current request.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_action/">add_action()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_install_maybe_enable_pretty_permalinks/">wp_install_maybe_enable_pretty_permalinks()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Maybe enable pretty permalinks on installation.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_install_defaults/">wp_install_defaults()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Creates the initial content for a newly-installed site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/flush_rewrite_rules/">flush_rewrite_rules()</a><code>wp-includes/rewrite.php</code></td><td><p>Removes rewrite rules and then recreate rewrite rules.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.1/">2.0.1</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

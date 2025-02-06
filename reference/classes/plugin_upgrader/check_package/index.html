@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/plugin_upgrader/">Plugin_Upgrader</a></span><span class="is-current-page">Plugin_Upgrader::check_package()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Plugin_Upgrader::check_package()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">Plugin_Upgrader::check_package( <span class="arg-type">string</span> <span class="arg-name">$source</span> ): <span class="return-type">string|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Checks that the source package contains a valid plugin.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Hooked to the <a href="https://developer.notmatt.press/reference/hooks/upgrader_source_selection/">‘upgrader_source_selection’</a> filter by <a href="https://developer.notmatt.press/reference/classes/plugin_upgrader/install/" rel="method">Plugin_Upgrader::install()</a>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$source</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The path to the downloaded package source.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> The source as passed, or a <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> object on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="462"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function check_package( $source ) {
+	global $wp_filesystem;
+
+	$wp_version            = wp_get_wp_version();
+	$this-&gt;new_plugin_data = array();
+
+	if ( is_wp_error( $source ) ) {
+		return $source;
+	}
+
+	$working_directory = str_replace( $wp_filesystem-&gt;wp_content_dir(), trailingslashit( WP_CONTENT_DIR ), $source );
+	if ( ! is_dir( $working_directory ) ) { // Confidence check, if the above fails, let's not prevent installation.
+		return $source;
+	}
+
+	// Check that the folder contains at least 1 valid plugin.
+	$files = glob( $working_directory . '*.php' );
+	if ( $files ) {
+		foreach ( $files as $file ) {
+			$info = get_plugin_data( $file, false, false );
+			if ( ! empty( $info['Name'] ) ) {
+				$this-&gt;new_plugin_data = $info;
+				break;
+			}
+		}
+	}
+
+	if ( empty( $this-&gt;new_plugin_data ) ) {
+		return new WP_Error( 'incompatible_archive_no_plugins', $this-&gt;strings['incompatible_archive'], __( 'No valid plugins were found.' ) );
+	}
+
+	$requires_php = isset( $info['RequiresPHP'] ) ? $info['RequiresPHP'] : null;
+	$requires_wp  = isset( $info['RequiresWP'] ) ? $info['RequiresWP'] : null;
+
+	if ( ! is_php_version_compatible( $requires_php ) ) {
+		$error = sprintf(
+			/* translators: 1: Current PHP version, 2: Version required by the uploaded plugin. */
+			__( 'The PHP version on your server is %1$s, however the uploaded plugin requires %2$s.' ),
+			PHP_VERSION,
+			$requires_php
+		);
+
+		return new WP_Error( 'incompatible_php_required_version', $this-&gt;strings['incompatible_archive'], $error );
+	}
+
+	if ( ! is_wp_version_compatible( $requires_wp ) ) {
+		$error = sprintf(
+			/* translators: 1: Current WordPress version, 2: Version required by the uploaded plugin. */
+			__( 'Your WordPress version is %1$s, however the uploaded plugin requires %2$s.' ),
+			$wp_version,
+			$requires_wp
+		);
+
+		return new WP_Error( 'incompatible_wp_required_version', $this-&gt;strings['incompatible_archive'], $error );
+	}
+
+	return $source;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-plugin-upgrader.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-plugin-upgrader.php#L462">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-plugin-upgrader.php#L462-L519">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_wp_version/">wp_get_wp_version()</a><code>wp-includes/functions.php</code></td><td><p>Returns the current WordPress version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_php_version_compatible/">is_php_version_compatible()</a><code>wp-includes/functions.php</code></td><td><p>Checks compatibility with the current PHP version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_wp_version_compatible/">is_wp_version_compatible()</a><code>wp-includes/functions.php</code></td><td><p>Checks compatibility with the current WordPress version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_plugin_data/">get_plugin_data()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Parses the plugin contents to retrieve plugin’s metadata.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.3.0/">3.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

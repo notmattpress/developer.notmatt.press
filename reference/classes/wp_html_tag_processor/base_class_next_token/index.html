@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_html_tag_processor/">WP_HTML_Tag_Processor</a></span><span class="is-current-page">WP_HTML_Tag_Processor::base_class_next_token()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_HTML_Tag_Processor::base_class_next_token()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_HTML_Tag_Processor::base_class_next_token(): <span class="return-type">bool</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Internal method which finds the next token in the HTML document.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This method is a protected internal function which implements the logic for finding the next token in a document. It exists so that the parser can update its state without affecting the location of the cursor in the document and without triggering subclass methods for things like <code>next_token()</code>, e.g. when applying patches before searching for the next token.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> Whether a token was parsed.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="854"><code class="language-php line-numbers" id="wporg-source-code" lang="php">
+	$this-&gt;parsing_namespace = $new_namespace;
+	return true;
+}
+
+/**
+ * Finds the next tag matching the $query.
+ *
+ * @since 6.2.0
+ * @since 6.5.0 No longer processes incomplete tokens at end of document; pauses the processor at start of token.
+ *
+ * @param array|string|null $query {
+ *     Optional. Which tag name to find, having which class, etc. Default is to find any tag.
+ *
+ *     @type string|null $tag_name     Which tag to find, or `null` for "any tag."
+ *     @type int|null    $match_offset Find the Nth tag matching all search criteria.
+ *                                     1 for "first" tag, 3 for "third," etc.
+ *                                     Defaults to first tag.
+ *     @type string|null $class_name   Tag must contain this whole class name to match.
+ *     @type string|null $tag_closers  "visit" or "skip": whether to stop on tag closers, e.g. &lt;/div&gt;.
+ * }
+ * @return bool Whether a tag was matched.
+ */
+public function next_tag( $query = null ): bool {
+	$this-&gt;parse_query( $query );
+	$already_found = 0;
+
+	do {
+		if ( false === $this-&gt;next_token() ) {
+			return false;
+		}
+
+		if ( self::STATE_MATCHED_TAG !== $this-&gt;parser_state ) {
+			continue;
+		}
+
+		if ( $this-&gt;matches() ) {
+			++$already_found;
+		}
+	} while ( $already_found &lt; $this-&gt;sought_match_offset );
+
+	return true;
+}
+
+/**
+ * Finds the next token in the HTML document.
+ *
+ * An HTML document can be viewed as a stream of tokens,
+ * where tokens are things like HTML tags, HTML comments,
+ * text nodes, etc. This method finds the next token in
+ * the HTML document and returns whether it found one.
+ *
+ * If it starts parsing a token and reaches the end of the
+ * document then it will seek to the start of the last
+ * token and pause, returning `false` to indicate that it
+ * failed to find a complete token.
+ *
+ * Possible token types, based on the HTML specification:
+ *
+ *  - an HTML tag, whether opening, closing, or void.
+ *  - a text node - the plaintext inside tags.
+ *  - an HTML comment.
+ *  - a DOCTYPE declaration.
+ *  - a processing instruction, e.g. `&lt;?xml version="1.0" ?&gt;`.
+ *
+ * The Tag Processor currently only supports the tag token.
+ *
+ * @since 6.5.0
+ * @since 6.7.0 Recognizes CDATA sections within foreign content.
+ *
+ * @return bool Whether a token was parsed.
+ */
+public function next_token(): bool {
+	return $this-&gt;base_class_next_token();
+}
+
+/**
+ * Internal method which finds the next token in the HTML document.
+ *
+ * This method is a protected internal function which implements the logic for
+ * finding the next token in a document. It exists so that the parser can update
+ * its state without affecting the location of the cursor in the document and
+ * without triggering subclass methods for things like `next_token()`, e.g. when
+ * applying patches before searching for the next token.
+ *
+ * @since 6.5.0
+ *
+ * @access private
+ *
+ * @return bool Whether a token was parsed.
+ */
+private function base_class_next_token(): bool {
+	$was_at = $this-&gt;bytes_already_parsed;
+	$this-&gt;after_tag();
+
+	// Don't proceed if there's nothing more to scan.
+	if (
+		self::STATE_COMPLETE === $this-&gt;parser_state ||
+		self::STATE_INCOMPLETE_INPUT === $this-&gt;parser_state
+	) {
+		return false;
+	}
+
+	/*
+	 * The next step in the parsing loop determines the parsing state;
+	 * clear it so that state doesn't linger from the previous step.
+	 */
+	$this-&gt;parser_state = self::STATE_READY;
+
+	if ( $this-&gt;bytes_already_parsed &gt;= strlen( $this-&gt;html ) ) {
+		$this-&gt;parser_state = self::STATE_COMPLETE;
+		return false;
+	}
+
+	// Find the next tag if it exists.
+	if ( false === $this-&gt;parse_next_tag() ) {
+		if ( self::STATE_INCOMPLETE_INPUT === $this-&gt;parser_state ) {
+			$this-&gt;bytes_already_parsed = $was_at;
+		}
+
+		return false;
+	}
+
+	/*
+	 * For legacy reasons the rest of this function handles tags and their
+	 * attributes. If the processor has reached the end of the document
+	 * or if it matched any other token then it should return here to avoid
+	 * attempting to process tag-specific syntax.
+	 */
+	if (
+		self::STATE_INCOMPLETE_INPUT !== $this-&gt;parser_state &amp;&amp;
+		self::STATE_COMPLETE !== $this-&gt;parser_state &amp;&amp;
+		self::STATE_MATCHED_TAG !== $this-&gt;parser_state
+	) {
+		return true;
+	}
+
+	// Parse all of its attributes.
+	while ( $this-&gt;parse_next_attribute() ) {
+		continue;
+	}
+
+	// Ensure that the tag closes before the end of the document.
+	if (
+		self::STATE_INCOMPLETE_INPUT === $this-&gt;parser_state ||
+		$this-&gt;bytes_already_parsed &gt;= strlen( $this-&gt;html )
+	) {
+		// Does this appropriately clear state (parsed attributes)?
+		$this-&gt;parser_state         = self::STATE_INCOMPLETE_INPUT;
+		$this-&gt;bytes_already_parsed = $was_at;
+
+		return false;
+	}
+
+	$tag_ends_at = strpos( $this-&gt;html, '&gt;', $this-&gt;bytes_already_parsed );
+	if ( false === $tag_ends_at ) {
+		$this-&gt;parser_state         = self::STATE_INCOMPLETE_INPUT;
+		$this-&gt;bytes_already_parsed = $was_at;
+
+		return false;
+	}
+	$this-&gt;parser_state         = self::STATE_MATCHED_TAG;
+	$this-&gt;bytes_already_parsed = $tag_ends_at + 1;
+	$this-&gt;token_length         = $this-&gt;bytes_already_parsed - $this-&gt;token_starts_at;
+
+	/*
+	 * Certain tags require additional processing. The first-letter pre-check
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/html-api/class-wp-html-tag-processor.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/html-api/class-wp-html-tag-processor.php#L854">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/html-api/class-wp-html-tag-processor.php#L854-L1020">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,151 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/private-apis</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/private-apis</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p><code>@wordpress/private-apis</code> enables sharing private <code>__experimental</code> APIs across <code>@wordpress</code> packages without<br/>
+<a href="https://make.wordpress.org/core/2022/08/10/proposal-stop-merging-experimental-apis-from-gutenberg-to-wordpress-core/#respond">publicly exposing them to WordPress extenders</a>.</p>
+<h2 class="is-toc-heading" id="getting-started" tabindex="-1"><a href="#getting-started">Getting started</a></h2>
+<p>Every <code>@wordpress</code> package wanting to privately access or expose experimental APIs must opt-in to <code>@wordpress/private-apis</code>:</p>
+<pre><code class="language-js">// In packages/block-editor/private-apis.js:
+import { __dangerousOptInToUnstableAPIsOnlyForCoreModules } from '@wordpress/private-apis';
+export const { lock, unlock } =
+    __dangerousOptInToUnstableAPIsOnlyForCoreModules(
+        'I acknowledge private features are not for use in themes or plugins and doing so will break in the next version of WordPress.',
+        '@wordpress/block-editor' // Name of the package calling __dangerousOptInToUnstableAPIsOnlyForCoreModules,
+        // (not the name of the package whose APIs you want to access)
+    );
+</code></pre>
+<p>Each package may only opt in once. The function name communicates that plugins are not supposed to use it.</p>
+<p>The function will throw an error if the following conditions are not met:</p>
+<ol>
+<li>The first argument must exactly match the required consent string: <code>'I acknowledge private features are not for use in themes or plugins and doing so will break in the next version of WordPress.'</code>.</li>
+<li>The second argument must be a known <code>@wordpress</code> package that hasn’t yet opted into <code>@wordpress/private-apis</code></li>
+</ol>
+<p>Once the opt-in is complete, the obtained <code>lock()</code> and <code>unlock()</code> utilities enable hiding <code>__experimental</code> APIs from the naked eye:</p>
+<pre><code class="language-js">// Say this object is exported from a package:
+export const publicObject = {};
+
+// However, this string is internal and should not be publicly available:
+const __experimentalString = '__experimental information';
+
+// Solution: lock the string "inside" of the object:
+lock( publicObject, __experimentalString );
+
+// The string is not nested in the object and cannot be extracted from it:
+console.log( publicObject );
+// {}
+
+// The only way to access the string is by "unlocking" the object:
+console.log( unlock( publicObject ) );
+// "__experimental information"
+
+// lock() accepts all data types, not just strings:
+export const anotherObject = {};
+lock( anotherObject, function __experimentalFn() {} );
+console.log( unlock( anotherObject ) );
+// function __experimentalFn() {}
+</code></pre>
+<p>Use <code>lock()</code> and <code>unlock()</code> to privately distribute the <code>__experimental</code> APIs across <code>@wordpress</code> packages:</p>
+<pre><code class="language-js">// In packages/package1/index.js:
+import { lock } from './lock-unlock';
+
+export const privateApis = {};
+/* Attach private data to the exported object */
+lock( privateApis, {
+    __experimentalFunction: function () {},
+} );
+
+// In packages/package2/index.js:
+import { privateApis } from '@wordpress/package1';
+import { unlock } from './lock-unlock';
+
+const { __experimentalFunction } = unlock( privateApis );
+</code></pre>
+<h2 class="is-toc-heading" id="shipping-experimental-apis" tabindex="-1"><a href="#shipping-experimental-apis">Shipping experimental APIs</a></h2>
+<p>See the <a href="https://developer.notmatt.press/block-editor/contributors/code/coding-guidelines/">Experimental and Unstable APIs chapter of Coding Guidelines</a> to learn how <code>lock()</code> and <code>unlock()</code> can help<br/>
+you ship private experimental functions, arguments, components, properties, actions, selectors.</p>
+<h2 class="is-toc-heading" id="technical-limitations" tabindex="-1"><a href="#technical-limitations">Technical limitations</a></h2>
+<p>A determined developer who would want to use the private experimental APIs at all costs would have to:</p>
+<ul>
+<li>Realize a private importing system exists</li>
+<li>Read the code where the risks would be spelled out in capital letters</li>
+<li>Explicitly type out he or she is aware of the consequences</li>
+<li>Pretend to register a <code>@wordpress</code> package (and trigger an error as soon as the real package is loaded)</li>
+</ul>
+<p>Dangerously opting in to using these APIs by theme and plugin developers is not recommended. Furthermore, the WordPress Core philosophy to strive to maintain backward compatibility for third-party developers <strong>does not apply</strong> to experimental APIs registered via this package.</p>
+<p>The consent string for opting in to these APIs may change at any time and without notice. This change will break existing third-party code. Such a change may occur in either a major or minor release.</p>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+<p align="center"><img alt="Code is Poetry." data-recalc-dims="1" decoding="async" src="https://i0.wp.com/s.w.org/style/images/codeispoetry.png?ssl=1"/></p>
+<h3 class="is-toc-heading" id="updating-the-consent-string" tabindex="-1"><a href="#updating-the-consent-string">Updating the consent string</a></h3>
+<p>The consent string for unlocking private APIs is intended to change on a regular basis. To update the consent string:</p>
+<ol>
+<li>Come up with a new consent string, the string should mention that themes or plugins opting in to unstable and private features will break in future versions of WordPress.</li>
+<li>Ensure the consent string has not being used previously.</li>
+<li>Append the new string to the history list below.</li>
+<li>Replace the consent string in the following locations:
+<ul>
+<li>twice in the documentation above</li>
+<li>in the <code>src/implementation.js</code> file of this package</li>
+<li>in the <code>src/lock-unlock.js</code> file located in packages consuming private APIs</li>
+<li>search the full code base for any other occurrences</li>
+</ul>
+</li>
+</ol>
+<p><strong>Note</strong>: The consent string is not used for user facing content and as such should <em>not</em> be made translatable via the internationalization features of WordPress.</p>
+<p>Updating the consent string is considered a task and can be done during the late stages of a WordPress release.</p>
+<h4>Consent string history</h4>
+<p>The final string in this list is the current version.</p>
+<ol>
+<li>I know using unstable features means my plugin or theme will inevitably break on the next WordPress release.</li>
+<li>I know using unstable features means my theme or plugin will inevitably break in the next version of WordPress.</li>
+<li>I acknowledge private features are not for use in themes or plugins and doing so will break in the next version of WordPress.</li>
+</ol>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

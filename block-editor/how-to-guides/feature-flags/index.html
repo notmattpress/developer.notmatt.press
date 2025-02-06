@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span class="is-current-page">Feature Flags</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Feature Flags</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>‘Feature flags’ are variables that allow you to prevent specific code in the Gutenberg project from being shipped to WordPress core, and to run certain experimental features only in the plugin.</p>
+<h2 class="is-toc-heading" id="introducing-globalthis-is_gutenberg_plugin" tabindex="-1"><a href="#introducing-globalthis-is_gutenberg_plugin">Introducing globalThis.IS_GUTENBERG_PLUGIN</a></h2>
+<p>The <code>globalThis.IS_GUTENBERG_PLUGIN</code> is an environment variable whose value ‘flags’ whether code is running within the Gutenberg plugin.</p>
+<p>When the codebase is built for the plugin, this variable will be set to <code>true</code>. When building for WordPress core, it will be set to <code>false</code> or <code>undefined</code>.</p>
+<h2 class="is-toc-heading" id="basic-usage" tabindex="-1"><a href="#basic-usage">Basic usage</a></h2>
+<h3 class="is-toc-heading" id="exporting-features" tabindex="-1"><a href="#exporting-features">Exporting features</a></h3>
+<p>A plugin-only function or constant should be exported using the following ternary syntax:</p>
+<pre><code class="language-js">function myPluginOnlyFeature() {
+    // implementation
+}
+
+export const pluginOnlyFeature = globalThis.IS_GUTENBERG_PLUGIN
+    ? myPluginOnlyFeature
+    : undefined;
+</code></pre>
+<p>In the above example, the <code>pluginOnlyFeature</code> export will be <code>undefined</code> in non-plugin environments such as WordPress core.</p>
+<h3 class="is-toc-heading" id="importing-features" tabindex="-1"><a href="#importing-features">Importing features</a></h3>
+<p>If you’re attempting to import and call a plugin-only feature, be sure to wrap the function call in an <code>if</code> statement to avoid an error:</p>
+<pre><code class="language-js">import { pluginOnlyFeature } from '@wordpress/foo';
+
+if ( globalThis.IS_GUTENBERG_PLUGIN ) {
+    pluginOnlyFeature();
+}
+</code></pre>
+<h2 class="is-toc-heading" id="how-it-works" tabindex="-1"><a href="#how-it-works">How it works</a></h2>
+<p>During the webpack build, instances of <code>globalThis.IS_GUTENBERG_PLUGIN</code> will be replaced using webpack’s <a href="https://webpack.js.org/plugins/define-plugin/">define plugin</a>.</p>
+<p>For example, in the following code –</p>
+<pre><code class="language-js">if ( globalThis.IS_GUTENBERG_PLUGIN ) {
+    pluginOnlyFeature();
+}
+</code></pre>
+<p>– the variable <code>globalThis.IS_GUTENBERG_PLUGIN</code> will be replaced with the boolean <code>true</code> during the plugin-only build:</p>
+<pre><code class="language-js">if ( true ) {
+    // Webpack has replaced `globalThis.IS_GUTENBERG_PLUGIN` with `true`
+    pluginOnlyFeature();
+}
+</code></pre>
+<p>This ensures that code within the body of the <code>if</code> statement will always be executed.</p>
+<p>In WordPress core, the <code>globalThis.IS_GUTENBERG_PLUGIN</code> variable is replaced with <code>undefined</code>. The built code looks like this:</p>
+<pre><code class="language-js">if ( undefined ) {
+    // Webpack has replaced `globalThis.IS_GUTENBERG_PLUGIN` with `undefined`
+    pluginOnlyFeature();
+}
+</code></pre>
+<p><code>undefined</code> evaluates to <code>false</code> so the plugin-only feature will not be executed.</p>
+<h3 class="is-toc-heading" id="dead-code-elimination" tabindex="-1"><a href="#dead-code-elimination">Dead code elimination</a></h3>
+<p>For production builds, webpack <a href="https://en.wikipedia.org/wiki/Minification_(programming)">‘minifies’</a> the code, removing as much unnecessary JavaScript as it can.</p>
+<p>One of the steps involves something known as ‘dead code elimination’. For example, when the following code is encountered, webpack determines that the surrounding <code>if</code> statement is unnecessary:</p>
+<pre><code class="language-js">if ( true ) {
+    pluginOnlyFeature();
+}
+</code></pre>
+<p>The condition will always evaluate to <code>true</code>, so webpack removes it, leaving behind the code that was in the body:</p>
+<pre><code class="language-js">pluginOnlyFeature(); // The `if` condition block has been removed. Only the body remains.
+</code></pre>
+<p>Similarly, when building for WordPress core, the condition in the following <code>if</code> statement always resolves to false:</p>
+<pre><code class="language-js">if ( undefined ) {
+    pluginOnlyFeature();
+}
+</code></pre>
+<p>In this case, the minification process will remove the entire <code>if</code> statement including the body, ensuring plugin-only code is not included in WordPress core build.</p>
+<h2 class="is-toc-heading" id="frequently-asked-questions" tabindex="-1"><a href="#frequently-asked-questions">Frequently asked questions</a></h2>
+<h3 class="is-toc-heading" id="why-shouldnt-i-assign-the-result-of-an-expression-involving-is_gutenberg_plugin-to-a-variable-e-g-const-ismyfeatureactive-object-is-undefined-globalthis-is_gutenberg_plugin" tabindex="-1"><a href="#why-shouldnt-i-assign-the-result-of-an-expression-involving-is_gutenberg_plugin-to-a-variable-e-g-const-ismyfeatureactive-object-is-undefined-globalthis-is_gutenberg_plugin">Why shouldn’t I assign the result of an expression involving IS_GUTENBERG_PLUGIN to a variable, e.g. const isMyFeatureActive = ! Object.is( undefined, globalThis.IS_GUTENBERG_PLUGIN )?</a></h3>
+<p>Introducing complexity may prevent webpack’s minifier from identifying and therefore eliminating dead code. Therefore it is recommended to use the examples in this document to ensure your feature flag functions as intended. For further details, see the <a href="#dead-code-elimination">Dead Code Elimination</a> section.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

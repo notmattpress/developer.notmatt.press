@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/testing-overview/">Testing Overview</a></span><span class="is-current-page">End-to-End Testing</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>End-to-End Testing</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>This living document serves to prescribe instructions and best practices for writing end-to-end (E2E) tests with Playwright in the Gutenberg project.</p>
+<div class="callout callout-info">
+<p>See the dedicated guide if you’re working with the previous Jest + Puppeteer framework. See the <a href="https://github.com/WordPress/gutenberg/tree/HEAD/docs/contributors/code/e2e/migration.md">migration guide</a> if you’re migrating tests from Jest + Puppeteer.
+</p></div>
+<h2 class="is-toc-heading" id="running-tests" tabindex="-1"><a href="#running-tests">Running tests</a></h2>
+<pre><code class="language-bash"># Run all available tests.
+npm run test:e2e
+
+# Run in headed mode.
+npm run test:e2e -- --headed
+
+# Run tests with specific browsers (`chromium`, `firefox`, or `webkit`).
+npm run test:e2e -- --project=webkit --project=firefox
+
+# Run a single test file.
+npm run test:e2e -- &lt;path_to_test_file&gt; # E.g., npm run test:e2e -- site-editor/title.spec.js
+
+# Debugging.
+npm run test:e2e -- --debug
+</code></pre>
+<p>If you’re developing in Linux, it currently requires testing Webkit browsers in headed mode. If you don’t want to or can’t run it with the GUI (e.g. if you don’t have a graphic interface), prepend the command with <a href="https://manpages.ubuntu.com/manpages/xenial/man1/xvfb-run.1.html"><code>xvfb-run</code></a> to run it in a virtual environment.</p>
+<pre><code class="language-bash"># Run all available tests.
+xvfb-run npm run test:e2e
+
+# Only run webkit tests.
+xvfb-run -- npm run test:e2e -- --project=webkit
+</code></pre>
+<p>If you’re already editing in VS Code, you may find the <a href="https://playwright.dev/docs/getting-started-vscode">Playwright extension</a> helpful for running, writing and debugging tests.</p>
+<h2 class="is-toc-heading" id="best-practices" tabindex="-1"><a href="#best-practices">Best practices</a></h2>
+<p>Read the <a href="https://playwright.dev/docs/best-practices">best practices</a> guide for Playwright.</p>
+<h3 class="is-toc-heading" id="forbid-use-locator-instead" tabindex="-1"><a href="#forbid-use-locator-instead">Forbid $, use locator instead</a></h3>
+<p>In fact, any API that returns <code>ElementHandle</code> is <a href="https://playwright.dev/docs/api/class-page#page-query-selector">discouraged</a>. This includes <code>$</code>, <code>$$</code>, <code>$eval</code>, <code>$$eval</code>, etc. <a href="https://playwright.dev/docs/api/class-locator"><code>Locator</code></a> is a much better API and can be used with playwright’s <a href="https://playwright.dev/docs/api/class-locatorassertions">assertions</a>. This also works great with Page Object Model since that locator is lazy and doesn’t return a promise.</p>
+<h3 class="is-toc-heading" id="use-accessible-selectors" tabindex="-1"><a href="#use-accessible-selectors">Use accessible selectors</a></h3>
+<p>Use <a href="https://playwright.dev/docs/locators#locate-by-role"><code>getByRole</code></a> to construct the query wherever possible. It enables us to write accessible queries without having to rely on internal implementations.</p>
+<pre><code class="language-js">// Select a button which includes the accessible name "Hello World" (case-insensitive).
+page.getByRole( 'button', { name: 'Hello World' } );
+</code></pre>
+<p>It can also be chained to perform complex queries:</p>
+<pre><code class="language-js">// Select an option with a name "Buttons" under the "Block Library" region.
+page.getByRole( 'region', { name: 'Block Library' } )
+    .getByRole( 'option', { name: 'Buttons' } )
+</code></pre>
+<p>See the <a href="https://playwright.dev/docs/locators">official documentation</a> for more info on how to use them.</p>
+<h3 class="is-toc-heading" id="selectors-are-strict-by-default" tabindex="-1"><a href="#selectors-are-strict-by-default">Selectors are strict by default</a></h3>
+<p>To encourage better practices for querying elements, selectors are <a href="https://playwright.dev/docs/api/class-browser#browser-new-page-option-strict-selectors">strict</a> by default, meaning that it will throw an error if the query returns more than one element.</p>
+<h3 class="is-toc-heading" id="dont-overload-test-utils-inline-simple-utils" tabindex="-1"><a href="#dont-overload-test-utils-inline-simple-utils">Don’t overload test-utils, inline simple utils</a></h3>
+<p><code>e2e-test-utils</code> are too bloated with too many utils. Most of them are simple enough to be inlined directly in tests. With the help of accessible selectors, simple utils are easier to write now. For utils that only take place on a certain page, use Page Object Model instead (with an exception of clearing states with <code>requestUtils</code> which are better placed in <code>e2e-test-utils</code>). Otherwise, only create an util if the action is complex and repetitive enough.</p>
+<h3 class="is-toc-heading" id="favor-page-object-model-over-utils" tabindex="-1"><a href="#favor-page-object-model-over-utils">Favor Page Object Model over utils</a></h3>
+<p>As mentioned above, <a href="https://playwright.dev/docs/pom">Page Object Model</a> is the preferred way to create reusable utility functions on a certain page.</p>
+<p>The rationale behind using a POM is to group utils under namespaces to be easier to discover and use. In fact, <code>PageUtils</code> in the <code>e2e-test-utils-playwright</code> package is also a POM, which avoids the need for global variables, and utils can reference each other with <code>this</code>.</p>
+<h3 class="is-toc-heading" id="restify-actions-to-clear-or-set-states" tabindex="-1"><a href="#restify-actions-to-clear-or-set-states">Restify actions to clear or set states</a></h3>
+<p>It’s slow to set states manually before or after tests, especially when they’re repeated multiple times between tests. It’s recommended to set them via API calls. Use <code>requestUtils.rest</code> and <code>requestUtils.batchRest</code> instead to call the <a href="https://developer.notmatt.press/rest-api/reference/">REST API</a> (and add them to <code>requestUtils</code> if needed). We should still add a test for manually setting them, but that should only be tested once.</p>
+<h3 class="is-toc-heading" id="avoid-global-variables" tabindex="-1"><a href="#avoid-global-variables">Avoid global variables</a></h3>
+<p>Previously in our Jest + Puppeteer E2E tests, <code>page</code> and <code>browser</code> are exposed as global variables. This makes it harder to work with when we have multiple pages/tabs in the same test, or if we want to run multiple tests in parallel. <code>@playwright/test</code> has the concept of <a href="https://playwright.dev/docs/test-fixtures">fixtures</a> which allows us to inject <code>page</code>, <code>browser</code>, and other parameters into the tests.</p>
+<h3 class="is-toc-heading" id="make-explicit-assertions" tabindex="-1"><a href="#make-explicit-assertions">Make explicit assertions</a></h3>
+<p>We can insert as many assertions in one test as needed. It’s better to make explicit assertions whenever possible. For instance, if we want to assert that a button exists before clicking on it, we can do <code>expect( locator ).toBeVisible()</code> before performing <code>locator.click()</code>. This makes the tests flow better and easier to read</p>
+<h2 class="is-toc-heading" id="common-pitfalls" tabindex="-1"><a href="#common-pitfalls">Common pitfalls</a></h2>
+<h3 class="is-toc-heading" id="overusing-snapshots" tabindex="-1"><a href="#overusing-snapshots">Overusing snapshots</a></h3>
+<h2 class="is-toc-heading" id="cross-browser-testing" tabindex="-1"><a href="#cross-browser-testing">Cross-browser testing</a></h2>
+<p>By default, tests are only run in chromium. You can <em>tag</em> tests to run them in different browsers. Use <code>@browser</code> anywhere in the test title to run it in that browser. Tests will always run in chromium by default, append <code>-chromium</code> to disable testing in chromium. Available browsers are <code>chromium</code>, <code>firefox</code>, and <code>webkit</code>.</p>
+<pre><code class="language-js">test( 'I will run in @firefox and @webkit (and chromium by default)', async ( { page } ) =&gt; {
+    // ...
+} );
+
+test( 'I will only run in @firefox but not -chromium', async ( { page } ) =&gt; {
+    // ...
+} );
+
+test.describe( 'Grouping tests (@webkit, -chromium)', () =&gt; {
+    test( 'I will only run in webkit', async ( { page } ) =&gt; {
+        // ...
+    } );
+} );
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

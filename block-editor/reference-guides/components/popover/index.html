@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/components/">Component Reference</a></span><span class="is-current-page">Popover</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Popover</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p><code>Popover</code> renders its content in a floating modal. If no explicit anchor is passed via props, it anchors to its parent element by default.</p>
+<p>The behavior of the popover when it exceeds the viewport’s edges can be controlled via its props.</p>
+<h2 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h2>
+<p>Render a Popover adjacent to its container.</p>
+<p>If a Popover is returned by your component, it will be shown. To hide the popover, simply omit it from your component’s render value.</p>
+<pre><code class="language-jsx">import { useState } from 'react';
+import { Button, Popover } from '@wordpress/components';
+
+const MyPopover = () =&gt; {
+    const [ isVisible, setIsVisible ] = useState( false );
+    const toggleVisible = () =&gt; {
+        setIsVisible( ( state ) =&gt; ! state );
+    };
+
+    return (
+        &lt;Button variant="secondary" onClick={ toggleVisible }&gt;
+            Toggle Popover!
+            { isVisible &amp;&amp; &lt;Popover&gt;Popover is toggled!&lt;/Popover&gt; }
+        &lt;/Button&gt;
+    );
+};
+</code></pre>
+<p>In order to pass an explicit anchor, you can use the <code>anchor</code> prop. When doing so, <strong>the anchor element should be stored in local state</strong> rather than a plain React ref to ensure reactive updating when it changes.</p>
+<pre><code class="language-jsx">import { useState } from 'react';
+import { Button, Popover } from '@wordpress/components';
+
+const MyPopover = () =&gt; {
+    // Use internal state instead of a ref to make sure that the component
+    // re-renders when the popover's anchor updates.
+    const [ popoverAnchor, setPopoverAnchor ] = useState();
+    const [ isVisible, setIsVisible ] = useState( false );
+    const toggleVisible = () =&gt; {
+        setIsVisible( ( state ) =&gt; ! state );
+    };
+
+    return (
+        &lt;p ref={ setPopoverAnchor }&gt;Popover s anchor&lt;/p&gt;
+        &lt;Button variant="secondary" onClick={ toggleVisible }&gt;
+            Toggle Popover!
+        &lt;/Button&gt;
+        { isVisible &amp;&amp; (
+            &lt;Popover
+                anchor={ popoverAnchor }
+            &gt;
+                Popover is toggled!
+            &lt;/Popover&gt;
+        ) }
+    );
+};
+</code></pre>
+<p>By default Popovers render at the end of the body of your document. If you want Popover elements to render to a specific location on the page, you must render a <code>Popover.Slot</code> further up the element tree:</p>
+<pre><code class="language-jsx">import { createRoot } from 'react-dom/client';
+import { Popover } from '@wordpress/components';
+import Content from './Content';
+
+const app = document.getElementById( 'app' );
+const root = createRoot( app );
+root.render(
+    &lt;div&gt;
+        &lt;Content /&gt;
+        &lt;Popover.Slot /&gt;
+    &lt;/div&gt;
+);
+</code></pre>
+<h2 class="is-toc-heading" id="props" tabindex="-1"><a href="#props">Props</a></h2>
+<p>The component accepts the following props. Props not included in this set will be applied to the element wrapping Popover content.</p>
+<h3 class="is-toc-heading" id="anchor-element-virtualelement-null" tabindex="-1"><a href="#anchor-element-virtualelement-null">anchor: Element | VirtualElement | null</a></h3>
+<p>The element that should be used by the <code>Popover</code> as its anchor. It can either be an <code>Element</code> or, alternatively, a <code>VirtualElement</code> — ie. an object with the <code>getBoundingClientRect()</code> and the <code>ownerDocument</code> properties defined.</p>
+<p>The element should be stored in state rather than a plain ref to ensure reactive updating when it changes.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="anchorrect-domrectwithownerdocument" tabindex="-1"><a href="#anchorrect-domrectwithownerdocument">anchorRect: DomRectWithOwnerDocument</a></h3>
+<p><em>Note: this prop is deprecated. Please use the <code>anchor</code> prop instead.</em></p>
+<p>An object extending a <code>DOMRect</code> with an additional optional <code>ownerDocument</code> property, used to specify a fixed popover position.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="anchorref-element-popoveranchorrefreference-popoveranchorreftopbottom-range" tabindex="-1"><a href="#anchorref-element-popoveranchorrefreference-popoveranchorreftopbottom-range">anchorRef: Element | PopoverAnchorRefReference | PopoverAnchorRefTopBottom | Range</a></h3>
+<p><em>Note: this prop is deprecated. Please use the <code>anchor</code> prop instead.</em></p>
+<p>Used to specify a fixed popover position. It can be an <code>Element</code>, a React reference to an <code>element</code>, an object with a <code>top</code> and a <code>bottom</code> properties (both pointing to elements), or a <code>range</code>.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="animate-boolean" tabindex="-1"><a href="#animate-boolean">animate: boolean</a></h3>
+<p>Whether the popover should animate when opening.</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>true</code></li>
+</ul>
+<h3 class="is-toc-heading" id="children-reactnode" tabindex="-1"><a href="#children-reactnode">children: ReactNode</a></h3>
+<p>The <code>children</code> elements rendered as the popover’s content.</p>
+<ul>
+<li>Required: Yes</li>
+</ul>
+<h3 class="is-toc-heading" id="expandonmobile-boolean" tabindex="-1"><a href="#expandonmobile-boolean">expandOnMobile: boolean</a></h3>
+<p>Show the popover fullscreen on mobile viewports.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="flip-boolean" tabindex="-1"><a href="#flip-boolean">flip: boolean</a></h3>
+<p>Specifies whether the popover should flip across its axis if there isn’t space for it in the normal placement.</p>
+<p>When the using a ‘top’ placement, the popover will switch to a ‘bottom’ placement. When using a ‘left’ placement, the popover will switch to a `right’ placement.</p>
+<p>The popover will retain its alignment of ‘start’ or ‘end’ when flipping.</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>true</code></li>
+</ul>
+<h3 class="is-toc-heading" id="focusonmount-firstelement-boolean" tabindex="-1"><a href="#focusonmount-firstelement-boolean">focusOnMount: ‘firstElement’ | boolean</a></h3>
+<p>By default, the <em>first tabbable element</em> in the popover will receive focus when it mounts. This is the same as setting this prop to <code>"firstElement"</code>.</p>
+<p>Specifying a <code>true</code> value will focus the container instead.</p>
+<p>Specifying a <code>false</code> value disables the focus handling entirely (this should only be done when an appropriately accessible substitute behavior exists).</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>"firstElement"</code></li>
+</ul>
+<h3 class="is-toc-heading" id="onfocusoutside-event-syntheticevent-void" tabindex="-1"><a href="#onfocusoutside-event-syntheticevent-void">onFocusOutside: ( event: SyntheticEvent ) =&gt; void</a></h3>
+<p>A callback invoked when the focus leaves the opened popover. This should only be provided in advanced use-cases when a popover should close under specific circumstances (for example, if the new <code>document.activeElement</code> is content of or otherwise controlling popover visibility).</p>
+<p>When not provided, the <code>onClose</code> callback will be called instead.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="getanchorrect-fallbackreferenceelement-element-null-domrectwithownerdocument" tabindex="-1"><a href="#getanchorrect-fallbackreferenceelement-element-null-domrectwithownerdocument">getAnchorRect: ( fallbackReferenceElement: Element | null ) =&gt; DomRectWithOwnerDocument</a></h3>
+<p><em>Note: this prop is deprecated. Please use the <code>anchor</code> prop instead.</em></p>
+<p>A function returning the same value as the one expected by the <code>anchorRect</code> prop, used to specify a dynamic popover position.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="headertitle-string" tabindex="-1"><a href="#headertitle-string">headerTitle: string</a></h3>
+<p>Used to customize the header text shown when the popover is toggled to fullscreen on mobile viewports (see the <code>expandOnMobile</code> prop).</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="isalternate-boolean" tabindex="-1"><a href="#isalternate-boolean">isAlternate: boolean</a></h3>
+<p><em>Note: this prop is deprecated. Please use the <code>variant</code> prop with the <code>'toolbar'</code> values instead.</em></p>
+<p>Used to enable a different visual style for the popover.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="noarrow-boolean" tabindex="-1"><a href="#noarrow-boolean">noArrow: boolean</a></h3>
+<p>Used to show/hide the arrow that points at the popover’s anchor.</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>true</code></li>
+</ul>
+<h3 class="is-toc-heading" id="offset-number" tabindex="-1"><a href="#offset-number">offset: number</a></h3>
+<p>The distance (in px) between the anchor and the popover.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="onclose-void" tabindex="-1"><a href="#onclose-void">onClose: () =&gt; void</a></h3>
+<p>A callback invoked when the popover should be closed.</p>
+<ul>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="placement-top-top-start-top-end-right-right-start-right-end-bottom-bottom-start-bottom-end-left-left-start-left-end-overlay" tabindex="-1"><a href="#placement-top-top-start-top-end-right-right-start-right-end-bottom-bottom-start-bottom-end-left-left-start-left-end-overlay">placement: ‘top’ | ‘top-start’ | ‘top-end’ | ‘right’ | ‘right-start’ | ‘right-end’ | ‘bottom’ | ‘bottom-start’ | ‘bottom-end’ | ‘left’ | ‘left-start’ | ‘left-end’ | ‘overlay’</a></h3>
+<p>Used to specify the popover’s position with respect to its anchor.</p>
+<p><code>overlay</code> is a special case that places the popover over the reference element.<br/>
+Please note that other placement related props may not behave as excepted.</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>"bottom-start"</code></li>
+</ul>
+<h3 class="is-toc-heading" id="position-yaxis-xaxis-optionalcorner" tabindex="-1"><a href="#position-yaxis-xaxis-optionalcorner">position: [yAxis] [xAxis] [optionalCorner]</a></h3>
+<p><em>Note: use the <code>placement</code> prop instead when possible.</em></p>
+<p>Legacy way to specify the popover’s position with respect to its anchor.</p>
+<p>Possible values:</p>
+<ul>
+<li><code>yAxis</code>: <code>'top' | 'middle' | 'bottom'</code></li>
+<li><code>xAxis</code>: <code>'left' | 'center' | 'right'</code></li>
+<li><code>corner</code>: <code>'top' | 'right' | 'bottom' | 'left'</code><br/>
+<!-- Break into two separate lists using an HTML comment --></li>
+<li>Required: No</li>
+</ul>
+<h3 class="is-toc-heading" id="resize-boolean" tabindex="-1"><a href="#resize-boolean">resize: boolean</a></h3>
+<p>Adjusts the size of the popover to prevent its contents from going out of view when meeting the viewport edges.</p>
+<ul>
+<li>Required: No</li>
+<li>Default: <code>true</code></li>
+</ul>
+<h3 class="is-toc-heading" id="variant-toolbar-unstyled" tabindex="-1"><a href="#variant-toolbar-unstyled">variant: ‘toolbar’ | ‘unstyled’</a></h3>
+<p>Specifies the popover’s style.</p>
+<p>Leave undefined for the default style. Possible values are:<br/>
+–   <code>unstyled</code>:  The popover is essentially without any visible style, it has no background, border, outline or drop shadow, but the popover contents are still displayed.<br/>
+–   <code>toolbar</code>: A style that has no elevation, but a high contrast with other elements. This matches the style of the <a href="https://developer.notmatt.press/block-editor/reference-guide/components/toolbar/"><code>Toolbar</code> component</a>.<br/>
+<!-- Break into two separate lists using an HTML comment --><br/>
+–   Required: No</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

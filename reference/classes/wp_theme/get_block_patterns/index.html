@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_theme/">WP_Theme</a></span><span class="is-current-page">WP_Theme::get_block_patterns()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Theme::get_block_patterns()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Theme::get_block_patterns(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Gets block pattern data for a specified theme.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Each pattern is defined as a PHP file and defines its metadata using plugin-style headers. The minimum required definition is:</p> <pre class="wp-block-code"><code class="language-php" lang="php">/**
+ * Title: My Pattern
+ * Slug: my-theme/my-pattern
+ *</code></pre> <p>The output of the PHP source corresponds to the content of the pattern, e.g.:</p> <pre class="wp-block-code"><code class="language-php" lang="php">&lt;main&gt;&lt;p&gt;&lt;?php echo "Hello"; ?&gt;&lt;/p&gt;&lt;/main&gt;</code></pre> <p>If applicable, this will collect from both parent and child theme.</p> <p>Other settable fields include:</p> <pre class="wp-block-code"><code class="language-php line-numbers" lang="php">- Description
+- Viewport Width
+- Inserter         (yes/no)
+- Categories       (comma-separated values)
+- Keywords         (comma-separated values)
+- Block Types      (comma-separated values)
+- Post Types       (comma-separated values)
+- Template Types   (comma-separated values)</code></pre></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Block pattern data.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1839"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function get_block_patterns() {
+	$can_use_cached = ! wp_is_development_mode( 'theme' );
+
+	$pattern_data = $this-&gt;get_pattern_cache();
+	if ( is_array( $pattern_data ) ) {
+		if ( $can_use_cached ) {
+			return $pattern_data;
+		}
+		// If in development mode, clear pattern cache.
+		$this-&gt;delete_pattern_cache();
+	}
+
+	$dirpath      = $this-&gt;get_stylesheet_directory() . '/patterns/';
+	$pattern_data = array();
+
+	if ( ! file_exists( $dirpath ) ) {
+		if ( $can_use_cached ) {
+			$this-&gt;set_pattern_cache( $pattern_data );
+		}
+		return $pattern_data;
+	}
+	$files = glob( $dirpath . '*.php' );
+	if ( ! $files ) {
+		if ( $can_use_cached ) {
+			$this-&gt;set_pattern_cache( $pattern_data );
+		}
+		return $pattern_data;
+	}
+
+	$default_headers = array(
+		'title'         =&gt; 'Title',
+		'slug'          =&gt; 'Slug',
+		'description'   =&gt; 'Description',
+		'viewportWidth' =&gt; 'Viewport Width',
+		'inserter'      =&gt; 'Inserter',
+		'categories'    =&gt; 'Categories',
+		'keywords'      =&gt; 'Keywords',
+		'blockTypes'    =&gt; 'Block Types',
+		'postTypes'     =&gt; 'Post Types',
+		'templateTypes' =&gt; 'Template Types',
+	);
+
+	$properties_to_parse = array(
+		'categories',
+		'keywords',
+		'blockTypes',
+		'postTypes',
+		'templateTypes',
+	);
+
+	foreach ( $files as $file ) {
+		$pattern = get_file_data( $file, $default_headers );
+
+		if ( empty( $pattern['slug'] ) ) {
+			_doing_it_wrong(
+				__FUNCTION__,
+				sprintf(
+					/* translators: 1: file name. */
+					__( 'Could not register file "%s" as a block pattern ("Slug" field missing)' ),
+					$file
+				),
+				'6.0.0'
+			);
+			continue;
+		}
+
+		if ( ! preg_match( '/^[A-z0-9\/_-]+$/', $pattern['slug'] ) ) {
+			_doing_it_wrong(
+				__FUNCTION__,
+				sprintf(
+					/* translators: 1: file name; 2: slug value found. */
+					__( 'Could not register file "%1$s" as a block pattern (invalid slug "%2$s")' ),
+					$file,
+					$pattern['slug']
+				),
+				'6.0.0'
+			);
+		}
+
+		// Title is a required property.
+		if ( ! $pattern['title'] ) {
+			_doing_it_wrong(
+				__FUNCTION__,
+				sprintf(
+					/* translators: 1: file name. */
+					__( 'Could not register file "%s" as a block pattern ("Title" field missing)' ),
+					$file
+				),
+				'6.0.0'
+			);
+			continue;
+		}
+
+		// For properties of type array, parse data as comma-separated.
+		foreach ( $properties_to_parse as $property ) {
+			if ( ! empty( $pattern[ $property ] ) ) {
+				$pattern[ $property ] = array_filter( wp_parse_list( (string) $pattern[ $property ] ) );
+			} else {
+				unset( $pattern[ $property ] );
+			}
+		}
+
+		// Parse properties of type int.
+		$property = 'viewportWidth';
+		if ( ! empty( $pattern[ $property ] ) ) {
+			$pattern[ $property ] = (int) $pattern[ $property ];
+		} else {
+			unset( $pattern[ $property ] );
+		}
+
+		// Parse properties of type bool.
+		$property = 'inserter';
+		if ( ! empty( $pattern[ $property ] ) ) {
+			$pattern[ $property ] = in_array(
+				strtolower( $pattern[ $property ] ),
+				array( 'yes', 'true' ),
+				true
+			);
+		} else {
+			unset( $pattern[ $property ] );
+		}
+
+		$key = str_replace( $dirpath, '', $file );
+
+		$pattern_data[ $key ] = $pattern;
+	}
+
+	if ( $can_use_cached ) {
+		$this-&gt;set_pattern_cache( $pattern_data );
+	}
+
+	return $pattern_data;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-theme.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-theme.php#L1839">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-theme.php#L1839-L1971">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/delete_pattern_cache/">WP_Theme::delete_pattern_cache()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Clears block pattern cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_pattern_cache/">WP_Theme::get_pattern_cache()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Gets block pattern cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/set_pattern_cache/">WP_Theme::set_pattern_cache()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Sets block pattern cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_development_mode/">wp_is_development_mode()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the site is in the given development mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_list/">wp_parse_list()</a><code>wp-includes/functions.php</code></td><td><p>Converts a comma- or space-separated list of scalar values to an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_stylesheet_directory/">WP_Theme::get_stylesheet_directory()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns the absolute path to the directory of a theme’s “stylesheet” files.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_file_data/">get_file_data()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves metadata from a file.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.4.0/">6.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

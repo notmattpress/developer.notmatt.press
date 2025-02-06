@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_kses_allowed_html()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_kses_allowed_html()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_kses_allowed_html( <span class="arg-type">string|array</span> <span class="arg-name">$context</span> = <span class="arg-default">''</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns an array of allowed HTML tags and attributes for a given context.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$context</code><span class="type"><span class="string">string</span>|<span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The context for which to retrieve tags. Allowed values are <code>'post'</code>,                              <code>'strip'</code>, <code>'data'</code>, <code>'entities'</code>, or the name of a field filter such as                              <code>'pre_user_description'</code>, or an array of allowed HTML elements and attributes.</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Array of allowed HTML tags and their allowed attributes.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>The Return value is a multidimensional array with the tag name as the key and an array of attributes as the value.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="849"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_kses_allowed_html( $context = '' ) {
+	global $allowedposttags, $allowedtags, $allowedentitynames;
+
+	if ( is_array( $context ) ) {
+		// When `$context` is an array it's actually an array of allowed HTML elements and attributes.
+		$html    = $context;
+		$context = 'explicit';
+
+		/**
+		 * Filters the HTML tags that are allowed for a given context.
+		 *
+		 * HTML tags and attribute names are case-insensitive in HTML but must be
+		 * added to the KSES allow list in lowercase. An item added to the allow list
+		 * in upper or mixed case will not recognized as permitted by KSES.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param array[] $html    Allowed HTML tags.
+		 * @param string  $context Context name.
+		 */
+		return apply_filters( 'wp_kses_allowed_html', $html, $context );
+	}
+
+	switch ( $context ) {
+		case 'post':
+			/** This filter is documented in wp-includes/kses.php */
+			$tags = apply_filters( 'wp_kses_allowed_html', $allowedposttags, $context );
+
+			// 5.0.1 removed the `&lt;form&gt;` tag, allow it if a filter is allowing it's sub-elements `&lt;input&gt;` or `&lt;select&gt;`.
+			if ( ! CUSTOM_TAGS &amp;&amp; ! isset( $tags['form'] ) &amp;&amp; ( isset( $tags['input'] ) || isset( $tags['select'] ) ) ) {
+				$tags = $allowedposttags;
+
+				$tags['form'] = array(
+					'action'         =&gt; true,
+					'accept'         =&gt; true,
+					'accept-charset' =&gt; true,
+					'enctype'        =&gt; true,
+					'method'         =&gt; true,
+					'name'           =&gt; true,
+					'target'         =&gt; true,
+				);
+
+				/** This filter is documented in wp-includes/kses.php */
+				$tags = apply_filters( 'wp_kses_allowed_html', $tags, $context );
+			}
+
+			return $tags;
+
+		case 'user_description':
+		case 'pre_user_description':
+			$tags             = $allowedtags;
+			$tags['a']['rel'] = true;
+			/** This filter is documented in wp-includes/kses.php */
+			return apply_filters( 'wp_kses_allowed_html', $tags, $context );
+
+		case 'strip':
+			/** This filter is documented in wp-includes/kses.php */
+			return apply_filters( 'wp_kses_allowed_html', array(), $context );
+
+		case 'entities':
+			/** This filter is documented in wp-includes/kses.php */
+			return apply_filters( 'wp_kses_allowed_html', $allowedentitynames, $context );
+
+		case 'data':
+		default:
+			/** This filter is documented in wp-includes/kses.php */
+			return apply_filters( 'wp_kses_allowed_html', $allowedtags, $context );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/kses.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/kses.php#L849">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/kses.php#L849-L917">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_kses_allowed_html/"><span class="hook-func">apply_filters</span>( ‘wp_kses_allowed_html’,  <nobr><span class="arg-type">array[]</span> <span class="arg-name">$html</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr> )</a></dt><dd><p>Filters the HTML tags that are allowed for a given context.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/filter_block_core_template_part_attributes/">filter_block_core_template_part_attributes()</a><code>wp-includes/blocks.php</code></td><td><p>Sanitizes the value of the Template Part block’s <code>tagName</code> attribute.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_code_editor_settings/">wp_get_code_editor_settings()</a><code>wp-includes/general-template.php</code></td><td><p>Generates and returns code editor settings.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_custom_html/render_control_template_scripts/">WP_Widget_Custom_HTML::render_control_template_scripts()</a><code>wp-includes/widgets/class-wp-widget-custom-html.php</code></td><td><p>Render form template scripts.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_kses_one_attr/">wp_kses_one_attr()</a><code>wp-includes/kses.php</code></td><td><p>Filters one HTML attribute and ensures its value is allowed.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_kses_attr/">wp_kses_attr()</a><code>wp-includes/kses.php</code></td><td><p>Removes all attributes, if none are allowed for this element.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.0.1/">5.0.1</a></td><td><span class="since-description"><code>form</code> removed as allowable HTML tag.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.5.0/">3.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-stevenlinx odd alt thread-odd thread-alt depth-1" data-comment-id="3860" id="comment-3860">
+<article class="comment-body" id="div-comment-3860">
+<a class="screen-reader-text" href="#comment-content-3860">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3860">
+<p>Example migrated from Codex:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// strips all html (empty array)
+$allowed_html = wp_kses_allowed_html( 'strip' );
+
+// allows all most inline elements and strips all block level elements except blockquote
+$allowed_html = wp_kses_allowed_html( 'data' );
+
+// very permissive: allows pretty much all HTML to pass - same as what's normally applied to the_content by default
+$allowed_html = wp_kses_allowed_html( 'post' );
+
+// allows a list of HTML Entities such as  
+$allowed_html = wp_kses_allowed_html( 'entities' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3860">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

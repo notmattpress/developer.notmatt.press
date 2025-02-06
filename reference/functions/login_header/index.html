@@ -1,0 +1,386 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">login_header()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>login_header()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">login_header( <span class="arg-type">string|null</span> <span class="arg-name">$title</span> = <span class="arg-default">null</span>,  <span class="arg-type">string</span> <span class="arg-name">$message</span> = <span class="arg-default">''</span>,  <span class="arg-type">WP_Error|null</span> <span class="arg-name">$wp_error</span> = <span class="arg-default">null</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Outputs the login page header.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$title</code><span class="type"><span class="string">string</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">WordPress login page title to display in the <code>&lt;title&gt;</code> element.<br/>
+Defaults to ‘Log In’.</span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$message</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Message to display in header. </span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$wp_error</code><span class="type"><span class="WP_Error"><a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The error to pass. Defaults to a <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> instance.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="41"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function login_header( $title = null, $message = '', $wp_error = null ) {
+	global $error, $interim_login, $action;
+
+	if ( null === $title ) {
+		$title = __( 'Log In' );
+	}
+
+	// Don't index any of these forms.
+	add_filter( 'wp_robots', 'wp_robots_sensitive_page' );
+	add_action( 'login_head', 'wp_strict_cross_origin_referrer' );
+
+	add_action( 'login_head', 'wp_login_viewport_meta' );
+
+	if ( ! is_wp_error( $wp_error ) ) {
+		$wp_error = new WP_Error();
+	}
+
+	// Shake it!
+	$shake_error_codes = array( 'empty_password', 'empty_email', 'invalid_email', 'invalidcombo', 'empty_username', 'invalid_username', 'incorrect_password', 'retrieve_password_email_failure' );
+	/**
+	 * Filters the error codes array for shaking the login form.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string[] $shake_error_codes Error codes that shake the login form.
+	 */
+	$shake_error_codes = apply_filters( 'shake_error_codes', $shake_error_codes );
+
+	if ( $shake_error_codes &amp;&amp; $wp_error-&gt;has_errors() &amp;&amp; in_array( $wp_error-&gt;get_error_code(), $shake_error_codes, true ) ) {
+		add_action( 'login_footer', 'wp_shake_js', 12 );
+	}
+
+	$login_title = get_bloginfo( 'name', 'display' );
+
+	/* translators: Login screen title. 1: Login screen name, 2: Network or site name. */
+	$login_title = sprintf( __( '%1$s &amp;lsaquo; %2$s &amp;#8212; WordPress' ), $title, $login_title );
+
+	if ( wp_is_recovery_mode() ) {
+		/* translators: %s: Login screen title. */
+		$login_title = sprintf( __( 'Recovery Mode &amp;#8212; %s' ), $login_title );
+	}
+
+	/**
+	 * Filters the title tag content for login page.
+	 *
+	 * @since 4.9.0
+	 *
+	 * @param string $login_title The page title, with extra context added.
+	 * @param string $title       The original page title.
+	 */
+	$login_title = apply_filters( 'login_title', $login_title, $title );
+
+	?&gt;&lt;!DOCTYPE html&gt;
+	&lt;html &lt;?php language_attributes(); ?&gt;&gt;
+	&lt;head&gt;
+	&lt;meta http-equiv="Content-Type" content="&lt;?php bloginfo( 'html_type' ); ?&gt;; charset=&lt;?php bloginfo( 'charset' ); ?&gt;" /&gt;
+	&lt;title&gt;&lt;?php echo $login_title; ?&gt;&lt;/title&gt;
+	&lt;?php
+
+	wp_enqueue_style( 'login' );
+
+	/*
+	 * Remove all stored post data on logging out.
+	 * This could be added by add_action('login_head'...) like wp_shake_js(),
+	 * but maybe better if it's not removable by plugins.
+	 */
+	if ( 'loggedout' === $wp_error-&gt;get_error_code() ) {
+		ob_start();
+		?&gt;
+		&lt;script&gt;if("sessionStorage" in window){try{for(var key in sessionStorage){if(key.indexOf("wp-autosave-")!=-1){sessionStorage.removeItem(key)}}}catch(e){}};&lt;/script&gt;
+		&lt;?php
+		wp_print_inline_script_tag( wp_remove_surrounding_empty_script_tags( ob_get_clean() ) );
+	}
+
+	/**
+	 * Enqueues scripts and styles for the login page.
+	 *
+	 * @since 3.1.0
+	 */
+	do_action( 'login_enqueue_scripts' );
+
+	/**
+	 * Fires in the login page header after scripts are enqueued.
+	 *
+	 * @since 2.1.0
+	 */
+	do_action( 'login_head' );
+
+	$login_header_url = __( 'https://wordpress.org/' );
+
+	/**
+	 * Filters link URL of the header logo above login form.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $login_header_url Login header logo URL.
+	 */
+	$login_header_url = apply_filters( 'login_headerurl', $login_header_url );
+
+	$login_header_title = '';
+
+	/**
+	 * Filters the title attribute of the header logo above login form.
+	 *
+	 * @since 2.1.0
+	 * @deprecated 5.2.0 Use <a href="https://developer.notmatt.press/reference/functions/login_headertext">'login_headertext'</a> instead.
+	 *
+	 * @param string $login_header_title Login header logo title attribute.
+	 */
+	$login_header_title = apply_filters_deprecated(
+		'login_headertitle',
+		array( $login_header_title ),
+		'5.2.0',
+		'login_headertext',
+		__( 'Usage of the title attribute on the login logo is not recommended for accessibility reasons. Use the link text instead.' )
+	);
+
+	$login_header_text = empty( $login_header_title ) ? __( 'Powered by WordPress' ) : $login_header_title;
+
+	/**
+	 * Filters the link text of the header logo above the login form.
+	 *
+	 * @since 5.2.0
+	 *
+	 * @param string $login_header_text The login header logo link text.
+	 */
+	$login_header_text = apply_filters( 'login_headertext', $login_header_text );
+
+	$classes = array( 'login-action-' . $action, 'wp-core-ui' );
+
+	if ( is_rtl() ) {
+		$classes[] = 'rtl';
+	}
+
+	if ( $interim_login ) {
+		$classes[] = 'interim-login';
+
+		?&gt;
+		&lt;style type="text/css"&gt;html{background-color: transparent;}&lt;/style&gt;
+		&lt;?php
+
+		if ( 'success' === $interim_login ) {
+			$classes[] = 'interim-login-success';
+		}
+	}
+
+	$classes[] = ' locale-' . sanitize_html_class( strtolower( str_replace( '_', '-', get_locale() ) ) );
+
+	/**
+	 * Filters the login page body classes.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @param string[] $classes An array of body classes.
+	 * @param string   $action  The action that brought the visitor to the login page.
+	 */
+	$classes = apply_filters( 'login_body_class', $classes, $action );
+
+	?&gt;
+	&lt;/head&gt;
+	&lt;body class="login no-js &lt;?php echo esc_attr( implode( ' ', $classes ) ); ?&gt;"&gt;
+	&lt;?php
+	wp_print_inline_script_tag( "document.body.className = document.body.className.replace('no-js','js');" );
+	?&gt;
+
+	&lt;?php
+	/**
+	 * Fires in the login page header after the body tag is opened.
+	 *
+	 * @since 4.6.0
+	 */
+	do_action( 'login_header' );
+	?&gt;
+	&lt;?php
+	if ( 'confirm_admin_email' !== $action &amp;&amp; ! empty( $title ) ) :
+		?&gt;
+		&lt;h1 class="screen-reader-text"&gt;&lt;?php echo $title; ?&gt;&lt;/h1&gt;
+		&lt;?php
+	endif;
+	?&gt;
+	&lt;div id="login"&gt;
+		&lt;h1 role="presentation" class="wp-login-logo"&gt;&lt;a href="&lt;?php echo esc_url( $login_header_url ); ?&gt;"&gt;&lt;?php echo $login_header_text; ?&gt;&lt;/a&gt;&lt;/h1&gt;
+	&lt;?php
+	/**
+	 * Filters the message to display above the login form.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $message Login message text.
+	 */
+	$message = apply_filters( 'login_message', $message );
+
+	if ( ! empty( $message ) ) {
+		echo $message . "\n";
+	}
+
+	// In case a plugin uses $error rather than the $wp_errors object.
+	if ( ! empty( $error ) ) {
+		$wp_error-&gt;add( 'error', $error );
+		unset( $error );
+	}
+
+	if ( $wp_error-&gt;has_errors() ) {
+		$error_list = array();
+		$messages   = '';
+
+		foreach ( $wp_error-&gt;get_error_codes() as $code ) {
+			$severity = $wp_error-&gt;get_error_data( $code );
+			foreach ( $wp_error-&gt;get_error_messages( $code ) as $error_message ) {
+				if ( 'message' === $severity ) {
+					$messages .= '&lt;p&gt;' . $error_message . '&lt;/p&gt;';
+				} else {
+					$error_list[] = $error_message;
+				}
+			}
+		}
+
+		if ( ! empty( $error_list ) ) {
+			$errors = '';
+
+			if ( count( $error_list ) &gt; 1 ) {
+				$errors .= '&lt;ul class="login-error-list"&gt;';
+
+				foreach ( $error_list as $item ) {
+					$errors .= '&lt;li&gt;' . $item . '&lt;/li&gt;';
+				}
+
+				$errors .= '&lt;/ul&gt;';
+			} else {
+				$errors .= '&lt;p&gt;' . $error_list[0] . '&lt;/p&gt;';
+			}
+
+			/**
+			 * Filters the error messages displayed above the login form.
+			 *
+			 * @since 2.1.0
+			 *
+			 * @param string $errors Login error messages.
+			 */
+			$errors = apply_filters( 'login_errors', $errors );
+
+			wp_admin_notice(
+				$errors,
+				array(
+					'type'           =&gt; 'error',
+					'id'             =&gt; 'login_error',
+					'paragraph_wrap' =&gt; false,
+				)
+			);
+		}
+
+		if ( ! empty( $messages ) ) {
+			/**
+			 * Filters instructional messages displayed above the login form.
+			 *
+			 * @since 2.5.0
+			 *
+			 * @param string $messages Login messages.
+			 */
+			$messages = apply_filters( 'login_messages', $messages );
+
+			wp_admin_notice(
+				$messages,
+				array(
+					'type'               =&gt; 'info',
+					'id'                 =&gt; 'login-message',
+					'additional_classes' =&gt; array( 'message' ),
+					'paragraph_wrap'     =&gt; false,
+				)
+			);
+		}
+	}
+} // End of login_header().
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-login.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-login.php#L41">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-login.php#L41-L313">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_body_class/"><span class="hook-func">apply_filters</span>( ‘login_body_class’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$classes</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$action</span></nobr> )</a></dt><dd><p>Filters the login page body classes.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_enqueue_scripts/"><span class="hook-func">do_action</span>( ‘login_enqueue_scripts’ )</a></dt><dd><p>Enqueues scripts and styles for the login page.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_errors/"><span class="hook-func">apply_filters</span>( ‘login_errors’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$errors</span></nobr> )</a></dt><dd><p>Filters the error messages displayed above the login form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_head/"><span class="hook-func">do_action</span>( ‘login_head’ )</a></dt><dd><p>Fires in the login page header after scripts are enqueued.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_header/"><span class="hook-func">do_action</span>( ‘login_header’ )</a></dt><dd><p>Fires in the login page header after the body tag is opened.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_headertext/"><span class="hook-func">apply_filters</span>( ‘login_headertext’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$login_header_text</span></nobr> )</a></dt><dd><p>Filters the link text of the header logo above the login form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_headertitle/"><span class="hook-func">apply_filters_deprecated</span>( ‘login_headertitle’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$login_header_title</span></nobr> )</a></dt><dd><p>Filters the title attribute of the header logo above login form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_headerurl/"><span class="hook-func">apply_filters</span>( ‘login_headerurl’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$login_header_url</span></nobr> )</a></dt><dd><p>Filters link URL of the header logo above login form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_message/"><span class="hook-func">apply_filters</span>( ‘login_message’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$message</span></nobr> )</a></dt><dd><p>Filters the message to display above the login form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_messages/"><span class="hook-func">apply_filters</span>( ‘login_messages’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$messages</span></nobr> )</a></dt><dd><p>Filters instructional messages displayed above the login form.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/login_title/"><span class="hook-func">apply_filters</span>( ‘login_title’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$login_title</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$title</span></nobr> )</a></dt><dd><p>Filters the title tag content for login page.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/shake_error_codes/"><span class="hook-func">apply_filters</span>( ‘shake_error_codes’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$shake_error_codes</span></nobr> )</a></dt><dd><p>Filters the error codes array for shaking the login form.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_notice/">wp_admin_notice()</a><code>wp-includes/functions.php</code></td><td><p>Outputs an admin notice.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_remove_surrounding_empty_script_tags/">wp_remove_surrounding_empty_script_tags()</a><code>wp-includes/script-loader.php</code></td><td><p>Removes leading and trailing _empty_ script tags.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_print_inline_script_tag/">wp_print_inline_script_tag()</a><code>wp-includes/script-loader.php</code></td><td><p>Prints an inline script tag.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_recovery_mode/">wp_is_recovery_mode()</a><code>wp-includes/load.php</code></td><td><p>Determines whether WordPress is in Recovery Mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_error/has_errors/">WP_Error::has_errors()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Verifies if the instance contains errors.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters_deprecated/">apply_filters_deprecated()</a><code>wp-includes/plugin.php</code></td><td><p>Fires functions attached to a deprecated filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_html_class/">sanitize_html_class()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes an HTML classname to ensure it only contains valid characters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/language_attributes/">language_attributes()</a><code>wp-includes/general-template.php</code></td><td><p>Displays the language attributes for the ‘html’ tag.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/bloginfo/">bloginfo()</a><code>wp-includes/general-template.php</code></td><td><p>Displays information about the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_enqueue_style/">wp_enqueue_style()</a><code>wp-includes/functions.wp-styles.php</code></td><td><p>Enqueues a CSS stylesheet.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/get_error_code/">WP_Error::get_error_code()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Retrieves the first error code available.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/add/">WP_Error::add()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Adds an error or appends an additional message to an existing error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/get_error_data/">WP_Error::get_error_data()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Retrieves the most recently added error data for an error code.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/get_error_messages/">WP_Error::get_error_messages()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Retrieves all error messages, or the error messages for the given error code.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/get_error_codes/">WP_Error::get_error_codes()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Retrieves all error codes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bloginfo/">get_bloginfo()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves information about the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_action/">add_action()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 19 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1484" id="comment-1484">
+<article class="comment-body" id="div-comment-1484">
+<a class="screen-reader-text" href="#comment-content-1484">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1484">
+<p><strong>Example from `wp-login.php`</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$errors = new WP_Error();
+// ...
+login_header( __( 'Reset Password', 'textdomain' ), '&lt;p class="message reset-pass"&gt;' . __( 'Enter your new password below.', 'textdomain' ) . '&lt;/p&gt;', $errors );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1484">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

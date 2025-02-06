@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/advanced-topics/">Advanced Topics</a></span><span class="is-current-page">Security</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Security</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>When releasing any code out into the world, whether it will only exist on your own site or hundreds of thousands of sites, it’s important to strive to make it as secure as possible. Responsible coding means being vigilant about all the ways your theme can be exploited.</p>
+<p>Your primary source for learning about security in the <a href="https://developer.notmatt.press/apis/security/">Security chapter</a> in the Common APIs Handbook. This article should be considered a supplement to what you will learn there and is not an all-encompassing guide on security itself. </p>
+<p>Below, you will find a list of common vulnerabilities to consider, but please use the Resources section for a more comprehensive overview of how to secure your themes.</p>
+<h2 class="is-toc-heading wp-block-heading" id="common-vulnerabilities" tabindex="-1"><a href="#common-vulnerabilities">Common vulnerabilities</a></h2>
+<p>Security is an ever-changing landscape, and vulnerabilities evolve over time. The following is an overview of common vulnerabilities you should protect against and the techniques for protecting your theme from exploitation.</p>
+<h3 class="is-toc-heading wp-block-heading" id="cross-site-scripting-xss" tabindex="-1"><a href="#cross-site-scripting-xss">Cross-Site Scripting (XSS)</a></h3>
+<p>Cross-Site Scripting (XSS) happens when a nefarious party injects JavaScript into a web page.</p>
+<p>To avoid XSS vulnerabilities, any output should be escaped. Since it’s the theme’s primary responsibility to output content, you should always <a href="https://developer.notmatt.press/apis/security/sanitizing/">escape dynamic content</a> with the proper function based on the data type.</p>
+<p>This example shows how to escape an image URL to avoid XSS vulnerabilities:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;img src="&lt;?php echo esc_url( $great_user_picture_url ); ?&gt;" /&gt;</code></pre>
+<p>Content that has HTML entities within can be sanitized to allow only specified HTML elements:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$allowed_html = array(
+	'a' =&gt; array(
+		'href' =&gt; array()
+	),
+	'br'     =&gt; array(),
+	'em'     =&gt; array(),
+	'strong' =&gt; array()
+);
+
+echo wp_kses( $custom_content, $allowed_html );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="sql-injection" tabindex="-1"><a href="#sql-injection">SQL Injection</a></h3>
+<p>SQL Injection happens when values being input are not properly sanitized, allowing for any SQL commands in the data to potentially be executed. To prevent this, the WordPress API is extensive. For example, it offers functions like <a href="https://developer.notmatt.press/reference/functions/add_post_meta/"><code>add_post_meta()</code></a> so that you don’t need to manually insert metadata via SQL.</p>
+<p>The first rule for hardening your theme against SQL Injection is: <strong>when there’s a WordPress function, use it.</strong></p>
+<p>While it is rare to do so in themes, sometimes you need to do complex queries that have not been accounted for in the API. If this is the case, always use the <a href="https://developer.notmatt.press/reference/classes/wpdb/"><code>$wpdb</code> functions</a>. These were built specifically to protect your database.</p>
+<p>All data in SQL queries must be SQL-escaped before the SQL query is executed to prevent SQL injection attacks. The best function to use for SQL-escaping is <code>$wpdb-&gt;prepare()</code> which supports both a <a href="http://secure.php.net/sprintf"><code>sprintf()</code></a>-like and <a href="http://secure.php.net/vsprintf"><code>vsprintf()</code></a>-like syntax:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$wpdb-&gt;get_var( $wpdb-&gt;prepare(
+	"SELECT something FROM table WHERE foo = %s and status = %d",
+	$name, // an unescaped string (function will do the sanitization for you)
+	$status // an untrusted integer (function will do the sanitization for you)
+) );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="cross-site-request-forgery-csrf" tabindex="-1"><a href="#cross-site-request-forgery-csrf">Cross-Site Request Forgery (CSRF)</a></h3>
+<p>Cross-site request forgery or CSRF (pronounced <em>sea-surf</em>) is when a nefarious party tricks a user into performing an unwanted action within a web application they are authenticated in. For example, a phishing email might contain a link to a page that would delete a user’s account in the WordPress admin.</p>
+<p>This is more common in plugins than themes. But if your theme includes any HTML or HTTP-based form submissions, use a <a href="https://developer.notmatt.press/apis/security/nonces/">nonce</a> to guarantee a user intends to perform an action:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;form method="post"&gt;
+	&lt;!-- some inputs here ... --&gt;
+	&lt;?php wp_nonce_field( 'name_of_my_action', 'name_of_nonce_field' ); ?&gt;
+&lt;/form&gt;</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="resources" tabindex="-1"><a href="#resources">Resources</a></h2>
+<p>Use the resources listed below to dive more deeply into securing your themes, plugins, and anything else you build on top of WordPress:</p>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/apis/security/">Common APIs Handbook: Security</a>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/apis/security/escaping/">Escaping Data</a></li>
+<li><a href="https://developer.notmatt.press/apis/security/sanitizing/">Sanitizing Data</a></li>
+<li><a href="https://developer.notmatt.press/apis/security/data-validation/">Validating Data</a></li>
+<li><a href="https://developer.notmatt.press/apis/security/nonces/">Nonces</a></li>
+</ul>
+</li>
+<li>Make Themes: A Guide To Writing Secure Themes:
+<ul class="wp-block-list">
+<li><a href="https://make.wordpress.org/themes/2015/05/19/a-guide-to-writing-secure-themes-part-1-introduction/">Part 1: Introduction</a></li>
+<li><a href="https://make.wordpress.org/themes/2015/05/26/a-guide-to-writing-secure-themes-part-2-validation/">Part 2: Validation</a></li>
+<li><a href="https://make.wordpress.org/themes/2015/06/02/a-guide-to-writing-secure-themes-part-3-sanitization/">Part 3: Sanitization</a></li>
+<li><a href="https://make.wordpress.org/themes/2015/06/09/a-guide-to-writing-secure-themes-part-4-securing-post-meta/">Part 4: Securing Post Meta</a></li>
+</ul>
+</li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="staying-current" tabindex="-1"><a href="#staying-current">Staying current</a></h3>
+<p>It is important to stay current on potential security holes. The following resources provide a good starting point:</p>
+<ul class="wp-block-list">
+<li><a href="https://wordpress.org/about/security/">WordPress Security Whitepaper</a></li>
+<li><a href="https://wordpress.org/news/category/security/">WordPress Security Release</a></li>
+<li><a href="https://www.owasp.org/index.php/OWASP_Top_Ten_Cheat_Sheet">Open Web Application Security Project (OWASP) Top 10</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

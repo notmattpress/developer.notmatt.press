@@ -1,0 +1,642 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">update_option()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>update_option()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">update_option( <span class="arg-type">string</span> <span class="arg-name">$option</span>,  <span class="arg-type">mixed</span> <span class="arg-name">$value</span>,  <span class="arg-type">bool|null</span> <span class="arg-name">$autoload</span> = <span class="arg-default">null</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Updates the value of an option that was already added.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>You do not need to serialize values. If the value needs to be serialized, then it will be serialized before it is inserted into the database.<br/>Remember, resources cannot be serialized or added as an option.</p>
+<p>If the option does not exist, it will be created.</p>
+<p>This function is designed to work with or without a logged-in user. In terms of security, plugin developers should check the current user’s capabilities before updating any options.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$option</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Name of the option to update. Expected to not be SQL-escaped.</span></div></dd><dt><code>$value</code><span class="type"><span class="mixed">mixed</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Option value. Must be serializable if non-scalar. Expected to not be SQL-escaped.</span></div></dd><dt><code>$autoload</code><span class="type"><span class="bool">bool</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to load the option when WordPress starts up.<br/>
+Accepts a boolean, or <code>null</code> to stick with the initial value or, if no initial value is                            set, to leave the decision up to default heuristics in WordPress.<br/>
+For existing options, <code>$autoload</code> can only be updated using <code>update_option()</code> if <code>$value</code>                            is also changed.<br/>
+For backward compatibility <code>'yes'</code> and <code>'no'</code> are also accepted, though using these values is                            deprecated.<br/>
+Autoloading too many options can lead to performance problems, especially if the                            options are not frequently used. For options which are accessed across several places                            in the frontend, it is recommended to autoload them, by using true.<br/>
+For options which are accessed only on few specific URLs, it is recommended                            to not autoload them, by using false.<br/>
+For non-existent options, the default is null, which means WordPress will determine                            the autoload value.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True if the value was updated, false otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="838"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function update_option( $option, $value, $autoload = null ) {
+	global $wpdb;
+
+	if ( is_scalar( $option ) ) {
+		$option = trim( $option );
+	}
+
+	if ( empty( $option ) ) {
+		return false;
+	}
+
+	/*
+	 * Until a proper _deprecated_option() function can be introduced,
+	 * redirect requests to deprecated keys to the new, correct ones.
+	 */
+	$deprecated_keys = array(
+		'blacklist_keys'    =&gt; 'disallowed_keys',
+		'comment_whitelist' =&gt; 'comment_previously_approved',
+	);
+
+	if ( isset( $deprecated_keys[ $option ] ) &amp;&amp; ! wp_installing() ) {
+		_deprecated_argument(
+			__FUNCTION__,
+			'5.5.0',
+			sprintf(
+				/* translators: 1: Deprecated option key, 2: New option key. */
+				__( 'The "%1$s" option key has been renamed to "%2$s".' ),
+				$option,
+				$deprecated_keys[ $option ]
+			)
+		);
+		return update_option( $deprecated_keys[ $option ], $value, $autoload );
+	}
+
+	wp_protect_special_option( $option );
+
+	if ( is_object( $value ) ) {
+		$value = clone $value;
+	}
+
+	$value     = sanitize_option( $option, $value );
+	$old_value = get_option( $option );
+
+	/**
+	 * Filters a specific option before its value is (maybe) serialized and updated.
+	 *
+	 * The dynamic portion of the hook name, `$option`, refers to the option name.
+	 *
+	 * @since 2.6.0
+	 * @since 4.4.0 The `$option` parameter was added.
+	 *
+	 * @param mixed  $value     The new, unserialized option value.
+	 * @param mixed  $old_value The old option value.
+	 * @param string $option    Option name.
+	 */
+	$value = apply_filters( "pre_update_option_{$option}", $value, $old_value, $option );
+
+	/**
+	 * Filters an option before its value is (maybe) serialized and updated.
+	 *
+	 * @since 3.9.0
+	 *
+	 * @param mixed  $value     The new, unserialized option value.
+	 * @param string $option    Name of the option.
+	 * @param mixed  $old_value The old option value.
+	 */
+	$value = apply_filters( 'pre_update_option', $value, $option, $old_value );
+
+	/*
+	 * If the new and old values are the same, no need to update.
+	 *
+	 * Unserialized values will be adequate in most cases. If the unserialized
+	 * data differs, the (maybe) serialized data is checked to avoid
+	 * unnecessary database calls for otherwise identical object instances.
+	 *
+	 * See https://core.trac.wordpress.org/ticket/38903
+	 */
+	if ( $value === $old_value || maybe_serialize( $value ) === maybe_serialize( $old_value ) ) {
+		return false;
+	}
+
+	/** This filter is documented in wp-includes/option.php */
+	if ( apply_filters( "default_option_{$option}", false, $option, false ) === $old_value ) {
+		return add_option( $option, $value, '', $autoload );
+	}
+
+	$serialized_value = maybe_serialize( $value );
+
+	/**
+	 * Fires immediately before an option value is updated.
+	 *
+	 * @since 2.9.0
+	 *
+	 * @param string $option    Name of the option to update.
+	 * @param mixed  $old_value The old option value.
+	 * @param mixed  $value     The new option value.
+	 */
+	do_action( 'update_option', $option, $old_value, $value );
+
+	$update_args = array(
+		'option_value' =&gt; $serialized_value,
+	);
+
+	if ( null !== $autoload ) {
+		$update_args['autoload'] = wp_determine_option_autoload_value( $option, $value, $serialized_value, $autoload );
+	} else {
+		// Retrieve the current autoload value to reevaluate it in case it was set automatically.
+		$raw_autoload = $wpdb-&gt;get_var( $wpdb-&gt;prepare( "SELECT autoload FROM $wpdb-&gt;options WHERE option_name = %s LIMIT 1", $option ) );
+		$allow_values = array( 'auto-on', 'auto-off', 'auto' );
+		if ( in_array( $raw_autoload, $allow_values, true ) ) {
+			$autoload = wp_determine_option_autoload_value( $option, $value, $serialized_value, $autoload );
+			if ( $autoload !== $raw_autoload ) {
+				$update_args['autoload'] = $autoload;
+			}
+		}
+	}
+
+	$result = $wpdb-&gt;update( $wpdb-&gt;options, $update_args, array( 'option_name' =&gt; $option ) );
+	if ( ! $result ) {
+		return false;
+	}
+
+	$notoptions = wp_cache_get( 'notoptions', 'options' );
+
+	if ( is_array( $notoptions ) &amp;&amp; isset( $notoptions[ $option ] ) ) {
+		unset( $notoptions[ $option ] );
+		wp_cache_set( 'notoptions', $notoptions, 'options' );
+	}
+
+	if ( ! wp_installing() ) {
+		if ( ! isset( $update_args['autoload'] ) ) {
+			// Update the cached value based on where it is currently cached.
+			$alloptions = wp_load_alloptions( true );
+
+			if ( isset( $alloptions[ $option ] ) ) {
+				$alloptions[ $option ] = $serialized_value;
+				wp_cache_set( 'alloptions', $alloptions, 'options' );
+			} else {
+				wp_cache_set( $option, $serialized_value, 'options' );
+			}
+		} elseif ( in_array( $update_args['autoload'], wp_autoload_values_to_autoload(), true ) ) {
+			// Delete the individual cache, then set in alloptions cache.
+			wp_cache_delete( $option, 'options' );
+
+			$alloptions = wp_load_alloptions( true );
+
+			$alloptions[ $option ] = $serialized_value;
+			wp_cache_set( 'alloptions', $alloptions, 'options' );
+		} else {
+			// Delete the alloptions cache, then set the individual cache.
+			$alloptions = wp_load_alloptions( true );
+
+			if ( isset( $alloptions[ $option ] ) ) {
+				unset( $alloptions[ $option ] );
+				wp_cache_set( 'alloptions', $alloptions, 'options' );
+			}
+
+			wp_cache_set( $option, $serialized_value, 'options' );
+		}
+	}
+
+	/**
+	 * Fires after the value of a specific option has been successfully updated.
+	 *
+	 * The dynamic portion of the hook name, `$option`, refers to the option name.
+	 *
+	 * @since 2.0.1
+	 * @since 4.4.0 The `$option` parameter was added.
+	 *
+	 * @param mixed  $old_value The old option value.
+	 * @param mixed  $value     The new option value.
+	 * @param string $option    Option name.
+	 */
+	do_action( "update_option_{$option}", $old_value, $value, $option );
+
+	/**
+	 * Fires after the value of an option has been successfully updated.
+	 *
+	 * @since 2.9.0
+	 *
+	 * @param string $option    Name of the updated option.
+	 * @param mixed  $old_value The old option value.
+	 * @param mixed  $value     The new option value.
+	 */
+	do_action( 'updated_option', $option, $old_value, $value );
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/option.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/option.php#L838">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/option.php#L838-L1025">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/default_option_option/"><span class="hook-func">apply_filters</span>( “default_option_{$option}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$default_value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$passed_default</span></nobr> )</a></dt><dd><p>Filters the default value for an option.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_update_option/"><span class="hook-func">apply_filters</span>( ‘pre_update_option’,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$old_value</span></nobr> )</a></dt><dd><p>Filters an option before its value is (maybe) serialized and updated.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_update_option_option/"><span class="hook-func">apply_filters</span>( “pre_update_option_{$option}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$old_value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr> )</a></dt><dd><p>Filters a specific option before its value is (maybe) serialized and updated.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/updated_option/"><span class="hook-func">do_action</span>( ‘updated_option’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$old_value</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr> )</a></dt><dd><p>Fires after the value of an option has been successfully updated.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/update_option/"><span class="hook-func">do_action</span>( ‘update_option’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$old_value</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr> )</a></dt><dd><p>Fires immediately before an option value is updated.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/update_option_option/"><span class="hook-func">do_action</span>( “update_option_{$option}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$old_value</span></nobr>,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$value</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr> )</a></dt><dd><p>Fires after the value of a specific option has been successfully updated.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_autoload_values_to_autoload/">wp_autoload_values_to_autoload()</a><code>wp-includes/option.php</code></td><td><p>Returns the values that trigger autoloading from the options table.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_determine_option_autoload_value/">wp_determine_option_autoload_value()</a><code>wp-includes/option.php</code></td><td><p>Determines the appropriate autoload value for an option based on input.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_installing/">wp_installing()</a><code>wp-includes/load.php</code></td><td><p>Checks or sets whether WordPress is in “installation” mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_set/">wp_cache_set()</a><code>wp-includes/cache.php</code></td><td><p>Saves the data to the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_delete/">wp_cache_delete()</a><code>wp-includes/cache.php</code></td><td><p>Removes the cache contents matching key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_option/">sanitize_option()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes various option values based on the nature of the option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_serialize/">maybe_serialize()</a><code>wp-includes/functions.php</code></td><td><p>Serializes data, if needed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_option/">add_option()</a><code>wp-includes/option.php</code></td><td><p>Adds a new option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_load_alloptions/">wp_load_alloptions()</a><code>wp-includes/option.php</code></td><td><p>Loads and caches all autoloaded options, if available or all options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_protect_special_option/">wp_protect_special_option()</a><code>wp-includes/option.php</code></td><td><p>Protects WordPress special option from being modified.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/update/">wpdb::update()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Updates a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_argument/">_deprecated_argument()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_var/">wpdb::get_var()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one value from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 14 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/refresh_rewrite_rules/">WP_Rewrite::refresh_rewrite_rules()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Refreshes the rewrite rules, saving the fresh value to the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menus_controller/handle_auto_add/">WP_REST_Menus_Controller::handle_auto_add()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menus-controller.php</code></td><td><p>Updates the menu’s auto add from a REST request.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/deactivated_plugins_notice/">deactivated_plugins_notice()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Renders an admin notice when a plugin was deactivated during an update.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_https_detection_errors/">wp_update_https_detection_errors()</a><code>wp-includes/deprecated.php</code></td><td><p>Runs a remote HTTPS request to detect whether HTTPS supported, and stores potential errors.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_urls_to_https/">wp_update_urls_to_https()</a><code>wp-includes/https-migration.php</code></td><td><p>Update the ‘home’ and ‘siteurl’ option to use the HTTPS variant of their URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_https_migration_required/">wp_update_https_migration_required()</a><code>wp-includes/https-migration.php</code></td><td><p>Updates the ‘https_migration_required’ option if needed when the given URL has been updated from HTTP to HTTPS.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_batch_update_comment_type/">_wp_batch_update_comment_type()</a><code>wp-includes/comment.php</code></td><td><p>Updates the comment type for a batch of comments.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_automatic_updater/send_plugin_theme_email/">WP_Automatic_Updater::send_plugin_theme_email()</a><code>wp-admin/includes/class-wp-automatic-updater.php</code></td><td><p>Sends an email upon the completion or failure of a plugin or theme background update.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_recovery_mode_key_service/update_keys/">WP_Recovery_Mode_Key_Service::update_keys()</a><code>wp-includes/class-wp-recovery-mode-key-service.php</code></td><td><p>Updates the recovery key records.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_recovery_mode_email_service/maybe_send_recovery_mode_email/">WP_Recovery_Mode_Email_Service::maybe_send_recovery_mode_email()</a><code>wp-includes/class-wp-recovery-mode-email-service.php</code></td><td><p>Sends the recovery mode email if the rate limit has not been sent.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_paused_extensions_storage/set/">WP_Paused_Extensions_Storage::set()</a><code>wp-includes/class-wp-paused-extensions-storage.php</code></td><td><p>Records an extension error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_paused_extensions_storage/delete/">WP_Paused_Extensions_Storage::delete()</a><code>wp-includes/class-wp-paused-extensions-storage.php</code></td><td><p>Forgets a previously recorded extension error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_paused_extensions_storage/delete_all/">WP_Paused_Extensions_Storage::delete_all()</a><code>wp-includes/class-wp-paused-extensions-storage.php</code></td><td><p>Remove all paused extensions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_policy_content/text_change_check/">WP_Privacy_Policy_Content::text_change_check()</a><code>wp-admin/includes/class-wp-privacy-policy-content.php</code></td><td><p>Performs a quick check to determine whether any privacy info has changed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/update_stashed_theme_mod_settings/">WP_Customize_Manager::update_stashed_theme_mod_settings()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Updates stashed theme mod settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/save_changeset_post/">WP_Customize_Manager::save_changeset_post()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Saves the post for the loaded changeset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_settings_controller/update_item/">WP_REST_Settings_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-settings-controller.php</code></td><td><p>Updates settings for the settings object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_delete_option_fresh_site/">_delete_option_fresh_site()</a><code>wp-includes/functions.php</code></td><td><p>Deletes the fresh site option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_upgrader/create_lock/">WP_Upgrader::create_lock()</a><code>wp-admin/includes/class-wp-upgrader.php</code></td><td><p>Creates a lock using WordPress options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_setting/set_root_value/">WP_Customize_Setting::set_root_value()</a><code>wp-includes/class-wp-customize-setting.php</code></td><td><p>Set the root value for a setting, especially for multidimensional ones.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_network_option/">update_network_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of a network option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_inactive_widgets/">wp_ajax_delete_inactive_widgets()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles removing inactive widgets via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menu_setting/update/">WP_Customize_Nav_Menu_Setting::update()</a><code>wp-includes/customize/class-wp-customize-nav-menu-setting.php</code></td><td><p>Create/update the nav_menu term for this setting.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_batch_split_terms/">_wp_batch_split_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Splits a batch of shared taxonomy terms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/plugin_upgrader/bulk_upgrade/">Plugin_Upgrader::bulk_upgrade()</a><code>wp-admin/includes/class-plugin-upgrader.php</code></td><td><p>Upgrades several plugins at once.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/theme_upgrader/upgrade/">Theme_Upgrader::upgrade()</a><code>wp-admin/includes/class-theme-upgrader.php</code></td><td><p>Upgrades a theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/theme_upgrader/bulk_upgrade/">Theme_Upgrader::bulk_upgrade()</a><code>wp-admin/includes/class-theme-upgrader.php</code></td><td><p>Upgrades several themes at once.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/plugin_upgrader/upgrade/">Plugin_Upgrader::upgrade()</a><code>wp-admin/includes/class-plugin-upgrader.php</code></td><td><p>Upgrades a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_plugins_list_table/prepare_items/">WP_Plugins_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-plugins-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option_new_admin_email/">update_option_new_admin_email()</a><code>wp-admin/includes/misc.php</code></td><td><p>Sends a confirmation request email when a change of site admin email address is attempted.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_recently_edited/">update_recently_edited()</a><code>wp-admin/includes/misc.php</code></td><td><p>Updates the “recently-edited” file for the plugin or theme file editor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/populate_options/">populate_options()</a><code>wp-admin/includes/schema.php</code></td><td><p>Create WordPress options and set the default values.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_rss_control/">wp_dashboard_rss_control()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Sets up the RSS dashboard widget control and $args to be used as input to <a href="https://developer.notmatt.press/reference/functions/wp_widget_rss_form/" rel="function">wp_widget_rss_form()</a> .</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/make_site_theme/">make_site_theme()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Creates a site theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_disable_automattic_widgets/">maybe_disable_automattic_widgets()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Disables the Automattic widgets plugin, which was merged into core.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/maybe_disable_link_manager/">maybe_disable_link_manager()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Disables the Link Manager on upgrade if, at the time of upgrade, no links exist in the DB.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_install/">wp_install()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Installs the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_install_defaults/">wp_install_defaults()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Creates the initial content for a newly-installed site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/uninstall_plugin/">uninstall_plugin()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Uninstalls a single plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/deactivate_plugins/">deactivate_plugins()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Deactivates a single plugin or multiple plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/validate_active_plugins/">validate_active_plugins()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Validates active plugins.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/activate_plugin/">activate_plugin()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Attempts activation of plugin in a “sandbox” and redirects on success.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_wp_compression_test/">wp_ajax_wp_compression_test()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles compression testing via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nav_menu_update_menu_items/">wp_nav_menu_update_menu_items()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Saves nav menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/request_filesystem_credentials/">request_filesystem_credentials()</a><code>wp-admin/includes/file.php</code></td><td><p>Displays a form to the user to request for their FTP/SSH details in order to connect to the filesystem.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_roles/add_cap/">WP_Roles::add_cap()</a><code>wp-includes/class-wp-roles.php</code></td><td><p>Adds a capability to role.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_roles/remove_cap/">WP_Roles::remove_cap()</a><code>wp-includes/class-wp-roles.php</code></td><td><p>Removes a capability from role.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_roles/add_role/">WP_Roles::add_role()</a><code>wp-includes/class-wp-roles.php</code></td><td><p>Adds a role name with capabilities to the list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_roles/remove_role/">WP_Roles::remove_role()</a><code>wp-includes/class-wp-roles.php</code></td><td><p>Removes a role by name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_set_cron_array/">_set_cron_array()</a><code>wp-includes/cron.php</code></td><td><p>Updates the cron option with the new cron array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_upgrade_cron_array/">_upgrade_cron_array()</a><code>wp-includes/cron.php</code></td><td><p>Upgrades a cron info array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/check_theme_switched/">check_theme_switched()</a><code>wp-includes/theme.php</code></td><td><p>Checks if a theme has been changed and runs ‘after_switch_theme’ hook on the next WP load.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_theme_mod/">set_theme_mod()</a><code>wp-includes/theme.php</code></td><td><p>Updates theme modification value for the active theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_theme_mod/">remove_theme_mod()</a><code>wp-includes/theme.php</code></td><td><p>Removes theme modification name from active theme list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/switch_theme/">switch_theme()</a><code>wp-includes/theme.php</code></td><td><p>Switches the theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_theme_mods/">get_theme_mods()</a><code>wp-includes/theme.php</code></td><td><p>Retrieves all theme modifications.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_theme/get_allowed_on_site/">WP_Theme::get_allowed_on_site()</a><code>wp-includes/class-wp-theme.php</code></td><td><p>Returns array of stylesheet names of themes allowed on the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_get_term_hierarchy/">_get_term_hierarchy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves children of taxonomy as term IDs.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_taxonomy/">register_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Creates or modifies a taxonomy object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_uninstall_hook/">register_uninstall_hook()</a><code>wp-includes/plugin.php</code></td><td><p>Sets the uninstallation hook for a plugin.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_transient/">set_transient()</a><code>wp-includes/option.php</code></td><td><p>Sets/updates the value of a transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_option/">update_option()</a><code>wp-includes/option.php</code></td><td><p>Updates the value of an option that was already added.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_reset_front_page_settings_for_post/">_reset_front_page_settings_for_post()</a><code>wp-includes/post.php</code></td><td><p>Resets the page_on_front, show_on_front, and page_for_post settings when a linked page is deleted or trashed.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/stick_post/">stick_post()</a><code>wp-includes/post.php</code></td><td><p>Makes a post sticky.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/unstick_post/">unstick_post()</a><code>wp-includes/post.php</code></td><td><p>Un-sticks a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/set_permalink_structure/">WP_Rewrite::set_permalink_structure()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Sets the main permalink structure for the site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/set_category_base/">WP_Rewrite::set_category_base()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Sets the category base for the category permalink.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/set_tag_base/">WP_Rewrite::set_tag_base()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Sets the tag base for the tag permalink.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_upgrade_revisions_of_post/">_wp_upgrade_revisions_of_post()</a><code>wp-includes/revision.php</code></td><td><p>Upgrades the revisions author, adds the current post as a revision and sets the revisions version to 1.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_posts_count/">update_posts_count()</a><code>wp-includes/ms-functions.php</code></td><td><p>Updates a blog’s post count.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/install_blog/">install_blog()</a><code>wp-includes/ms-deprecated.php</code></td><td><p>Install an empty blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/update_blog_option/">update_blog_option()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Updates an option for a particular blog.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_setoptions/">wp_xmlrpc_server::wp_setOptions()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Updates blog options.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_widget/save_settings/">WP_Widget::save_settings()</a><code>wp-includes/class-wp-widget.php</code></td><td><p>Saves the settings for all instances of the widget class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_sidebars_widgets/">wp_set_sidebars_widgets()</a><code>wp-includes/widgets.php</code></td><td><p>Set the sidebar widget option to update sidebars.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_convert_widget_settings/">wp_convert_widget_settings()</a><code>wp-includes/widgets.php</code></td><td><p>Converts the widget settings from single to multi-widget format.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 71 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td><span class="since-description">The autoload values <code>'yes'</code> and <code>'no'</code> are deprecated.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.2.0/">4.2.0</a></td><td><span class="since-description">The <code>$autoload</code> parameter was added.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.0.0/">1.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment even thread-odd thread-alt depth-1" data-comment-id="880" id="comment-880">
+<article class="comment-body" id="div-comment-880">
+<a class="screen-reader-text" href="#comment-content-880">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-880">
+<p>According to the WordPress Codex (and my experiences developing with WP) note an important subtlety in the return value here:<br>
+ “True if option value has <strong>changed</strong>, false if not or if update failed.</br></p>
+<p>It is also recommended on some forums to check for the existence of an option via code:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( ! get_option('my_option') ) ...</code></pre>
+<p>But I don’t find this works when the option exists and I have set <em>my_option</em> to bool FALSE! </p>
+<p>To handle all checking of existence of options, I exploit the <strong>update_option</strong> subtlety:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if (FALSE === get_option('my_option') &amp;&amp; FALSE === update_option('my_option',FALSE)) add_option('my_option',$default_value);</code></pre>
+<p>The second check yields FALSE when setting the option with the value of FALSE produces no change…therefore if the value truly didn’t exist, it will be added with (in my case) the desired <em>$default_value</em>.</p>
+<p>I know this seems extreme, but to the best of my knowledge this is the only way I’ve been able to preserve bool FALSE on my plugin options, and to assert valid actions based on the actual presence of my custom options.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-880">
+<ul class="children">
+<li class="comment byuser comment-author-tansautn odd alt depth-2" data-comment-id="3921" id="comment-3921">
+<article class="comment-body" id="div-comment-3921">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3921">
+<div>Might i’m late, but i hope this helpful to someone needed.   – According to the WordPress Codex : get_option has $default_value param. will returned when option does not exist. So we can use $default_value as check our code can smaller &amp; faster.  <code>if(get_option('otp_name','SOME_UNIQUE_VALUE') === 'SOME_UNIQUE_VALUE'){ add_option('otp_name','init_value'); }</code>  no <em>update_option</em> call required.</div>
+<div><a class="url" href="https://profiles.wordpress.org/tansautn/" rel="external nofollow">tansautn</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/update_option/#comment-3921"><time datetime="2020-05-29T04:06:33+00:00">5 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-camthor even thread-even depth-1" data-comment-id="2396" id="comment-2396">
+<article class="comment-body" id="div-comment-2396">
+<a class="screen-reader-text" href="#comment-content-2396">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2396">
+<p>Since <strong>get_option</strong> in line 271 returns <em>false</em> if the option doesn’t yet exist, it is not possible to use <strong>update_option</strong> to create a new option with the boolean value <em>false</em>, because <strong>update_option</strong> would wrongly assume (line 307) that the option <em>does</em> exists but is unchanged. One workaround is to use as values integers 1 and 0 instead of booleans.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2396">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment odd alt thread-odd thread-alt depth-1" data-comment-id="3278" id="comment-3278">
+<article class="comment-body" id="div-comment-3278">
+<a class="screen-reader-text" href="#comment-content-3278">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3278">
+<p><strong>Update option only once on the first time installed</strong><br>
+The code below will let user change options even after new option set.</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function my_switch_theme() {
+	update_option( 'thumbnail_size_w', 320 );
+	update_option( 'thumbnail_size_h', 180 );
+}
+
+add_action('switch_theme', 'my_switch_theme');</code></pre>
+<p>If we use <code>after_setup_theme</code>, it will block the options and prevent users change it.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3278">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="950" id="comment-950">
+<article class="comment-body" id="div-comment-950">
+<a class="screen-reader-text" href="#comment-content-950">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-950">
+<p><strong>Usage</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php update_option( $option, $new_value, $autoload ); ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-950">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tassawerhussain odd alt thread-odd thread-alt depth-1" data-comment-id="4967" id="comment-4967">
+<article class="comment-body" id="div-comment-4967">
+<a class="screen-reader-text" href="#comment-content-4967">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4967">
+<p><strong>update_option</strong> will return false if new value is same as old one.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$opt_name  = ( ! empty($_POST['opt_name']  ) ) ? $_POST['opt_name']  : 'wpdocs';
+$opt_value = ( ! empty($_POST['opt_value'] ) ) ? $_POST['opt_value'] : ' ';
+		
+$existing_val = get_option( $opt_name );
+
+if ( false !== $existing_val ) {
+	// option exist
+	if ( $existing_val === $opt_value ) {
+		echo "new value is same as old.";
+	} else {
+		echo "new value is different.";
+		update_option( $opt_name, $opt_value );
+	}
+} else {
+	// option not exist
+	add_option( $opt_name, $opt_value );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4967">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="952" id="comment-952">
+<article class="comment-body" id="div-comment-952">
+<a class="screen-reader-text" href="#comment-content-952">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-952">
+<p><strong>Example: Updating Core Options</strong><br>
+Set the default comment status to ‘closed’:</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php update_option( 'default_comment_status', 'closed' ); ?&gt;</code></pre>
+<p>This option is usually set in from the Settings &gt; Discussion administration panel. See the <a href="https://codex.wordpress.org/Option_Reference" rel="nofollow">Option Reference</a> for a full list of options used by WordPress Core.</p>
+<p>Note: Use <a href="https://developer.notmatt.press/reference/functions/get_option/" rel="nofollow"><code>get_option()</code></a> to confirm an option value.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo get_option( 'default_comment_status' ); ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-952">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="953" id="comment-953">
+<article class="comment-body" id="div-comment-953">
+<a class="screen-reader-text" href="#comment-content-953">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-953">
+<p><strong>Example: Updating Custom Options</strong><br>
+You can also create your own custom options. This example updates the option <code>'my_custom_option'</code> with the value 255:</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php update_option( 'my_custom_option', 255 ); ?&gt;</code></pre>
+<p>This will automatically add the option if it does not exist (and set the option’s value). </p>
+<p>If you don’t want your custom option to auto-load when WordPress starts up, use <a href="https://developer.notmatt.press/reference/functions/add_option/" rel="nofollow"><code>add_option()</code></a>. This example updates the option if it already exists; if it does not exist it uses <code>add_option()</code> to set <code>$autoload</code> to <code>'no'</code>.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+$option_name = 'my_custom_color_option' ;
+$new_value = 'red';
+
+if ( get_option( $option_name ) !== false ) {
+
+    // The option already exists, so update it.
+    update_option( $option_name, $new_value );
+
+} else {
+
+    // The option hasn't been created yet, so add it with $autoload set to 'no'.
+    $deprecated = null;
+    $autoload = 'no';
+    add_option( $option_name, $new_value, $deprecated, $autoload );
+}
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-953">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="954" id="comment-954">
+<article class="comment-body" id="div-comment-954">
+<a class="screen-reader-text" href="#comment-content-954">Skip to note 21 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-954">
+<p><strong>Note</strong><br>
+Option values retrieved via WordPress functions are cached. If you modify an options outside of the <a href="https://codex.wordpress.org/Options_API" rel="nofollow">Options API</a>, then try to update a cached option, the update will fail and return false. Use the following method to clear the options cache before trying to get or update the options on the same request:</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php wp_cache_delete ( 'alloptions', 'options' ); ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-954">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="956" id="comment-956">
+<article class="comment-body" id="div-comment-956">
+<a class="screen-reader-text" href="#comment-content-956">Skip to note 22 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-956">
+<p>Use <a href="https://developer.notmatt.press/reference/functions/wp_load_alloptions/" rel="nofollow"><code>wp_load_alloptions()</code></a> to print a list of all options:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php 
+$alloptions  = wp_load_alloptions();
+var_dump( $alloptions );
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-956">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-mp518 even thread-even depth-1" data-comment-id="2364" id="comment-2364">
+<article class="comment-body" id="div-comment-2364">
+<a class="screen-reader-text" href="#comment-content-2364">Skip to note 23 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2364">
+<p><strong>Update Option Stored in Multi-Dimensional Array</strong></p>
+<p>update multi-dimensional array and retrieve the entire array.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">//store in one variable
+$multidimensional_options = array(
+  'inner_array'=&gt;array(
+       'foo' =&gt; 'bar',
+       'hello' =&gt; 'world',
+   ),
+);
+ 
+//Update entire array
+update_option('my_multi_options', $multidimensional_options);
+ 
+//Get entire array
+$my_multi_options = get_option('my_multi_options');</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2364">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-pinoceniccola odd alt thread-odd thread-alt depth-1" data-comment-id="4895" id="comment-4895">
+<article class="comment-body" id="div-comment-4895">
+<a class="screen-reader-text" href="#comment-content-4895">Skip to note 24 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4895">
+<p><strong>Note</strong><br>
+Please avoid to pass <code>null</code> as <code>$value</code>, for a false-y value just use <code>0</code>, <code>false</code> or even an empty string. A <code>null</code> value may lead to potential bugs and side effects. </br></p>
+<p>See <a href="https://core.trac.wordpress.org/ticket/52723" rel="nofollow ugc">this ticket</a> for details.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4895">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-andrija even thread-even depth-1" data-comment-id="4899" id="comment-4899">
+<article class="comment-body" id="div-comment-4899">
+<a class="screen-reader-text" href="#comment-content-4899">Skip to note 25 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4899">
+<p>Saving a boolean true will have the option value of (string) “1”.<br/>
+Saving a boolean false will have the option value of empty (string) “”;</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$value = true;
+update_option( 'some_option', $value );</code></pre>
+<p>Getting a boolean value will return:<br/>
+a) the string “1” if the saved boolean was true<br/>
+b) the empty string “” if the saved boolean was false<br/>
+c) boolean false if the option doesn’t exist</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$get_value = get_option( 'some_option', true );</code></pre>
+<p>To check if something was turned on, and it should be turned on by default (we don’t care if the option already exists):</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$check = ! empty( $get_value );</code></pre>
+<p>To check if something was turned on, but only if the option exists:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$check = ( '1' === $get_value );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4899">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-dparthj odd alt thread-odd thread-alt depth-1" data-comment-id="7131" id="comment-7131">
+<article class="comment-body" id="div-comment-7131">
+<a class="screen-reader-text" href="#comment-content-7131">Skip to note 26 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7131">
+<p>As This function is designed to work with or without a logged-in user. Sometimes we have to check user capabilities.<br/>
+Let’s assume, our option should only be saved by admin user than code would be,</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">global $current_user;
+
+$option_key   = 'option_key';
+$option_value = ( ! empty( $_POST['option_value_0'] ) &amp;&amp; ! empty( $_POST['option_value_1'] ) ) ? array( $_POST['option_value_0'], $_POST['option_value_1'] ) : '';
+
+if ( current_user_can( 'manage_options' ) ) {
+	update_option( $option_key, $option_value );
+}</code></pre>
+<p>Also, No need to <code>serialize()</code> the value, because function does itself.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-7131">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

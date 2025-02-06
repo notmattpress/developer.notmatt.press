@@ -1,0 +1,196 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">image_resize_dimensions()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>image_resize_dimensions()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">image_resize_dimensions( <span class="arg-type">int</span> <span class="arg-name">$orig_w</span>,  <span class="arg-type">int</span> <span class="arg-name">$orig_h</span>,  <span class="arg-type">int</span> <span class="arg-name">$dest_w</span>,  <span class="arg-type">int</span> <span class="arg-name">$dest_h</span>,  <span class="arg-type">bool|array</span> <span class="arg-name">$crop</span> = <span class="arg-default">false</span> ): <span class="return-type">array|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves calculated resize dimensions for use in <a href="https://developer.notmatt.press/reference/classes/wp_image_editor/" rel="class">WP_Image_Editor</a>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Calculates dimensions and coordinates for a resized image that fits within a specified width and height.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$orig_w</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Original width in pixels.</span></div></dd><dt><code>$orig_h</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Original height in pixels.</span></div></dd><dt><code>$dest_w</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">New width in pixels.</span></div></dd><dt><code>$dest_h</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">New height in pixels.</span></div></dd><dt><code>$crop</code><span class="type"><span class="bool">bool</span>|<span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Image cropping behavior. If false, the image will be scaled (default).<br/>
+If true, image will be cropped to the specified dimensions using center positions.<br/>
+If an array, the image will be cropped using the array to specify the crop location: <ul class="param-hash"><li><code>0</code> <span class="type">string</span><div class="desc">The x crop position. Accepts <code>'left'</code> <code>'center'</code>, or <code>'right'</code>.</div></li>
+<li><code>1</code> <span class="type">string</span><div class="desc">The y crop position. Accepts <code>'top'</code>, <code>'center'</code>, or <code>'bottom'</code>.</div></li>
+</ul>
+</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|false</span> Returned array matches parameters for <code>imagecopyresampled()</code>. False on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="538"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function image_resize_dimensions( $orig_w, $orig_h, $dest_w, $dest_h, $crop = false ) {
+
+	if ( $orig_w &lt;= 0 || $orig_h &lt;= 0 ) {
+		return false;
+	}
+	// At least one of $dest_w or $dest_h must be specific.
+	if ( $dest_w &lt;= 0 &amp;&amp; $dest_h &lt;= 0 ) {
+		return false;
+	}
+
+	/**
+	 * Filters whether to preempt calculating the image resize dimensions.
+	 *
+	 * Returning a non-null value from the filter will effectively short-circuit
+	 * image_resize_dimensions(), returning that value instead.
+	 *
+	 * @since 3.4.0
+	 *
+	 * @param null|mixed $null   Whether to preempt output of the resize dimensions.
+	 * @param int        $orig_w Original width in pixels.
+	 * @param int        $orig_h Original height in pixels.
+	 * @param int        $dest_w New width in pixels.
+	 * @param int        $dest_h New height in pixels.
+	 * @param bool|array $crop   Whether to crop image to specified width and height or resize.
+	 *                           An array can specify positioning of the crop area. Default false.
+	 */
+	$output = apply_filters( 'image_resize_dimensions', null, $orig_w, $orig_h, $dest_w, $dest_h, $crop );
+
+	if ( null !== $output ) {
+		return $output;
+	}
+
+	// Stop if the destination size is larger than the original image dimensions.
+	if ( empty( $dest_h ) ) {
+		if ( $orig_w &lt; $dest_w ) {
+			return false;
+		}
+	} elseif ( empty( $dest_w ) ) {
+		if ( $orig_h &lt; $dest_h ) {
+			return false;
+		}
+	} else {
+		if ( $orig_w &lt; $dest_w &amp;&amp; $orig_h &lt; $dest_h ) {
+			return false;
+		}
+	}
+
+	if ( $crop ) {
+		/*
+		 * Crop the largest possible portion of the original image that we can size to $dest_w x $dest_h.
+		 * Note that the requested crop dimensions are used as a maximum bounding box for the original image.
+		 * If the original image's width or height is less than the requested width or height
+		 * only the greater one will be cropped.
+		 * For example when the original image is 600x300, and the requested crop dimensions are 400x400,
+		 * the resulting image will be 400x300.
+		 */
+		$aspect_ratio = $orig_w / $orig_h;
+		$new_w        = min( $dest_w, $orig_w );
+		$new_h        = min( $dest_h, $orig_h );
+
+		if ( ! $new_w ) {
+			$new_w = (int) round( $new_h * $aspect_ratio );
+		}
+
+		if ( ! $new_h ) {
+			$new_h = (int) round( $new_w / $aspect_ratio );
+		}
+
+		$size_ratio = max( $new_w / $orig_w, $new_h / $orig_h );
+
+		$crop_w = round( $new_w / $size_ratio );
+		$crop_h = round( $new_h / $size_ratio );
+
+		if ( ! is_array( $crop ) || count( $crop ) !== 2 ) {
+			$crop = array( 'center', 'center' );
+		}
+
+		list( $x, $y ) = $crop;
+
+		if ( 'left' === $x ) {
+			$s_x = 0;
+		} elseif ( 'right' === $x ) {
+			$s_x = $orig_w - $crop_w;
+		} else {
+			$s_x = floor( ( $orig_w - $crop_w ) / 2 );
+		}
+
+		if ( 'top' === $y ) {
+			$s_y = 0;
+		} elseif ( 'bottom' === $y ) {
+			$s_y = $orig_h - $crop_h;
+		} else {
+			$s_y = floor( ( $orig_h - $crop_h ) / 2 );
+		}
+	} else {
+		// Resize using $dest_w x $dest_h as a maximum bounding box.
+		$crop_w = $orig_w;
+		$crop_h = $orig_h;
+
+		$s_x = 0;
+		$s_y = 0;
+
+		list( $new_w, $new_h ) = wp_constrain_dimensions( $orig_w, $orig_h, $dest_w, $dest_h );
+	}
+
+	if ( wp_fuzzy_number_match( $new_w, $orig_w ) &amp;&amp; wp_fuzzy_number_match( $new_h, $orig_h ) ) {
+		// The new size has virtually the same dimensions as the original image.
+
+		/**
+		 * Filters whether to proceed with making an image sub-size with identical dimensions
+		 * with the original/source image. Differences of 1px may be due to rounding and are ignored.
+		 *
+		 * @since 5.3.0
+		 *
+		 * @param bool $proceed The filtered value.
+		 * @param int  $orig_w  Original image width.
+		 * @param int  $orig_h  Original image height.
+		 */
+		$proceed = (bool) apply_filters( 'wp_image_resize_identical_dimensions', false, $orig_w, $orig_h );
+
+		if ( ! $proceed ) {
+			return false;
+		}
+	}
+
+	/*
+	 * The return array matches the parameters to imagecopyresampled().
+	 * int dst_x, int dst_y, int src_x, int src_y, int dst_w, int dst_h, int src_w, int src_h
+	 */
+	return array( 0, 0, (int) $s_x, (int) $s_y, (int) $new_w, (int) $new_h, (int) $crop_w, (int) $crop_h );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/media.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/media.php#L538">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/media.php#L538-L668">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

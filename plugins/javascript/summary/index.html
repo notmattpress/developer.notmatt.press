@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/javascript/">JavaScript</a></span><span class="is-current-page">Summary</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Summary</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Here are all the example code snippets from the preceding discussion, assembled into two complete code pages: one for jQuery and the other for PHP.</p>
+<h2 class="is-toc-heading wp-block-heading" id="php" tabindex="-1"><a href="#php">PHP</a></h2>
+<p>This code resides on one of your plugin pages.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'admin_enqueue_scripts', 'my_enqueue' );
+function my_enqueue( $hook ) {
+   if ( 'myplugin_settings.php' !== $hook ) {
+      return;
+   }
+
+   wp_enqueue_script(
+      'ajax-script',
+      plugins_url( '/js/myjquery.js', __FILE__ ),
+      array( 'jquery' ),
+      '1.0.0',
+      true
+   );
+
+   $title_nonce = wp_create_nonce( 'title_example' );
+   wp_localize_script(
+      'ajax-script',
+      'my_ajax_obj',
+      array(
+         'ajax_url' =&gt; admin_url( 'admin-ajax.php' ),
+         'nonce'    =&gt; $title_nonce,
+      )
+   );
+}
+
+add_action( 'wp_ajax_my_tag_count', 'my_ajax_handler' );
+function my_ajax_handler() {
+   check_ajax_referer( 'title_example' );
+
+   $title = wp_unslash( $_POST['title'] );
+
+   update_user_meta( get_current_user_id(), 'title_preference', $title );
+
+   $args = array(
+      'tag' =&gt; $title,
+   );
+
+   $the_query = new WP_Query( $args );
+
+   echo esc_html( $title ) . ' (' . $the_query-&gt;post_count . ') ';
+
+   wp_die(); // all ajax handlers should die when finished
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="jquery" tabindex="-1"><a href="#jquery">jQuery</a></h2>
+<p>This code is in the file <code>js/myjquery.js</code> below your plugin folder.</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">jQuery(document).ready(function($) { 	   //wrapper
+	$(".pref").change(function() { 		   //event
+		var this2 = this; 		           //use in callback
+		$.post(my_ajax_obj.ajax_url, { 	   //POST request
+	       _ajax_nonce: my_ajax_obj.nonce, //nonce
+			action: "my_tag_count",        //action
+	  		title: this.value 	           //data
+  		}, function(data) {		           //callback
+			this2.nextSibling.remove();    //remove the current title
+			$(this2).after(data); 	       //insert server response
+		});
+	});
+});</code></pre>
+<p>And after storing the preference, the resulting post count is added to the selected title.</p>
+<h2 class="is-toc-heading wp-block-heading" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<ul class="wp-block-list">
+<li><a href="http://wp.smashingmagazine.com/2011/10/18/how-to-use-ajax-in-wordpress/" title="External Site">How To Use AJAX In WordPress</a></li>
+<li><a href="http://www.glennmessersmith.com/pages/wpajax.html" title="External Site">AJAX for WordPress</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

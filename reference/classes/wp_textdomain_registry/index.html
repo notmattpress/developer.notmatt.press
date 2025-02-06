@@ -1,0 +1,388 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Textdomain_Registry</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Textdomain_Registry</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Textdomain_Registry {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Core class used for registering text domains.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/get/">WP_Textdomain_Registry::get</a></td><td>Returns the languages directory path for a specific domain and locale.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/get_language_files_from_path/">WP_Textdomain_Registry::get_language_files_from_path</a></td><td>Retrieves translation files from the specified path.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/get_path_from_lang_dir/">WP_Textdomain_Registry::get_path_from_lang_dir</a></td><td>Gets the path to the language directory for the current domain and locale.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/get_paths_for_domain/">WP_Textdomain_Registry::get_paths_for_domain</a></td><td>Returns possible language directory paths for a given text domain.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/has/">WP_Textdomain_Registry::has</a></td><td>Determines whether any MO file paths are available for the domain.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/init/">WP_Textdomain_Registry::init</a></td><td>Initializes the registry.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/invalidate_mo_files_cache/">WP_Textdomain_Registry::invalidate_mo_files_cache</a></td><td>Invalidate the cache for .mo files.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/set/">WP_Textdomain_Registry::set</a></td><td>Sets the language directory path for a specific domain and locale.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/set_cached_mo_files/">WP_Textdomain_Registry::set_cached_mo_files</a></td><td>Reads and caches all available MO files from a given directory.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_textdomain_registry/set_custom_path/">WP_Textdomain_Registry::set_custom_path</a></td><td>Sets the custom path to the plugin’s/theme’s languages directory.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="19"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Textdomain_Registry {
+	/**
+	 * List of domains and all their language directory paths for each locale.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @var array
+	 */
+	protected $all = array();
+
+	/**
+	 * List of domains and their language directory path for the current (most recent) locale.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @var array
+	 */
+	protected $current = array();
+
+	/**
+	 * List of domains and their custom language directory paths.
+	 *
+	 * @see load_plugin_textdomain()
+	 * @see load_theme_textdomain()
+	 *
+	 * @since 6.1.0
+	 *
+	 * @var array
+	 */
+	protected $custom_paths = array();
+
+	/**
+	 * Holds a cached list of available .mo files to improve performance.
+	 *
+	 * @since 6.1.0
+	 * @since 6.5.0 This property is no longer used.
+	 *
+	 * @var array
+	 *
+	 * @deprecated
+	 */
+	protected $cached_mo_files = array();
+
+	/**
+	 * Holds a cached list of domains with translations to improve performance.
+	 *
+	 * @since 6.2.0
+	 *
+	 * @var string[]
+	 */
+	protected $domains_with_translations = array();
+
+	/**
+	 * Initializes the registry.
+	 *
+	 * Hooks into the <a href="https://developer.notmatt.press/reference/functions/upgrader_process_complete">'upgrader_process_complete'</a> filter
+	 * to invalidate MO files caches.
+	 *
+	 * @since 6.5.0
+	 */
+	public function init() {
+		add_action( 'upgrader_process_complete', array( $this, 'invalidate_mo_files_cache' ), 10, 2 );
+	}
+
+	/**
+	 * Returns the languages directory path for a specific domain and locale.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param string $domain Text domain.
+	 * @param string $locale Locale.
+	 *
+	 * @return string|false Languages directory path or false if there is none available.
+	 */
+	public function get( $domain, $locale ) {
+		$path = $this-&gt;all[ $domain ][ $locale ] ?? $this-&gt;get_path_from_lang_dir( $domain, $locale );
+
+		/**
+		 * Filters the determined languages directory path for a specific domain and locale.
+		 *
+		 * @since 6.6.0
+		 *
+		 * @param string|false $path   Languages directory path for the given domain and locale.
+		 * @param string       $domain Text domain.
+		 * @param string       $locale Locale.
+		 */
+		return apply_filters( 'lang_dir_for_domain', $path, $domain, $locale );
+	}
+
+	/**
+	 * Determines whether any MO file paths are available for the domain.
+	 *
+	 * This is the case if a path has been set for the current locale,
+	 * or if there is no information stored yet, in which case
+	 * <a href="https://developer.notmatt.press/reference/functions/_load_textdomain_just_in_time">_load_textdomain_just_in_time()</a> will fetch the information first.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param string $domain Text domain.
+	 * @return bool Whether any MO file paths are available for the domain.
+	 */
+	public function has( $domain ) {
+		return (
+			isset( $this-&gt;current[ $domain ] ) ||
+			empty( $this-&gt;all[ $domain ] ) ||
+			in_array( $domain, $this-&gt;domains_with_translations, true )
+		);
+	}
+
+	/**
+	 * Sets the language directory path for a specific domain and locale.
+	 *
+	 * Also sets the 'current' property for direct access
+	 * to the path for the current (most recent) locale.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param string       $domain Text domain.
+	 * @param string       $locale Locale.
+	 * @param string|false $path   Language directory path or false if there is none available.
+	 */
+	public function set( $domain, $locale, $path ) {
+		$this-&gt;all[ $domain ][ $locale ] = $path ? rtrim( $path, '/' ) . '/' : false;
+		$this-&gt;current[ $domain ]        = $this-&gt;all[ $domain ][ $locale ];
+	}
+
+	/**
+	 * Sets the custom path to the plugin's/theme's languages directory.
+	 *
+	 * Used by <a href="https://developer.notmatt.press/reference/functions/load_plugin_textdomain">load_plugin_textdomain()</a> and <a href="https://developer.notmatt.press/reference/functions/load_theme_textdomain">load_theme_textdomain()</a>.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @param string $domain Text domain.
+	 * @param string $path   Language directory path.
+	 */
+	public function set_custom_path( $domain, $path ) {
+		$this-&gt;custom_paths[ $domain ] = rtrim( $path, '/' );
+	}
+
+	/**
+	 * Retrieves translation files from the specified path.
+	 *
+	 * Allows early retrieval through the <a href="https://developer.notmatt.press/reference/functions/pre_get_mo_files_from_path">'pre_get_mo_files_from_path'</a> filter to optimize
+	 * performance, especially in directories with many files.
+	 *
+	 * @since 6.5.0
+	 *
+	 * @param string $path The directory path to search for translation files.
+	 * @return array Array of translation file paths. Can contain .mo and .l10n.php files.
+	 */
+	public function get_language_files_from_path( $path ) {
+		$path = rtrim( $path, '/' ) . '/';
+
+		/**
+		 * Filters the translation files retrieved from a specified path before the actual lookup.
+		 *
+		 * Returning a non-null value from the filter will effectively short-circuit
+		 * the MO files lookup, returning that value instead.
+		 *
+		 * This can be useful in situations where the directory contains a large number of files
+		 * and the default glob() function becomes expensive in terms of performance.
+		 *
+		 * @since 6.5.0
+		 *
+		 * @param null|array $files List of translation files. Default null.
+		 * @param string     $path  The path from which translation files are being fetched.
+		 */
+		$files = apply_filters( 'pre_get_language_files_from_path', null, $path );
+
+		if ( null !== $files ) {
+			return $files;
+		}
+
+		$cache_key = md5( $path );
+		$files     = wp_cache_get( $cache_key, 'translation_files' );
+
+		if ( false === $files ) {
+			$files = glob( $path . '*.mo' );
+			if ( false === $files ) {
+				$files = array();
+			}
+
+			$php_files = glob( $path . '*.l10n.php' );
+			if ( is_array( $php_files ) ) {
+				$files = array_merge( $files, $php_files );
+			}
+
+			wp_cache_set( $cache_key, $files, 'translation_files', HOUR_IN_SECONDS );
+		}
+
+		return $files;
+	}
+
+	/**
+	 * Invalidate the cache for .mo files.
+	 *
+	 * This function deletes the cache entries related to .mo files when triggered
+	 * by specific actions, such as the completion of an upgrade process.
+	 *
+	 * @since 6.5.0
+	 *
+	 * @param WP_Upgrader $upgrader   Unused. WP_Upgrader instance. In other contexts this might be a
+	 *                                Theme_Upgrader, Plugin_Upgrader, Core_Upgrade, or Language_Pack_Upgrader instance.
+	 * @param array       $hook_extra {
+	 *     Array of bulk item update data.
+	 *
+	 *     @type string $action       Type of action. Default 'update'.
+	 *     @type string $type         Type of update process. Accepts 'plugin', 'theme', 'translation', or 'core'.
+	 *     @type bool   $bulk         Whether the update process is a bulk update. Default true.
+	 *     @type array  $plugins      Array of the basename paths of the plugins' main files.
+	 *     @type array  $themes       The theme slugs.
+	 *     @type array  $translations {
+	 *         Array of translations update data.
+	 *
+	 *         @type string $language The locale the translation is for.
+	 *         @type string $type     Type of translation. Accepts 'plugin', 'theme', or 'core'.
+	 *         @type string $slug     Text domain the translation is for. The slug of a theme/plugin or
+	 *                                'default' for core translations.
+	 *         @type string $version  The version of a theme, plugin, or core.
+	 *     }
+	 * }
+	 */
+	public function invalidate_mo_files_cache( $upgrader, $hook_extra ) {
+		if (
+			! isset( $hook_extra['type'] ) ||
+			'translation' !== $hook_extra['type'] ||
+			array() === $hook_extra['translations']
+		) {
+			return;
+		}
+
+		$translation_types = array_unique( wp_list_pluck( $hook_extra['translations'], 'type' ) );
+
+		foreach ( $translation_types as $type ) {
+			switch ( $type ) {
+				case 'plugin':
+					wp_cache_delete( md5( WP_LANG_DIR . '/plugins/' ), 'translation_files' );
+					break;
+				case 'theme':
+					wp_cache_delete( md5( WP_LANG_DIR . '/themes/' ), 'translation_files' );
+					break;
+				default:
+					wp_cache_delete( md5( WP_LANG_DIR . '/' ), 'translation_files' );
+					break;
+			}
+		}
+	}
+
+	/**
+	 * Returns possible language directory paths for a given text domain.
+	 *
+	 * @since 6.2.0
+	 *
+	 * @param string $domain Text domain.
+	 * @return string[] Array of language directory paths.
+	 */
+	private function get_paths_for_domain( $domain ) {
+		$locations = array(
+			WP_LANG_DIR . '/plugins',
+			WP_LANG_DIR . '/themes',
+		);
+
+		if ( isset( $this-&gt;custom_paths[ $domain ] ) ) {
+			$locations[] = $this-&gt;custom_paths[ $domain ];
+		}
+
+		return $locations;
+	}
+
+	/**
+	 * Gets the path to the language directory for the current domain and locale.
+	 *
+	 * Checks the plugins and themes language directories as well as any
+	 * custom directory set via <a href="https://developer.notmatt.press/reference/functions/load_plugin_textdomain">load_plugin_textdomain()</a> or <a href="https://developer.notmatt.press/reference/functions/load_theme_textdomain">load_theme_textdomain()</a>.
+	 *
+	 * @since 6.1.0
+	 *
+	 * @see _get_path_to_translation_from_lang_dir()
+	 *
+	 * @param string $domain Text domain.
+	 * @param string $locale Locale.
+	 * @return string|false Language directory path or false if there is none available.
+	 */
+	private function get_path_from_lang_dir( $domain, $locale ) {
+		$locations = $this-&gt;get_paths_for_domain( $domain );
+
+		$found_location = false;
+
+		foreach ( $locations as $location ) {
+			$files = $this-&gt;get_language_files_from_path( $location );
+
+			$mo_path  = "$location/$domain-$locale.mo";
+			$php_path = "$location/$domain-$locale.l10n.php";
+
+			foreach ( $files as $file_path ) {
+				if (
+					! in_array( $domain, $this-&gt;domains_with_translations, true ) &amp;&amp;
+					str_starts_with( str_replace( "$location/", '', $file_path ), "$domain-" )
+				) {
+					$this-&gt;domains_with_translations[] = $domain;
+				}
+
+				if ( $file_path === $mo_path || $file_path === $php_path ) {
+					$found_location = rtrim( $location, '/' ) . '/';
+					break 2;
+				}
+			}
+		}
+
+		if ( $found_location ) {
+			$this-&gt;set( $domain, $locale, $found_location );
+
+			return $found_location;
+		}
+
+		/*
+		 * If no path is found for the given locale and a custom path has been set
+		 * using load_plugin_textdomain/load_theme_textdomain, use that one.
+		 */
+		if ( 'en_US' !== $locale &amp;&amp; isset( $this-&gt;custom_paths[ $domain ] ) ) {
+			$fallback_location = rtrim( $this-&gt;custom_paths[ $domain ], '/' ) . '/';
+			$this-&gt;set( $domain, $locale, $fallback_location );
+			return $fallback_location;
+		}
+
+		$this-&gt;set( $domain, $locale, false );
+
+		return false;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-textdomain-registry.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-textdomain-registry.php#L19">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-textdomain-registry.php#L19-L349">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

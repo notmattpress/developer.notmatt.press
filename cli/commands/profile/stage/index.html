@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/cli/commands/">WP-CLI Commands</a></span><span><a href="https://developer.wordpress.org/cli/commands/profile/">wp profile</a></span><span class="is-current-page">wp profile stage</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp profile stage</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-command-github"><div class="github-tracker">
+<a href="https://github.com/wp-cli/profile-command">
+<img alt="GitHub" class="icon-github" decoding="async" src="https://make.wordpress.org/cli/wp-content/plugins/wporg-cli/assets/images/github-mark.svg"/>
+</a>
+<div class="btn-group">
+<a class="button wporg-command-github-open" href="https://github.com/login?return_to=%2Fissues%3Fq%3Dlabel%3Acommand%3Aprofile-stage+sort%3Aupdated-desc+org%3Awp-cli+is%3Aopen">
+				View Open Issues <span class="green">(0)</span>
+</a>
+<a class="button wporg-command-github-closed" href="https://github.com/login?return_to=%2Fissues%3Fq%3Dlabel%3Acommand%3Aprofile-stage+sort%3Aupdated-desc+org%3Awp-cli+is%3Aclosed">
+				View Closed Issues <span class="red">(1)</span>
+</a>
+<a class="button wporg-command-github-new" href="https://github.com/wp-cli/profile-command/issues/new">Create New Issue</a></div></div></section>
+<section class="wp-block-wporg-command-content">This command runs on the <code>before_wp_load</code> hook, just before the WP load process begins.
+
+When WordPress handles a request from a browser, it’s essentially executing as one long PHP script. <code>wp profile stage</code> breaks the script into three stages:
+
+<ul>
+<li><strong>bootstrap</strong> is where WordPress is setting itself up, loading plugins and the main theme, and firing the <code>init</code> hook.</li>
+<li><strong>main_query</strong> is how WordPress transforms the request (e.g. <code>/2016/10/21/moms-birthday/</code>) into the primary <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a>.</li>
+<li><strong>template</strong> is where WordPress determines which theme template to render based on the main query, and renders it.</li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="installing" tabindex="-1"><a href="#installing">Installing</a></h3>
+<p>Use the <code>wp profile stage</code> command by installing the command’s package:</p>
+<pre><code>wp package install wp-cli/profile-command</code></pre>
+<p>Once the package is successfully installed, the <code>wp profile stage</code> command will appear in the list of available commands.</p>
+<h3 class="is-toc-heading" id="options" tabindex="-1"><a href="#options">Options</a></h3>
+<dl>
+<dt>[&lt;stage&gt;]</dt>
+<dd>Drill down into a specific stage.</dd>
+<dt>[--all]</dt>
+<dd>Expand upon all stages.</dd>
+<dt>[--spotlight]</dt>
+<dd>Filter out logs with zero-ish values from the set.</dd>
+<dt>[--url=&lt;url&gt;]</dt>
+<dd>Execute a request against a specified URL. Defaults to the home URL.</dd>
+<dt>[--fields=&lt;fields&gt;]</dt>
+<dd>Limit the output to specific fields. Default is all fields.</dd>
+<dt>[--format=&lt;format&gt;]</dt>
+<dd>Render output in a particular format.
+<br/>—<br/>default: table<br/>
+options:<br/>
+– table<br/>
+– json<br/>
+– yaml<br/>
+– csv<br/>—<br/></dd>
+<dt>[--order=&lt;order&gt;]</dt>
+<dd>Ascending or Descending order.
+<br/>—<br/>default: ASC<br/>
+options:<br/>
+– ASC<br/>
+– DESC<br/>—<br/></dd>
+<dt>[--orderby=&lt;fields&gt;]</dt>
+<dd>Set orderby which field.</dd>
+</dl>
+<h3 class="is-toc-heading" id="examples" tabindex="-1"><a href="#examples">Examples</a></h3>
+<pre><code># See an overview for each stage of the load process.
+$ wp profile stage --fields=stage,time,cache_ratio
++------------+---------+-------------+
+| stage      | time    | cache_ratio |
++------------+---------+-------------+
+| bootstrap  | 0.7994s | 93.21%      |
+| main_query | 0.0123s | 94.29%      |
+| template   | 0.792s  | 91.23%      |
++------------+---------+-------------+
+| total (3)  | 1.6037s | 92.91%      |
++------------+---------+-------------+
+
+# Dive into hook performance for a given stage.
+$ wp profile stage bootstrap --fields=hook,time,cache_ratio --spotlight
++--------------------------+---------+-------------+
+| hook                     | time    | cache_ratio |
++--------------------------+---------+-------------+
+| muplugins_loaded:before  | 0.2335s | 40%         |
+| muplugins_loaded         | 0.0007s | 50%         |
+| plugins_loaded:before    | 0.2792s | 77.63%      |
+| plugins_loaded           | 0.1502s | 100%        |
+| after_setup_theme:before | 0.068s  | 100%        |
+| init                     | 0.2643s | 96.88%      |
+| wp_loaded:after          | 0.0377s |             |
++--------------------------+---------+-------------+
+| total (7)                | 1.0335s | 77.42%      |
++--------------------------+---------+-------------+
+</code></pre>
+<h3 class="is-toc-heading" id="global-parameters" tabindex="-1"><a href="#global-parameters">Global Parameters</a></h3>
+
+These <a href="https://make.wordpress.org/cli/handbook/config/">global parameters</a> have the same behavior across all commands and affect how WP-CLI interacts with WordPress.
+
+<table>
+<thead>
+<tr>
+<th align="left"><strong>Argument</strong></th>
+<th align="left"><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>--path=&lt;path&gt;</code></td>
+<td align="left">Path to the WordPress files.</td>
+</tr>
+<tr>
+<td align="left"><code>--url=&lt;url&gt;</code></td>
+<td align="left">Pretend request came from given URL. In multisite, this argument is how the target site is specified.</td>
+</tr>
+<tr>
+<td align="left"><code>--ssh=[&lt;scheme&gt;:][&lt;user&gt;@]&lt;host\|container&gt;[:&lt;port&gt;][&lt;path&gt;]</code></td>
+<td align="left">Perform operation against a remote server over SSH (or a container using scheme of “docker”, “docker-compose”, “docker-compose-run”, “vagrant”).</td>
+</tr>
+<tr>
+<td align="left"><code>--http=&lt;http&gt;</code></td>
+<td align="left">Perform operation against a remote WordPress installation over HTTP.</td>
+</tr>
+<tr>
+<td align="left"><code>--user=&lt;id\|login\|email&gt;</code></td>
+<td align="left">Set the WordPress user.</td>
+</tr>
+<tr>
+<td align="left"><code>--skip-plugins[=&lt;plugins&gt;]</code></td>
+<td align="left">Skip loading all plugins, or a comma-separated list of plugins. Note: mu-plugins are still loaded.</td>
+</tr>
+<tr>
+<td align="left"><code>--skip-themes[=&lt;themes&gt;]</code></td>
+<td align="left">Skip loading all themes, or a comma-separated list of themes.</td>
+</tr>
+<tr>
+<td align="left"><code>--skip-packages</code></td>
+<td align="left">Skip loading all installed packages.</td>
+</tr>
+<tr>
+<td align="left"><code>--require=&lt;path&gt;</code></td>
+<td align="left">Load PHP file before running the command (may be used more than once).</td>
+</tr>
+<tr>
+<td align="left"><code>--exec=&lt;php-code&gt;</code></td>
+<td align="left">Execute PHP code before running the command (may be used more than once).</td>
+</tr>
+<tr>
+<td align="left"><code>--context=&lt;context&gt;</code></td>
+<td align="left">Load WordPress in a given context.</td>
+</tr>
+<tr>
+<td align="left"><code>--[no-]color</code></td>
+<td align="left">Whether to colorize the output.</td>
+</tr>
+<tr>
+<td align="left"><code>--debug[=&lt;group&gt;]</code></td>
+<td align="left">Show all PHP errors and add verbosity to WP-CLI output. Built-in groups include: bootstrap, commandfactory, and help.</td>
+</tr>
+<tr>
+<td align="left"><code>--prompt[=&lt;assoc&gt;]</code></td>
+<td align="left">Prompt the user to enter values for all command arguments, or a subset specified as comma-separated values.</td>
+</tr>
+<tr>
+<td align="left"><code>--quiet</code></td>
+<td align="left">Suppress informational messages.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wpdb/">wpdb</a></span><span class="is-current-page">wpdb::check_safe_collation()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wpdb::check_safe_collation()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wpdb::check_safe_collation( <span class="arg-type">string</span> <span class="arg-name">$query</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Checks if the query is accessing a collation considered safe on the current version of MySQL.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$query</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The query to check.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True if the collation is safe, false if it isn’t.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3475"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function check_safe_collation( $query ) {
+	if ( $this-&gt;checking_collation ) {
+		return true;
+	}
+
+	// We don't need to check the collation for queries that don't read data.
+	$query = ltrim( $query, "\r\n\t (" );
+	if ( preg_match( '/^(?:SHOW|DESCRIBE|DESC|EXPLAIN|CREATE)\s/i', $query ) ) {
+		return true;
+	}
+
+	// All-ASCII queries don't need extra checking.
+	if ( $this-&gt;check_ascii( $query ) ) {
+		return true;
+	}
+
+	$table = $this-&gt;get_table_from_query( $query );
+	if ( ! $table ) {
+		return false;
+	}
+
+	$this-&gt;checking_collation = true;
+	$collation                = $this-&gt;get_table_charset( $table );
+	$this-&gt;checking_collation = false;
+
+	// Tables with no collation, or latin1 only, don't need extra checking.
+	if ( false === $collation || 'latin1' === $collation ) {
+		return true;
+	}
+
+	$table = strtolower( $table );
+	if ( empty( $this-&gt;col_meta[ $table ] ) ) {
+		return false;
+	}
+
+	// If any of the columns don't have one of these collations, it needs more confidence checking.
+	$safe_collations = array(
+		'utf8_bin',
+		'utf8_general_ci',
+		'utf8mb3_bin',
+		'utf8mb3_general_ci',
+		'utf8mb4_bin',
+		'utf8mb4_general_ci',
+	);
+
+	foreach ( $this-&gt;col_meta[ $table ] as $col ) {
+		if ( empty( $col-&gt;Collation ) ) {
+			continue;
+		}
+
+		if ( ! in_array( $col-&gt;Collation, $safe_collations, true ) ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wpdb.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wpdb.php#L3475">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wpdb.php#L3475-L3531">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_table_from_query/">wpdb::get_table_from_query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Finds the first table name referenced in a query.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/check_ascii/">wpdb::check_ascii()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Checks if a string is ASCII.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_table_charset/">wpdb::get_table_charset()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves the character set for the given table.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_var/">wpdb::get_var()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one value from the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_row/">wpdb::get_row()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one row from the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_col/">wpdb::get_col()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one column from the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_results/">wpdb::get_results()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves an entire SQL result set from the database (i.e., many rows).</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.2.0/">4.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

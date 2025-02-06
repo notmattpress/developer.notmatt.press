@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_image_editor/">WP_Image_Editor</a></span><span class="is-current-page">WP_Image_Editor::set_quality()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Image_Editor::set_quality()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Image_Editor::set_quality( <span class="arg-type">int</span> <span class="arg-name">$quality</span> = <span class="arg-default">null</span> ): <span class="return-type">true|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Sets Image Compression quality on a 1-100% scale.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$quality</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Compression Quality. Range: [1,100]</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">true|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> True if set successfully; <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> on failure.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>Default quality defined in <a href="https://developer.notmatt.press/reference/classes/wp_image_editor/">WP_Image_Editor</a> class is 90.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="247"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function set_quality( $quality = null ) {
+	// Use the output mime type if present. If not, fall back to the input/initial mime type.
+	$mime_type = ! empty( $this-&gt;output_mime_type ) ? $this-&gt;output_mime_type : $this-&gt;mime_type;
+	// Get the default quality setting for the mime type.
+	$default_quality = $this-&gt;get_default_quality( $mime_type );
+
+	if ( null === $quality ) {
+		/**
+		 * Filters the default image compression quality setting.
+		 *
+		 * Applies only during initial editor instantiation, or when set_quality() is run
+		 * manually without the `$quality` argument.
+		 *
+		 * The WP_Image_Editor::set_quality() method has priority over the filter.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param int    $quality   Quality level between 1 (low) and 100 (high).
+		 * @param string $mime_type Image mime type.
+		 */
+		$quality = apply_filters( 'wp_editor_set_quality', $default_quality, $mime_type );
+
+		if ( 'image/jpeg' === $mime_type ) {
+			/**
+			 * Filters the JPEG compression quality for backward-compatibility.
+			 *
+			 * Applies only during initial editor instantiation, or when set_quality() is run
+			 * manually without the `$quality` argument.
+			 *
+			 * The WP_Image_Editor::set_quality() method has priority over the filter.
+			 *
+			 * The filter is evaluated under two contexts: 'image_resize', and 'edit_image',
+			 * (when a JPEG image is saved to file).
+			 *
+			 * @since 2.5.0
+			 *
+			 * @param int    $quality Quality level between 0 (low) and 100 (high) of the JPEG.
+			 * @param string $context Context of the filter.
+			 */
+			$quality = apply_filters( 'jpeg_quality', $quality, 'image_resize' );
+		}
+
+		if ( $quality &lt; 0 || $quality &gt; 100 ) {
+			$quality = $default_quality;
+		}
+	}
+
+	// Allow 0, but squash to 1 due to identical images in GD, and for backward compatibility.
+	if ( 0 === $quality ) {
+		$quality = 1;
+	}
+
+	if ( ( $quality &gt;= 1 ) &amp;&amp; ( $quality &lt;= 100 ) ) {
+		$this-&gt;quality = $quality;
+		return true;
+	} else {
+		return new WP_Error( 'invalid_image_quality', __( 'Attempted to set image quality outside of the range [1,100].' ) );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-image-editor.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-image-editor.php#L247">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-image-editor.php#L247-L305">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/jpeg_quality/"><span class="hook-func">apply_filters</span>( ‘jpeg_quality’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$quality</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr> )</a></dt><dd><p>Filters the JPEG compression quality for backward-compatibility.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_editor_set_quality/"><span class="hook-func">apply_filters</span>( ‘wp_editor_set_quality’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$quality</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$mime_type</span></nobr> )</a></dt><dd><p>Filters the default image compression quality setting.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor/get_default_quality/">WP_Image_Editor::get_default_quality()</a><code>wp-includes/class-wp-image-editor.php</code></td><td><p>Returns the default compression quality setting for the mime type.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor_gd/set_quality/">WP_Image_Editor_GD::set_quality()</a><code>wp-includes/class-wp-image-editor-gd.php</code></td><td><p>Sets Image Compression quality on a 1-100% scale. Handles WebP lossless images.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor/get_quality/">WP_Image_Editor::get_quality()</a><code>wp-includes/class-wp-image-editor.php</code></td><td><p>Gets the Image Compression quality on a 1-100% scale.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor_imagick/set_quality/">WP_Image_Editor_Imagick::set_quality()</a><code>wp-includes/class-wp-image-editor-imagick.php</code></td><td><p>Sets Image Compression quality on a 1-100% scale.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor/get_output_format/">WP_Image_Editor::get_output_format()</a><code>wp-includes/class-wp-image-editor.php</code></td><td><p>Returns preferred mime-type and extension based on provided file’s extension and mime, or current file’s extension and mime.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.5.0/">3.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

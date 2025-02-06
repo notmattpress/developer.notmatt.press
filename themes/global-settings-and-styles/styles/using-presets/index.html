@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/global-settings-and-styles/">Global Settings and Styles (theme.json)</a></span><span><a href="https://developer.wordpress.org/themes/global-settings-and-styles/styles/">Styles</a></span><span class="is-current-page">Using Presets</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Using Presets</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>In the <code>theme.json</code> <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings">Settings documentation</a>, you learned how to register custom presets, such as a color palette, font sizes, a spacing scale, and more. In the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/styles/">Styles documentation</a>, you’ve learned how to apply CSS styles via <code>theme.json</code>.</p>
+<p>Now it’s time to combine these two concepts by applying styles using the presets that you’ve registered.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>In the styles documentation, you will often see examples using hard-coded CSS values. This is primarily for the sake of demonstration. You will almost always use registered presets instead. This makes it much easier to manage everything from a single location.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="what-are-presets" tabindex="-1"><a href="#what-are-presets">What are presets?</a></h2>
+<p>Essentially, presets are options that you register—generally for users to select from the UI—that map to CSS custom properties.</p>
+<p>For example, when you learned how to <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/typography/">register custom font sizes</a>, you added your presets to <code>settings.typography.fontSizes</code>. WordPress takes each of those font sizes and creates a CSS custom property with the name of <code>--wp--preset--font-size–{$slug}</code>.</p>
+<p>WordPress itself, your theme, plugins, and even users can register presets for the various features that are supported. And WordPress creates CSS custom properties for all registered presets with the name of <code>--wp--preset–{$feature}-{$slug}</code>.</p>
+<p>Let’s look at a basic example of a <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/color/">custom color palette</a> with three colors:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"settings": {
+		"color": {
+			"palette": [
+				{
+					"color": "#ffffff",
+					"name": "Base",
+					"slug": "base"
+				},
+				{
+					"color": "#000000",
+					"name": "Contrast",
+					"slug": "contrast"
+				},
+				{
+					"color": "#89cff0",
+					"name": "Primary",
+					"slug": "primary"
+				}
+			]
+		}
+	}
+}</code></pre>
+<p>This creates three CSS custom properties, which WordPress will output in the editor and on the front end:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">body {
+	--wp--preset--color--base: #ffffff;
+	--wp--preset--color--contrast: #000000;
+	--wp--preset--color--primary: #89cff0;
+}</code></pre>
+<p>At the end of the day, presets are merely a standardized method of creating options in the interface and generating CSS custom properties.</p>
+<h2 class="is-toc-heading wp-block-heading" id="applying-presets-as-styles" tabindex="-1"><a href="#applying-presets-as-styles">Applying presets as styles</a></h2>
+<p>Because presets are registered as settings, they are available to select in the user interface. But you must apply them as styles if you want to use them as part of your theme’s default design.</p>
+<p>Let’s build off the custom color palette from the previous section. Suppose you wanted to apply these styles using your registered presets:</p>
+<ul class="wp-block-list">
+<li>The site’s background color should use the <code>base</code> preset.</li>
+<li>The site’s primary text color should use the <code>contrast</code> preset.</li>
+<li>Link colors should use the <code>primary</code> preset.</li>
+</ul>
+<p>To reference presets in <code>theme.json</code>, there is a special syntax that you can use: <code>var:preset|$feature|$slug</code>. So <code>base</code> color in this instance would be <code>var:preset|color|base</code>.</p>
+<p>With that plan in mind and using what you’ve already learned from this chapter, try your hand at recreating this in <code>theme.json</code>. Your code should look like this:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"settings": {
+		"color": {
+			"palette": [
+				{
+					"color": "#ffffff",
+					"name": "Base",
+					"slug": "base"
+				},
+				{
+					"color": "#000000",
+					"name": "Contrast",
+					"slug": "contrast"
+				},
+				{
+					"color": "#89cff0",
+					"name": "Primary",
+					"slug": "primary"
+				}
+			]
+		}
+	},
+	"styles": {
+		"color": {
+			"text": "var:preset|color|contrast",
+			"background": "var:preset|color|base"
+		},
+		"elements": {
+			"link": {
+				"color": {
+					"text": "var:preset|color|primary"
+				}
+			}
+		}
+	}
+}</code></pre>
+<p>If you test your site on the front end or via the editor, you should see that your colors have correctly applied:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/using-presets-color.jpg?ssl=1"><img alt="WordPress post editor with a couple of demo paragraphs. The image reflects the black text color and blue link color." class="wp-image-149117" data-recalc-dims="1" decoding="async" fetchpriority="high" height="1056" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/using-presets-color.jpg?resize=2048%2C1056&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/using-presets-color.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/using-presets-color.jpg?resize=300%2C155&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/using-presets-color.jpg?resize=1024%2C528&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/using-presets-color.jpg?resize=768%2C396&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/using-presets-color.jpg?resize=1536%2C792&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>The next step now is to figure out which elements and blocks you want to apply other presets to. Depending on the complexity of your theme, this can be as simple as a few custom colors to hundreds of lines of JSON code. Really, what you do from here is entirely up to you.</p>
+<div class="wp-block-wporg-notice is-tip-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>Technically, you can reference presets using the CSS syntax of <code>var( --wp--preset--{$feature}--{$slug} )</code>. But the WordPress <code>var:preset|$feature|$slug</code> syntax works much better and always appears correctly throughout the interface in the WordPress admin. Save the CSS syntax for when you are actually writing CSS.</p></div></div>
+<h3 class="is-toc-heading wp-block-heading" id="referencing-custom-presets" tabindex="-1"><a href="#referencing-custom-presets">Referencing custom presets</a></h3>
+<p>In the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/custom/">Custom Settings</a> documentation, you learned how to create “custom” presets. These are non-standard CSS custom properties that you can register, and WordPress generates the CSS output for you.</p>
+<p>These use a different naming convention in comparison to standard presets. Essentially, whenever you used the term <code>preset</code> in your code for standard presets, you would exchange that for <code>custom</code> when dealing with custom presets.</p>
+<p>Let’s walk through an example. Assume that you wanted to register some CSS custom properties for handling line heights in your theme design. You would add this to your <code>theme.json</code> file:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"settings": {
+		"custom": {
+			"lineHeight": {
+				"xs": "1",
+				"sm": "1.25",
+				"md": "1.5",
+				"lg": "1.75"
+			}
+		}
+	}
+}</code></pre>
+<p>WordPress will generate these custom line heights as CSS custom properties in the editor and on the front end:</p>
+<pre class="wp-block-code"><code class="language-css" lang="css">body {
+	--wp--custom--line-height--xs: 1;
+	--wp--custom--line-height--sm: 1.25;
+	--wp--custom--line-height--md: 1.5;
+	--wp--custom--line-height--lg: 1.75;
+}</code></pre>
+<p>To reference these as styles in <code>theme.json</code>, you would use the <code>var:custom</code> syntax instead of <code>var:preset</code>.</p>
+<p>Suppose you wanted to apply the registered <code>md</code> line-height size as the default line height at the root/global level. For that, you would need to target <code>styles.typography.lineHeight</code>.</p>
+<p>Here is what the full code would look like in <code>theme.json</code>:</p>
+<pre class="wp-block-code"><code class="">{
+	"version": 2,
+	"settings": {
+		"custom": {
+			"lineHeight": {
+				"xs": "1",
+				"sm": "1.25",
+				"md": "1.5",
+				"lg": "1.75"
+			}
+		}
+	},
+	"styles": {
+		"typography": {
+			"lineHeight": "var:custom|line-height|md"
+		}
+	}
+}</code></pre>
+<p>Of course, you could use your other custom line-height presets for styling other elements and blocks.</p>
+<h2 class="is-toc-heading wp-block-heading" id="available-presets" tabindex="-1"><a href="#available-presets">Available presets</a></h2>
+<p>WordPress has several features that you can register presets for. You can find these presets in their corresponding settings docs (the specific properties are noted in parentheses):</p>
+<ul class="wp-block-list">
+<li><a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/color/">Color</a> (<code>palette</code>)</li>
+<li><a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/shadow/">Shadow</a> (<code>presets</code>)</li>
+<li><a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/spacing/">Spacing</a> (<code>spacingScale</code>, <code>spacingSizes</code>)</li>
+<li><a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/typography/">Typography</a> (<code>fontSizes</code>, <code>fontFamily</code>)</li>
+<li><a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/custom/">Custom</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

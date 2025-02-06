@@ -1,0 +1,268 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">has_block()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>has_block()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">has_block( <span class="arg-type">string</span> <span class="arg-name">$block_name</span>,  <span class="arg-type">int|string|WP_Post|null</span> <span class="arg-name">$post</span> = <span class="arg-default">null</span> ): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Determines whether a $post or a string contains a specific block type.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This test optimizes for performance rather than strict accuracy, detecting whether the block type exists but not validating its structure and not checking synced patterns (formerly called reusable blocks). For strict accuracy, you should use the block parser on post content.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/parse_blocks">parse_blocks()</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$block_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Full block type to look for.</span></div></dd><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="string">string</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post content, post ID, or post object.<br/>
+Defaults to global $post.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> Whether the post content contains the specified block.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="801"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function has_block( $block_name, $post = null ) {
+	if ( ! has_blocks( $post ) ) {
+		return false;
+	}
+
+	if ( ! is_string( $post ) ) {
+		$wp_post = get_post( $post );
+		if ( $wp_post instanceof WP_Post ) {
+			$post = $wp_post-&gt;post_content;
+		}
+	}
+
+	/*
+	 * Normalize block name to include namespace, if provided as non-namespaced.
+	 * This matches behavior for WordPress 5.0.0 - 5.3.0 in matching blocks by
+	 * their serialized names.
+	 */
+	if ( ! str_contains( $block_name, '/' ) ) {
+		$block_name = 'core/' . $block_name;
+	}
+
+	// Test for existence of block by its fully qualified name.
+	$has_block = str_contains( $post, '&lt;!-- wp:' . $block_name . ' ' );
+
+	if ( ! $has_block ) {
+		/*
+		 * If the given block name would serialize to a different name, test for
+		 * existence by the serialized form.
+		 */
+		$serialized_block_name = strip_core_block_namespace( $block_name );
+		if ( $serialized_block_name !== $block_name ) {
+			$has_block = str_contains( $post, '&lt;!-- wp:' . $serialized_block_name . ' ' );
+		}
+	}
+
+	return $has_block;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/blocks.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/blocks.php#L801">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/blocks.php#L801-L837">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/strip_core_block_namespace/">strip_core_block_namespace()</a><code>wp-includes/blocks.php</code></td><td><p>Returns the block name to use for serialization. This will remove the default “core/” namespace from a block name.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/has_blocks/">has_blocks()</a><code>wp-includes/blocks.php</code></td><td><p>Determines whether a post or content string has blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_block_hooks_to_content/">apply_block_hooks_to_content()</a><code>wp-includes/blocks.php</code></td><td><p>Runs the hooked blocks algorithm on the given content.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_the_content/">get_the_content()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves the post content.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.0.0/">5.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-andrewza even thread-even depth-1" data-comment-id="4026" id="comment-4026">
+<article class="comment-body" id="div-comment-4026">
+<a class="screen-reader-text" href="#comment-content-4026">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4026">
+<p>If you are wanting to check if a custom (non core block) is for a page or post, include the namespace/name-of-block:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( has_block( 'my-namespace/block-name' ) ) {
+ // Do stuff here.
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4026">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-vyskoczilova odd alt thread-odd thread-alt depth-1" data-comment-id="5023" id="comment-5023">
+<article class="comment-body" id="div-comment-5023">
+<a class="screen-reader-text" href="#comment-content-5023">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5023">
+<p>The function doesn’t work in reusable blocks. If you need to check blocks within a reusable block you need to parse content first. Here is my simplified functional solution (although OOP would do bit better):</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Has block function which searches as well in reusable blocks.
+ *
+ * @param mixed $block_name Full Block type to look for.
+ * @return bool
+ */
+function wpdocs_enhanced_has_block( $block_name ) {
+	if ( has_block( $block_name ) ) {
+		return true;
+	}
+
+	if ( has_block( 'core/block' ) ) {
+		$content = get_post_field( 'post_content' );
+		$blocks = parse_blocks( $content );
+		return wpdocs_search_reusable_blocks_within_innerblocks( $blocks, $block_name );
+	}
+
+	return false;
+}
+
+/**
+ * Search for the selected block within inner blocks.
+ *
+ * The helper function for wpdocs_enhanced_has_block() function.
+ *
+ * @param array $blocks Blocks to loop through.
+ * @param string $block_name Full Block type to look for.
+ * @return bool
+ */
+function wpdocs_search_reusable_blocks_within_innerblocks( $blocks, $block_name ) {
+	foreach ( $blocks as $block ) {
+		if ( isset( $block['innerBlocks'] ) &amp;&amp; ! empty( $block['innerBlocks'] ) ) {
+			wpdocs_search_reusable_blocks_within_innerblocks( $block['innerBlocks'], $block_name );
+		} elseif ( 'core/block' === $block['blockName'] &amp;&amp; ! empty( $block['attrs']['ref'] ) &amp;&amp; has_block( $block_name, $block['attrs']['ref'] ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}</code></pre>
+<p>Now you can call <code>wpdocs_enhanced_has_block( 'core/heading' )</code> to check for heading block both in post content and if not found in all reusable blocks within the post.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5023">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tom-napier even thread-even depth-1" data-comment-id="3236" id="comment-3236">
+<article class="comment-body" id="div-comment-3236">
+<a class="screen-reader-text" href="#comment-content-3236">Skip to note 9 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3236">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Note: does not support arrays
+if ( has_block( array( 'gallery', 'button' ) ) ) {
+	// error
+}
+
+// Use || instead
+if ( has_block( 'gallery' ) || has_block( 'button' ) ) {
+	// Do something.
+} </code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3236">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-johnnya23 odd alt thread-odd thread-alt depth-1" data-comment-id="3882" id="comment-3882">
+<article class="comment-body" id="div-comment-3882">
+<a class="screen-reader-text" href="#comment-content-3882">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3882">
+<p>If adding a “number” value for $post make sure it’s an integer (if a string – like ‘5’) sneaks in you will get a return of false.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3882">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-wpdevjoakim even thread-even depth-1" data-comment-id="6490" id="comment-6490">
+<article class="comment-body" id="div-comment-6490">
+<a class="screen-reader-text" href="#comment-content-6490">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6490">
+<p>I just want to know if Gutenberg block exist to create the logic, i have a hybrid kind of site, previous answers only had specific blocks with has_block, didnt suit me so i found this.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">// Check if any Gutenberg block exists
+if ( function_exists( 'register_block_type' ) &amp;&amp; has_blocks() ) {
+	// Do stuff
+	echo 'At least one Gutenberg block exists!';
+} else {
+	// Do stuff
+	echo 'No Gutenberg blocks found.';
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6490">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-rabmalin odd alt thread-odd thread-alt depth-1 bad-note" data-comment-id="3172" id="comment-3172">
+<article class="comment-body" id="div-comment-3172">
+<a class="screen-reader-text" href="#comment-content-3172">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3172">
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( has_block( 'gallery' ) ) {
+    // Do something.
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="2" id="feedback-3172">
+<ul class="children">
+<li class="comment byuser comment-author-misfist even depth-2" data-comment-id="5539" id="comment-5539">
+<article class="comment-body" id="div-comment-5539">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5539">
+<div>Blocks will always have a namespace followed by <code>/</code> before the name. So, this example should be:  
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( has_block( 'core/gallery' ) ) {     // Do something. }</code></pre>
+<p>  or  </p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( has_block( 'my-custom-block/gallery' ) ) {     // Do something. }</code></pre>
+</div>
+<div><a class="url" href="https://profiles.wordpress.org/misfist/" rel="external nofollow">Pea Lutz</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/has_block/#comment-5539"><time datetime="2021-12-13T18:31:00+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-desertsailors odd alt depth-2" data-comment-id="6133" id="comment-6133">
+<article class="comment-body" id="div-comment-6133">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6133">
+<div>Unlike reusable blocks <code>core/block</code>, it returns <strong>true</strong> for the Group block <code>core/group</code>. i.e. if you select multiple blocks and group them together, the <code>has_block()</code> will return true for a check against a block inside the group.</div>
+<div><a class="url" href="https://profiles.wordpress.org/desertsailors/" rel="external nofollow">desertsailors</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/has_block/#comment-6133"><time datetime="2022-10-14T07:42:26+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

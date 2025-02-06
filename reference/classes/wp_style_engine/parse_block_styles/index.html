@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_style_engine/">WP_Style_Engine</a></span><span class="is-current-page">WP_Style_Engine::parse_block_styles()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Style_Engine::parse_block_styles()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Style_Engine::parse_block_styles( <span class="arg-type">array</span> <span class="arg-name">$block_styles</span>,  <span class="arg-type">array</span> <span class="arg-name">$options</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns classnames and CSS based on the values in a styles object.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Return values are parsed based on the instructions in BLOCK_STYLE_DEFINITIONS_METADATA.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$block_styles</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The style object.</span></div></dd><dt><code>$options</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">An array of options. Default empty array.<br/>
+<ul class="param-hash"><li><code>convert_vars_to_classnames</code> <span class="type">bool</span><div class="desc">Whether to skip converting incoming CSS var patterns, e.g. <code>var:preset|&lt;PRESET_TYPE&gt;|&lt;PRESET_SLUG&gt;</code>, to <code>var( --wp--preset--* )</code> values. Default false.</div></li>
+<li><code>selector</code> <span class="type">string</span><div class="desc">Optional. When a selector is passed, the value of <code>$css</code> in the return value will comprise a full CSS rule <code>$selector { ...$css_declarations }</code>, otherwise, the value will be a concatenated string of CSS declarations.</div></li>
+</ul>
+</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> <ul class="param-hash"><li><code>classnames</code> <span class="type">string[]</span><div class="desc">Array of class names.</div></li>
+<li><code>declarations</code> <span class="type">string[]</span><div class="desc">An associative array of CSS definitions, e.g. <code>array( "$property" =&gt; "$value", "$property" =&gt; "$value" )</code>.</div></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="436"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function parse_block_styles( $block_styles, $options ) {
+	$parsed_styles = array(
+		'classnames'   =&gt; array(),
+		'declarations' =&gt; array(),
+	);
+	if ( empty( $block_styles ) || ! is_array( $block_styles ) ) {
+		return $parsed_styles;
+	}
+
+	// Collect CSS and classnames.
+	foreach ( static::BLOCK_STYLE_DEFINITIONS_METADATA as $definition_group_key =&gt; $definition_group_style ) {
+		if ( empty( $block_styles[ $definition_group_key ] ) ) {
+			continue;
+		}
+		foreach ( $definition_group_style as $style_definition ) {
+			$style_value = _wp_array_get( $block_styles, $style_definition['path'], null );
+
+			if ( ! static::is_valid_style_value( $style_value ) ) {
+				continue;
+			}
+
+			$parsed_styles['classnames']   = array_merge( $parsed_styles['classnames'], static::get_classnames( $style_value, $style_definition ) );
+			$parsed_styles['declarations'] = array_merge( $parsed_styles['declarations'], static::get_css_declarations( $style_value, $style_definition, $options ) );
+		}
+	}
+
+	return $parsed_styles;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/style-engine/class-wp-style-engine.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/style-engine/class-wp-style-engine.php#L436">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/style-engine/class-wp-style-engine.php#L436-L463">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_array_get/">_wp_array_get()</a><code>wp-includes/functions.php</code></td><td><p>Accesses an array in depth based on a path of keys.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_style_engine_get_styles/">wp_style_engine_get_styles()</a><code>wp-includes/style-engine.php</code></td><td><p>Global public interface method to generate styles from a single style object, e.g. the value of a block’s attributes.style object or the top level styles in theme.json.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

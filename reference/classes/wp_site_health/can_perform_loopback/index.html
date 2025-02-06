@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_site_health/">WP_Site_Health</a></span><span class="is-current-page">WP_Site_Health::can_perform_loopback()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Site_Health::can_perform_loopback()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Site_Health::can_perform_loopback(): <span class="return-type">object</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Runs a loopback test on the site.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Loopbacks are what WordPress uses to communicate with itself to start up WP_Cron, scheduled posts, make sure plugin or theme edits don’t cause site failures and similar.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">object</span> The test results.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3113"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function can_perform_loopback() {
+	$body    = array( 'site-health' =&gt; 'loopback-test' );
+	$cookies = wp_unslash( $_COOKIE );
+	$timeout = 10; // 10 seconds.
+	$headers = array(
+		'Cache-Control' =&gt; 'no-cache',
+	);
+	/** This filter is documented in wp-includes/class-wp-http-streams.php */
+	$sslverify = apply_filters( 'https_local_ssl_verify', false );
+
+	// Include Basic auth in loopback requests.
+	if ( isset( $_SERVER['PHP_AUTH_USER'] ) &amp;&amp; isset( $_SERVER['PHP_AUTH_PW'] ) ) {
+		$headers['Authorization'] = 'Basic ' . base64_encode( wp_unslash( $_SERVER['PHP_AUTH_USER'] ) . ':' . wp_unslash( $_SERVER['PHP_AUTH_PW'] ) );
+	}
+
+	$url = site_url( 'wp-cron.php' );
+
+	/*
+	 * A post request is used for the wp-cron.php loopback test to cause the file
+	 * to finish early without triggering cron jobs. This has two benefits:
+	 * - cron jobs are not triggered a second time on the site health page,
+	 * - the loopback request finishes sooner providing a quicker result.
+	 *
+	 * Using a POST request causes the loopback to differ slightly to the standard
+	 * GET request WordPress uses for wp-cron.php loopback requests but is close
+	 * enough. See https://core.trac.wordpress.org/ticket/52547
+	 */
+	$r = wp_remote_post( $url, compact( 'body', 'cookies', 'headers', 'timeout', 'sslverify' ) );
+
+	if ( is_wp_error( $r ) ) {
+		return (object) array(
+			'status'  =&gt; 'critical',
+			'message' =&gt; sprintf(
+				'%s&lt;br&gt;%s',
+				__( 'The loopback request to your site failed, this means features relying on them are not currently working as expected.' ),
+				sprintf(
+					/* translators: 1: The WordPress error message. 2: The WordPress error code. */
+					__( 'Error: %1$s (%2$s)' ),
+					$r-&gt;get_error_message(),
+					$r-&gt;get_error_code()
+				)
+			),
+		);
+	}
+
+	if ( 200 !== wp_remote_retrieve_response_code( $r ) ) {
+		return (object) array(
+			'status'  =&gt; 'recommended',
+			'message' =&gt; sprintf(
+				/* translators: %d: The HTTP response code returned. */
+				__( 'The loopback request returned an unexpected http status code, %d, it was not possible to determine if this will prevent features from working as expected.' ),
+				wp_remote_retrieve_response_code( $r )
+			),
+		);
+	}
+
+	return (object) array(
+		'status'  =&gt; 'good',
+		'message' =&gt; __( 'The loopback request to your site completed successfully.' ),
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-site-health.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-site-health.php#L3113">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-site-health.php#L3113-L3173">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/https_local_ssl_verify/"><span class="hook-func">apply_filters</span>( ‘https_local_ssl_verify’,  <nobr><span class="arg-type">bool|string</span> <span class="arg-name">$ssl_verify</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$url</span></nobr> )</a></dt><dd><p>Filters whether SSL should be verified for local HTTP API requests.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/site_url/">site_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where WordPress application files (e.g. wp-blog-header.php or the wp-admin/ folder) are accessible.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_remote_post/">wp_remote_post()</a><code>wp-includes/http.php</code></td><td><p>Performs an HTTP request using the POST method and returns its response.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_remote_retrieve_response_code/">wp_remote_retrieve_response_code()</a><code>wp-includes/http.php</code></td><td><p>Retrieves only the response code from the raw response.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_test_loopback_requests/">WP_Site_Health::get_test_loopback_requests()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Tests if loopbacks work as expected.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

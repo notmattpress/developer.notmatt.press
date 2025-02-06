@@ -1,0 +1,373 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_delete_post()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_delete_post()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_delete_post( <span class="arg-type">int</span> <span class="arg-name">$post_id</span>,  <span class="arg-type">bool</span> <span class="arg-name">$force_delete</span> = <span class="arg-default">false</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_post/" rel="class">WP_Post</a>|false|null</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Trashes or deletes a post or page.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>When the post and page is permanently deleted, everything that is tied to it is deleted also. This includes comments, post meta fields, and terms associated with the post.</p>
+<p>The post or page is moved to Trash instead of permanently deleted unless Trash is disabled, item is already in the Trash, or $force_delete is true.</p>
+<h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/functions/wp_delete_attachment">wp_delete_attachment()</a></li>
+<li><a href="https://developer.notmatt.press/reference/functions/wp_trash_post">wp_trash_post()</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post_id</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID. Default 0.</span></div></dd><dt><code>$force_delete</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to bypass Trash and force deletion.<br/>
+</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a>|false|null</span> Post data on success, false or null on failure.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p><a href="https://developer.notmatt.press/reference/functions/wp_delete_post/" rel="function">wp_delete_post()</a>  automatically reverts to <a href="https://codex.wordpress.org/Function_Reference/wp_trash_post" title="Function Reference/wp trash post"><tt>wp_trash_post()</tt></a> if <tt>$force_delete</tt> is <i>false</i>, the <tt>post_type</tt> of <tt>$postid</tt> is <i>page</i> or <i>post</i>, <tt>$postid</tt> is not already in the trash <b>and</b> if <a href="https://wordpress.org/support/article/editing-wp-config-php/" title="Editing wp-config.php">that trash feature</a> enabled (which it it is by default).</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3656"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_delete_post( $post_id = 0, $force_delete = false ) {
+	global $wpdb;
+
+	$post = $wpdb-&gt;get_row( $wpdb-&gt;prepare( "SELECT * FROM $wpdb-&gt;posts WHERE ID = %d", $post_id ) );
+
+	if ( ! $post ) {
+		return $post;
+	}
+
+	$post = get_post( $post );
+
+	if ( ! $force_delete
+		&amp;&amp; ( 'post' === $post-&gt;post_type || 'page' === $post-&gt;post_type )
+		&amp;&amp; 'trash' !== get_post_status( $post_id ) &amp;&amp; EMPTY_TRASH_DAYS
+	) {
+		return wp_trash_post( $post_id );
+	}
+
+	if ( 'attachment' === $post-&gt;post_type ) {
+		return wp_delete_attachment( $post_id, $force_delete );
+	}
+
+	/**
+	 * Filters whether a post deletion should take place.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param WP_Post|false|null $delete       Whether to go forward with deletion.
+	 * @param WP_Post            $post         Post object.
+	 * @param bool               $force_delete Whether to bypass the Trash.
+	 */
+	$check = apply_filters( 'pre_delete_post', null, $post, $force_delete );
+	if ( null !== $check ) {
+		return $check;
+	}
+
+	/**
+	 * Fires before a post is deleted, at the start of wp_delete_post().
+	 *
+	 * @since 3.2.0
+	 * @since 5.5.0 Added the `$post` parameter.
+	 *
+	 * @see wp_delete_post()
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	do_action( 'before_delete_post', $post_id, $post );
+
+	delete_post_meta( $post_id, '_wp_trash_meta_status' );
+	delete_post_meta( $post_id, '_wp_trash_meta_time' );
+
+	wp_delete_object_term_relationships( $post_id, get_object_taxonomies( $post-&gt;post_type ) );
+
+	$parent_data  = array( 'post_parent' =&gt; $post-&gt;post_parent );
+	$parent_where = array( 'post_parent' =&gt; $post_id );
+
+	if ( is_post_type_hierarchical( $post-&gt;post_type ) ) {
+		// Point children of this page to its parent, also clean the cache of affected children.
+		$children_query = $wpdb-&gt;prepare(
+			"SELECT * FROM $wpdb-&gt;posts WHERE post_parent = %d AND post_type = %s",
+			$post_id,
+			$post-&gt;post_type
+		);
+
+		$children = $wpdb-&gt;get_results( $children_query );
+
+		if ( $children ) {
+			$wpdb-&gt;update( $wpdb-&gt;posts, $parent_data, $parent_where + array( 'post_type' =&gt; $post-&gt;post_type ) );
+		}
+	}
+
+	// Do raw query. wp_get_post_revisions() is filtered.
+	$revision_ids = $wpdb-&gt;get_col(
+		$wpdb-&gt;prepare( "SELECT ID FROM $wpdb-&gt;posts WHERE post_parent = %d AND post_type = 'revision'", $post_id )
+	);
+
+	// Use wp_delete_post (via wp_delete_post_revision) again. Ensures any meta/misplaced data gets cleaned up.
+	foreach ( $revision_ids as $revision_id ) {
+		wp_delete_post_revision( $revision_id );
+	}
+
+	// Point all attachments to this post up one level.
+	$wpdb-&gt;update( $wpdb-&gt;posts, $parent_data, $parent_where + array( 'post_type' =&gt; 'attachment' ) );
+
+	wp_defer_comment_counting( true );
+
+	$comment_ids = $wpdb-&gt;get_col(
+		$wpdb-&gt;prepare( "SELECT comment_ID FROM $wpdb-&gt;comments WHERE comment_post_ID = %d ORDER BY comment_ID DESC", $post_id )
+	);
+
+	foreach ( $comment_ids as $comment_id ) {
+		wp_delete_comment( $comment_id, true );
+	}
+
+	wp_defer_comment_counting( false );
+
+	$post_meta_ids = $wpdb-&gt;get_col(
+		$wpdb-&gt;prepare( "SELECT meta_id FROM $wpdb-&gt;postmeta WHERE post_id = %d ", $post_id )
+	);
+
+	foreach ( $post_meta_ids as $mid ) {
+		delete_metadata_by_mid( 'post', $mid );
+	}
+
+	/**
+	 * Fires immediately before a post is deleted from the database.
+	 *
+	 * The dynamic portion of the hook name, `$post-&gt;post_type`, refers to
+	 * the post type slug.
+	 *
+	 * @since 6.6.0
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	do_action( "delete_post_{$post-&gt;post_type}", $post_id, $post );
+
+	/**
+	 * Fires immediately before a post is deleted from the database.
+	 *
+	 * @since 1.2.0
+	 * @since 5.5.0 Added the `$post` parameter.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	do_action( 'delete_post', $post_id, $post );
+
+	$result = $wpdb-&gt;delete( $wpdb-&gt;posts, array( 'ID' =&gt; $post_id ) );
+	if ( ! $result ) {
+		return false;
+	}
+
+	/**
+	 * Fires immediately after a post is deleted from the database.
+	 *
+	 * The dynamic portion of the hook name, `$post-&gt;post_type`, refers to
+	 * the post type slug.
+	 *
+	 * @since 6.6.0
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	do_action( "deleted_post_{$post-&gt;post_type}", $post_id, $post );
+
+	/**
+	 * Fires immediately after a post is deleted from the database.
+	 *
+	 * @since 2.2.0
+	 * @since 5.5.0 Added the `$post` parameter.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	do_action( 'deleted_post', $post_id, $post );
+
+	clean_post_cache( $post );
+
+	if ( is_post_type_hierarchical( $post-&gt;post_type ) &amp;&amp; $children ) {
+		foreach ( $children as $child ) {
+			clean_post_cache( $child );
+		}
+	}
+
+	wp_clear_scheduled_hook( 'publish_future_post', array( $post_id ) );
+
+	/**
+	 * Fires after a post is deleted, at the conclusion of wp_delete_post().
+	 *
+	 * @since 3.2.0
+	 * @since 5.5.0 Added the `$post` parameter.
+	 *
+	 * @see wp_delete_post()
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	do_action( 'after_delete_post', $post_id, $post );
+
+	return $post;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/post.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/post.php#L3656">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/post.php#L3656-L3838">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/after_delete_post/"><span class="hook-func">do_action</span>( ‘after_delete_post’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Fires after a post is deleted, at the conclusion of <a href="https://developer.notmatt.press/reference/functions/wp_delete_post/" rel="function">wp_delete_post()</a> .</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/before_delete_post/"><span class="hook-func">do_action</span>( ‘before_delete_post’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Fires before a post is deleted, at the start of <a href="https://developer.notmatt.press/reference/functions/wp_delete_post/" rel="function">wp_delete_post()</a> .</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/deleted_post/"><span class="hook-func">do_action</span>( ‘deleted_post’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Fires immediately after a post is deleted from the database.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/deleted_post_post-post_type/"><span class="hook-func">do_action</span>( “deleted_post_{$post-&gt;post_type}”,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Fires immediately after a post is deleted from the database.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/delete_post/"><span class="hook-func">do_action</span>( ‘delete_post’,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Fires immediately before a post is deleted from the database.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/delete_post_post-post_type/"><span class="hook-func">do_action</span>( “delete_post_{$post-&gt;post_type}”,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Fires immediately before a post is deleted from the database.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_delete_post/"><span class="hook-func">apply_filters</span>( ‘pre_delete_post’,  <nobr><span class="arg-type">WP_Post|false|null</span> <span class="arg-name">$delete</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$force_delete</span></nobr> )</a></dt><dd><p>Filters whether a post deletion should take place.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_clear_scheduled_hook/">wp_clear_scheduled_hook()</a><code>wp-includes/cron.php</code></td><td><p>Unschedules all events attached to the hook with the specified arguments.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_object_term_relationships/">wp_delete_object_term_relationships()</a><code>wp-includes/taxonomy.php</code></td><td><p>Unlinks the object from the taxonomy or taxonomies.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_object_taxonomies/">get_object_taxonomies()</a><code>wp-includes/taxonomy.php</code></td><td><p>Returns the names or objects of the taxonomies which are registered for the requested object or object type, such as a post object or post type name.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/clean_post_cache/">clean_post_cache()</a><code>wp-includes/post.php</code></td><td><p>Will clean the post in the cache.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_attachment/">wp_delete_attachment()</a><code>wp-includes/post.php</code></td><td><p>Trashes or deletes an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_trash_post/">wp_trash_post()</a><code>wp-includes/post.php</code></td><td><p>Moves a post or page to the Trash</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_post_meta/">delete_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Deletes a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_status/">get_post_status()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the post status based on the post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_post_type_hierarchical/">is_post_type_hierarchical()</a><code>wp-includes/post.php</code></td><td><p>Determines whether the post type is hierarchical.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post_revision/">wp_delete_post_revision()</a><code>wp-includes/revision.php</code></td><td><p>Deletes a revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_row/">wpdb::get_row()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one row from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/update/">wpdb::update()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Updates a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_col/">wpdb::get_col()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one column from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/delete/">wpdb::delete()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Deletes a row in the table.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_defer_comment_counting/">wp_defer_comment_counting()</a><code>wp-includes/comment.php</code></td><td><p>Determines whether to defer comment counting.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_comment/">wp_delete_comment()</a><code>wp-includes/comment.php</code></td><td><p>Trashes or deletes a comment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/delete_metadata_by_mid/">delete_metadata_by_mid()</a><code>wp-includes/meta.php</code></td><td><p>Deletes metadata by meta ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_results/">wpdb::get_results()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves an entire SQL result set from the database (i.e., many rows).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 17 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_wp_after_delete_font_family/">_wp_after_delete_font_family()</a><code>wp-includes/fonts.php</code></td><td><p>Deletes child font faces when a font family is deleted.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_menu_items_controller/delete_item/">WP_REST_Menu_Items_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-menu-items-controller.php</code></td><td><p>Deletes a single nav menu item.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_templates_controller/update_item/">WP_REST_Templates_Controller::update_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-templates-controller.php</code></td><td><p>Updates a single template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_templates_controller/delete_item/">WP_REST_Templates_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-templates-controller.php</code></td><td><p>Deletes a single template.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_privacy_requests_table/process_bulk_action/">WP_Privacy_Requests_Table::process_bulk_action()</a><code>wp-admin/includes/class-wp-privacy-requests-table.php</code></td><td><p>Process bulk actions.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/handle_dismiss_autosave_or_lock_request/">WP_Customize_Manager::handle_dismiss_autosave_or_lock_request()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Deletes a given auto-draft changeset or the autosave revision for a given changeset or delete changeset lock.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/trash_changeset_post/">WP_Customize_Manager::trash_changeset_post()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Trashes or deletes a changeset post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_delete_customize_changeset_dependent_auto_drafts/">_wp_delete_customize_changeset_dependent_auto_drafts()</a><code>wp-includes/nav-menu.php</code></td><td><p>Deletes auto-draft posts associated with the supplied changeset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/save_changeset_post/">WP_Customize_Manager::save_changeset_post()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Saves the post for the loaded changeset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_revisions_controller/delete_item/">WP_REST_Revisions_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-revisions-controller.php</code></td><td><p>Deletes a single revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_posts_controller/delete_item/">WP_REST_Posts_Controller::delete_item()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-posts-controller.php</code></td><td><p>Deletes a single post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menu_item_setting/update/">WP_Customize_Nav_Menu_Item_Setting::update()</a><code>wp-includes/customize/class-wp-customize-nav-menu-item-setting.php</code></td><td><p>Creates/updates the nav_menu_item post for this setting.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wpmu_delete_user/">wpmu_delete_user()</a><code>wp-admin/includes/ms.php</code></td><td><p>Deletes a user and all of their posts from the network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_user/">wp_delete_user()</a><code>wp-admin/includes/user.php</code></td><td><p>Delete user and optionally reassign posts and links to another user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_attachment/">wp_ajax_save_attachment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles updating attachment attributes via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_post/">wp_ajax_delete_post()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a post via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_page/">wp_ajax_delete_page()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a page via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_delete_orphaned_draft_menu_items/">_wp_delete_orphaned_draft_menu_items()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Deletes orphaned draft menu items</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nav_menu_update_menu_items/">wp_nav_menu_update_menu_items()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Saves nav menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_scheduled_delete/">wp_scheduled_delete()</a><code>wp-includes/functions.php</code></td><td><p>Permanently deletes comments or posts of any type that have held a status of ‘trash’ for the number of days defined in EMPTY_TRASH_DAYS.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_auto_drafts/">wp_delete_auto_drafts()</a><code>wp-includes/post.php</code></td><td><p>Deletes auto-drafts for new posts that are &gt; 7 days old.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_trash_post/">wp_trash_post()</a><code>wp-includes/post.php</code></td><td><p>Moves a post or page to the Trash</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_post_revision/">wp_delete_post_revision()</a><code>wp-includes/revision.php</code></td><td><p>Deletes a revision.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_delete_post_menu_item/">_wp_delete_post_menu_item()</a><code>wp-includes/nav-menu.php</code></td><td><p>Callback for handling a menu item when its original object is deleted.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_delete_tax_menu_item/">_wp_delete_tax_menu_item()</a><code>wp-includes/nav-menu.php</code></td><td><p>Serves as a callback for handling a menu item when its original object is deleted.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_nav_menu/">wp_delete_nav_menu()</a><code>wp-includes/nav-menu.php</code></td><td><p>Deletes a navigation menu.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/blogger_deletepost/">wp_xmlrpc_server::blogger_deletePost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_deletepage/">wp_xmlrpc_server::wp_deletePage()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_xmlrpc_server/wp_deletepost/">wp_xmlrpc_server::wp_deletePost()</a><code>wp-includes/class-wp-xmlrpc-server.php</code></td><td><p>Deletes a post for any registered post type.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 24 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.0.0/">1.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-tkaufmann even thread-odd thread-alt depth-1" data-comment-id="3659" id="comment-3659">
+<article class="comment-body" id="div-comment-3659">
+<a class="screen-reader-text" href="#comment-content-3659">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3659">
+<p>Beware: Custom Post Types will be deleted (not moved to trash) disregarding the $force_delete parameter. Use <a href="https://developer.notmatt.press/reference/functions/wp_trash_post/" rel="function">wp_trash_post()</a>  if you want to move a custom post to trash.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-3659">
+<ul class="children">
+<li class="comment byuser comment-author-enkirch odd alt depth-2" data-comment-id="5942" id="comment-5942">
+<article class="comment-body" id="div-comment-5942">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5942">
+<div>Thank you! This information should really be part of the documentation!</div>
+<div><a class="url" href="https://profiles.wordpress.org/enkirch/" rel="external nofollow">enkirch</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/wp_delete_post/#comment-5942"><time datetime="2022-07-28T07:53:14+00:00">3 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-sa3idho even thread-even depth-1" data-comment-id="1210" id="comment-1210">
+<article class="comment-body" id="div-comment-1210">
+<a class="screen-reader-text" href="#comment-content-1210">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1210">
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Deletes all posts from "products" custom post type.
+ */
+function wpdocs_delete_all_products() {
+    $myproducts = get_pages( array( 'post_type' =&gt; 'products') );
+
+    foreach ( $myproducts as $myproduct ) {
+        // Delete all products.
+        wp_delete_post( $myproduct-&gt;ID, true); // Set to False if you want to send them to Trash.
+    } 
+}
+add_action( 'init', 'wpdocs_delete_all_products' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1210">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="593" id="comment-593">
+<article class="comment-body" id="div-comment-593">
+<a class="screen-reader-text" href="#comment-content-593">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-593">
+<p><strong>Delete Post</strong><br>
+Deleting the WP default post “Hello World” which has ID 1.</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php"> &lt;?php wp_delete_post(1); ?&gt; </code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-593">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

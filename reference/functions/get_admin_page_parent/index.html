@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_admin_page_parent()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_admin_page_parent()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_admin_page_parent( <span class="arg-type">string</span> <span class="arg-name">$parent_page</span> = <span class="arg-default">''</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Gets the parent file of the current admin page.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$parent_page</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The slug name for the parent menu (or the file name                            of a standard WordPress admin page). </span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The parent file of the current admin page.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1956"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_admin_page_parent( $parent_page = '' ) {
+	global $parent_file, $menu, $submenu, $pagenow, $typenow,
+		$plugin_page, $_wp_real_parent_file, $_wp_menu_nopriv, $_wp_submenu_nopriv;
+
+	if ( ! empty( $parent_page ) &amp;&amp; 'admin.php' !== $parent_page ) {
+		if ( isset( $_wp_real_parent_file[ $parent_page ] ) ) {
+			$parent_page = $_wp_real_parent_file[ $parent_page ];
+		}
+
+		return $parent_page;
+	}
+
+	if ( 'admin.php' === $pagenow &amp;&amp; isset( $plugin_page ) ) {
+		foreach ( (array) $menu as $parent_menu ) {
+			if ( $parent_menu[2] === $plugin_page ) {
+				$parent_file = $plugin_page;
+
+				if ( isset( $_wp_real_parent_file[ $parent_file ] ) ) {
+					$parent_file = $_wp_real_parent_file[ $parent_file ];
+				}
+
+				return $parent_file;
+			}
+		}
+		if ( isset( $_wp_menu_nopriv[ $plugin_page ] ) ) {
+			$parent_file = $plugin_page;
+
+			if ( isset( $_wp_real_parent_file[ $parent_file ] ) ) {
+					$parent_file = $_wp_real_parent_file[ $parent_file ];
+			}
+
+			return $parent_file;
+		}
+	}
+
+	if ( isset( $plugin_page ) &amp;&amp; isset( $_wp_submenu_nopriv[ $pagenow ][ $plugin_page ] ) ) {
+		$parent_file = $pagenow;
+
+		if ( isset( $_wp_real_parent_file[ $parent_file ] ) ) {
+			$parent_file = $_wp_real_parent_file[ $parent_file ];
+		}
+
+		return $parent_file;
+	}
+
+	foreach ( array_keys( (array) $submenu ) as $parent_page ) {
+		foreach ( $submenu[ $parent_page ] as $submenu_array ) {
+			if ( isset( $_wp_real_parent_file[ $parent_page ] ) ) {
+				$parent_page = $_wp_real_parent_file[ $parent_page ];
+			}
+
+			if ( ! empty( $typenow ) &amp;&amp; "$pagenow?post_type=$typenow" === $submenu_array[2] ) {
+				$parent_file = $parent_page;
+				return $parent_page;
+			} elseif ( empty( $typenow ) &amp;&amp; $pagenow === $submenu_array[2]
+				&amp;&amp; ( empty( $parent_file ) || ! str_contains( $parent_file, '?' ) )
+			) {
+				$parent_file = $parent_page;
+				return $parent_page;
+			} elseif ( isset( $plugin_page ) &amp;&amp; $plugin_page === $submenu_array[2] ) {
+				$parent_file = $parent_page;
+				return $parent_page;
+			}
+		}
+	}
+
+	if ( empty( $parent_file ) ) {
+		$parent_file = '';
+	}
+	return '';
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/plugin.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/plugin.php#L1956">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/plugin.php#L1956-L2026">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_admin_page_title/">get_admin_page_title()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Gets the title of the current admin page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_plugin_page_hookname/">get_plugin_page_hookname()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Gets the hook name for the administrative page of a plugin.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/user_can_access_admin_page/">user_can_access_admin_page()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Determines whether the current user can access the current admin page.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

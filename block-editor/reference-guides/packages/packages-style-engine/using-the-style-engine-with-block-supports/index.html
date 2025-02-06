@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/packages-style-engine/">@wordpress/style-engine</a></span><span class="is-current-page">@wordpress/style-engine Using the Style Engine to generate block supports styles</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/style-engine Using the Style Engine to generate block supports styles</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p><a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-supports/">Block supports</a> is the API that allows a block to declare support for certain features.</p>
+<p>Where a block declares support for a specific style group or property, e.g., “spacing” or “spacing.padding”, the block’s attributes are extended to include a <strong>style object</strong>.</p>
+<p>For example:</p>
+<pre><code class="language-json">{
+    "attributes": {
+        "style": {
+            "spacing": {
+                "margin": {
+                    "top": "10px"
+                },
+                "padding": "1em"
+            },
+            "typography": {
+                "fontSize": "2.2rem"
+            }
+        }
+    }
+}
+</code></pre>
+<p>Using this object, the Style Engine can generate the classes and CSS required to style the block element.</p>
+<p>The global function <code>wp_style_engine_get_styles</code> accepts a style object as its first argument, and will output compiled CSS and an array of CSS declaration property/value pairs.</p>
+<pre><code class="language-php">$block_styles =  array(
+    'spacing' =&gt; array( 'padding' =&gt; '10px', 'margin' =&gt; array( 'top' =&gt; '1em') ),
+    'typography' =&gt; array( 'fontSize' =&gt; '2.2rem' ),
+);
+$styles = wp_style_engine_get_styles(
+    $block_styles
+);
+print_r( $styles );
+
+/*
+array(
+    'css'          =&gt; 'padding:10px;margin-top:1em;font-size:2.2rem',
+    'declarations' =&gt; array( 'padding' =&gt; '10px', 'margin-top' =&gt; '1em', 'font-size' =&gt; '2.2rem' )
+)
+*/
+</code></pre>
+<h2 class="is-toc-heading" id="use-case" tabindex="-1"><a href="#use-case">Use case</a></h2>
+<p>When <a href="https://developer.notmatt.press/reference/classes/wp_block_supports/register/">registering a block support</a>, it is possible to pass an ‘apply’ callback in the block support config array to add or extend block support attributes with “class” or “style” properties.</p>
+<p>If a block has opted into the block support, the values of “class” and “style” will be applied to the block element’s “class” and “style” attributes accordingly when rendered in the frontend HTML. Note, this applies only to server-side rendered blocks, for example, the <a href="https://developer.notmatt.press/block-editor/reference-guides/core-blocks/#site-title">Site Title block</a>.</p>
+<p>The callback receives <code>$block_type</code> and <code>$block_attributes</code> as arguments. The <code>style</code> attribute within <code>$block_attributes</code> only contains the raw style object, if any styles have been set for the block, and not any CSS or classnames to be applied to the block’s HTML elements.</p>
+<p>Here is where <code>wp_style_engine_get_styles</code> comes in handy: it will generate CSS and, if appropriate, classnames to be added to the “style” and “class” HTML attributes in the final rendered block markup.</p>
+<p>Here is a <em>very</em> simplified version of how the <a href="https://github.com/WordPress/gutenberg/tree/HEAD/lib/block-supports/color.php">color block support</a> works:</p>
+<pre><code class="language-php">function gutenberg_apply_colors_support( $block_type, $block_attributes ) {
+    // Get the color styles from the style object.
+    $block_color_styles = isset( $block_attributes['style']['color'] ) ? $block_attributes['style']['color'] : null;
+
+    // Since we only want the color styles, pass the color styles only to the Style Engine.
+    $styles = wp_style_engine_get_styles( array( 'color' =&gt; $block_color_styles ) );
+
+    // Return the generated styles to be applied to the block's HTML element.
+    return array(
+        'style' =&gt; $styles['css'],
+        'class' =&gt; $styles['classnames']
+    );
+}
+
+// Register the block support.
+WP_Block_Supports::get_instance()-&gt;register(
+    'colors',
+    array(
+        'register_attribute' =&gt; 'gutenberg_register_colors_support',
+        'apply'              =&gt; 'gutenberg_apply_colors_support',
+    )
+);
+</code></pre>
+<p>It’s important to note that, for now, the Style Engine will only generate styles for the following, core block supports:</p>
+<ul>
+<li>border</li>
+<li>color</li>
+<li>spacing</li>
+<li>typography</li>
+</ul>
+<p>In future releases, it will be possible to extend this list.</p>
+<h2 class="is-toc-heading" id="checking-for-block-support-and-skip-serialization" tabindex="-1"><a href="#checking-for-block-support-and-skip-serialization">Checking for block support and skip serialization</a></h2>
+<p>Before passing the block style object to the Style Engine, you’ll need to take into account:</p>
+<ol>
+<li>whether the theme has elected to support a particular block style, and</li>
+<li>whether a block has elected to “skip serialization” of that particular block style, that is, opt-out of automatic application of styles to the block’s element (usually in order to do it via the block’s internals). See the <a href="https://developer.notmatt.press/block-editor/explanations/architecture/styles/#block-supports-api">block API documentation</a> for further information.</li>
+</ol>
+<p>If a block either:</p>
+<ul>
+<li>has no support for a style, or</li>
+<li>skips serialization of that style</li>
+</ul>
+<p>it’s likely that you’ll want to remove those style values from the style object before passing it to the Style Engine with help of two functions:</p>
+<ul>
+<li>wp_should_skip_block_supports_serialization()</li>
+<li><a href="https://developer.notmatt.press/reference/functions/block_has_support/" rel="function">block_has_support()</a> </li>
+</ul>
+<p>We can now update the “apply” callback code above so that we’ll only return “style” and “class”, where a block has support, and it doesn’t skip serialization:</p>
+<pre><code class="language-php">function gutenberg_apply_colors_support( $block_type, $block_attributes ) {
+    // The return value.
+    $attributes = array();
+
+    // Return early if the block skips all serialization for block supports.
+    if ( gutenberg_should_skip_block_supports_serialization( $block_type, 'color' ) ) {
+        return $attributes;
+    }
+
+    // Checks for support and skip serialization.
+    $has_text_support                        = block_has_support( $block_type, array( 'color', 'text' ), false );
+    $has_background_support                  = block_has_support( $block_type, array( 'color', 'background' ), false );
+    $skips_serialization_of_color_text       = wp_should_skip_block_supports_serialization( $block_type, 'color', 'text' );
+    $skips_serialization_of_color_background = wp_should_skip_block_supports_serialization( $block_type, 'color', 'background' );
+
+    // Get the color styles from the style object.
+    $block_color_styles = isset( $block_attributes['style']['color'] ) ? $block_attributes['style']['color'] : null;
+
+    // The mutated styles object we're going to pass to wp_style_engine_get_styles().
+    $color_block_styles = array();
+
+    // Set the color style values according to whether the block has support and does not skip serialization.
+    $spacing_block_styles['text']       = null;
+    $spacing_block_styles['background'] = null;
+    if ( $has_text_support &amp;&amp; ! $skips_serialization_of_color_text ) {
+        $spacing_block_styles['text'] = $block_color_styles['text'] ?? null;
+    }
+    if $has_background_support &amp;&amp; ! $skips_serialization_of_color_background ) {
+        $spacing_block_styles['background'] = $block_color_styles['background'] ?? null;
+    }
+
+    // Pass the color styles, excluding those that have no support or skip serialization, to the Style Engine.
+    $styles = wp_style_engine_get_styles( array( 'color' =&gt; $block_color_styles ) );
+
+    // Return the generated styles to be applied to the block's HTML element.
+    return array(
+        'style' =&gt; $styles['css'],
+        'class' =&gt; $styles['classnames']
+    );
+}
+</code></pre>
+<h2 class="is-toc-heading" id="generating-classnames-and-css-custom-selectors-from-presets" tabindex="-1"><a href="#generating-classnames-and-css-custom-selectors-from-presets">Generating classnames and CSS custom selectors from presets</a></h2>
+<p>Many of theme.json’s presets will generate both CSS custom properties and CSS rules (consisting of a selector and the CSS declarations) on the frontend.</p>
+<p>Styling a block using these presets normally involves adding the selector to the “className” attribute of the block.</p>
+<p>For styles that can have preset values, such as text color and font family, the Style Engine knows how to construct the classnames using the preset slug.</p>
+<p>To discern CSS values from preset values, the Style Engine expects a special format.</p>
+<p>Preset values must follow the pattern <code>var:preset|&lt;PRESET_TYPE&gt;|&lt;PRESET_SLUG&gt;</code>.</p>
+<p>When the Style Engine encounters these values, it will parse them and create a CSS value of <code>var(--wp--preset--font-size--small)</code> and/or generate a classname if required.</p>
+<p>Example:</p>
+<pre><code class="language-php">// Let's say the block attributes styles contain a fontSize preset slug of "small".
+// $block_attributes['fontSize'] = 'var:preset|font-size|small';
+$preset_font_size        = "var:preset|font-size|{$block_attributes['fontSize']}";
+// Now let's say the block attributes styles contain a backgroundColor preset slug of "blue".
+// $block_attributes['backgroundColor'] = 'var:preset|color|blue';
+$preset_background_color = "var:preset|color|{$block_attributes['backgroundColor']}";
+
+$block_styles =  array(
+    'typography' =&gt; array( 'fontSize' =&gt; $preset_font_size ),
+    'color'      =&gt; array( 'background' =&gt; $preset_background_color ),
+    'spacing'    =&gt; array( 'padding' =&gt; '10px', 'margin' =&gt; array( 'top' =&gt; '1em') ),
+);
+
+$styles = wp_style_engine_get_styles(
+    $block_styles
+);
+print_r( $styles );
+
+/*
+array(
+    'css'          =&gt; 'background-color:var(--wp--preset--color--blue);padding:10px;margin-top:1em;font-size:var(--wp--preset--font-size--small);',
+    'declarations' =&gt; array(
+        'background-color' =&gt; 'var(--wp--preset--color--blue)',
+        'padding' =&gt; '10px',
+        'margin-top' =&gt; '1em',
+        'font-size' =&gt; 'var(--wp--preset--font-size--small)',
+    ),
+    'classnames'   =&gt; 'has-background has-blue-background-color has-small-font-size',
+)
+*/
+</code></pre>
+<p>If you don’t want the Style Engine to output the CSS custom vars in the generated CSS string as well, which you might not if you’re applying both the CSS rules and classnames to the block element, you can pass <code>'convert_vars_to_classnames' =&gt; true</code> in the options array.</p>
+<p>This flag means “convert the vars to classnames and don’t output the vars to the CSS”. The Style Engine will therefore <strong>only</strong> generate the required classnames and omit the CSS custom vars in the CSS.</p>
+<p>Using the above example code, observe the different output when we pass the option:</p>
+<pre><code class="language-php">$options = array(
+    'convert_vars_to_classnames' =&gt; true,
+);
+
+$styles = wp_style_engine_get_styles(
+    $block_styles,
+    $options
+);
+print_r( $styles );
+
+/*
+array(
+    'css'          =&gt; 'padding:10px;margin-top:1em;',
+    'declarations' =&gt; array(
+        'padding' =&gt; '10px',
+        'margin-top' =&gt; '1em',
+    ),
+    'classnames'   =&gt; 'has-background has-blue-background-color has-small-font-size',
+)
+*/
+</code></pre>
+<p>Read more about <a href="https://developer.notmatt.press/block-editor/explanations/architecture/styles/#global-styles">global styles</a> and <a href="https://developer.notmatt.press/block-editor/how-to-guides/themes/global-settings-and-styles.md#css-custom-properties-presets-custom">preset CSS custom properties</a> and <a href="https://developer.notmatt.press/block-editor/how-to-guides/themes/theme-support/">theme supports</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

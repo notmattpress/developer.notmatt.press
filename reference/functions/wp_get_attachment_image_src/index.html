@@ -1,0 +1,342 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_get_attachment_image_src()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_get_attachment_image_src()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_get_attachment_image_src( <span class="arg-type">int</span> <span class="arg-name">$attachment_id</span>,  <span class="arg-type">string|int[]</span> <span class="arg-name">$size</span> = <span class="arg-default">'thumbnail'</span>,  <span class="arg-type">bool</span> <span class="arg-name">$icon</span> = <span class="arg-default">false</span> ): <span class="return-type">array|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves an image to represent an attachment.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$attachment_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Image attachment ID.</span></div></dd><dt><code>$size</code><span class="type"><span class="string">string</span>|<span class="int[]">int[]</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Image size. Accepts any registered image size name, or an array of                                    width and height values in pixels (in that order). Default <code>'thumbnail'</code>.</span></div><p class="default">Default:<code>'thumbnail'</code></p></dd><dt><code>$icon</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether the image should fall back to a mime type icon. </span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|false</span> Array of image data, or boolean false if no image is available.<br/>
+<ul class="param-hash"><li><code>0</code> <span class="type">string</span><div class="desc">Image source URL.</div></li>
+<li><code>1</code> <span class="type">int</span><div class="desc">Image width in pixels.</div></li>
+<li><code>2</code> <span class="type">int</span><div class="desc">Image height in pixels.</div></li>
+<li><code>3</code> <span class="type">bool</span><div class="desc">Whether the image is a resized image.</div></li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="968"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_get_attachment_image_src( $attachment_id, $size = 'thumbnail', $icon = false ) {
+	// Get a thumbnail or intermediate image if there is one.
+	$image = image_downsize( $attachment_id, $size );
+	if ( ! $image ) {
+		$src = false;
+
+		if ( $icon ) {
+			$src = wp_mime_type_icon( $attachment_id, '.svg' );
+
+			if ( $src ) {
+				/** This filter is documented in wp-includes/post.php */
+				$icon_dir = apply_filters( 'icon_dir', ABSPATH . WPINC . '/images/media' );
+
+				$src_file = $icon_dir . '/' . wp_basename( $src );
+
+				list( $width, $height ) = wp_getimagesize( $src_file );
+
+				$ext = strtolower( substr( $src_file, -4 ) );
+
+				if ( '.svg' === $ext ) {
+					// SVG does not have true dimensions, so this assigns width and height directly.
+					$width  = 48;
+					$height = 64;
+				} else {
+					list( $width, $height ) = wp_getimagesize( $src_file );
+				}
+			}
+		}
+
+		if ( $src &amp;&amp; $width &amp;&amp; $height ) {
+			$image = array( $src, $width, $height, false );
+		}
+	}
+	/**
+	 * Filters the attachment image source result.
+	 *
+	 * @since 4.3.0
+	 *
+	 * @param array|false  $image         {
+	 *     Array of image data, or boolean false if no image is available.
+	 *
+	 *     @type string $0 Image source URL.
+	 *     @type int    $1 Image width in pixels.
+	 *     @type int    $2 Image height in pixels.
+	 *     @type bool   $3 Whether the image is a resized image.
+	 * }
+	 * @param int          $attachment_id Image attachment ID.
+	 * @param string|int[] $size          Requested image size. Can be any registered image size name, or
+	 *                                    an array of width and height values in pixels (in that order).
+	 * @param bool         $icon          Whether the image should be treated as an icon.
+	 */
+	return apply_filters( 'wp_get_attachment_image_src', $image, $attachment_id, $size, $icon );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/media.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/media.php#L968">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/media.php#L968-L1020">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.5.0/">2.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-barkerbaggies even thread-even depth-1" data-comment-id="2199" id="comment-2199">
+<article class="comment-body" id="div-comment-2199">
+<a class="screen-reader-text" href="#comment-content-2199">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2199">
+<p>The #return section gives keys, but the function just returns indexes. We should make it clearer what is returned by this function. And some description or a link to explain <code>is_intermediate</code></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">array{
+	[0] =&gt; url,
+	[1] =&gt; width&lt;/em&gt;
+	[2] =&gt; height&lt;/em&gt;
+	[4] =&gt; is_intermediate
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2199">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="328" id="comment-328">
+<article class="comment-body" id="div-comment-328">
+<a class="screen-reader-text" href="#comment-content-328">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-328">
+<p><strong>Default Usage</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$image_attributes = wp_get_attachment_image_src( $attachment_id = 8 );
+if ( $image_attributes ) : ?&gt;
+	&lt;img src="&lt;?php echo $image_attributes[0]; ?&gt;" width="&lt;?php echo $image_attributes[1]; ?&gt;" height="&lt;?php echo $image_attributes[2]; ?&gt;" /&gt;
+&lt;?php endif; ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-328">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="330" id="comment-330">
+<article class="comment-body" id="div-comment-330">
+<a class="screen-reader-text" href="#comment-content-330">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-330">
+<p><strong>Show the first image associated with the post</strong><br>
+This function retrieves the first image associated with a post.</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Output a post's first image.
+ *
+ * @param int $post_id Post ID.
+ */
+function wpdocs_echo_first_image( $post_id ) {
+	$args = array(
+		'posts_per_page' =&gt; 1,
+		'order'          =&gt; 'ASC',
+		'post_mime_type' =&gt; 'image',
+		'post_parent'    =&gt; $post_id,
+		'post_status'    =&gt; null,
+		'post_type'      =&gt; 'attachment',
+	);
+
+	$attachments = get_children( $args );
+
+	if ( $attachments ) {
+		echo '&lt;img src="' . wp_get_attachment_thumb_url( $attachments[0]-&gt;ID ) . '" class="current"&gt;';
+	}
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-330">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-blexfort odd alt thread-odd thread-alt depth-1" data-comment-id="3568" id="comment-3568">
+<article class="comment-body" id="div-comment-3568">
+<a class="screen-reader-text" href="#comment-content-3568">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3568">
+<p>To get original size URL image in the function <code>wp_get_attachment_image_src</code> use:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$img_atts = wp_get_attachment_image_src($IMG_ID, 'full');
+&lt;img src="&lt;?php echo $img_atts[0]; ?&gt;"</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3568">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-olalaweb even thread-even depth-1" data-comment-id="193" id="comment-193">
+<article class="comment-body" id="div-comment-193">
+<a class="screen-reader-text" href="#comment-content-193">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-193">
+<p>Tips: Return values ( [1] width [2] height [3] resize ) seems to be empty when using the Jetpack plugin.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-193">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="329" id="comment-329">
+<article class="comment-body" id="div-comment-329">
+<a class="screen-reader-text" href="#comment-content-329">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-329">
+<p><strong>Change Icon Directory</strong><br/>
+WordPress can use media icons to represent attachment files on your blog and in the Admin interface, if those icons are available.<br/>
+For images, it returns the thumbnail. For other media types, it looks for image files named by media type (e.g., <code>audio.jpg</code>) in the directory <code>wp-includes/images/crystal/</code>.</p>
+<p>This example shows how you can change this directory to a folder called “images” in your theme: <code>wp-content/themes/yourtheme/images</code>. Create the folder and put “media type images” in there. To tell WordPress the directory has changed, put this in the current theme’s <code>functions.php</code> file:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_filter( 'icon_dir', 'wpdocs_theme_icon_directory' );
+add_filter( 'icon_dir_uri', 'wpdocs_theme_icon_uri' );
+
+/*
+ * Return my desired icon directory
+ */
+function wpdocs_theme_icon_directory( $icon_dir ) {
+	return get_stylesheet_directory() . '/images';
+}
+
+/*
+ * Return my desired icon URI
+ */
+function wpdocs_theme_icon_uri( $icon_dir ) {
+	return get_stylesheet_directory_uri() . '/images'; 
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-329">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-cdwritted even thread-even depth-1" data-comment-id="2050" id="comment-2050">
+<article class="comment-body" id="div-comment-2050">
+<a class="screen-reader-text" href="#comment-content-2050">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2050">
+<p>Retrieve the post thumbnail url sized as 220 if thumbnail exists.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$args = array( 'post_type' =&gt; 'post', 'post_status' =&gt; 'publish', 'posts_per_page' =&gt; 5, 'numberposts' =&gt; 5 );
+
+$posts = get_posts( $args );
+
+foreach($posts as $post) {
+	$thumbnail_url = wp_get_attachment_image_src(get_post_thumbnail_id($post-&gt;ID), array('220','220'), true );
+	$thumbnail_url = $thumbnail_url[0];
+	echo ( !empty($thumbnail_url) ) ? $thumbnail_url : 'No thumb!';
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2050">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-huskyr odd alt thread-odd thread-alt depth-1" data-comment-id="3797" id="comment-3797">
+<article class="comment-body" id="div-comment-3797">
+<a class="screen-reader-text" href="#comment-content-3797">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3797">
+<p>A couple of notes on this page mention getting the first image in a post based on <code>get_children</code>. Unfortunately, that won’t work if you’re using the Gutenberg editor. To get the first image from a Gutenberg-based post, you need to parse the blocks. Here’s a function that will return the ID of the first image in a post, or <code>null</code> if there is none.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function first_image_in_blocks( $id ) {
+    $post = get_post( $id );
+    $blocks = parse_blocks( $post-&gt;post_content );
+
+    // Get all blocks that have a core/image blockName
+    $images = array_filter( $blocks, function( $block ) {
+        return 'core/image' === $block['blockName'];
+    } );
+
+    // If there are any images, get the id from the first image, otherwise
+    // return null
+    return count( $images ) &gt; 0 ? $images[0]['attrs']['id'] : null;
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3797">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-salem80 even thread-even depth-1" data-comment-id="5687" id="comment-5687">
+<article class="comment-body" id="div-comment-5687">
+<a class="screen-reader-text" href="#comment-content-5687">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5687">
+<p>Here is my code to create custom <strong>gallery</strong> from post attachment only (I use it in ‘<strong>singl.php</strong>‘ for specified category)</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;!-- begin gallery --&gt;
+&lt;?php  if  ( get_the_category()[0]-&gt;slug == 'gallery' )  {     ?&gt;
+&lt;div class="gallery" id ='lightgallery' &gt;
+&lt;?php $attachments = get_posts( array(  'post_type'  =&gt; 'attachment', 'post_parent' =&gt; $post-&gt;ID ) );
+if ( $attachments ) {
+foreach ( $attachments as $post ) {
+echo '&lt;a href="'.wp_get_attachment_image_src( $post-&gt;ID, 'full' )[0].'"&gt;'  ;
+echo  '&lt;img  src="'.wp_get_attachment_image_src( $post-&gt;ID )[0].'"  &gt;  &lt;/a&gt;';  
+ }
+ wp_reset_postdata();
+ }  ?&gt;
+&lt;/div&gt;
+&lt;?php   }    ?&gt; 
+&lt;!-- End gallery --&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5687">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tazotodua odd alt thread-odd thread-alt depth-1 bad-note" data-comment-id="2429" id="comment-2429">
+<article class="comment-body" id="div-comment-2429">
+<a class="screen-reader-text" href="#comment-content-2429">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2429">
+<p>the function returns:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">array (size=4)
+  0 =&gt; string 'http://example.com/wp-content/uploads/2017/11/image-name-150x150.jpg' (length=72)
+  1 =&gt; int 150
+  2 =&gt; int 150
+  3 =&gt; boolean true</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2429">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

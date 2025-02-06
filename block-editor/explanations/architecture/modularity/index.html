@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/explanations/">Explanations</a></span><span><a href="https://developer.wordpress.org/block-editor/explanations/architecture/">Architecture</a></span><span class="is-current-page">Modularity</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Modularity</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The WordPress block editor is based around the idea that you can combine independent blocks together to write your post or build your page. Blocks can also use and interact with each other. This makes it very modular and flexible.</p>
+<p>But the Block Editor does not embrace modularity for its behavior and output only. The Gutenberg repository is also built from the ground up as several reusable and independent modules or packages, that, combined together, lead to the application and interface we all know. These modules are known as <a href="https://www.npmjs.com/org/wordpress">WordPress packages</a> and are published and updated regularly on the npm package repository.</p>
+<p>These packages are used to power the Block Editor, but they can be used to power any page in the WordPress Admin or outside.</p>
+<h2 class="is-toc-heading" id="why" tabindex="-1"><a href="#why">Why?</a></h2>
+<p>Using a modular architecture has several benefits for all the actors involved:</p>
+<ul>
+<li>Each package is an independent unit and has a well defined public API that is used to interact with other packages and third-party code. This makes it easier for <strong>Core Contributors</strong> to reason about the codebase. They can focus on a single package at a time, understand it and make updates while knowing exactly how these changes could impact all the other parts relying on the given package.</li>
+<li>A module approach is also beneficial to the <strong>end-user</strong>. It allows to selectively load scripts on different WordPress Admin pages while keeping the bundle size contained. For instance, if we use the components package to power our plugin’s settings page, there’s no need to load the block-editor package on that page.</li>
+<li>This architecture also allows <strong>third-party developers</strong> to reuse these packages inside and outside the WordPress context by using these packages as npm or WordPress script dependencies.</li>
+</ul>
+<h2 class="is-toc-heading" id="types-of-packages" tabindex="-1"><a href="#types-of-packages">Types of packages</a></h2>
+<p>Almost everything in the Gutenberg repository is built into a package. We can split these packages into two different types:</p>
+<h3 class="is-toc-heading" id="production-packages" tabindex="-1"><a href="#production-packages">Production packages</a></h3>
+<p>These are the packages that ship in WordPress itself as JavaScript scripts. These constitute the actual production code that runs on your browsers. As an example, there’s a <code>components</code> package serving as a reusable set of React components used to prototype and build interfaces quickly. There’s also an <code>api-fetch</code> package that can be used to call WordPress Rest APIs.</p>
+<p>Third-party developers can use these production packages in two different ways:</p>
+<ul>
+<li>If you’re building a JavaScript application, website, page that runs outside of the context of WordPress, you can consume these packages like any other JavaScript package in the npm registry.</li>
+</ul>
+<pre><code>npm install @wordpress/components
+</code></pre>
+<pre><code class="language-js">import { Button } from '@wordpress/components';
+
+function MyApp() {
+    return &lt;Button&gt;Nice looking button&lt;/Button&gt;;
+}
+</code></pre>
+<ul>
+<li>If you’re building a plugin that runs on WordPress, you’d probably prefer consuming the package that ships with WordPress itself. This allows multiple plugins to reuse the same packages and avoid code duplication. In WordPress, these packages are available as WordPress scripts with a handle following this format <code>wp-package-name</code> (e.g. <code>wp-components</code>). Once you add the script to your own WordPress plugin scripts dependencies, the package will be available on the <code>wp</code> global variable.</li>
+</ul>
+<pre><code class="language-php">// myplugin.php
+// Example of script registration depending on the "components" and "element packages.
+wp_register_script( 'myscript', 'pathtomyscript.js', array ('wp-components', "react" ) );
+</code></pre>
+<pre><code class="language-js">// Using the package in your scripts
+const { Button } = wp.components;
+
+function MyApp() {
+    return &lt;Button&gt;Nice looking button&lt;/Button&gt;;
+}
+</code></pre>
+<p>Script dependencies definition can be a tedious task for developers. Mistakes and oversight can happen easily. If you want to learn how you can automate this task. Check the <a href="https://developer.notmatt.press/block-editor/packages/packages-scripts/#build">@wordpress/scripts</a> and <a href="https://developer.notmatt.press/block-editor/packages/packages-dependency-extraction-webpack-plugin/">@wordpress/dependency-extraction-webpack-plugin</a> documentation.</p>
+<h4>Packages with stylesheets</h4>
+<p>Some production packages provide stylesheets to function properly.</p>
+<ul>
+<li>If you’re using the package as an npm dependency, the stylesheets will be available on the <code>build-style</code> folder of the package. Make sure to load this style file on your application.</li>
+<li>If you’re working in the context of WordPress, you’ll have to enqueue these stylesheets or add them to your stylesheets dependencies. The stylesheet handles are the same as the script handles.</li>
+</ul>
+<p>In the context of existing WordPress pages, if you omit to define the scripts or styles dependencies properly, your plugin might still work properly if these scripts and styles are already loaded there by WordPress or by other plugins, but it’s highly recommended to define all your dependencies exhaustively if you want to avoid potential breakage in future versions.</p>
+<h4>Packages with data stores</h4>
+<p>Some WordPress production packages define data stores to handle their state. These stores can also be used by third-party plugins and themes to retrieve data and to manipulate it. The name of these data stores is also normalized following this format <code>core/package-name</code> (E.g. the <code>@wordpress/block-editor</code> package defines and uses the <code>core/block-editor</code> data store).</p>
+<p>If you’re using one of these stores to access and manipulate WordPress data in your plugins, don’t forget to add the corresponding WordPress script to your own script dependencies for your plugin to work properly. (For instance, if you’re retrieving data from the <code>core/block-editor</code> store, you should add the <code>wp-block-editor</code> package to your script dependencies like shown above).</p>
+<h3 class="is-toc-heading" id="development-packages" tabindex="-1"><a href="#development-packages">Development packages</a></h3>
+<p>These are packages used in development mode to help developers with daily tasks to develop, build and ship JavaScript applications, WordPress plugins and themes. They include tools for linting your codebase, building it, testing it…</p>
+<h2 class="is-toc-heading" id="editor-packages" tabindex="-1"><a href="#editor-packages">Editor packages</a></h2>
+<p><img alt="Post Editor Modules Architecture" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/explanations/architecture/assets/modules.png?ssl=1"/></p>
+<h3 class="is-toc-heading" id="whats-the-difference-between-the-different-editor-packages-whats-the-purpose-of-each-package" tabindex="-1"><a href="#whats-the-difference-between-the-different-editor-packages-whats-the-purpose-of-each-package">What’s the difference between the different editor packages? What’s the purpose of each package?</a></h3>
+<p>It’s often surprising to new contributors to discover that the post editor is constructed as a layered abstraction of three separate packages <code>@wordpress/edit-post</code>, <code>@wordpress/editor</code>, and <code>@wordpress/block-editor</code>.</p>
+<p>The above <a href="#why">Why?</a> section should provide some context for how individual packages aim to satisfy specific requirements. That applies to these packages as well:</p>
+<ul>
+<li><code>@wordpress/block-editor</code> provides components for implementing a block editor, operating on a primitive value of an array of block objects. It makes no assumptions for how this value is saved, and has no awareness (or requirement) of a WordPress site.</li>
+<li><code>@wordpress/editor</code> is the enhanced version of the block editor for WordPress posts. It utilizes components from the <code>@wordpress/block-editor</code> package. Having an awareness of the concept of a WordPress post, it associates the loading and saving mechanism of the value representing blocks to a post and its content. It also provides various components relevant for working with a post object in the context of an editor (e.g., a post title input component). This package can support editing posts of any post type and does not assume that rendering happens in any particular WordPress screen or layout arrangement.</li>
+<li><code>@wordpress/edit-post</code> is the implementation of the “New Post” (“Edit Post”) screen in the WordPress admin. It is responsible for the layout of the various components provided by <code>@wordpress/editor</code> and <code>@wordpress/block-editor</code>, with full awareness of how it is presented in the specific screen in the WordPress administrative dashboard.</li>
+</ul>
+<p>Structured this way, these packages can be used in a variety of combinations outside the use-case of the “New Post” screen:</p>
+<ul>
+<li>A <code>@wordpress/edit-site</code> or <code>@wordpress/edit-widgets</code> package can serve as similar implementations of a “Site Editor” or “Widgets Editor”, in much the same way as <code>@wordpress/edit-post</code>.</li>
+<li><code>@wordpress/editor</code> could be used in the implementation of the “Reusable Block” block, since it is essentially a nested block editor associated with the post type <code>wp_block</code>.</li>
+<li><code>@wordpress/block-editor</code> could be used independently from WordPress, or with a completely different save mechanism. For example, it could be used for a comments editor for posts of a site.</li>
+</ul>
+<h2 class="is-toc-heading" id="going-further" tabindex="-1"><a href="#going-further">Going further</a></h2>
+<ul>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/packages/">Package Reference</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

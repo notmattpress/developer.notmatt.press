@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_ajax_query_themes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_ajax_query_themes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_ajax_query_themes()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Handles getting themes from <a href="https://developer.notmatt.press/reference/functions/themes_api/" rel="function">themes_api()</a>  via AJAX.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3613"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_ajax_query_themes() {
+	global $themes_allowedtags, $theme_field_defaults;
+
+	if ( ! current_user_can( 'install_themes' ) ) {
+		wp_send_json_error();
+	}
+
+	$args = wp_parse_args(
+		wp_unslash( $_REQUEST['request'] ),
+		array(
+			'per_page' =&gt; 20,
+			'fields'   =&gt; array_merge(
+				(array) $theme_field_defaults,
+				array(
+					'reviews_url' =&gt; true, // Explicitly request the reviews URL to be linked from the Add Themes screen.
+				)
+			),
+		)
+	);
+
+	if ( isset( $args['browse'] ) &amp;&amp; 'favorites' === $args['browse'] &amp;&amp; ! isset( $args['user'] ) ) {
+		$user = get_user_option( 'wporg_favorites' );
+		if ( $user ) {
+			$args['user'] = $user;
+		}
+	}
+
+	$old_filter = isset( $args['browse'] ) ? $args['browse'] : 'search';
+
+	/** This filter is documented in wp-admin/includes/class-wp-theme-install-list-table.php */
+	$args = apply_filters( 'install_themes_table_api_args_' . $old_filter, $args );
+
+	$api = themes_api( 'query_themes', $args );
+
+	if ( is_wp_error( $api ) ) {
+		wp_send_json_error();
+	}
+
+	$update_php = network_admin_url( 'update.php?action=install-theme' );
+
+	$installed_themes = search_theme_directories();
+
+	if ( false === $installed_themes ) {
+		$installed_themes = array();
+	}
+
+	foreach ( $installed_themes as $theme_slug =&gt; $theme_data ) {
+		// Ignore child themes.
+		if ( str_contains( $theme_slug, '/' ) ) {
+			unset( $installed_themes[ $theme_slug ] );
+		}
+	}
+
+	foreach ( $api-&gt;themes as &amp;$theme ) {
+		$theme-&gt;install_url = add_query_arg(
+			array(
+				'theme'    =&gt; $theme-&gt;slug,
+				'_wpnonce' =&gt; wp_create_nonce( 'install-theme_' . $theme-&gt;slug ),
+			),
+			$update_php
+		);
+
+		if ( current_user_can( 'switch_themes' ) ) {
+			if ( is_multisite() ) {
+				$theme-&gt;activate_url = add_query_arg(
+					array(
+						'action'   =&gt; 'enable',
+						'_wpnonce' =&gt; wp_create_nonce( 'enable-theme_' . $theme-&gt;slug ),
+						'theme'    =&gt; $theme-&gt;slug,
+					),
+					network_admin_url( 'themes.php' )
+				);
+			} else {
+				$theme-&gt;activate_url = add_query_arg(
+					array(
+						'action'     =&gt; 'activate',
+						'_wpnonce'   =&gt; wp_create_nonce( 'switch-theme_' . $theme-&gt;slug ),
+						'stylesheet' =&gt; $theme-&gt;slug,
+					),
+					admin_url( 'themes.php' )
+				);
+			}
+		}
+
+		$is_theme_installed = array_key_exists( $theme-&gt;slug, $installed_themes );
+
+		// We only care about installed themes.
+		$theme-&gt;block_theme = $is_theme_installed &amp;&amp; wp_get_theme( $theme-&gt;slug )-&gt;is_block_theme();
+
+		if ( ! is_multisite() &amp;&amp; current_user_can( 'edit_theme_options' ) &amp;&amp; current_user_can( 'customize' ) ) {
+			$customize_url = $theme-&gt;block_theme ? admin_url( 'site-editor.php' ) : wp_customize_url( $theme-&gt;slug );
+
+			$theme-&gt;customize_url = add_query_arg(
+				array(
+					'return' =&gt; urlencode( network_admin_url( 'theme-install.php', 'relative' ) ),
+				),
+				$customize_url
+			);
+		}
+
+		$theme-&gt;name        = wp_kses( $theme-&gt;name, $themes_allowedtags );
+		$theme-&gt;author      = wp_kses( $theme-&gt;author['display_name'], $themes_allowedtags );
+		$theme-&gt;version     = wp_kses( $theme-&gt;version, $themes_allowedtags );
+		$theme-&gt;description = wp_kses( $theme-&gt;description, $themes_allowedtags );
+
+		$theme-&gt;stars = wp_star_rating(
+			array(
+				'rating' =&gt; $theme-&gt;rating,
+				'type'   =&gt; 'percent',
+				'number' =&gt; $theme-&gt;num_ratings,
+				'echo'   =&gt; false,
+			)
+		);
+
+		$theme-&gt;num_ratings    = number_format_i18n( $theme-&gt;num_ratings );
+		$theme-&gt;preview_url    = set_url_scheme( $theme-&gt;preview_url );
+		$theme-&gt;compatible_wp  = is_wp_version_compatible( $theme-&gt;requires );
+		$theme-&gt;compatible_php = is_php_version_compatible( $theme-&gt;requires_php );
+	}
+
+	wp_send_json_success( $api );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/ajax-actions.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/ajax-actions.php#L3613">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/ajax-actions.php#L3613-L3734">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_wp_version_compatible/">is_wp_version_compatible()</a><code>wp-includes/functions.php</code></td><td><p>Checks compatibility with the current WordPress version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_php_version_compatible/">is_php_version_compatible()</a><code>wp-includes/functions.php</code></td><td><p>Checks compatibility with the current PHP version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/themes_api/">themes_api()</a><code>wp-admin/includes/theme.php</code></td><td><p>Retrieves theme installer pages from the WordPress.org Themes API.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_star_rating/">wp_star_rating()</a><code>wp-admin/includes/template.php</code></td><td><p>Outputs a HTML element with a star rating for a given rating.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_customize_url/">wp_customize_url()</a><code>wp-includes/theme.php</code></td><td><p>Returns a URL to load the Customizer.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/search_theme_directories/">search_theme_directories()</a><code>wp-includes/theme.php</code></td><td><p>Searches all registered theme directories for complete and valid themes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_theme/">wp_get_theme()</a><code>wp-includes/theme.php</code></td><td><p>Gets a <a href="https://developer.notmatt.press/reference/classes/wp_theme/" rel="class">WP_Theme</a> object for a theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_create_nonce/">wp_create_nonce()</a><code>wp-includes/pluggable.php</code></td><td><p>Creates a cryptographic token tied to a specific action, user, user session, and window of time.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_kses/">wp_kses()</a><code>wp-includes/kses.php</code></td><td><p>Filters text content and strips out disallowed HTML.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/set_url_scheme/">set_url_scheme()</a><code>wp-includes/link-template.php</code></td><td><p>Sets the scheme for a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/network_admin_url/">network_admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_user_option/">get_user_option()</a><code>wp-includes/user.php</code></td><td><p>Retrieves user option that can be either per Site or per Network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_error/">wp_send_json_error()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating failure.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_send_json_success/">wp_send_json_success()</a><code>wp-includes/functions.php</code></td><td><p>Sends a JSON response back to an Ajax request, indicating success.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_query_arg/">add_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves a modified URL query string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/number_format_i18n/">number_format_i18n()</a><code>wp-includes/functions.php</code></td><td><p>Converts float number to format based on the locale.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_url/">admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 18 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.9.0/">3.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

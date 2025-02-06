@@ -1,0 +1,276 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Http_Encoding</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Http_Encoding</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Http_Encoding {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Core class used to implement deflate and gzip transfer encoding support for HTTP requests.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Includes RFC 1950, RFC 1951, and RFC 1952.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_encoding/accept_encoding/">WP_Http_Encoding::accept_encoding</a></td><td>What encoding types to accept and their priority values.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_encoding/compatible_gzinflate/">WP_Http_Encoding::compatible_gzinflate</a></td><td>Decompression of deflated string while staying compatible with the majority of servers.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_encoding/compress/">WP_Http_Encoding::compress</a></td><td>Compress raw string using the deflate format.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_encoding/content_encoding/">WP_Http_Encoding::content_encoding</a></td><td>What encoding the content used when it was compressed to send in the headers.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_encoding/decompress/">WP_Http_Encoding::decompress</a></td><td>Decompression of deflated string.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_encoding/is_available/">WP_Http_Encoding::is_available</a></td><td>Whether decompression and compression are supported by the PHP version.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http_encoding/should_decode/">WP_Http_Encoding::should_decode</a></td><td>Whether the content be decoded based on the headers.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="18"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Http_Encoding {
+
+	/**
+	 * Compress raw string using the deflate format.
+	 *
+	 * Supports the RFC 1951 standard.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $raw      String to compress.
+	 * @param int    $level    Optional. Compression level, 9 is highest. Default 9.
+	 * @param string $supports Optional, not used. When implemented it will choose
+	 *                         the right compression based on what the server supports.
+	 * @return string|false Compressed string on success, false on failure.
+	 */
+	public static function compress( $raw, $level = 9, $supports = null ) {
+		return gzdeflate( $raw, $level );
+	}
+
+	/**
+	 * Decompression of deflated string.
+	 *
+	 * Will attempt to decompress using the RFC 1950 standard, and if that fails
+	 * then the RFC 1951 standard deflate will be attempted. Finally, the RFC
+	 * 1952 standard gzip decode will be attempted. If all fail, then the
+	 * original compressed string will be returned.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $compressed String to decompress.
+	 * @param int    $length     The optional length of the compressed data.
+	 * @return string|false Decompressed string on success, false on failure.
+	 */
+	public static function decompress( $compressed, $length = null ) {
+
+		if ( empty( $compressed ) ) {
+			return $compressed;
+		}
+
+		$decompressed = @gzinflate( $compressed );
+		if ( false !== $decompressed ) {
+			return $decompressed;
+		}
+
+		$decompressed = self::compatible_gzinflate( $compressed );
+		if ( false !== $decompressed ) {
+			return $decompressed;
+		}
+
+		$decompressed = @gzuncompress( $compressed );
+		if ( false !== $decompressed ) {
+			return $decompressed;
+		}
+
+		if ( function_exists( 'gzdecode' ) ) {
+			$decompressed = @gzdecode( $compressed );
+
+			if ( false !== $decompressed ) {
+				return $decompressed;
+			}
+		}
+
+		return $compressed;
+	}
+
+	/**
+	 * Decompression of deflated string while staying compatible with the majority of servers.
+	 *
+	 * Certain Servers will return deflated data with headers which PHP's gzinflate()
+	 * function cannot handle out of the box. The following function has been created from
+	 * various snippets on the gzinflate() PHP documentation.
+	 *
+	 * Warning: Magic numbers within. Due to the potential different formats that the compressed
+	 * data may be returned in, some "magic offsets" are needed to ensure proper decompression
+	 * takes place. For a simple pragmatic way to determine the magic offset in use, see:
+	 * https://core.trac.wordpress.org/ticket/18273
+	 *
+	 * @since 2.8.1
+	 *
+	 * @link https://core.trac.wordpress.org/ticket/18273
+	 * @link https://www.php.net/manual/en/function.gzinflate.php#70875
+	 * @link https://www.php.net/manual/en/function.gzinflate.php#77336
+	 *
+	 * @param string $gz_data String to decompress.
+	 * @return string|false Decompressed string on success, false on failure.
+	 */
+	public static function compatible_gzinflate( $gz_data ) {
+
+		// Compressed data might contain a full header, if so strip it for gzinflate().
+		if ( str_starts_with( $gz_data, "\x1f\x8b\x08" ) ) {
+			$i   = 10;
+			$flg = ord( substr( $gz_data, 3, 1 ) );
+			if ( $flg &gt; 0 ) {
+				if ( $flg &amp; 4 ) {
+					list($xlen) = unpack( 'v', substr( $gz_data, $i, 2 ) );
+					$i          = $i + 2 + $xlen;
+				}
+				if ( $flg &amp; 8 ) {
+					$i = strpos( $gz_data, "\0", $i ) + 1;
+				}
+				if ( $flg &amp; 16 ) {
+					$i = strpos( $gz_data, "\0", $i ) + 1;
+				}
+				if ( $flg &amp; 2 ) {
+					$i = $i + 2;
+				}
+			}
+			$decompressed = @gzinflate( substr( $gz_data, $i, -8 ) );
+			if ( false !== $decompressed ) {
+				return $decompressed;
+			}
+		}
+
+		// Compressed data from java.util.zip.Deflater amongst others.
+		$decompressed = @gzinflate( substr( $gz_data, 2 ) );
+		if ( false !== $decompressed ) {
+			return $decompressed;
+		}
+
+		return false;
+	}
+
+	/**
+	 * What encoding types to accept and their priority values.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param string $url
+	 * @param array  $args
+	 * @return string Types of encoding to accept.
+	 */
+	public static function accept_encoding( $url, $args ) {
+		$type                = array();
+		$compression_enabled = self::is_available();
+
+		if ( ! $args['decompress'] ) { // Decompression specifically disabled.
+			$compression_enabled = false;
+		} elseif ( $args['stream'] ) { // Disable when streaming to file.
+			$compression_enabled = false;
+		} elseif ( isset( $args['limit_response_size'] ) ) { // If only partial content is being requested, we won't be able to decompress it.
+			$compression_enabled = false;
+		}
+
+		if ( $compression_enabled ) {
+			if ( function_exists( 'gzinflate' ) ) {
+				$type[] = 'deflate;q=1.0';
+			}
+
+			if ( function_exists( 'gzuncompress' ) ) {
+				$type[] = 'compress;q=0.5';
+			}
+
+			if ( function_exists( 'gzdecode' ) ) {
+				$type[] = 'gzip;q=0.5';
+			}
+		}
+
+		/**
+		 * Filters the allowed encoding types.
+		 *
+		 * @since 3.6.0
+		 *
+		 * @param string[] $type Array of what encoding types to accept and their priority values.
+		 * @param string   $url  URL of the HTTP request.
+		 * @param array    $args HTTP request arguments.
+		 */
+		$type = apply_filters( 'wp_http_accept_encoding', $type, $url, $args );
+
+		return implode( ', ', $type );
+	}
+
+	/**
+	 * What encoding the content used when it was compressed to send in the headers.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return string Content-Encoding string to send in the header.
+	 */
+	public static function content_encoding() {
+		return 'deflate';
+	}
+
+	/**
+	 * Whether the content be decoded based on the headers.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param array|string $headers All of the available headers.
+	 * @return bool
+	 */
+	public static function should_decode( $headers ) {
+		if ( is_array( $headers ) ) {
+			if ( array_key_exists( 'content-encoding', $headers ) &amp;&amp; ! empty( $headers['content-encoding'] ) ) {
+				return true;
+			}
+		} elseif ( is_string( $headers ) ) {
+			return ( stripos( $headers, 'content-encoding:' ) !== false );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether decompression and compression are supported by the PHP version.
+	 *
+	 * Each function is tested instead of checking for the zlib extension, to
+	 * ensure that the functions all exist in the PHP version and aren't
+	 * disabled.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return bool
+	 */
+	public static function is_available() {
+		return ( function_exists( 'gzuncompress' ) || function_exists( 'gzdeflate' ) || function_exists( 'gzinflate' ) );
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-http-encoding.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-http-encoding.php#L18">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-http-encoding.php#L18-L234">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

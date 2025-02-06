@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">apply_block_hooks_to_content()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>apply_block_hooks_to_content()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">apply_block_hooks_to_content( <span class="arg-type">string</span> <span class="arg-name">$content</span>,  <span class="arg-type">WP_Block_Template|WP_Post|array</span> <span class="arg-name">$context</span>,  <span class="arg-type">callable</span> <span class="arg-name">$callback</span> = <span class="arg-default">'insert_hooked_blocks'</span> ): <span class="return-type">string</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Runs the hooked blocks algorithm on the given content.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$content</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Serialized content.</span></div></dd><dt><code>$context</code><span class="type"><span class="WP_Block_Template"><a href="https://developer.notmatt.press/reference/classes/wp_block_template/" rel="class">WP_Block_Template</a></span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span>|<span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">A block template, template part, <code>wp_navigation</code> post object,                                                  or pattern that the blocks belong to.</span></div></dd><dt><code>$callback</code><span class="type"><span class="callable">callable</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A function that will be called for each block to generate                                                  the markup for a given list of blocks that are hooked to it.<br/>
+Default: <code>'insert_hooked_blocks'</code>.</span></div><p class="default">Default:<code>'insert_hooked_blocks'</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The serialized markup.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1052"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function apply_block_hooks_to_content( $content, $context, $callback = 'insert_hooked_blocks' ) {
+	$hooked_blocks = get_hooked_blocks();
+
+	$before_block_visitor = '_inject_theme_attribute_in_template_part_block';
+	$after_block_visitor  = null;
+	if ( ! empty( $hooked_blocks ) || has_filter( 'hooked_block_types' ) ) {
+		$before_block_visitor = make_before_block_visitor( $hooked_blocks, $context, $callback );
+		$after_block_visitor  = make_after_block_visitor( $hooked_blocks, $context, $callback );
+	}
+
+	$block_allows_multiple_instances = array();
+	/*
+	 * Remove hooked blocks from `$hooked_block_types` if they have `multiple` set to false and
+	 * are already present in `$content`.
+	 */
+	foreach ( $hooked_blocks as $anchor_block_type =&gt; $relative_positions ) {
+		foreach ( $relative_positions as $relative_position =&gt; $hooked_block_types ) {
+			foreach ( $hooked_block_types as $index =&gt; $hooked_block_type ) {
+				$hooked_block_type_definition =
+					WP_Block_Type_Registry::get_instance()-&gt;get_registered( $hooked_block_type );
+
+				$block_allows_multiple_instances[ $hooked_block_type ] =
+					block_has_support( $hooked_block_type_definition, 'multiple', true );
+
+				if (
+					! $block_allows_multiple_instances[ $hooked_block_type ] &amp;&amp;
+					has_block( $hooked_block_type, $content )
+				) {
+					unset( $hooked_blocks[ $anchor_block_type ][ $relative_position ][ $index ] );
+				}
+			}
+			if ( empty( $hooked_blocks[ $anchor_block_type ][ $relative_position ] ) ) {
+				unset( $hooked_blocks[ $anchor_block_type ][ $relative_position ] );
+			}
+		}
+		if ( empty( $hooked_blocks[ $anchor_block_type ] ) ) {
+			unset( $hooked_blocks[ $anchor_block_type ] );
+		}
+	}
+
+	/*
+	 * We also need to cover the case where the hooked block is not present in
+	 * `$content` at first and we're allowed to insert it once -- but not again.
+	 */
+	$suppress_single_instance_blocks = static function ( $hooked_block_types ) use ( &amp;$block_allows_multiple_instances, $content ) {
+		static $single_instance_blocks_present_in_content = array();
+		foreach ( $hooked_block_types as $index =&gt; $hooked_block_type ) {
+			if ( ! isset( $block_allows_multiple_instances[ $hooked_block_type ] ) ) {
+				$hooked_block_type_definition =
+					WP_Block_Type_Registry::get_instance()-&gt;get_registered( $hooked_block_type );
+
+				$block_allows_multiple_instances[ $hooked_block_type ] =
+					block_has_support( $hooked_block_type_definition, 'multiple', true );
+			}
+
+			if ( $block_allows_multiple_instances[ $hooked_block_type ] ) {
+				continue;
+			}
+
+			// The block doesn't allow multiple instances, so we need to check if it's already present.
+			if (
+				in_array( $hooked_block_type, $single_instance_blocks_present_in_content, true ) ||
+				has_block( $hooked_block_type, $content )
+			) {
+				unset( $hooked_block_types[ $index ] );
+			} else {
+				// We can insert the block once, but need to remember not to insert it again.
+				$single_instance_blocks_present_in_content[] = $hooked_block_type;
+			}
+		}
+		return $hooked_block_types;
+	};
+	add_filter( 'hooked_block_types', $suppress_single_instance_blocks, PHP_INT_MAX );
+	$content = traverse_and_serialize_blocks(
+		parse_blocks( $content ),
+		$before_block_visitor,
+		$after_block_visitor
+	);
+	remove_filter( 'hooked_block_types', $suppress_single_instance_blocks, PHP_INT_MAX );
+
+	return $content;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/blocks.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/blocks.php#L1052">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/blocks.php#L1052-L1133">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/traverse_and_serialize_blocks/">traverse_and_serialize_blocks()</a><code>wp-includes/blocks.php</code></td><td><p>Given an array of parsed block trees, applies callbacks before and after serializing them and returns their concatenated output.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/make_after_block_visitor/">make_after_block_visitor()</a><code>wp-includes/blocks.php</code></td><td><p>Returns a function that injects the hooked blocks after a given block.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/make_before_block_visitor/">make_before_block_visitor()</a><code>wp-includes/blocks.php</code></td><td><p>Returns a function that injects the theme attribute into, and hooked blocks before, a given block.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_hooked_blocks/">get_hooked_blocks()</a><code>wp-includes/blocks.php</code></td><td><p>Retrieves block types hooked into the given block, grouped by anchor block type and the relative position.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/block_has_support/">block_has_support()</a><code>wp-includes/blocks.php</code></td><td><p>Checks whether the current block type supports the feature requested.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_block_type_registry/get_instance/">WP_Block_Type_Registry::get_instance()</a><code>wp-includes/class-wp-block-type-registry.php</code></td><td><p>Utility method to retrieve the main instance of the class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/parse_blocks/">parse_blocks()</a><code>wp-includes/blocks.php</code></td><td><p>Parses blocks out of a content string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/has_block/">has_block()</a><code>wp-includes/blocks.php</code></td><td><p>Determines whether a $post or a string contains a specific block type.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/has_filter/">has_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Checks if any filter has been registered for a hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_filter/">remove_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Removes a callback function from a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/insert_hooked_blocks_into_rest_response/">insert_hooked_blocks_into_rest_response()</a><code>wp-includes/blocks.php</code></td><td><p>Hooks into the REST API response for the core/navigation block and adds the first and last inner blocks.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/update_ignored_hooked_blocks_postmeta/">update_ignored_hooked_blocks_postmeta()</a><code>wp-includes/blocks.php</code></td><td><p>Updates the wp_postmeta with the list of ignored hooked blocks where the inner blocks are stored as post content.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/inject_ignored_hooked_blocks_metadata_attributes/">inject_ignored_hooked_blocks_metadata_attributes()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Inject ignoredHookedBlocks metadata attributes into a template or template part.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_build_block_template_result_from_file/">_build_block_template_result_from_file()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Builds a unified template object based on a theme file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_build_block_template_result_from_post/">_build_block_template_result_from_post()</a><code>wp-includes/block-template-utils.php</code></td><td><p>Builds a unified template object based a post Object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_block_patterns_registry/get_registered/">WP_Block_Patterns_Registry::get_registered()</a><code>wp-includes/class-wp-block-patterns-registry.php</code></td><td><p>Retrieves an array containing the properties of a registered block pattern.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_block_patterns_registry/get_all_registered/">WP_Block_Patterns_Registry::get_all_registered()</a><code>wp-includes/class-wp-block-patterns-registry.php</code></td><td><p>Retrieves all registered block patterns.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td><span class="since-description">Injects the <code>theme</code> attribute into Template Part blocks, even if no hooked blocks are registered.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.6.0/">6.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

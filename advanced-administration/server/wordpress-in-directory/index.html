@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/advanced-administration/">Advanced Administration Handbook</a></span><span><a href="https://developer.wordpress.org/advanced-administration/server/">Server configuration</a></span><span class="is-current-page">Giving WordPress Its Own Directory</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Giving WordPress Its Own Directory</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Many people want WordPress to power their website’s root (e.g. https://example.com) but they don’t want all of the WordPress files cluttering up their root directory. WordPress allows you to install it into a subdirectory, but have your website served from the website root.</p>
+<p>As of <a href="https://wordpress.org/documentation/wordpress-version/version-3-5/">Version 3.5</a>, Multisite users may use all of the functionality listed below. If you are running a version of WordPress older than 3.5, please update before installing a Multisite WordPress install on a subdirectory.</p>
+<p><strong>Note to theme/plugin developers:</strong> this will not separate your code from WordPress. Themes and plugins will still reside under <code>wp-content</code> folder.</p>
+<h2 class="is-toc-heading" id="moving-a-root-install-to-its-own-directory" tabindex="-1"><a href="#moving-a-root-install-to-its-own-directory">Moving a Root install to its own directory</a></h2>
+<p>Let’s say you’ve installed WordPress at <code>example.com</code>. Now you have two different methods to move WordPress installations into subdirectory:</p>
+<ol>
+<li>Without change of SITE-URL (remains <code>example.com</code>)</li>
+<li>With change in SITE-URL (it will redirect to <code>example.com/subdirectory</code>)</li>
+</ol>
+<h2 class="is-toc-heading" id="method-i-without-url-change" tabindex="-1"><a href="#method-i-without-url-change">Method I (Without URL change)</a></h2>
+<ol>
+<li>After Installing WordPress in the root folder, move EVERYTHING from the root folder into subdirectory.</li>
+<li>Create a <code>.htaccess</code> file in the root folder, and put this content inside (just change <code>example.com</code> and <code>my_subdir</code>):</li>
+</ol>
+<pre><code>&lt;IfModule mod_rewrite.c&gt;
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^(www.)?example.com$
+RewriteCond %{REQUEST_URI} !^/my_subdir/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /my_subdir/$1
+RewriteCond %{HTTP_HOST} ^(www.)?example.com$
+RewriteRule ^(/)?$ my_subdir/index.php [L] 
+&lt;/IfModule&gt;
+</code></pre>
+<p>That’s all 🙂</p>
+<h2 class="is-toc-heading" id="method-ii-with-url-change" tabindex="-1"><a href="#method-ii-with-url-change">Method II (With URL change)</a></h2>
+<h3 class="is-toc-heading" id="moving-process" tabindex="-1"><a href="#moving-process">Moving process</a></h3>
+<p><em>(p.s. If you’ve already installed WP in subdirectory, some steps might be already done automatically).</em></p>
+<ol>
+<li>Create the new location for the core WordPress files to be stored—we will use <code>/wordpress</code> in our examples. On Linux, use <code>mkdir wordpress</code> from your <code>www</code> directory. You’ll probably want to use <code>chown apache:apache</code> on the <code>wordpress</code> directory you created.</li>
+<li>Go to the <a href="https://wordpress.org/documentation/article/administration-screens/#settings-configuration-settings">General</a> screen.</li>
+<li>In <strong>WordPress address (URL):</strong> set the address of your main WordPress core files. Example: `https://example.com/wordpress`.</li>
+<li>In <strong>Site address (URL):</strong> set root directory’s URL. Example: `https://example.com`.</li>
+<li>Click <strong>Save Changes</strong>. Do not worry about the errors that happen now! Continue reading.</li>
+<li>Now move your WordPress core files (from root directory) to the subdirectory.</li>
+<li>Copy (NOT MOVE!) the <code>index.php</code> and <code>.htaccess</code> files from the WordPress directory into the root directory of your site (Blog address). The <code>.htaccess</code> file is invisible, so you may have to set your FTP client to <a href="https://developer.notmatt.press/advanced-administration/server/file-permissions/#Unhide_the_hidden_files">show hidden files</a>. If you are not using <a href="https://wordpress.org/documentation/article/using-permalinks/#using-pretty-permalinks">pretty permalinks</a>, then you may not have a .<code>htaccess</code> file. <em><strong>If you are running WordPress on a Windows (IIS) server</strong> and are using pretty permalinks, you’ll have a <code>web.config</code> rather than a <code>.htaccess</code> file in your WordPress directory. For the <code>index.php</code> file the instructions remain the same, copy (don’t move) the index.php file to your root directory. The <code>web.config</code> file, must be treated differently than the <code>.htaccess</code> file so you must MOVE (DON’T COPY) the <code>web.config</code> file to your root directory.</em></li>
+<li>Open your root directory’s <code>index.php</code> file in a <a href="https://wordpress.org/documentation/article/glossary#text-editor">text editor</a>.</li>
+<li>Change the following and save the file. Change the line that says:<code>require dirname( __FILE__ ) . '/wp-blog-header.php';</code>to the following, using your directory name for the WordPress core files: <code>require dirname( __FILE__ ) . '/wordpress/wp-blog-header.php';</code>.</li>
+<li>Login to the new location. It might now be `https://example.com/wordpress/wp-admin/`.</li>
+<li>If you have set up <a href="https://wordpress.org/documentation/article/using-permalinks/">Permalinks</a>, go to the <a href="https://wordpress.org/documentation/article/administration-screens/#permalinks">Permalinks Screen</a> and update your Permalink structure. WordPress will automatically update your <code>.htaccess</code> file if it has the appropriate file permissions. If WordPress can’t write to your <code>.htaccess</code> file, it will display the new rewrite rules to you, which you should manually copy into your <code>.htaccess</code> file (in the same directory as the main <code>index.php</code> file).</li>
+</ol>
+<h3 class="is-toc-heading" id="htaccess-modification" tabindex="-1"><a href="#htaccess-modification">.htaccess modification</a></h3>
+<p>In some cases, some people like to install separate versions in a subdirectory (such as <code>/2010</code>, <code>/2011</code>, <code>/latest</code> and etc..), and want that website (by default) used the latest version, then Install WordPress in a subdirectory, such as <code>/my_subdir</code> and in your root folder’s .htaccess file add the following (just change the words as you need):</p>
+<pre><code>RewriteEngine On
+RewriteCond %{HTTP_HOST} ^(www.)?example.com$
+RewriteRule ^(/)?$ my_subdir\[L\]
+</code></pre>
+<p>Now when users to go your root domain (<code>example.com</code>), it will automatically redirect to the subdirectory you specified.</p>
+<p>Note: This code comes from Site 5’s post here: <a href="https://qa.site5.com/advanced/how-to-redirect-your-domain-to-a-subfolder-using-htaccess/">How to Redirect Your Domain to a Subfolder Using .htaccess</a>.</p>
+<h2 class="is-toc-heading" id="moving-specific-wordpress-folders" tabindex="-1"><a href="#moving-specific-wordpress-folders">Moving Specific WordPress Folders</a></h2>
+<p>The following links explains how to change specific directories within WordPress:</p>
+<ul>
+<li><a href="https://wordpress.org/documentation/article/editing-wp-config-php/#moving-wp-content-folder">Moving wp-content folder</a></li>
+<li><a href="https://wordpress.org/documentation/article/editing-wp-config-php/#moving-plugin-folder">Moving Plugin Folder</a></li>
+<li><a href="https://wordpress.org/documentation/article/editing-wp-config-php/#moving-themes-folder">Moving Themes Folder</a></li>
+<li><a href="https://wordpress.org/documentation/article/editing-wp-config-php/#moving-uploads-folder">Moving Uploads Folder</a></li>
+</ul>
+<h2 class="is-toc-heading" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h2>
+<ul>
+<li><a href="https://caddy.community/t/using-caddy-to-give-wordpress-its-own-directory/13185">Using Caddy to give WordPress its own directory</a></li>
+</ul>
+<h2 class="is-toc-heading" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2>
+<ul>
+<li>2022-09-11: Original content from <a href="https://wordpress.org/documentation/article/giving-wordpress-its-own-directory/">Giving WordPress Its Own Directory</a>.</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

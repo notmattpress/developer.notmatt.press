@@ -1,0 +1,237 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span class="is-current-page">Formatting Toolbar API</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Formatting Toolbar API</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="overview" tabindex="-1"><a href="#overview">Overview</a></h2>
+<p>The Format API makes it possible for developers to add custom buttons to the formatting toolbar and have them apply a <em>format</em> to a text selection. Bold is an example of a standard button in the formatting toolbar.</p>
+<p><img alt="Format API Toolbar animated example" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/developer.wordpress.org/files/2021/12/format-api-example.gif?ssl=1"/></p>
+<p>In WordPress lingo, a <em>format</em> is a <a href="https://www.w3.org/TR/html5/textlevel-semantics.html#text-level-semantics-usage-summary">HTML tag with text-level semantics</a> used to give some special meaning to a text selection. For example, in this tutorial, the button to be hooked into the format toolbar will wrap a particular text selection with the <code>&lt;samp&gt;</code> HTML tag.</p>
+<h2 class="is-toc-heading" id="before-you-start" tabindex="-1"><a href="#before-you-start">Before you start</a></h2>
+<p>This guide assumes you are already familiar with WordPress plugins and loading JavaScript with them, see the <a href="https://developer.notmatt.press/plugins/">Plugin Handbook</a> or <a href="https://developer.notmatt.press/block-editor/getting-started/fundamentals/javascript-in-the-block-editor/">JavaScript Tutorial</a> to brush up.</p>
+<p>You will need:</p>
+<ul>
+<li>WordPress development environment</li>
+<li>A minimal plugin activated and setup ready to edit</li>
+<li>JavaScript setup for building and enqueuing</li>
+</ul>
+<p>The <a href="https://github.com/WordPress/block-development-examples/tree/trunk/plugins/format-api-f14b86">complete format-api example</a> is available that you can use as a reference for your setup.</p>
+<h2 class="is-toc-heading" id="step-by-step-guide" tabindex="-1"><a href="#step-by-step-guide">Step-by-step guide</a></h2>
+<p>The guide will refer to <code>src/index.js</code> as the JavaScript file where the changes are made. After each step, running <code>npm run build</code> creates <code>build/index.js</code> that is then loaded on the post editor screen.</p>
+<h3 class="is-toc-heading" id="step-1-register-a-new-format" tabindex="-1"><a href="#step-1-register-a-new-format">Step 1: Register a new format</a></h3>
+<p>The first step is to register the new format, add <code>src/index.js</code> with the following:</p>
+<pre><code class="language-js">import { registerFormatType } from '@wordpress/rich-text';
+
+registerFormatType( 'my-custom-format/sample-output', {
+    title: 'Sample output',
+    tagName: 'samp',
+    className: null,
+} );
+</code></pre>
+<p>The list of available format types is maintained in the <code>core/rich-text</code> store. You can query the store to check that your custom format is now available.</p>
+<p>Run this code in your browser’s console to confirm:</p>
+<pre><code class="language-js">wp.data.select( 'core/rich-text' ).getFormatTypes();
+</code></pre>
+<p>It’ll return an array containing the format types, including your own.</p>
+<h3 class="is-toc-heading" id="step-2-add-a-button-to-the-toolbar" tabindex="-1"><a href="#step-2-add-a-button-to-the-toolbar">Step 2: Add a button to the toolbar</a></h3>
+<p>With the format available, the next step is to add a button to the UI by registering a component for the edit property.</p>
+<p>Using the <code>RichTextToolbarButton</code> component, update <code>src/index.js</code>:</p>
+<pre><code class="language-js">import { registerFormatType } from '@wordpress/rich-text';
+import { RichTextToolbarButton } from '@wordpress/block-editor';
+
+const MyCustomButton = ( props ) =&gt; {
+    return (
+        &lt;RichTextToolbarButton
+            icon="editor-code"
+            title="Sample output"
+            onClick={ () =&gt; {
+                console.log( 'toggle format' );
+            } }
+        /&gt;
+    );
+};
+
+registerFormatType( 'my-custom-format/sample-output', {
+    title: 'Sample output',
+    tagName: 'samp',
+    className: null,
+    edit: MyCustomButton,
+} );
+</code></pre>
+<p>Let’s check that everything is working as expected. Build and reload and then select any block containing text like for example the paragraph block. Confirm the new button was added to the format toolbar.</p>
+<p><img alt="Toolbar with custom button" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/developer.wordpress.org/files/2021/12/format-api-toolbar.png?ssl=1"/></p>
+<p>Click the button and check the console.log for the “toggle format” message.</p>
+<p>If you do not see the button or message, double check you are building and loading the JavScript properly; and check the console.log for any errors.</p>
+<h3 class="is-toc-heading" id="step-3-apply-a-format-when-clicked" tabindex="-1"><a href="#step-3-apply-a-format-when-clicked">Step 3: Apply a format when clicked</a></h3>
+<p>Next is to update the button to apply a format when clicked.</p>
+<p>For our example, the <code>&lt;samp&gt;</code> tag format is binary – either a text selection has the tag or not, so we can use the <code>toggleFormat</code> method from the RichText package.</p>
+<p>Update <code>src/index.js</code> changing the <code>onClick</code> action:</p>
+<pre><code class="language-js">import { registerFormatType, toggleFormat } from '@wordpress/rich-text';
+import { RichTextToolbarButton } from '@wordpress/block-editor';
+
+const MyCustomButton = ( { isActive, onChange, value } ) =&gt; {
+    return (
+        &lt;RichTextToolbarButton
+            icon="editor-code"
+            title="Sample output"
+            onClick={ () =&gt; {
+                onChange(
+                    toggleFormat( value, {
+                        type: 'my-custom-format/sample-output',
+                    } )
+                );
+            } }
+            isActive={ isActive }
+        /&gt;
+    );
+};
+
+registerFormatType( 'my-custom-format/sample-output', {
+    title: 'Sample output',
+    tagName: 'samp',
+    className: null,
+    edit: MyCustomButton,
+} );
+</code></pre>
+<p>Confirm it is working: first build and reload, then make a text selection and click the button. Your browser will likely display that selection differently than the surrounding text.</p>
+<p>You can also confirm by switching to HTML view (Code editor <code>Ctrl+Shift+Alt+M</code>) and see the text selection wrapped with <code>&lt;samp&gt;</code> HTML tags.</p>
+<p>Use the <code>className</code> option when registering to add your own custom class to the tag. You can use that class and custom CSS to target that element and style as you wish.</p>
+<h3 class="is-toc-heading" id="step-4-show-the-button-only-for-specific-blocks-optional" tabindex="-1"><a href="#step-4-show-the-button-only-for-specific-blocks-optional">Step 4: Show the button only for specific blocks (Optional)</a></h3>
+<p>By default, the button is rendered on every rich text toolbar (image captions, buttons, paragraphs, etc). You can render the button only on blocks of a certain type by using <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-data">the data API</a>.</p>
+<p>Here is an example that only shows the button for Paragraph blocks:</p>
+<pre><code class="language-js">import { registerFormatType, toggleFormat } from '@wordpress/rich-text';
+import { RichTextToolbarButton } from '@wordpress/block-editor';
+import { useSelect } from '@wordpress/data';
+
+function ConditionalButton( { isActive, onChange, value } ) {
+    const selectedBlock = useSelect( ( select ) =&gt; {
+        return select( 'core/block-editor' ).getSelectedBlock();
+    }, [] );
+
+    if ( selectedBlock &amp;&amp; selectedBlock.name !== 'core/paragraph' ) {
+        return null;
+    }
+
+    return (
+        &lt;RichTextToolbarButton
+            icon="editor-code"
+            title="Sample output"
+            onClick={ () =&gt; {
+                onChange(
+                    toggleFormat( value, {
+                        type: 'my-custom-format/sample-output',
+                    } )
+                );
+            } }
+            isActive={ isActive }
+        /&gt;
+    );
+}
+
+registerFormatType( 'my-custom-format/sample-output', {
+    title: 'Sample output',
+    tagName: 'samp',
+    className: null,
+    edit: ConditionalButton,
+} );
+</code></pre>
+<h3 class="is-toc-heading" id="step-5-add-a-button-outside-of-the-dropdown-optional" tabindex="-1"><a href="#step-5-add-a-button-outside-of-the-dropdown-optional">Step 5: Add a button outside of the dropdown (Optional)</a></h3>
+<p>Using the <code>RichTextToolbarButton</code> component, the button is added to the default dropdown menu. You can add the button directly to the toolbar by using the <code>BlockControls</code> component.</p>
+<pre><code class="language-js">import { registerFormatType, toggleFormat } from '@wordpress/rich-text';
+import { BlockControls } from '@wordpress/block-editor';
+import { ToolbarGroup, ToolbarButton } from '@wordpress/components';
+
+const MyCustomButton = ( { isActive, onChange, value } ) =&gt; {
+    return (
+        &lt;BlockControls&gt;
+            &lt;ToolbarGroup&gt;
+                &lt;ToolbarButton
+                    icon="editor-code"
+                    title="Sample output"
+                    onClick={ () =&gt; {
+                        onChange(
+                            toggleFormat( value, {
+                                type: 'my-custom-format/sample-output',
+                            } )
+                        );
+                    } }
+                    isActive={ isActive }
+                /&gt;
+            &lt;/ToolbarGroup&gt;
+        &lt;/BlockControls&gt;
+    );
+};
+
+registerFormatType( 'my-custom-format/sample-output', {
+    title: 'Sample output',
+    tagName: 'samp',
+    className: null,
+    edit: MyCustomButton,
+} );
+</code></pre>
+<h2 class="is-toc-heading" id="troubleshooting" tabindex="-1"><a href="#troubleshooting">Troubleshooting</a></h2>
+<p>If you run into errors:</p>
+<ul>
+<li>Double check that you run <code>npm run build</code> first.</li>
+<li>Confirm no syntax errors or issues in build process.</li>
+<li>Confirm the JavaScript is loading in the editor.</li>
+<li>Check for any console error messages.</li>
+</ul>
+<h2 class="is-toc-heading" id="additional-resources" tabindex="-1"><a href="#additional-resources">Additional resources</a></h2>
+<p>Reference documentation used in this guide:</p>
+<ul>
+<li>RichText: <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-rich-text/#registerformattype"><code>registerFormatType</code></a></li>
+<li>Components: <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-block-editor/src/components/rich-text/#richtexttoolbarbutton"><code>RichTextToolbarButton</code></a></li>
+<li>RichText: <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-rich-text/#applyformat"><code>applyFormat</code></a></li>
+<li>RichText: <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-rich-text/#removeformat"><code>removeFormat</code></a></li>
+<li>RichText: <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-rich-text/#toggleformat"><code>toggleFormat</code></a></li>
+</ul>
+<h2 class="is-toc-heading" id="conclusion" tabindex="-1"><a href="#conclusion">Conclusion</a></h2>
+<p>The guide showed you how to add a button to the toolbar and have it apply a format to the selected text. Try it out and see what you can build with it in your next plugin.</p>
+<p>Download the <a href="https://github.com/WordPress/block-development-examples/tree/trunk/plugins/format-api-f14b86">format-api example</a> from the <a href="https://github.com/WordPress/block-development-examples">block-development-examples</a> repository.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

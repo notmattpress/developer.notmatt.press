@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_image_editor_gd/">WP_Image_Editor_GD</a></span><span class="is-current-page">WP_Image_Editor_GD::_resize()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Image_Editor_GD::_resize()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Image_Editor_GD::_resize( <span class="arg-type">int</span> <span class="arg-name">$max_w</span>,  <span class="arg-type">int</span> <span class="arg-name">$max_h</span>,  <span class="arg-type">bool|array</span> <span class="arg-name">$crop</span> = <span class="arg-default">false</span> ): <span class="return-type">resource|GdImage|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$max_w</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"></div></dd><dt><code>$max_h</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"></div></dd><dt><code>$crop</code><span class="type"><span class="bool">bool</span>|<span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Image cropping behavior. If false, the image will be scaled (default).<br/>
+If true, image will be cropped to the specified dimensions using center positions.<br/>
+If an array, the image will be cropped using the array to specify the crop location: <ul class="param-hash"><li><code>0</code> <span class="type">string</span><div class="desc">The x crop position. Accepts <code>'left'</code> <code>'center'</code>, or <code>'right'</code>.</div></li>
+<li><code>1</code> <span class="type">string</span><div class="desc">The y crop position. Accepts <code>'top'</code>, <code>'center'</code>, or <code>'bottom'</code>.</div></li>
+</ul>
+</span></div><p class="default">Default:<code>false</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">resource|GdImage|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="222"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function _resize( $max_w, $max_h, $crop = false ) {
+	$dims = image_resize_dimensions( $this-&gt;size['width'], $this-&gt;size['height'], $max_w, $max_h, $crop );
+
+	if ( ! $dims ) {
+		return new WP_Error( 'error_getting_dimensions', __( 'Could not calculate resized image dimensions' ), $this-&gt;file );
+	}
+
+	list( $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h ) = $dims;
+
+	$resized = wp_imagecreatetruecolor( $dst_w, $dst_h );
+	imagecopyresampled( $resized, $this-&gt;image, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h );
+
+	if ( is_gd_image( $resized ) ) {
+		$this-&gt;update_size( $dst_w, $dst_h );
+		return $resized;
+	}
+
+	return new WP_Error( 'image_resize_error', __( 'Image resize failed.' ), $this-&gt;file );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-image-editor-gd.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-image-editor-gd.php#L222">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-image-editor-gd.php#L222-L240">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor_gd/update_size/">WP_Image_Editor_GD::update_size()</a><code>wp-includes/class-wp-image-editor-gd.php</code></td><td><p>Sets or updates current image size.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor_gd/make_subsize/">WP_Image_Editor_GD::make_subsize()</a><code>wp-includes/class-wp-image-editor-gd.php</code></td><td><p>Create an image sub-size and return the image meta data value for it.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_image_editor_gd/resize/">WP_Image_Editor_GD::resize()</a><code>wp-includes/class-wp-image-editor-gd.php</code></td><td><p>Resizes current image.</p>
+</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

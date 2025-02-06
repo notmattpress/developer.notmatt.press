@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_privacy_data_removal_requests_list_table/">WP_Privacy_Data_Removal_Requests_List_Table</a></span><span class="is-current-page">WP_Privacy_Data_Removal_Requests_List_Table::column_next_steps()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Privacy_Data_Removal_Requests_List_Table::column_next_steps()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Privacy_Data_Removal_Requests_List_Table::column_next_steps( <span class="arg-type">WP_User_Request</span> <span class="arg-name">$item</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Outputs the Next steps column.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$item</code><span class="type"><span class="WP_User_Request"><a href="https://developer.notmatt.press/reference/classes/wp_user_request/" rel="class">WP_User_Request</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Item being shown.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="117"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function column_next_steps( $item ) {
+	$status = $item-&gt;status;
+
+	switch ( $status ) {
+		case 'request-pending':
+			esc_html_e( 'Waiting for confirmation' );
+			break;
+		case 'request-confirmed':
+			/** This filter is documented in wp-admin/includes/ajax-actions.php */
+			$erasers       = apply_filters( 'wp_privacy_personal_data_erasers', array() );
+			$erasers_count = count( $erasers );
+			$request_id    = $item-&gt;ID;
+			$nonce         = wp_create_nonce( 'wp-privacy-erase-personal-data-' . $request_id );
+
+			echo '&lt;div class="remove-personal-data" ' .
+				'data-force-erase="1" ' .
+				'data-erasers-count="' . esc_attr( $erasers_count ) . '" ' .
+				'data-request-id="' . esc_attr( $request_id ) . '" ' .
+				'data-nonce="' . esc_attr( $nonce ) .
+				'"&gt;';
+
+			?&gt;
+			&lt;span class="remove-personal-data-idle"&gt;&lt;button type="button" class="button-link remove-personal-data-handle"&gt;&lt;?php _e( 'Erase personal data' ); ?&gt;&lt;/button&gt;&lt;/span&gt;
+			&lt;span class="remove-personal-data-processing hidden"&gt;&lt;?php _e( 'Erasing data...' ); ?&gt; &lt;span class="erasure-progress"&gt;&lt;/span&gt;&lt;/span&gt;
+			&lt;span class="remove-personal-data-success success-message hidden" &gt;&lt;?php _e( 'Erasure completed.' ); ?&gt;&lt;/span&gt;
+			&lt;span class="remove-personal-data-failed hidden"&gt;&lt;?php _e( 'Data erasure has failed.' ); ?&gt; &lt;button type="button" class="button-link remove-personal-data-handle"&gt;&lt;?php _e( 'Retry' ); ?&gt;&lt;/button&gt;&lt;/span&gt;
+			&lt;?php
+
+			echo '&lt;/div&gt;';
+
+			break;
+		case 'request-failed':
+			echo '&lt;button type="submit" class="button-link" name="privacy_action_email_retry[' . $item-&gt;ID . ']" id="privacy_action_email_retry[' . $item-&gt;ID . ']"&gt;' . __( 'Retry' ) . '&lt;/button&gt;';
+			break;
+		case 'request-completed':
+			echo '&lt;a href="' . esc_url(
+				wp_nonce_url(
+					add_query_arg(
+						array(
+							'action'     =&gt; 'delete',
+							'request_id' =&gt; array( $item-&gt;ID ),
+						),
+						admin_url( 'erase-personal-data.php' )
+					),
+					'bulk-privacy_requests'
+				)
+			) . '"&gt;' . esc_html__( 'Remove request' ) . '&lt;/a&gt;';
+			break;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-privacy-data-removal-requests-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-privacy-data-removal-requests-list-table.php#L117">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-privacy-data-removal-requests-list-table.php#L117-L166">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_privacy_personal_data_erasers/"><span class="hook-func">apply_filters</span>( ‘wp_privacy_personal_data_erasers’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr> )</a></dt><dd><p>Filters the array of personal data eraser callbacks.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_create_nonce/">wp_create_nonce()</a><code>wp-includes/pluggable.php</code></td><td><p>Creates a cryptographic token tied to a specific action, user, user session, and window of time.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_url/">wp_nonce_url()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves URL with nonce added to URL query.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_query_arg/">add_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves a modified URL query string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_url/">admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for the current site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.9.6/">4.9.6</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/advanced-topics/">Advanced Topics</a></span><span class="is-current-page">Build Process</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Build Process</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>A build process is a method of converting source code files into a final build/production version that can be read by the computer. In particular, themes will most often be minifying or converting source code into CSS or JavaScript so that they can be read by the browser.</p>
+<p>When creating a WordPress theme, you may find yourself in need of a build process to handle more complex projects. There are many systems to choose from, and you can use whatever you prefer. But WordPress also offers a standard package that you can be assured is continually updated and should cover most of your needs.</p>
+<p>In this article, you will learn how to integrate with the <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-scripts/"><code>@wordpress/scripts</code></a> package to handle your theme’s build process.</p>
+<h2 class="is-toc-heading wp-block-heading" id="prerequisites" tabindex="-1"><a href="#prerequisites">Prerequisites</a></h2>
+<p>Most of WordPress theme development is pretty much plug and play. You just need a code editor and an install of WordPress in some type of development environment as outlined in <a href="https://developer.notmatt.press/themes/getting-started/tools-and-setup/">Tools and Setup</a>. But to work with a build process, there are some other requirements:</p>
+<ul class="wp-block-list">
+<li>You need to have <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm">Node.js and npm installed</a> on your local machine.</li>
+<li>A basic <a href="https://webpack.js.org/concepts/">understanding of webpack</a> is also highly recommended.</li>
+<li>Some familiarity with the <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-scripts/"><code>@wordpress/scripts</code></a> package (read <a href="https://developer.notmatt.press/block-editor/getting-started/devenv/get-started-with-wp-scripts/">Getting started with wp-scripts</a> in the Block Editor Handbook).</li>
+</ul>
+<p>These are more advanced tools than what is normally required to build themes, but they are necessary if you want to work with the standard WordPress build process.</p>
+<h2 class="is-toc-heading wp-block-heading" id="setting-up-your-files-and-folders" tabindex="-1"><a href="#setting-up-your-files-and-folders">Setting up your files and folders</a></h2>
+<p>The <code>@wordpress/scripts</code> package was originally created for block development, but it evolved to also work with themes over time. By default, it expects that development files live in the <code>/src</code> folder and will output build files in the <code>/build</code> folder. Because most theme authors utilize a custom system for working with assets, this guide will show you how to do that.</p>
+<p>For the examples that follow, you will use this structure within your theme folder:</p>
+<ul class="wp-block-list">
+<li><code>public/</code></li>
+<li><code>resources/</code>
+<ul class="wp-block-list">
+<li><code>js/</code>
+<ul class="wp-block-list">
+<li><code>editor.js</code></li>
+</ul>
+</li>
+<li><code>scss/</code>
+<ul class="wp-block-list">
+<li><code>editor.scss</code></li>
+<li><code>screen.scss</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>package.json</code></li>
+<li><code>webpack.config.js</code></li>
+</ul>
+<h2 class="is-toc-heading wp-block-heading" id="installing-the-wordpress-scripts-package" tabindex="-1"><a href="#installing-the-wordpress-scripts-package">Installing the WordPress scripts package</a></h2>
+<p>Once you have your files and folders set up, you need to install the correct packages on your local machine.</p>
+<p>First, open your theme’s <code>package.json</code> file and add the following code:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"name": "your-project-name",
+	"scripts": {
+		"start": "wp-scripts start --webpack-src-dir=resources --output-path=public",
+		"build": "wp-scripts build --webpack-src-dir=resources --output-path=public"
+	}
+}</code></pre>
+<p>The <code>@wordpress/scripts</code> package has several other <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-scripts/#available-scripts">available scripts</a> that you can add, but you will definitely need <code>start</code> and <code>build</code>.</p>
+<p>Now open your command line tool on your computer, navigate to your theme folder, and input the following command:</p>
+<pre class="wp-block-code"><code class="language-bash" lang="bash">npm install @wordpress/scripts path webpack-remove-empty-scripts --save-dev</code></pre>
+<p>That command installs three packages:</p>
+<ul class="wp-block-list">
+<li><code>@wordpress/scripts</code></li>
+<li><code>path</code></li>
+<li><code>webpack-remove-empty-scripts</code></li>
+</ul>
+<p>The latter two are third-party packages, but they are useful for integrating with webpack in the next step.</p>
+<h2 class="is-toc-heading wp-block-heading" id="configuring-webpack" tabindex="-1"><a href="#configuring-webpack">Configuring webpack</a></h2>
+<p>The <code>@wordpress/scripts</code> package is built on top of webpack. If you were building a block, everything would already be in place for you. However, because you are building a theme, you need to overwrite some of the default configuration of the <code>@wordpress/scripts</code> package with your own.</p>
+<p>That’s where your theme’s custom <code>webpack.config.js</code> file comes in. There two primary things you need to configure:</p>
+<ul class="wp-block-list">
+<li>The entry points for your custom CSS and JavaScript files (those in the code below correspond to the file structure in this article).</li>
+<li>The <code>webpack-remove-empty-scripts</code> plugin so that there are no leftover <code>.js</code> files mapped to your CSS.</li>
+</ul>
+<p>Add the following code to your <code>webpack.config.js</code> file:</p>
+<pre class="wp-block-code"><code class="language-javascript" lang="javascript">// WordPress webpack config.
+const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
+
+// Plugins.
+const RemoveEmptyScriptsPlugin = require( 'webpack-remove-empty-scripts' );
+
+// Utilities.
+const path = require( 'path' );
+
+// Add any new entry points by extending the webpack config.
+module.exports = {
+	...defaultConfig,
+	...{
+		entry: {
+			'js/editor':  path.resolve( process.cwd(), 'resources/js',   'editor.js'   ),
+			'css/screen': path.resolve( process.cwd(), 'resources/scss', 'screen.scss' ),
+			'css/editor': path.resolve( process.cwd(), 'resources/scss', 'editor.scss' ),
+		},
+		plugins: [
+			// Include WP's plugin config.
+			...defaultConfig.plugins,
+
+			// Removes the empty `.js` files generated by webpack but
+			// sets it after WP has generated its `*.asset.php` file.
+			new RemoveEmptyScriptsPlugin( {
+				stage: RemoveEmptyScriptsPlugin.STAGE_AFTER_PROCESS_PLUGINS
+			} )
+		]
+	}
+};</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="using-the-wordpress-scripts-package" tabindex="-1"><a href="#using-the-wordpress-scripts-package">Using the WordPress scripts package</a></h2>
+<p>To use the WordPress scripts package to process your assets, you can run one of two commands in your command line tool:</p>
+<ul class="wp-block-list">
+<li><code>start</code>: Builds the development version of your files and activates “watch” mode, which will process any code changes while enabled.</li>
+<li><code>build</code>: Builds the production version of your files.</li>
+</ul>
+<p>Now open your command line tool and run the <code>start</code> command:</p>
+<pre class="wp-block-code"><code class="language-bash" lang="bash">npm run start</code></pre>
+<p>It should automatically process your files from the <code>/resources</code> folder and place them in the <code>/public</code> folder with this structure:</p>
+<ul class="wp-block-list">
+<li><code>public/</code>
+<ul class="wp-block-list">
+<li><code>js/</code>
+<ul class="wp-block-list">
+<li><code>editor.js</code></li>
+<li><code>editor.asset.php</code></li>
+</ul>
+</li>
+<li><code>scss/</code>
+<ul class="wp-block-list">
+<li><code>editor.scss</code></li>
+<li><code>editor.asset.php</code></li>
+<li><code>screen.scss</code></li>
+<li><code>screen.asset.php</code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>You’ll now see new <code>*.asset.php</code> files generated for each of your CSS and JavaScript files. These will contain metadata about each asset file that you can use when loading your files. This is covered in the “Loading scripts and styles” section below.</p>
+<p>To disable the <code>start</code> command, type <code>Ctrl + C</code> (on either Windows or Mac) of your command line tool.</p>
+<p>Once you’re ready to do a final production build of your files, run this command in your command line tool:</p>
+<pre class="wp-block-code"><code class="language-bash" lang="bash">npm run build</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="loading-scripts-and-styles" tabindex="-1"><a href="#loading-scripts-and-styles">Loading scripts and styles</a></h2>
+<p>The methods for loading scripts and styles are already covered in depth in the <a href="https://developer.notmatt.press/themes/core-concepts/including-assets/">Including Assets</a> documentation in this handbook. You should already be familiar with how to do this before proceeding with the next steps.</p>
+<p>The documentation below is primarily geared towards teaching you how the <code>*.asset.php</code> file is generated for each asset. In each file, you will see an array that looks similar to the following snippet:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php return array('dependencies' =&gt; array('wp-block-editor'), 'version' =&gt; '2eae4c519afeff2a8c77');</code></pre>
+<p>In particular, the array will have two pieces of metadata that you can use in any <code>wp_enqueue_*()</code> functions:</p>
+<ul class="wp-block-list">
+<li><strong><code>dependencies</code>:</strong> An array of dependencies that your script/style rely on.</li>
+<li><strong><code>version</code>:</strong> A version number that you can use for cache busting.</li>
+</ul>
+<p>Because the file returns the array, you can use PHP’s <code>include</code> to assign the array to a variable in your code. The following example shows getting the array for the <code>screen.asset.php</code> file:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$asset = include get_theme_file_path( 'public/css/screen.asset.php' );
+// Returns: array( 'dependencies' =&gt; array(), 'version' =&gt; '0000' );</code></pre>
+<p>When loading a script or style using either <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/"><code>wp_enqueue_script()</code></a> or <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_style/"><code>wp_enqueue_style()</code></a>, you can pass <code>$asset['dependencies']</code> and <code>$asset['version']</code> to the corresponding parameters in the functions.</p>
+<p>Try adding the following code to your theme’s <code>functions.php</code> file to load the assets that you’ve previously defined:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">// Load front-end assets.
+add_action( 'wp_enqueue_scripts', 'themeslug_assets' );
+
+function themeslug_assets() {
+	$asset = include get_theme_file_path( 'public/css/screen.asset.php' );
+
+	wp_enqueue_style(
+		'themeslug-style',
+		get_theme_file_uri( 'public/css/screen.css' ),
+		$asset['dependencies'],
+		$asset['version']
+	);
+}
+
+// Load editor stylesheets.
+add_action( 'after_setup_theme', 'themeslug_editor_styles' );
+
+function themeslug_editor_styles() {
+	add_editor_style( [
+		get_theme_file_uri( 'public/css/screen.css' )
+	] );
+}
+
+// Load editor scripts.
+add_action( 'enqueue_block_editor_assets', 'themeslug_editor_assets' );
+
+function themeslug_editor_assets() {
+	$script_asset = include get_theme_file_path( 'public/js/editor.asset.php'  );
+	$style_asset  = include get_theme_file_path( 'public/css/editor.asset.php' );
+
+	wp_enqueue_script(
+		'themeslug-editor',
+		get_theme_file_uri( 'public/js/editor.js' ),
+		$script_asset['dependencies'],
+		$script_asset['version'],
+		true
+	);
+
+	wp_enqueue_style(
+		'themeslug-editor',
+		get_theme_file_uri( 'public/css/editor.css' ),
+		$style_asset['dependencies'],
+		$style_asset['version']
+	);
+}</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

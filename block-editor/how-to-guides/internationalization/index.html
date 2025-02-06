@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span class="is-current-page">Internationalization</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Internationalization</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="what-is-internationalization" tabindex="-1"><a href="#what-is-internationalization">What is internationalization?</a></h2>
+<p>Internationalization is the process to provide multiple language support to software, in this case WordPress. Internationalization is often abbreviated as <strong>i18n</strong>, where 18 stands for the number of letters between the first <em>i</em> and the last <em>n</em>.</p>
+<p>Providing i18n support to your plugin and theme allows it to reach the largest possible audience, even without requiring you to provide the additional language translations. When you upload your software to WordPress.org, all JS and PHP files will automatically be parsed. Any detected translation strings are added to <a href="https://translate.wordpress.org/">translate.wordpress.org</a> to allow the community to translate, ensuring WordPress plugins and themes are available in as many languages as possible.</p>
+<p>For PHP, WordPress has a long established process, see <a href="https://developer.notmatt.press/plugins/internationalization/how-to-internationalize-your-plugin/">How to Internationalize Your Plugin</a>. The release of WordPress 5.0 brings a similar process for translation to JavaScript code.</p>
+<h2 class="is-toc-heading" id="how-to-use-i18n-in-javascript" tabindex="-1"><a href="#how-to-use-i18n-in-javascript">How to use i18n in JavaScript</a></h2>
+<p>WordPress 5.0 introduced the wp-i18n JavaScript package that provides the functions needed to add translatable strings as you would in PHP.</p>
+<p>First, add <strong>wp-i18n</strong> as a dependency when registering your script:</p>
+<pre><code class="language-php">&lt;?php
+/**
+ * Plugin Name: Myguten Plugin
+ * Text Domain: myguten
+ */
+function myguten_block_init() {
+    wp_register_script(
+        'myguten-script',
+        plugins_url( 'block.js', __FILE__ ),
+        array( 'wp-blocks', 'react', 'wp-i18n', 'wp-block-editor' )
+    );
+
+    register_block_type( 'myguten/simple', array(
+        'api_version' =&gt; 3,
+        'editor_script' =&gt; 'myguten-script',
+    ) );
+}
+add_action( 'init', 'myguten_block_init' );
+</code></pre>
+<p>In your code, you can include the i18n functions. The most common function is <strong>__</strong> (a double underscore) which provides translation of a simple string. Here is a basic block example:</p>
+<pre><code class="language-js">import { __ } from '@wordpress/i18n';
+import { registerBlockType } from '@wordpress/blocks';
+import { useBlockProps } from '@wordpress/block-editor';
+
+registerBlockType( 'myguten/simple', {
+    apiVersion: 3,
+    title: __( 'Simple Block', 'myguten' ),
+    category: 'widgets',
+
+    edit: () =&gt; {
+        const blockProps = useBlockProps( { style: { color: 'red' } } );
+
+        return &lt;p { ...blockProps }&gt;{ __( 'Hello World', 'myguten' ) }&lt;/p&gt;;
+    },
+
+    save: () =&gt; {
+        const blockProps = useBlockProps.save( { style: { color: 'red' } } );
+
+        return &lt;p { ...blockProps }&gt;{ __( 'Hello World', 'myguten' ) }&lt;/p&gt;;
+    },
+} );
+</code></pre>
+<p>In the above example, the function will use the first argument for the string to be translated. The second argument is the text domain which must match the text domain slug specified by your plugin.</p>
+<p>Common functions available, these mirror their PHP counterparts are:</p>
+<ul>
+<li><code>__( 'Hello World', 'my-text-domain' )</code> – Translate a certain string.</li>
+<li><code>_n( '%s Comment', '%s Comments', numberOfComments, 'my-text-domain' )</code> – Translate and retrieve the singular or plural form based on the supplied number.</li>
+<li><code>_x( 'Default', 'block style', 'my-text-domain' )</code> – Translate a certain string with some additional context.</li>
+</ul>
+<div class="callout callout-alert">
+<strong>Note:</strong> Every string displayed to the user should be wrapped in an i18n function.
+</div>
+<p>After all strings in your code is wrapped, the final step is to tell WordPress your JavaScript contains translations, using the <a href="https://developer.notmatt.press/reference/functions/wp_set_script_translations/">wp_set_script_translations()</a> function.</p>
+<pre><code class="language-php">&lt;?php
+    function myguten_set_script_translations() {
+        wp_set_script_translations( 'myguten-script', 'myguten' );
+    }
+    add_action( 'init', 'myguten_set_script_translations' );
+</code></pre>
+<p>This is all you need to make your plugin JavaScript code translatable.</p>
+<p>When you set script translations for a handle WordPress will automatically figure out if a translations file exists on translate.wordpress.org, and if so ensure that it’s loaded into <code>wp.i18n</code> before your script runs. With translate.wordpress.org, plugin authors also do not need to worry about setting up their own infrastructure for translations and can rely on a global community with dozens of active locales. Read more about <a href="https://make.wordpress.org/meta/handbook/documentation/translations/">WordPress Translations</a>.</p>
+<h2 class="is-toc-heading" id="provide-your-own-translations" tabindex="-1"><a href="#provide-your-own-translations">Provide your own translations</a></h2>
+<p>You can create and ship your own translations with your plugin, if you have sufficient knowledge of the language(s) you can ensure the translations are available.</p>
+<h3 class="is-toc-heading" id="create-the-translation-file" tabindex="-1"><a href="#create-the-translation-file">Create the translation file</a></h3>
+<p>The translation files must be in the JED 1.x JSON format.</p>
+<p>To create a JED translation file, first you need to extract the strings from the text. Typically, the language files all live in a directory called <code>languages</code> in your plugin. Using <a href="https://wp-cli.org/">WP-CLI</a>, you create a <code>.pot</code> file using the following command from within your plugin directory:</p>
+<pre><code>mkdir languages
+wp i18n make-pot ./ languages/myguten.pot
+</code></pre>
+<p>This will create the file <code>myguten.pot</code> which contains all the translatable strings from your project.</p>
+<pre><code>msgid ""
+msgstr ""
+"Project-Id-Version: Scratch Plugin\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/scratch\n"
+"Last-Translator: FULL NAME &lt;EMAIL@ADDRESS&gt;\n"
+"Language-Team: LANGUAGE &lt;LL@li.org&gt;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2019-03-08T11:26:56-08:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.1.0\n"
+"X-Domain: myguten\n"
+
+#. Plugin Name of the plugin
+msgid "Scratch Plugin"
+msgstr ""
+
+#: block.js:6
+msgid "Simple Block"
+msgstr ""
+
+#: block.js:13
+#: block.js:21
+msgid "Hello World"
+msgstr ""
+</code></pre>
+<p>Here, <code>msgid</code> is the string to be translated, and <code>msgstr</code> is the actual translation. In the POT file, <code>msgstr</code> will always be empty.</p>
+<p>This POT file can then be used as the template for new translations. You should <strong>copy the file</strong> using the language code you are going to translate, this example will use the Esperanto (eo) language:</p>
+<pre><code>cp myguten.pot myguten-eo.po
+</code></pre>
+<p>For this simple example, you can simply edit the <code>.po</code> file in your editor and add the translation to all the <code>msgstr</code> sets. For a larger, more complex set of translation, the <a href="https://glotpress.blog/">GlotPress</a> and <a href="https://poedit.net/">Poedit</a> tools exist to help.</p>
+<p>You need also to add the <code>Language: eo</code> parameter. Here is full <code>myguten-eo.po</code> translated file</p>
+<pre><code># Copyright (C) 2019
+# This file is distributed under the same license as the Scratch Plugin plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: Scratch Plugin\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/scratch\n"
+"Last-Translator: Marcus Kazmierczak &lt;marcus@mkaz.com&gt;\n"
+"Language-Team: Esperanto &lt;marcus@mkaz.com&gt;\n"
+"Language: eo\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2019-02-18T07:20:46-08:00\n"
+"PO-Revision-Date: 2019-02-18 08:16-0800\n"
+"X-Generator: Poedit 2.2.1\n"
+"X-Domain: myguten\n"
+
+#. Plugin Name of the plugin
+msgid "Scratch Plugin"
+msgstr "Scratch kromprogrameto"
+
+#: block.js:6
+msgid "Simple Block"
+msgstr "Simpla bloko"
+
+#: block.js:13 block.js:21
+msgid "Hello World"
+msgstr "Saltuon mundo"
+</code></pre>
+<p>The last step to create the translation file is to convert the <code>myguten-eo.po</code> to the JSON format needed. For this, you can use WP-CLI’s <a href="https://developer.notmatt.press/cli/commands/i18n/make-json/"><code>wp i18n make-json</code> command</a>, which requires WP-CLI v2.2.0 and later.</p>
+<pre><code>wp i18n make-json myguten-eo.po --no-purge
+</code></pre>
+<p>This will generate the JSON file <code>myguten-eo-[md5].json</code> with the contents:</p>
+<pre><code class="language-json">{
+    "translation-revision-date": "2019-04-26T13:30:11-07:00",
+    "generator": "WP-CLI/2.2.0",
+    "source": "block.js",
+    "domain": "messages",
+    "locale_data": {
+        "messages": {
+            "": {
+                "domain": "messages",
+                "lang": "eo",
+                "plural-forms": "nplurals=2; plural=(n != 1);"
+            },
+            "Simple Block": [ "Simpla Bloko" ],
+            "Hello World": [ "Salunton mondo" ]
+        }
+    }
+}
+</code></pre>
+<h3 class="is-toc-heading" id="load-the-translation-file" tabindex="-1"><a href="#load-the-translation-file">Load the translation file</a></h3>
+<p>The final part is to tell WordPress where it can look to find the translation file. The <code>wp_set_script_translations</code> function accepts an optional third argument that is the path it will first check for translations. For example:</p>
+<pre><code class="language-php">&lt;?php
+    function myguten_set_script_translations() {
+        wp_set_script_translations( 'myguten-script', 'myguten', plugin_dir_path( __FILE__ ) . 'languages' );
+    }
+    add_action( 'init', 'myguten_set_script_translations' );
+</code></pre>
+<p>WordPress will check for a file in that path with the format <code>${domain}-${locale}-${handle}.json</code> as the source of translations. Alternatively, instead of the registered handle you can use the md5 hash of the relative path of the file, <code>${domain}-${locale} in the form of ${domain}-${locale}-${md5}.json.</code></p>
+<p>Using <code>make-json</code> automatically names the file with the md5 hash, so it is ready as-is. You could rename the file to use the handle instead, in which case the file name would be <code>myguten-eo-myguten-script.json</code>.</p>
+<h3 class="is-toc-heading" id="test-translations" tabindex="-1"><a href="#test-translations">Test translations</a></h3>
+<p>You will need to set your WordPress installation to Esperanto language. Go to Settings &gt; General and change your site language to Esperanto.</p>
+<p>With the language set, create a new post, add the block, and you will see the translations used.</p>
+<h3 class="is-toc-heading" id="filtering-translations" tabindex="-1"><a href="#filtering-translations">Filtering translations</a></h3>
+<p>The outputs of the translation functions (<code>__()</code>, <code>_x()</code>, <code>_n()</code>, and <code>_nx()</code>) are filterable, see <a href="https://developer.notmatt.press/block-editor/reference-guides/filters/i18n-filters/">i18n Filters</a> for full information.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

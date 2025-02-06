@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/themes/">Theme Handbook</a></span><span><a href="https://developer.wordpress.org/themes/global-settings-and-styles/">Global Settings and Styles (theme.json)</a></span><span><a href="https://developer.wordpress.org/themes/global-settings-and-styles/settings/">Settings</a></span><span class="is-current-page">Blocks</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Blocks</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Most settings in <code>theme.json</code> let you configure properties at the global level. This means that they apply to all blocks that support them. But WordPress also lets you control this at the block level.</p>
+<p>That’s what the <code>settings.block</code> property is for—you can configure everything from typography, to colors, to spacing, and more for individual blocks.</p>
+<p>Before moving forward with this page of the handbook, it is important to familiarize yourself with at least some of the existing <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/"><code>theme.json</code> settings</a>. This way, you can apply them on a per-block basis.</p>
+<h2 class="is-toc-heading wp-block-heading" id="how-block-settings-work" tabindex="-1"><a href="#how-block-settings-work">How block settings work</a></h2>
+<p>In the previous pages of the <code>theme.json</code> settings documentation, you learned how to configure specific properties at the global level. Essentially, this means that they are applied to all blocks that support the specific property/feature.</p>
+<p>You would have configured many of these properties in your <code>theme.json</code> (shortened for example—you can review all available properties via the main <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/">settings documentation</a>):</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"settings": {
+		"border": {},
+		"color": {},
+		"custom": {},
+		"spacing": {},
+		"typography": {}
+	}
+}</code></pre>
+<p>But there are times when you need to add settings at the individual block level, and anything set for the block will overrule its global setting. So let’s explore an example that shows block-specific settings overwriting the global settings.</p>
+<p>For this example, you will create a custom color palette, which you can learn about in the <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/color">color settings documentation</a>. This will be applied globally and used for every block’s color picker. Then, you will create a custom color palette for the Cover block that’s only shown for the Cover block.</p>
+<p>First, add your global color palette in <code>theme.json</code> with two colors named <code>base</code> and <code>contrast</code>:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"settings": {
+		"color": {
+			"palette": [
+				{
+					"color": "#0284c7",
+					"name": "Base",
+					"slug": "base"
+				},
+				{
+					"color": "#ffffff",
+					"name": "Contrast",
+					"slug": "contrast"
+				}
+			]
+		}
+	}
+}</code></pre>
+<p>Now add a Cover block and some nested text in the WordPress editor, saving the <strong>Text</strong> and <strong>Overlay</strong> colors for the block to your two custom colors:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-global-colors.jpg?ssl=1"><img alt="WordPress post editor showing a Cover block with a blue background and white text." class="wp-image-149097" data-recalc-dims="1" decoding="async" fetchpriority="high" height="1071" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-global-colors.jpg?resize=2048%2C1071&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-global-colors.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-global-colors.jpg?resize=300%2C157&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-global-colors.jpg?resize=1024%2C536&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-global-colors.jpg?resize=768%2C402&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-global-colors.jpg?resize=1536%2C803&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>As you can see, the Cover block currently uses the global color palette that you configured in your <code>theme.json</code> file.</p>
+<p>Suppose that you wanted the Cover block to use an orange color palette. You can configure that by targeting <code>settings.blocks[core/cover].color.palette</code> in your <code>theme.json</code> file and passing an array of custom colors.</p>
+<p>Add this new section to your existing <code>theme.json</code> so that it looks like this:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"settings": {
+		"color": {
+			"palette": [
+				{
+					"color": "#0284c7",
+					"name": "Base",
+					"slug": "base"
+				},
+				{
+					"color": "#ffffff",
+					"name": "Contrast",
+					"slug": "contrast"
+				}
+			]
+		}
+		"blocks": {
+			"core/cover": {
+				"color": {
+					"palette": [
+						{
+							"color": "#ea580c",
+							"name": "Base",
+							"slug": "base"
+						},
+						{
+							"color": "#fff7ed",
+							"name": "Contrast",
+							"slug": "contrast"
+						}
+					]
+				}
+			}
+		}
+	}
+}</code></pre>
+<p>As shown in the <code>theme.json</code> example, you use the same organizational structure for block settings as you do for global settings (i.e., <code>settings.color</code> at the global level but <code>settings.blocks[core/cover].color</code> at the block level).</p>
+<p>If you refresh your browser window, your Cover block should now show the new colors:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-block-colors.jpg?ssl=1"><img alt="WordPress post editor showing a Cover block with an orange background and white text." class="wp-image-149098" data-recalc-dims="1" decoding="async" height="1071" sizes="(max-width: 1000px) 100vw, 1000px" src="https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-block-colors.jpg?resize=2048%2C1071&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-block-colors.jpg?w=2048&amp;ssl=1 2048w, https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-block-colors.jpg?resize=300%2C157&amp;ssl=1 300w, https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-block-colors.jpg?resize=1024%2C536&amp;ssl=1 1024w, https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-block-colors.jpg?resize=768%2C402&amp;ssl=1 768w, https://i0.wp.com/developer.wordpress.org/files/2023/10/cover-block-colors.jpg?resize=1536%2C803&amp;ssl=1 1536w" width="2048"/></a></figure>
+<p>If you check other blocks, they will still use the global color palette. Only the Cover block will use this custom orange palette.</p>
+<p>Per-block color palettes are just the tip of the iceberg. You can configure any <code>theme.json</code> for any block (assuming the block supports it). This gives you an incredible amount of control over how your theme works.</p>
+<div class="wp-block-wporg-notice is-tip-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>When targeting a block’s settings, you must know both its namespace and slug. Above, you learned that the Cover block has the namespace (<code>core</code>) and slug (<code>cover</code>), creating the namespace/slug combination of <code>core/cover</code>. All core WordPress blocks have the <code>core</code> namespace, and you can find this information for any block (including from third-party plugins) in its <code>block.json</code> file.</p></div></div>
+<h2 class="is-toc-heading wp-block-heading" id="default-block-settings" tabindex="-1"><a href="#default-block-settings">Default block settings</a></h2>
+<p>Believe it or not, WordPress actually configures a couple of default block settings in <code>theme.json</code>. Generally, this would be left to themes, but these settings are primarily enabled for backward compatibility with features from older versions of WordPress.</p>
+<p>WordPress enables a few settings for the Button and Pullquote blocks by default. Here is what this looks like in the default <code>theme.json</code>:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+	"version": 2,
+	"settings": {
+		"blocks": {
+			"core/button": {
+				"border": {
+					"radius": true
+				}
+			},
+			"core/pullquote": {
+				"border": {
+					"color": true,
+					"radius": true,
+					"style": true,
+					"width": true
+				}
+			}
+		}
+	}
+}</code></pre>
+<p>You can overwrite these block-specific settings in your <code>theme.json</code> file just as you learned to do in the previous section of this documentation.</p>
+<div class="wp-block-wporg-notice is-info-notice"><div class="wp-block-wporg-notice__icon"></div><div class="wp-block-wporg-notice__content"><p>If you are wondering why some of your global settings do not seem to apply to certain blocks, particularly Button and Pullquote, it is likely because they are being set at the block level. You will need to override these in <code>settings.blocks</code> in your <code>theme.json</code> if you want a different behavior.</p></div></div>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

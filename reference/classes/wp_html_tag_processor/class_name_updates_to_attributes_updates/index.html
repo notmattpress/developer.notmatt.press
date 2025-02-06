@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_html_tag_processor/">WP_HTML_Tag_Processor</a></span><span class="is-current-page">WP_HTML_Tag_Processor::class_name_updates_to_attributes_updates()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_HTML_Tag_Processor::class_name_updates_to_attributes_updates()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_HTML_Tag_Processor::class_name_updates_to_attributes_updates()</h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness. Use WP_HTML_Tag_Processor::$lexical_updates instead.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Converts class name updates into tag attributes updates (they are accumulated in different data formats for performance).</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li>WP_HTML_Tag_Processor::$lexical_updates</li>
+<li>WP_HTML_Tag_Processor::$classname_updates</li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2125"><code class="language-php line-numbers" id="wporg-source-code" lang="php">				$attribute_end              = $end_quote_at + 1;
+				$this-&gt;bytes_already_parsed = $attribute_end;
+				break;
+
+			default:
+				$value_start                = $this-&gt;bytes_already_parsed;
+				$value_length               = strcspn( $this-&gt;html, "&gt; \t\f\r\n", $value_start );
+				$attribute_end              = $value_start + $value_length;
+				$this-&gt;bytes_already_parsed = $attribute_end;
+		}
+	} else {
+		$value_start   = $this-&gt;bytes_already_parsed;
+		$value_length  = 0;
+		$attribute_end = $attribute_start + $name_length;
+	}
+
+	if ( $attribute_end &gt;= $doc_length ) {
+		$this-&gt;parser_state = self::STATE_INCOMPLETE_INPUT;
+
+		return false;
+	}
+
+	if ( $this-&gt;is_closing_tag ) {
+		return true;
+	}
+
+	/*
+	 * &gt; There must never be two or more attributes on
+	 * &gt; the same start tag whose names are an ASCII
+	 * &gt; case-insensitive match for each other.
+	 *     - HTML 5 spec
+	 *
+	 * @see https://html.spec.whatwg.org/multipage/syntax.html#attributes-2:ascii-case-insensitive
+	 */
+	$comparable_name = strtolower( $attribute_name );
+
+	// If an attribute is listed many times, only use the first declaration and ignore the rest.
+	if ( ! isset( $this-&gt;attributes[ $comparable_name ] ) ) {
+		$this-&gt;attributes[ $comparable_name ] = new WP_HTML_Attribute_Token(
+			$attribute_name,
+			$value_start,
+			$value_length,
+			$attribute_start,
+			$attribute_end - $attribute_start,
+			! $has_value
+		);
+
+		return true;
+	}
+
+	/*
+	 * Track the duplicate attributes so if we remove it, all disappear together.
+	 *
+	 * While `$this-&gt;duplicated_attributes` could always be stored as an `array()`,
+	 * which would simplify the logic here, storing a `null` and only allocating
+	 * an array when encountering duplicates avoids needless allocations in the
+	 * normative case of parsing tags with no duplicate attributes.
+	 */
+	$duplicate_span = new WP_HTML_Span( $attribute_start, $attribute_end - $attribute_start );
+	if ( null === $this-&gt;duplicate_attributes ) {
+		$this-&gt;duplicate_attributes = array( $comparable_name =&gt; array( $duplicate_span ) );
+	} elseif ( ! isset( $this-&gt;duplicate_attributes[ $comparable_name ] ) ) {
+		$this-&gt;duplicate_attributes[ $comparable_name ] = array( $duplicate_span );
+	} else {
+		$this-&gt;duplicate_attributes[ $comparable_name ][] = $duplicate_span;
+	}
+
+	return true;
+}
+
+/**
+ * Move the internal cursor past any immediate successive whitespace.
+ *
+ * @since 6.2.0
+ */
+private function skip_whitespace(): void {
+	$this-&gt;bytes_already_parsed += strspn( $this-&gt;html, " \t\f\r\n", $this-&gt;bytes_already_parsed );
+}
+
+/**
+ * Applies attribute updates and cleans up once a tag is fully parsed.
+ *
+ * @since 6.2.0
+ */
+private function after_tag(): void {
+	/*
+	 * There could be lexical updates enqueued for an attribute that
+	 * also exists on the next tag. In order to avoid conflating the
+	 * attributes across the two tags, lexical updates with names
+	 * need to be flushed to raw lexical updates.
+	 */
+	$this-&gt;class_name_updates_to_attributes_updates();
+
+	/*
+	 * Purge updates if there are too many. The actual count isn't
+	 * scientific, but a few values from 100 to a few thousand were
+	 * tests to find a practically-useful limit.
+	 *
+	 * If the update queue grows too big, then the Tag Processor
+	 * will spend more time iterating through them and lose the
+	 * efficiency gains of deferring applying them.
+	 */
+	if ( 1000 &lt; count( $this-&gt;lexical_updates ) ) {
+		$this-&gt;get_updated_html();
+	}
+
+	foreach ( $this-&gt;lexical_updates as $name =&gt; $update ) {
+		/*
+		 * Any updates appearing after the cursor should be applied
+		 * before proceeding, otherwise they may be overlooked.
+		 */
+		if ( $update-&gt;start &gt;= $this-&gt;bytes_already_parsed ) {
+			$this-&gt;get_updated_html();
+			break;
+		}
+
+		if ( is_int( $name ) ) {
+			continue;
+		}
+
+		$this-&gt;lexical_updates[] = $update;
+		unset( $this-&gt;lexical_updates[ $name ] );
+	}
+
+	$this-&gt;token_starts_at          = null;
+	$this-&gt;token_length             = null;
+	$this-&gt;tag_name_starts_at       = null;
+	$this-&gt;tag_name_length          = null;
+	$this-&gt;text_starts_at           = 0;
+	$this-&gt;text_length              = 0;
+	$this-&gt;is_closing_tag           = null;
+	$this-&gt;attributes               = array();
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/html-api/class-wp-html-tag-processor.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/html-api/class-wp-html-tag-processor.php#L2125">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/html-api/class-wp-html-tag-processor.php#L2125-L2256">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.2.0/">6.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

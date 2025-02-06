@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">signup_another_blog()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>signup_another_blog()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">signup_another_blog( <span class="arg-type">string</span> <span class="arg-name">$blogname</span> = <span class="arg-default">''</span>,  <span class="arg-type">string</span> <span class="arg-name">$blog_title</span> = <span class="arg-default">''</span>,  <span class="arg-type">WP_Error|string</span> <span class="arg-name">$errors</span> = <span class="arg-default">''</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Shows a form for returning users to sign up for another site.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$blogname</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The new site name</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$blog_title</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The new site title.</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$errors</code><span class="type"><span class="WP_Error"><a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> object containing existing errors. Defaults to empty string.</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="332"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function signup_another_blog( $blogname = '', $blog_title = '', $errors = '' ) {
+	$current_user = wp_get_current_user();
+
+	if ( ! is_wp_error( $errors ) ) {
+		$errors = new WP_Error();
+	}
+
+	$signup_defaults = array(
+		'blogname'   =&gt; $blogname,
+		'blog_title' =&gt; $blog_title,
+		'errors'     =&gt; $errors,
+	);
+
+	/**
+	 * Filters the default site sign-up variables.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param array $signup_defaults {
+	 *     An array of default site sign-up variables.
+	 *
+	 *     @type string   $blogname   The site blogname.
+	 *     @type string   $blog_title The site title.
+	 *     @type WP_Error $errors     A WP_Error object possibly containing 'blogname' or 'blog_title' errors.
+	 * }
+	 */
+	$filtered_results = apply_filters( 'signup_another_blog_init', $signup_defaults );
+
+	$blogname   = $filtered_results['blogname'];
+	$blog_title = $filtered_results['blog_title'];
+	$errors     = $filtered_results['errors'];
+
+	/* translators: %s: Network title. */
+	echo '&lt;h2&gt;' . sprintf( __( 'Get &lt;em&gt;another&lt;/em&gt; %s site in seconds' ), get_network()-&gt;site_name ) . '&lt;/h2&gt;';
+
+	if ( $errors-&gt;has_errors() ) {
+		echo '&lt;p&gt;' . __( 'There was a problem, please correct the form below and try again.' ) . '&lt;/p&gt;';
+	}
+	?&gt;
+	&lt;p&gt;
+		&lt;?php
+		printf(
+			/* translators: %s: Current user's display name. */
+			__( 'Welcome back, %s. By filling out the form below, you can &lt;strong&gt;add another site to your account&lt;/strong&gt;. There is no limit to the number of sites you can have, so create to your heart&amp;#8217;s content, but write responsibly!' ),
+			$current_user-&gt;display_name
+		);
+		?&gt;
+	&lt;/p&gt;
+
+	&lt;?php
+	$blogs = get_blogs_of_user( $current_user-&gt;ID );
+	if ( ! empty( $blogs ) ) {
+		?&gt;
+
+			&lt;p&gt;&lt;?php _e( 'Sites you are already a member of:' ); ?&gt;&lt;/p&gt;
+			&lt;ul&gt;
+				&lt;?php
+				foreach ( $blogs as $blog ) {
+					$home_url = get_home_url( $blog-&gt;userblog_id );
+					echo '&lt;li&gt;&lt;a href="' . esc_url( $home_url ) . '"&gt;' . $home_url . '&lt;/a&gt;&lt;/li&gt;';
+				}
+				?&gt;
+			&lt;/ul&gt;
+	&lt;?php } ?&gt;
+
+	&lt;p&gt;&lt;?php _e( 'If you are not going to use a great site domain, leave it for a new user. Now have at it!' ); ?&gt;&lt;/p&gt;
+	&lt;form id="setupform" method="post" action="wp-signup.php"&gt;
+		&lt;input type="hidden" name="stage" value="gimmeanotherblog" /&gt;
+		&lt;?php
+		/**
+		 * Fires when hidden sign-up form fields output when creating another site or user.
+		 *
+		 * @since MU (3.0.0)
+		 *
+		 * @param string $context A string describing the steps of the sign-up process. The value can be
+		 *                        'create-another-site', 'validate-user', or 'validate-site'.
+		 */
+		do_action( 'signup_hidden_fields', 'create-another-site' );
+		?&gt;
+		&lt;?php show_blog_form( $blogname, $blog_title, $errors ); ?&gt;
+		&lt;p class="submit"&gt;&lt;input type="submit" name="submit" class="submit" value="&lt;?php esc_attr_e( 'Create Site' ); ?&gt;" /&gt;&lt;/p&gt;
+	&lt;/form&gt;
+	&lt;?php
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-signup.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-signup.php#L332">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-signup.php#L332-L415">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/signup_another_blog_init/"><span class="hook-func">apply_filters</span>( ‘signup_another_blog_init’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$signup_defaults</span></nobr> )</a></dt><dd><p>Filters the default site sign-up variables.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/signup_hidden_fields/"><span class="hook-func">do_action</span>( ‘signup_hidden_fields’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr> )</a></dt><dd><p>Fires when hidden sign-up form fields output when creating another site or user.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_network/">get_network()</a><code>wp-includes/ms-network.php</code></td><td><p>Retrieves network data given a network ID or network object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/show_blog_form/">show_blog_form()</a><code>wp-signup.php</code></td><td><p>Generates and displays the Sign-up and Create Site forms.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_current_user/">wp_get_current_user()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves the current user object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_home_url/">get_home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for a given site where the front end is accessible.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_blogs_of_user/">get_blogs_of_user()</a><code>wp-includes/user.php</code></td><td><p>Gets the sites a user belongs to.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/validate_another_blog_signup/">validate_another_blog_signup()</a><code>wp-signup.php</code></td><td><p>Validates a new site sign-up for an existing user.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/mu.3.0.0/">MU (3.0.0)</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

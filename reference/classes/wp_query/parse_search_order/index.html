@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_query/">WP_Query</a></span><span class="is-current-page">WP_Query::parse_search_order()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Query::parse_search_order()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Query::parse_search_order( <span class="arg-type">array</span> <span class="arg-name">$q</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Generates SQL for the ORDER BY condition based on passed search terms.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$q</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Query variables.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> ORDER BY clause.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1600"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function parse_search_order( &amp;$q ) {
+	global $wpdb;
+
+	if ( $q['search_terms_count'] &gt; 1 ) {
+		$num_terms = count( $q['search_orderby_title'] );
+
+		// If the search terms contain negative queries, don't bother ordering by sentence matches.
+		$like = '';
+		if ( ! preg_match( '/(?:\s|^)\-/', $q['s'] ) ) {
+			$like = '%' . $wpdb-&gt;esc_like( $q['s'] ) . '%';
+		}
+
+		$search_orderby = '';
+
+		// Sentence match in 'post_title'.
+		if ( $like ) {
+			$search_orderby .= $wpdb-&gt;prepare( "WHEN {$wpdb-&gt;posts}.post_title LIKE %s THEN 1 ", $like );
+		}
+
+		/*
+		 * Sanity limit, sort as sentence when more than 6 terms
+		 * (few searches are longer than 6 terms and most titles are not).
+		 */
+		if ( $num_terms &lt; 7 ) {
+			// All words in title.
+			$search_orderby .= 'WHEN ' . implode( ' AND ', $q['search_orderby_title'] ) . ' THEN 2 ';
+			// Any word in title, not needed when $num_terms == 1.
+			if ( $num_terms &gt; 1 ) {
+				$search_orderby .= 'WHEN ' . implode( ' OR ', $q['search_orderby_title'] ) . ' THEN 3 ';
+			}
+		}
+
+		// Sentence match in 'post_content' and 'post_excerpt'.
+		if ( $like ) {
+			$search_orderby .= $wpdb-&gt;prepare( "WHEN {$wpdb-&gt;posts}.post_excerpt LIKE %s THEN 4 ", $like );
+			$search_orderby .= $wpdb-&gt;prepare( "WHEN {$wpdb-&gt;posts}.post_content LIKE %s THEN 5 ", $like );
+		}
+
+		if ( $search_orderby ) {
+			$search_orderby = '(CASE ' . $search_orderby . 'ELSE 6 END)';
+		}
+	} else {
+		// Single word or sentence search.
+		$search_orderby = reset( $q['search_orderby_title'] ) . ' DESC';
+	}
+
+	return $search_orderby;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-query.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-query.php#L1600">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-query.php#L1600-L1647">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/esc_like/">wpdb::esc_like()</a><code>wp-includes/class-wpdb.php</code></td><td><p>First half of escaping for <code>LIKE</code> special characters <code>%</code> and <code>_</code> before preparing for SQL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get_posts/">WP_Query::get_posts()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves an array of posts based on query variables.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.7.0/">3.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

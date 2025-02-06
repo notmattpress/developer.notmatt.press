@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_home_url()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_home_url()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_home_url( <span class="arg-type">int|null</span> <span class="arg-name">$blog_id</span> = <span class="arg-default">null</span>,  <span class="arg-type">string</span> <span class="arg-name">$path</span> = <span class="arg-default">''</span>,  <span class="arg-type">string|null</span> <span class="arg-name">$scheme</span> = <span class="arg-default">null</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the URL for a given site where the front end is accessible.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Returns the ‘home’ option with the appropriate protocol. The protocol will be ‘https’ if <a href="https://developer.notmatt.press/reference/functions/is_ssl/" rel="function">is_ssl()</a>  evaluates to true; otherwise, it will be the same as the ‘home’ option.<br/>If <code>$scheme</code> is ‘http’ or ‘https’, <a href="https://developer.notmatt.press/reference/functions/is_ssl/" rel="function">is_ssl()</a>  is overridden.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$blog_id</code><span class="type"><span class="int">int</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Site ID. Default null (current site).</span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$path</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Path relative to the home URL. </span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$scheme</code><span class="type"><span class="string">string</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Scheme to give the home URL context. Accepts                             <code>'http'</code>, <code>'https'</code>, <code>'relative'</code>, <code>'rest'</code>, or null. </span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Home URL link with optional path appended.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p><strong>Basic Usage</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo get_home_url(); ?&gt;</code></pre>
+<p>Will output: <code>https://www.example.com</code> With the domain and the schema matching your settings.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3452"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_home_url( $blog_id = null, $path = '', $scheme = null ) {
+	$orig_scheme = $scheme;
+
+	if ( empty( $blog_id ) || ! is_multisite() ) {
+		$url = get_option( 'home' );
+	} else {
+		switch_to_blog( $blog_id );
+		$url = get_option( 'home' );
+		restore_current_blog();
+	}
+
+	if ( ! in_array( $scheme, array( 'http', 'https', 'relative' ), true ) ) {
+		if ( is_ssl() ) {
+			$scheme = 'https';
+		} else {
+			$scheme = parse_url( $url, PHP_URL_SCHEME );
+		}
+	}
+
+	$url = set_url_scheme( $url, $scheme );
+
+	if ( $path &amp;&amp; is_string( $path ) ) {
+		$url .= '/' . ltrim( $path, '/' );
+	}
+
+	/**
+	 * Filters the home URL.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string      $url         The complete home URL including scheme and path.
+	 * @param string      $path        Path relative to the home URL. Blank string if no path is specified.
+	 * @param string|null $orig_scheme Scheme to give the home URL context. Accepts 'http', 'https',
+	 *                                 'relative', 'rest', or null.
+	 * @param int|null    $blog_id     Site ID, or null for the current site.
+	 */
+	return apply_filters( 'home_url', $url, $path, $orig_scheme, $blog_id );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/link-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/link-template.php#L3452">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/link-template.php#L3452-L3489">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/home_url/"><span class="hook-func">apply_filters</span>( ‘home_url’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$url</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$path</span></nobr>,  <nobr><span class="arg-type">string|null</span> <span class="arg-name">$orig_scheme</span></nobr>,  <nobr><span class="arg-type">int|null</span> <span class="arg-name">$blog_id</span></nobr> )</a></dt><dd><p>Filters the home URL.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_ssl/">is_ssl()</a><code>wp-includes/load.php</code></td><td><p>Determines if SSL is used.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_url_scheme/">set_url_scheme()</a><code>wp-includes/link-template.php</code></td><td><p>Sets the scheme for a URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/switch_to_blog/">switch_to_blog()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Switches the current blog.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/restore_current_blog/">restore_current_blog()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Restores the current blog, after calling <a href="https://developer.notmatt.press/reference/functions/switch_to_blog/" rel="function">switch_to_blog()</a> .</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_initialize_site/">wp_initialize_site()</a><code>wp-includes/ms-site.php</code></td><td><p>Runs the initialization routine for a given site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_rest_url/">get_rest_url()</a><code>wp-includes/rest-api.php</code></td><td><p>Retrieves the URL to a REST endpoint on a site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_oembed_response_data/">get_oembed_response_data()</a><code>wp-includes/embed.php</code></td><td><p>Retrieves the oEmbed response data for a given post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_sites_list_table/handle_row_actions/">WP_MS_Sites_List_Table::handle_row_actions()</a><code>wp-admin/includes/class-wp-ms-sites-list-table.php</code></td><td><p>Generates and displays row action links.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_ms_users_list_table/column_blogs/">WP_MS_Users_List_Table::column_blogs()</a><code>wp-admin/includes/class-wp-ms-users-list-table.php</code></td><td><p>Handles the sites column output.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/signup_another_blog/">signup_another_blog()</a><code>wp-signup.php</code></td><td><p>Shows a form for returning users to sign up for another site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_access_denied_splash/">_access_denied_splash()</a><code>wp-admin/includes/ms.php</code></td><td><p>Displays an access denied message when a user tries to view a site’s dashboard they do not have access to.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/choose_primary_blog/">choose_primary_blog()</a><code>wp-admin/includes/ms.php</code></td><td><p>Handles the display of choosing a user’s primary site.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/options_general_add_js/">options_general_add_js()</a><code>wp-admin/includes/options.php</code></td><td><p>Display JavaScript on the page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/confirm_delete_users/">confirm_delete_users()</a><code>wp-admin/includes/ms.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_archive_link/">get_post_type_archive_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the permalink for a post type archive.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_admin_bar/initialize/">WP_Admin_Bar::initialize()</a><code>wp-includes/class-wp-admin-bar.php</code></td><td><p>Initializes the admin bar.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_bar_site_menu/">wp_admin_bar_site_menu()</a><code>wp-includes/admin-bar.php</code></td><td><p>Adds the “Site Name” menu.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_bar_my_sites_menu/">wp_admin_bar_my_sites_menu()</a><code>wp-includes/admin-bar.php</code></td><td><p>Adds the “My Sites/[Site Name]” menu and all submenus.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/install_blog/">install_blog()</a><code>wp-includes/ms-deprecated.php</code></td><td><p>Install an empty blog.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 11 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

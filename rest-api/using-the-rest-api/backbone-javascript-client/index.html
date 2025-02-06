@@ -1,0 +1,243 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/rest-api/">REST API Handbook</a></span><span><a href="https://developer.wordpress.org/rest-api/using-the-rest-api/">Using the REST API</a></span><span class="is-current-page">Backbone JavaScript Client</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Backbone JavaScript Client</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The REST API includes a JavaScript/Backbone client library.</p>
+<p>The library provides an interface for the WP REST API by providing Backbone Models and Collections for all endpoints exposed through the API Schema.</p>
+<h2 class="is-toc-heading" id="using" tabindex="-1"><a href="#using">Using</a></h2>
+<p>Activate the WP-API plugin. Enqueue the script directly:</p>
+<pre><code class="language-php">wp_enqueue_script( 'wp-api' );
+</code></pre>
+<p>or as a dependency for your script:</p>
+<pre><code class="language-php">wp_enqueue_script( 'my_script', 'path/to/my/script', array( 'wp-api' ) );
+</code></pre>
+<p>The library parses the root endpoint (the ‘Schema’) and creates matching Backbone models and collections. You will now have two root objects available to you: <code>wp.api.models</code> and <code>wp.api.collections</code>.</p>
+<p>The models and collections include:</p>
+<p>Models:<br/>
+* Category<br/>
+* Comment<br/>
+* Media<br/>
+* Page<br/>
+* PageMeta<br/>
+* PageRevision<br/>
+* Post<br/>
+* PostMeta<br/>
+* PostRevision<br/>
+* Schema<br/>
+* Status<br/>
+* Tag<br/>
+* Taxonomy<br/>
+* Type<br/>
+* User</p>
+<p>Collections:<br/>
+* Categories<br/>
+* Comments<br/>
+* Media<br/>
+* PageMeta<br/>
+* PageRevisions<br/>
+* Pages<br/>
+* Posts<br/>
+* Statuses<br/>
+* Tags<br/>
+* Taxonomies<br/>
+* Types<br/>
+* Users</p>
+<p>You can use these endpoints as-is to read, update, create and delete items using standard Backbone methods (fetch, sync, save &amp; destroy for models, sync for collections). You can also extend these objects to make them your own, and build your views on top of them.</p>
+<h3 class="is-toc-heading" id="default-values" tabindex="-1"><a href="#default-values">Default values</a></h3>
+<p>Each model and collection includes a reference to its default values, for example:</p>
+<p><code>wp.api.models.Post.prototype.args</code></p>
+<ul>
+<li>author: null</li>
+<li>comment_status: null</li>
+<li>content: null</li>
+<li>date: null</li>
+<li>date_gmt: null</li>
+<li>excerpt: null</li>
+<li>featured_image: null</li>
+<li>format: null</li>
+<li>modified: null</li>
+<li>modified_gmt: null</li>
+<li>password: null</li>
+<li>ping_status: null</li>
+<li>slug: null</li>
+<li>status: null</li>
+<li>sticky: null</li>
+<li>title: null</li>
+</ul>
+<h3 class="is-toc-heading" id="available-methods" tabindex="-1"><a href="#available-methods">Available methods</a></h3>
+<p>Each model and collection contains a list of methods the corresponding endpoint supports. For example, models created from <code>wp.api.models.Post</code> have a methods array of:</p>
+<pre><code class="language-js">["GET", "POST", "PUT", "PATCH", "DELETE"]
+</code></pre>
+<h3 class="is-toc-heading" id="accepted-options" tabindex="-1"><a href="#accepted-options">Accepted options</a></h3>
+<p>Each model and collection contains a list of options the corresponding endpoint accepts (note that options are passed as the second parameter when creating models or collections), for example:</p>
+<p><code>wp.api.collections.Posts.prototype.options</code></p>
+<ul>
+<li>author</li>
+<li>context</li>
+<li>filter</li>
+<li>order</li>
+<li>orderby</li>
+<li>page</li>
+<li>per_page</li>
+<li>search</li>
+<li>status</li>
+</ul>
+<h3 class="is-toc-heading" id="localizing-the-api-schema" tabindex="-1"><a href="#localizing-the-api-schema">Localizing the API Schema</a></h3>
+<p>The client will accept and use a localized schema as part of the <code>wpApiSettings</code> object. The Schema is currently not passed by default; instead the client makes an ajax request to the API to load the Schema, then caches it in the browser’s session storage (if available). Activating the client-js plugin with <code>SCRIPT_DEBUG</code> enabled uses a localized Schema. Check the <a href="https://github.com/WP-API/client-js/blob/master/client-js.php">client-js example</a> or this branch which <a href="https://github.com/WP-API/client-js/compare/features/only-localize-schma-once?expand=1">attempts to only localize the schema once per client</a>.</p>
+<h3 class="is-toc-heading" id="waiting-for-the-client-to-load" tabindex="-1"><a href="#waiting-for-the-client-to-load">Waiting for the client to load</a></h3>
+<p>Client startup is asynchronous. If the api schema is localized, the client can start immediately; if not the client makes an ajax request to load the schema. The client exposes a load promise for provide a reliable wait to wait for client to be ready:</p>
+<pre><code class="language-js">wp.api.loadPromise.done( function() {
+//... use the client here
+} )
+</code></pre>
+<h3 class="is-toc-heading" id="model-examples" tabindex="-1"><a href="#model-examples">Model examples:</a></h3>
+<p>To create a post and edit its categories, make sure you are logged in, then:</p>
+<pre><code class="language-js">// Create a new post
+var post = new wp.api.models.Post( { title: 'This is a test post' } );
+post.save();
+
+// Load an existing post
+var post = new wp.api.models.Post( { id: 1 } );
+post.fetch();
+
+// Get a collection of the post's categories (returns a promise)
+// Uses _embedded data if available, in which case promise resolves immediately.
+post.getCategories().done( function( postCategories ) {
+  // ... do something with the categories.
+  // The new post has an single Category: Uncategorized
+  console.log( postCategories[0].name );
+  // response -&gt; "Uncategorized"
+} );
+
+// Get a posts author User model.
+post.getAuthorUser().done( function( user ){
+  // ... do something with user
+  console.log( user.get( "name" ) );
+} );
+
+// Get a posts featured image Media model.
+post.getFeaturedMedia().done( function( image ){
+  // ... do something with image
+  console.log( image );
+} );
+
+// Set the post categories.
+post.setCategories( [ "apples", "oranges" ] );
+
+// Get all the categories
+var allCategories = new wp.api.collections.Categories()
+allCategories.fetch();
+
+var appleCategory = allCategories.findWhere( { slug: "apples" } );
+
+// Add the category to the postCategories collection we previously fetched.
+appleCategory.set( "parent_post", post.get( "id" ) );
+
+// Use the POST method so Backbone will not PUT it even though it has an id.
+postCategories.create( appleCategory.toJSON(), { type: "POST" } );
+
+// Remove the Uncategorized category
+postCategories.at( 0 ).destroy();
+
+// Check the results - re-fetch
+postCategories = post.getCategories();
+
+postCategories.at( 0 ).get( "name" );
+// response -&gt; "apples"
+</code></pre>
+<h3 class="is-toc-heading" id="collection-examples" tabindex="-1"><a href="#collection-examples">Collection examples:</a></h3>
+<p>To get the last 10 posts:</p>
+<pre><code class="language-js">var postsCollection = new wp.api.collections.Posts();
+postsCollection.fetch();
+</code></pre>
+<p>To get the last 25 posts:</p>
+<pre><code class="language-js">postsCollection.fetch( { data: { per_page: 25 } } );
+</code></pre>
+<p>Use filter to change the order &amp; orderby options:</p>
+<pre><code class="language-js">postsCollection.fetch( { data: { 'filter': { 'orderby': 'title', 'order': 'ASC' } } } );
+</code></pre>
+<p>All collections support pagination automatically, and you can get the next page of results using <code>more</code>:</p>
+<pre><code class="language-js">postsCollection.more();
+</code></pre>
+<p>To get page 5 of a collection:</p>
+<pre><code class="language-js">posts.fetch( { data: { page: 5 } } );
+</code></pre>
+<p>Check if the collection has any more posts:</p>
+<pre><code class="language-js">posts.hasMore();
+</code></pre>
+<h3 class="is-toc-heading" id="working-with-revisions" tabindex="-1"><a href="#working-with-revisions">Working With Revisions</a></h3>
+<p>You can access post or page revisions using the PostRevisions or PageRevisions collections or through the Post or Page collection.</p>
+<p>For example, to get a collection of all revisions of post ID 1:</p>
+<pre><code class="language-js">var revisions = new wp.api.collections.PostRevisions({}, { parent: 1 });
+</code></pre>
+<p>Revision collections can also be accessed via their parent’s collection. This example makes 2 HTTP requests instead of one, but now the original post and its revisions are available:</p>
+<pre><code class="language-js">var post = new wp.api.models.Post( { id: 1 } );
+post.fetch();
+post.getRevisions().done( function( revisions ){
+  console.log( revisions );
+});
+</code></pre>
+<p>If you add custom endpoints to the API they will also become available as models/collections. For example, you will get new models and collections when you <a href="https://developer.notmatt.press/rest-api/extending-the-rest-api/adding-rest-api-support-for-custom-content-types/">add REST API support to your custom post type</a>. To access custom endpoints created, use the item’s JSON endpoint name as CamelCase; for example if the item is found at the JSON path of /wp-json/wp/v2/my-custom-post, it can be accessed via the api at wp.api.collections.MyCustomPost.  Note: Because the schema is stored in the user’s session cache to avoid re-fetching, you may need to open a new tab to get a new read of the Schema.</p>
+<pre><code class="language-js">// Extend wp.api.models.Post and wp.api.collections.Posts to load a custom post type
+const CustomPost = wp.api.models.Post.extend( {
+  urlRoot: wpApiSettings.root + 'wp/v2/custom_post_slug',
+  defaults: {
+    type: 'custom_post_slug',
+  },
+} );
+const CustomPosts = wp.api.collections.Posts.extend( {
+  url: wpApiSettings.root + 'wp/v2/custom_post_slug',
+  model: BLProduct,
+} );
+const someCustomPosts = new CustomPosts();
+someCustomPosts.fetch().then( ( posts ) =&gt; {
+  // do something with the custom posts
+} );
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

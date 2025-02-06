@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/explanations/">Explanations</a></span><span><a href="https://developer.wordpress.org/block-editor/explanations/architecture/">Architecture</a></span><span class="is-current-page">Data Flow and Data Format</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Data Flow and Data Format</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><h2 class="is-toc-heading" id="the-format" tabindex="-1"><a href="#the-format">The format</a></h2>
+<p>A block editor post is the proper block-aware representation of a post: a collection of semantically consistent descriptions of what each block is and what its essential data is. This representation only ever exists in memory. It is the <a href="https://en.wikipedia.org/wiki/Chase_(printing)">chase</a> in the typesetter’s workshop, ever-shifting as <a href="https://en.wikipedia.org/wiki/Sort_(typesetting)">sorts</a> are attached and repositioned.</p>
+<p>A block editor post is not the artifact it produces, namely the <code>post_content</code>. The latter is the printed page, optimized for the reader but retaining its invisible markings for later editing.</p>
+<p>The input and output of the block editor is a tree of block objects with the current format:</p>
+<pre><code class="language-js">const value = [ block1, block2, block3 ];
+</code></pre>
+<h3 class="is-toc-heading" id="the-block-object" tabindex="-1"><a href="#the-block-object">The block object</a></h3>
+<p>Each block object has an id, a set of attributes and potentially a list of child blocks.</p>
+<pre><code class="language-js">const block = {
+    clientId, // unique string identifier.
+    type, // The block type (paragraph, image...)
+    attributes, // (key, value) set of attributes representing the direct properties/content of the current block.
+    innerBlocks, // An array of child blocks or inner blocks.
+};
+</code></pre>
+<p>Note the attributes keys and types, the allowed inner blocks are defined by the block type. For example, the core quote block has a <code>cite</code> string attribute representing the cite content while a heading block has a numeric <code>level</code> attribute, representing the level of the heading (1 to 6).</p>
+<p>During the lifecycle of the block in the editor, the block object can receive extra metadata:</p>
+<ul>
+<li><code>isValid</code>: A boolean representing whether the block is valid or not;</li>
+<li><code>originalContent</code>: The original HTML serialization of the block.</li>
+</ul>
+<p><strong>Examples</strong></p>
+<pre><code class="language-js">// A simple paragraph block.
+const paragraphBlock1 = {
+    clientId: '51828be1-5f0d-4a6b-8099-f4c6f897e0a3',
+    type: 'core/paragraph',
+    attributes: {
+        content: 'This is the &lt;strong&gt;content&lt;/strong&gt; of the paragraph block',
+        dropCap: true,
+    },
+};
+
+// A separator block.
+const separatorBlock = {
+    clientId: '51828be1-5f0d-4a6b-8099-f4c6f897e0a4',
+    type: 'core/separator',
+    attributes: {},
+};
+
+// A columns block with a paragraph block on each column.
+const columnsBlock = {
+    clientId: '51828be1-5f0d-4a6b-8099-f4c6f897e0a7',
+    type: 'core/columns',
+    attributes: {},
+    innerBlocks: [
+        {
+            clientId: '51828be1-5f0d-4a6b-8099-f4c6f897e0a5',
+            type: 'core/column',
+            attributes: {},
+            innerBlocks: [ paragraphBlock1 ],
+        },
+        {
+            clientId: '51828be1-5f0d-4a6b-8099-f4c6f897e0a6',
+            type: 'core/column',
+            attributes: {},
+            innerBlocks: [ paragraphBlock2 ],
+        },
+    ],
+};
+</code></pre>
+<h2 class="is-toc-heading" id="serialization-and-parsing" tabindex="-1"><a href="#serialization-and-parsing">Serialization and parsing</a></h2>
+<p><img alt="Diagram" decoding="async" src="https://docs.google.com/drawings/d/1iuownt5etcih7rMMvPvh0Mny8zUA1Z28saxjxaWmfJ0/pub?w=1234&amp;h=453"/></p>
+<p>This data model, however, is something that lives in memory while editing a post. It’s not visible to the page viewer when rendered, just like a printed page has no trace of the structure of the letters that produced it in the press.</p>
+<p>Since the whole WordPress ecosystem has an expectation for receiving HTML when rendering or editing a post, the block editor transforms its data into something that can be saved in <code>post_content</code> through serialization. This assures that there’s a single source of truth for the content, and that this source remains readable and compatible with all the tools that interact with WordPress content at the present. Were we to store the object tree separately, we would face the risk of <code>post_content</code> and the tree getting out of sync and the problem of data duplication in both places.</p>
+<p>Thus, the serialization process converts the block tree into HTML using HTML comments as explicit block delimiters—which can contain the attributes in non-HTML form. This is the act of printing invisible marks on the printed page that leave a trace of the original structured intention.</p>
+<p>This is one end of the process. The other is how to recreate the collection of blocks whenever a post is to be edited again. A formal grammar defines how the serialized representation of a block editor post should be loaded, just as some basic rules define how to turn the tree into an HTML-like string. The block editor’s posts aren’t designed to be edited by hand; they aren’t designed to be edited as HTML documents because the block editor posts aren’t HTML in essence.</p>
+<p>They just happen, incidentally, to be stored inside of <code>post_content</code> in a way in which they require no transformation in order to be viewable by any legacy system. It’s true that loading the stored HTML into a browser without the corresponding machinery might degrade the experience, and if it included dynamic blocks of content, the dynamic elements may not load, server-generated content may not appear, and interactive content may remain static. However, it at least protects against not being able to view block editor posts on themes and installations that are blocks-unaware, and it provides the most accessible way to the content. In other words, the post remains mostly intact even if the saved HTML is rendered as is.</p>
+<h3 class="is-toc-heading" id="delimiters-and-parsing-expression-grammar" tabindex="-1"><a href="#delimiters-and-parsing-expression-grammar">Delimiters and parsing expression grammar</a></h3>
+<p>We chose instead to try to find a way to keep the formality, explicitness, and unambiguity in the existing HTML syntax. Within the HTML there were a number of options.</p>
+<p>Of these options, a novel approach was suggested: by storing data in HTML comments, we would know that we wouldn’t break the rest of the HTML in the document, that browsers should ignore it, and that we could simplify our approach to parsing the document.</p>
+<p>Unique to HTML comments is the fact that they cannot legitimately exist in ambiguous places, such as inside of HTML attributes like <code>&lt;img alt='data-id="14"'&gt;</code>. Comments are also quite permissive. Whereas HTML attributes are complicated to parse properly, comments are quite easily described by a leading <code>&lt;!--</code> followed by anything except <code>--</code> until the first <code>--&gt;</code>. This simplicity and permissiveness means that the parser can be implemented in several ways without needing to understand HTML properly, and we have the liberty to use more convenient syntax inside of the comment—we only need to escape double-hyphen sequences. We take advantage of this in how we store block attributes: as JSON literals inside the comment.</p>
+<p>After running this through the parser, we’re left with a simple object we can manipulate idiomatically, and we don’t have to worry about escaping or unescaping the data. It’s handled for us through the serialization process. Because the comments are so different from other HTML tags and because we can perform a first-pass to extract the top-level blocks, we don’t actually depend on having fully valid HTML!</p>
+<p>This has dramatic implications for how simple and performant we can make our parser. These explicit boundaries also protect damage in a single block from bleeding into other blocks or tarnishing the entire document. It also allows the system to identify unrecognized blocks before rendering them.</p>
+<p><em>N.B.:</em> The defining aspects of blocks are their semantics and the isolation mechanism they provide: in other words, their identity. On the other hand, where their data is stored is a more liberal aspect. Blocks support more than just static local data (via JSON literals inside the HTML comment or within the block’s HTML), and more mechanisms (<em>e.g.</em>, global blocks or otherwise resorting to storage in complementary <code>WP_Post</code> objects) are expected. See <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-attributes/">attributes</a> for details.</p>
+<h3 class="is-toc-heading" id="the-anatomy-of-a-serialized-block" tabindex="-1"><a href="#the-anatomy-of-a-serialized-block">The anatomy of a serialized block</a></h3>
+<p>When blocks are saved to the content after the editing session, its attributes—depending on the nature of the block—are serialized to these explicit comment delimiters.</p>
+<pre><code class="language-html">&lt;!-- wp:image --&gt;
+&lt;figure class="wp-block-image"&gt;&lt;img src="source.jpg" alt="" /&gt;&lt;/figure&gt;
+&lt;!-- /wp:image --&gt;
+</code></pre>
+<p>A purely dynamic block that is to be server-rendered before display could look like this:</p>
+<pre><code class="language-html">&lt;!-- wp:latest-posts {"postsToShow":4,"displayPostDate":true} /--&gt;
+</code></pre>
+<h2 class="is-toc-heading" id="the-data-lifecycle" tabindex="-1"><a href="#the-data-lifecycle">The data lifecycle</a></h2>
+<p>In summary, the block editor workflow parses the saved document to an in-memory tree of blocks, using token delimiters to help. During editing, all manipulations happen within the block tree. The process ends by serializing the blocks back to the <code>post_content</code>.</p>
+<p>The workflow process relies on a serialization/parser pair to persist posts. Hypothetically, the post data structure could be stored using a plugin or retrieved from a remote JSON file to be converted to the block tree.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

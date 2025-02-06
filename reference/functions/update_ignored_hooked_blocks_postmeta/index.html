@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">update_ignored_hooked_blocks_postmeta()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>update_ignored_hooked_blocks_postmeta()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">update_ignored_hooked_blocks_postmeta( <span class="arg-type">stdClass</span> <span class="arg-name">$post</span> ): <span class="return-type">stdClass</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Updates the wp_postmeta with the list of ignored hooked blocks where the inner blocks are stored as post content.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Currently only supports <code>wp_navigation</code> post types.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post</code><span class="type"><span class="stdClass">stdClass</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Post object.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">stdClass</span> The updated post object.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1177"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function update_ignored_hooked_blocks_postmeta( $post ) {
+	/*
+	 * In this scenario the user has likely tried to create a navigation via the REST API.
+	 * In which case we won't have a post ID to work with and store meta against.
+	 */
+	if ( empty( $post-&gt;ID ) ) {
+		return $post;
+	}
+
+	/*
+	 * Skip meta generation when consumers intentionally update specific Navigation fields
+	 * and omit the content update.
+	 */
+	if ( ! isset( $post-&gt;post_content ) ) {
+		return $post;
+	}
+
+	/*
+	 * Skip meta generation when the post content is not a navigation block.
+	 */
+	if ( ! isset( $post-&gt;post_type ) || 'wp_navigation' !== $post-&gt;post_type ) {
+		return $post;
+	}
+
+	$attributes = array();
+
+	$ignored_hooked_blocks = get_post_meta( $post-&gt;ID, '_wp_ignored_hooked_blocks', true );
+	if ( ! empty( $ignored_hooked_blocks ) ) {
+		$ignored_hooked_blocks  = json_decode( $ignored_hooked_blocks, true );
+		$attributes['metadata'] = array(
+			'ignoredHookedBlocks' =&gt; $ignored_hooked_blocks,
+		);
+	}
+
+	$markup = get_comment_delimited_block_content(
+		'core/navigation',
+		$attributes,
+		$post-&gt;post_content
+	);
+
+	$existing_post = get_post( $post-&gt;ID );
+	// Merge the existing post object with the updated post object to pass to the block hooks algorithm for context.
+	$context          = (object) array_merge( (array) $existing_post, (array) $post );
+	$serialized_block = apply_block_hooks_to_content( $markup, $context, 'set_ignored_hooked_blocks_metadata' );
+	$root_block       = parse_blocks( $serialized_block )[0];
+
+	$ignored_hooked_blocks = isset( $root_block['attrs']['metadata']['ignoredHookedBlocks'] )
+		? $root_block['attrs']['metadata']['ignoredHookedBlocks']
+		: array();
+
+	if ( ! empty( $ignored_hooked_blocks ) ) {
+		$existing_ignored_hooked_blocks = get_post_meta( $post-&gt;ID, '_wp_ignored_hooked_blocks', true );
+		if ( ! empty( $existing_ignored_hooked_blocks ) ) {
+			$existing_ignored_hooked_blocks = json_decode( $existing_ignored_hooked_blocks, true );
+			$ignored_hooked_blocks          = array_unique( array_merge( $ignored_hooked_blocks, $existing_ignored_hooked_blocks ) );
+		}
+
+		if ( ! isset( $post-&gt;meta_input ) ) {
+			$post-&gt;meta_input = array();
+		}
+		$post-&gt;meta_input['_wp_ignored_hooked_blocks'] = json_encode( $ignored_hooked_blocks );
+	}
+
+	$post-&gt;post_content = remove_serialized_parent_block( $serialized_block );
+	return $post;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/blocks.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/blocks.php#L1177">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/blocks.php#L1177-L1242">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_block_hooks_to_content/">apply_block_hooks_to_content()</a><code>wp-includes/blocks.php</code></td><td><p>Runs the hooked blocks algorithm on the given content.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/remove_serialized_parent_block/">remove_serialized_parent_block()</a><code>wp-includes/blocks.php</code></td><td><p>Accepts the serialized markup of a block and its inner blocks, and returns serialized markup of the inner blocks.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_comment_delimited_block_content/">get_comment_delimited_block_content()</a><code>wp-includes/blocks.php</code></td><td><p>Returns the content of a block, including comment delimiters.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/parse_blocks/">parse_blocks()</a><code>wp-includes/blocks.php</code></td><td><p>Parses blocks out of a content string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_meta/">get_post_meta()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post meta field for the given post ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.6.0/">6.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

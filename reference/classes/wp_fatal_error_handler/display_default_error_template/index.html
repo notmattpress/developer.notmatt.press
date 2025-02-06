@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_fatal_error_handler/">WP_Fatal_Error_Handler</a></span><span class="is-current-page">WP_Fatal_Error_Handler::display_default_error_template()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Fatal_Error_Handler::display_default_error_template()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Fatal_Error_Handler::display_default_error_template( <span class="arg-type">array</span> <span class="arg-name">$error</span>,  <span class="arg-type">true|WP_Error</span> <span class="arg-name">$handled</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Displays the default PHP error template.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This method is called conditionally if no ‘php-error.php’ drop-in is available.</p>
+<p>It calls <a href="https://developer.notmatt.press/reference/functions/wp_die">wp_die()</a> with a message indicating that the site is experiencing technical difficulties and a login link to the admin backend. The <a href="https://developer.notmatt.press/reference/hooks/wp_php_error_message/">‘wp_php_error_message’</a> and <a href="https://developer.notmatt.press/reference/hooks/wp_php_error_args/">‘wp_php_error_args’</a> filters can be used to modify these parameters.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$error</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Error information retrieved from <code>error_get_last()</code>.</span></div></dd><dt><code>$handled</code><span class="type"><span class="true">true</span>|<span class="WP_Error"><a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Whether Recovery Mode handled the fatal error.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="174"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function display_default_error_template( $error, $handled ) {
+	if ( ! function_exists( '__' ) ) {
+		wp_load_translations_early();
+	}
+
+	if ( ! function_exists( 'wp_die' ) ) {
+		require_once ABSPATH . WPINC . '/functions.php';
+	}
+
+	if ( ! class_exists( 'WP_Error' ) ) {
+		require_once ABSPATH . WPINC . '/class-wp-error.php';
+	}
+
+	if ( true === $handled &amp;&amp; wp_is_recovery_mode() ) {
+		$message = __( 'There has been a critical error on this website, putting it in recovery mode. Please check the Themes and Plugins screens for more details. If you just installed or updated a theme or plugin, check the relevant page for that first.' );
+	} elseif ( is_protected_endpoint() &amp;&amp; wp_recovery_mode()-&gt;is_initialized() ) {
+		if ( is_multisite() ) {
+			$message = __( 'There has been a critical error on this website. Please reach out to your site administrator, and inform them of this error for further assistance.' );
+		} else {
+			$message = sprintf(
+				/* translators: %s: Support forums URL. */
+				__( 'There has been a critical error on this website. Please check your site admin email inbox for instructions. If you continue to have problems, please try the &lt;a href="%s"&gt;support forums&lt;/a&gt;.' ),
+				__( 'https://wordpress.org/support/forums/' )
+			);
+		}
+	} else {
+		$message = __( 'There has been a critical error on this website.' );
+	}
+
+	$message = sprintf(
+		'&lt;p&gt;%s&lt;/p&gt;&lt;p&gt;&lt;a href="%s"&gt;%s&lt;/a&gt;&lt;/p&gt;',
+		$message,
+		/* translators: Documentation about troubleshooting. */
+		__( 'https://wordpress.org/documentation/article/faq-troubleshooting/' ),
+		__( 'Learn more about troubleshooting WordPress.' )
+	);
+
+	$args = array(
+		'response' =&gt; 500,
+		'exit'     =&gt; false,
+	);
+
+	/**
+	 * Filters the message that the default PHP error template displays.
+	 *
+	 * @since 5.2.0
+	 *
+	 * @param string $message HTML error message to display.
+	 * @param array  $error   Error information retrieved from `error_get_last()`.
+	 */
+	$message = apply_filters( 'wp_php_error_message', $message, $error );
+
+	/**
+	 * Filters the arguments passed to <a href="https://developer.notmatt.press/reference/functions/wp_die">wp_die()</a> for the default PHP error template.
+	 *
+	 * @since 5.2.0
+	 *
+	 * @param array $args Associative array of arguments passed to `wp_die()`. By default these contain a
+	 *                    'response' key, and optionally 'link_url' and 'link_text' keys.
+	 * @param array $error Error information retrieved from `error_get_last()`.
+	 */
+	$args = apply_filters( 'wp_php_error_args', $args, $error );
+
+	$wp_error = new WP_Error(
+		'internal_server_error',
+		$message,
+		array(
+			'error' =&gt; $error,
+		)
+	);
+
+	wp_die( $wp_error, '', $args );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-fatal-error-handler.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-fatal-error-handler.php#L174">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-fatal-error-handler.php#L174-L246">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_php_error_args/"><span class="hook-func">apply_filters</span>( ‘wp_php_error_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$args</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$error</span></nobr> )</a></dt><dd><p>Filters the arguments passed to <a href="https://developer.notmatt.press/reference/functions/wp_die">&lt;a href="https://developer.notmatt.press/reference/functions/wp_die/" rel="function"&gt;wp_die()&lt;/a&gt; </a> for the default PHP error template.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_php_error_message/"><span class="hook-func">apply_filters</span>( ‘wp_php_error_message’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$message</span></nobr>,  <nobr><span class="arg-type">array</span> <span class="arg-name">$error</span></nobr> )</a></dt><dd><p>Filters the message that the default PHP error template displays.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_recovery_mode/is_initialized/">WP_Recovery_Mode::is_initialized()</a><code>wp-includes/class-wp-recovery-mode.php</code></td><td><p>Checks whether recovery mode has been initialized.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_recovery_mode/">wp_is_recovery_mode()</a><code>wp-includes/load.php</code></td><td><p>Determines whether WordPress is in Recovery Mode.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_protected_endpoint/">is_protected_endpoint()</a><code>wp-includes/load.php</code></td><td><p>Determines whether we are currently on an endpoint that should be protected against WSODs.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_recovery_mode/">wp_recovery_mode()</a><code>wp-includes/error-protection.php</code></td><td><p>Access the WordPress Recovery Mode instance.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_load_translations_early/">wp_load_translations_early()</a><code>wp-includes/load.php</code></td><td><p>Attempts an early load of translations.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_die/">wp_die()</a><code>wp-includes/functions.php</code></td><td><p>Kills WordPress execution and displays HTML page with an error message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_fatal_error_handler/display_error_template/">WP_Fatal_Error_Handler::display_error_template()</a><code>wp-includes/class-wp-fatal-error-handler.php</code></td><td><p>Displays the PHP error template and sends the HTTP status code, typically 500.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.3.0/">5.3.0</a></td><td><span class="since-description">The <code>$handled</code> parameter was added.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.2.0/">5.2.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

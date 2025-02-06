@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/">Contributor Guide</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/">Code Contributions</a></span><span><a href="https://developer.wordpress.org/block-editor/contributors/code/react-native/">React Native mobile editor</a></span><span class="is-current-page">React Native Internationalization Guide</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>React Native Internationalization Guide</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The native version of the editor references two types of string:<br/>
+1. Strings used in web and native platforms.<br/>
+2. Strings used only in the native platform.</p>
+<p>Regarding the first type, these strings are translated following the same process described for the web version in <a href="https://github.com/WordPress/gutenberg/blob/trunk/docs/how-to-guides/internationalization.md">this guide</a>, however for the latter, it’s required to provide your own translations.</p>
+<h2 class="is-toc-heading" id="extract-strings-only-used-in-the-native-platform" tabindex="-1"><a href="#extract-strings-only-used-in-the-native-platform">Extract strings only used in the native platform</a></h2>
+<p>In order to identify these strings, you can use the script <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/react-native-editor/bin/extract-used-strings.js"><code>extract-used-strings</code></a> located in <code>packages/react-native-editor/bin/extract-used-strings.js</code> to generate a JSON object that contains all the strings referenced including the platforms where they are used, as well as the files that reference it. Here you can see the format:</p>
+<pre><code> {
+    "gutenberg": {
+      "&lt;string&gt;": {
+        "string": String value.
+        "stringPlural": String value with its plural form. [optional]
+        "comments": Comments for translators. [default value is an empty string]
+        "reference": Array containing the paths of the source files that reference the string.
+        "platforms": Array containing the platforms where the string is being used, values are "android" | "ios" | "web".
+      },
+      ...
+    },
+    "other-domain-plugin": {
+      ...
+    },
+    ...
+}
+</code></pre>
+<p>This command also supports passing extra plugins, in case the React Native bundle of the editor is generated including other plugins.</p>
+<p>It’s important to note that the JSON object contains all used strings, so in order to identify the ones only used in the native platform, it’s required to provide your own script/process to extract them. This can easily be done by going through the strings and filtering out the ones that include the “web” platform.</p>
+<h3 class="is-toc-heading" id="npm-command" tabindex="-1"><a href="#npm-command">NPM command</a></h3>
+<p>Extract used strings:</p>
+<pre><code class="language-sh">npm run native i18n:extract-used-strings -- "$PWD/used-strings.json"
+</code></pre>
+<p><em><strong>NOTE:</strong> We need to pass absolute paths, otherwise it uses <code>packages/react-native-editor</code> as root path for relative paths.</em></p>
+<p>Extract used strings including extra plugins:</p>
+<pre><code class="language-sh">npm run native i18n:extract-used-strings -- "$PWD/used-strings.json" "domain-plugin-1" &lt;PLUGIN-1_SOURCE_PATH&gt; "domain-plugin-2" &lt;PLUGIN-2_SOURCE_PATH&gt; ...
+</code></pre>
+<h2 class="is-toc-heading" id="providing-own-translations-for-strings-only-used-in-native-platform" tabindex="-1"><a href="#providing-own-translations-for-strings-only-used-in-native-platform">Providing own translations (for strings only used in native platform)</a></h2>
+<p>Once you have the list of used strings in the native platform, the strings have to be translated, however, this process is out of the scope of the native version so you have to provide your own translations.</p>
+<p>The process for injecting the translations data into the editor is via the <code>translations</code> initial prop which is passed to the editor during its initialization:<br/>
+– <a href="https://github.com/WordPress/gutenberg/blob/72854b4d6b09bd7fb7f996a5c55dd3cc0613ddf8/packages/react-native-bridge/android/react-native-bridge/src/main/java/org/wordpress/mobile/WPAndroidGlue/GutenbergProps.kt#L34">Android reference</a><br/>
+– <a href="https://github.com/WordPress/gutenberg/blob/72854b4d6b09bd7fb7f996a5c55dd3cc0613ddf8/packages/react-native-bridge/ios/GutenbergBridgeDataSource.swift#L39-L43">iOS reference</a></p>
+<p>The mechanism for integrating the provided translations to the mobile client, via the mentioned <code>translations</code> initial prop, is not described here, as it’s specific to the mobile client and could be achieved in different ways. Nevertheless, it’s important that they’re provided by the mentioned initial prop, as the editor is in charge of merging them with the translations already included in the editor.</p>
+<p><strong>NOTE:</strong> Keep in mind that those strings that match with ones already included in the editor will be overridden.</p>
+<h2 class="is-toc-heading" id="fetch-translations-for-strings-used-in-web-and-native-platforms" tabindex="-1"><a href="#fetch-translations-for-strings-used-in-web-and-native-platforms">Fetch translations (for strings used in web and native platforms)</a></h2>
+<p>A translation file is basically a JSON object that contains key-value items with the translation for each individual string. This content is fetched from <a href="https://translate.wordpress.org/">translate.wordpress.org</a> that holds translations for WordPress and a list of different plugins like Gutenberg.</p>
+<p>These files can be cached under a folder and optimized. Additionally, an index file is generated that acts as the entry point to import and fetches the plugin translations.</p>
+<p>Fetched translations contain all the translatable plugin strings, including those not used in the native version of the editor. The file sizes, however, can be reduced by filtering out the strings not referenced in the used strings JSON file.</p>
+<p>By default, when installing dependencies, un-optimized translations might be downloaded for Gutenberg and located in the <code>i18n-cache</code> folder if the cache is not present.</p>
+<p>The strings included in these translation files are imported in the editor upon its initialization (<a href="https://github.com/WordPress/gutenberg/blob/154918b5770ac07c851169eaa35961c636eac5ba/packages/react-native-editor/src/index.js#L43-L49">reference</a>) and will be merged with the extra translations provided by the <code>translations</code> initial prop.</p>
+<h3 class="is-toc-heading" id="npm-command-2" tabindex="-1"><a href="#npm-command-2">NPM command</a></h3>
+<p>Fetch un-optimized translations:</p>
+<pre><code class="language-sh">npm run native i18n:fetch-translations -- "gutenberg" &lt;OUTPUT_PATH&gt;
+</code></pre>
+<p><em><strong>NOTE:</strong> We need to pass absolute paths, otherwise it uses <code>packages/react-native-editor</code> as root path  for relative paths.</em></p>
+<p>Fetch optimized translations:</p>
+<pre><code class="language-sh">npm run native i18n:fetch-translations -- "gutenberg" &lt;OUTPUT_PATH&gt; &lt;USED_STRINGS_FILE&gt;
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

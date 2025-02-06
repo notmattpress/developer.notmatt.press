@@ -1,0 +1,265 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_screen/">WP_Screen</a></span><span class="is-current-page">WP_Screen::get()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Screen::get()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Screen::get( <span class="arg-type">string|WP_Screen</span> <span class="arg-name">$hook_name</span> = <span class="arg-default">''</span> ): <span class="return-type"><a href="https://developer.wordpress.org/reference/classes/wp_screen/" rel="class">WP_Screen</a></span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Fetches a screen object.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$hook_name</code><span class="type"><span class="string">string</span>|<span class="WP_Screen"><a href="https://developer.notmatt.press/reference/classes/wp_screen/" rel="class">WP_Screen</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The hook name (also known as the hook suffix) used to determine the screen.<br/>
+Defaults to the current $hook_suffix global.</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type"><a href="https://developer.notmatt.press/reference/classes/wp_screen/" rel="class">WP_Screen</a></span> Screen object.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="210"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public static function get( $hook_name = '' ) {
+	if ( $hook_name instanceof WP_Screen ) {
+		return $hook_name;
+	}
+
+	$id              = '';
+	$post_type       = null;
+	$taxonomy        = null;
+	$in_admin        = false;
+	$action          = '';
+	$is_block_editor = false;
+
+	if ( $hook_name ) {
+		$id = $hook_name;
+	} elseif ( ! empty( $GLOBALS['hook_suffix'] ) ) {
+		$id = $GLOBALS['hook_suffix'];
+	}
+
+	// For those pesky meta boxes.
+	if ( $hook_name &amp;&amp; post_type_exists( $hook_name ) ) {
+		$post_type = $id;
+		$id        = 'post'; // Changes later. Ends up being $base.
+	} else {
+		if ( str_ends_with( $id, '.php' ) ) {
+			$id = substr( $id, 0, -4 );
+		}
+
+		if ( in_array( $id, array( 'post-new', 'link-add', 'media-new', 'user-new' ), true ) ) {
+			$id     = substr( $id, 0, -4 );
+			$action = 'add';
+		}
+	}
+
+	if ( ! $post_type &amp;&amp; $hook_name ) {
+		if ( str_ends_with( $id, '-network' ) ) {
+			$id       = substr( $id, 0, -8 );
+			$in_admin = 'network';
+		} elseif ( str_ends_with( $id, '-user' ) ) {
+			$id       = substr( $id, 0, -5 );
+			$in_admin = 'user';
+		}
+
+		$id = sanitize_key( $id );
+		if ( 'edit-comments' !== $id &amp;&amp; 'edit-tags' !== $id &amp;&amp; str_starts_with( $id, 'edit-' ) ) {
+			$maybe = substr( $id, 5 );
+			if ( taxonomy_exists( $maybe ) ) {
+				$id       = 'edit-tags';
+				$taxonomy = $maybe;
+			} elseif ( post_type_exists( $maybe ) ) {
+				$id        = 'edit';
+				$post_type = $maybe;
+			}
+		}
+
+		if ( ! $in_admin ) {
+			$in_admin = 'site';
+		}
+	} else {
+		if ( defined( 'WP_NETWORK_ADMIN' ) &amp;&amp; WP_NETWORK_ADMIN ) {
+			$in_admin = 'network';
+		} elseif ( defined( 'WP_USER_ADMIN' ) &amp;&amp; WP_USER_ADMIN ) {
+			$in_admin = 'user';
+		} else {
+			$in_admin = 'site';
+		}
+	}
+
+	if ( 'index' === $id ) {
+		$id = 'dashboard';
+	} elseif ( 'front' === $id ) {
+		$in_admin = false;
+	}
+
+	$base = $id;
+
+	// If this is the current screen, see if we can be more accurate for post types and taxonomies.
+	if ( ! $hook_name ) {
+		if ( isset( $_REQUEST['post_type'] ) ) {
+			$post_type = post_type_exists( $_REQUEST['post_type'] ) ? $_REQUEST['post_type'] : false;
+		}
+		if ( isset( $_REQUEST['taxonomy'] ) ) {
+			$taxonomy = taxonomy_exists( $_REQUEST['taxonomy'] ) ? $_REQUEST['taxonomy'] : false;
+		}
+
+		switch ( $base ) {
+			case 'post':
+				if ( isset( $_GET['post'] ) &amp;&amp; isset( $_POST['post_ID'] ) &amp;&amp; (int) $_GET['post'] !== (int) $_POST['post_ID'] ) {
+					wp_die( __( 'A post ID mismatch has been detected.' ), __( 'Sorry, you are not allowed to edit this item.' ), 400 );
+				} elseif ( isset( $_GET['post'] ) ) {
+					$post_id = (int) $_GET['post'];
+				} elseif ( isset( $_POST['post_ID'] ) ) {
+					$post_id = (int) $_POST['post_ID'];
+				} else {
+					$post_id = 0;
+				}
+
+				if ( $post_id ) {
+					$post = get_post( $post_id );
+					if ( $post ) {
+						$post_type = $post-&gt;post_type;
+
+						/** This filter is documented in wp-admin/post.php */
+						$replace_editor = apply_filters( 'replace_editor', false, $post );
+
+						if ( ! $replace_editor ) {
+							$is_block_editor = use_block_editor_for_post( $post );
+						}
+					}
+				}
+				break;
+			case 'edit-tags':
+			case 'term':
+				if ( null === $post_type &amp;&amp; is_object_in_taxonomy( 'post', $taxonomy ? $taxonomy : 'post_tag' ) ) {
+					$post_type = 'post';
+				}
+				break;
+			case 'upload':
+				$post_type = 'attachment';
+				break;
+		}
+	}
+
+	switch ( $base ) {
+		case 'post':
+			if ( null === $post_type ) {
+				$post_type = 'post';
+			}
+
+			// When creating a new post, use the default block editor support value for the post type.
+			if ( empty( $post_id ) ) {
+				$is_block_editor = use_block_editor_for_post_type( $post_type );
+			}
+
+			$id = $post_type;
+			break;
+		case 'edit':
+			if ( null === $post_type ) {
+				$post_type = 'post';
+			}
+			$id .= '-' . $post_type;
+			break;
+		case 'edit-tags':
+		case 'term':
+			if ( null === $taxonomy ) {
+				$taxonomy = 'post_tag';
+			}
+			// The edit-tags ID does not contain the post type. Look for it in the request.
+			if ( null === $post_type ) {
+				$post_type = 'post';
+				if ( isset( $_REQUEST['post_type'] ) &amp;&amp; post_type_exists( $_REQUEST['post_type'] ) ) {
+					$post_type = $_REQUEST['post_type'];
+				}
+			}
+
+			$id = 'edit-' . $taxonomy;
+			break;
+	}
+
+	if ( 'network' === $in_admin ) {
+		$id   .= '-network';
+		$base .= '-network';
+	} elseif ( 'user' === $in_admin ) {
+		$id   .= '-user';
+		$base .= '-user';
+	}
+
+	if ( isset( self::$_registry[ $id ] ) ) {
+		$screen = self::$_registry[ $id ];
+		if ( get_current_screen() === $screen ) {
+			return $screen;
+		}
+	} else {
+		$screen     = new self();
+		$screen-&gt;id = $id;
+	}
+
+	$screen-&gt;base            = $base;
+	$screen-&gt;action          = $action;
+	$screen-&gt;post_type       = (string) $post_type;
+	$screen-&gt;taxonomy        = (string) $taxonomy;
+	$screen-&gt;is_user         = ( 'user' === $in_admin );
+	$screen-&gt;is_network      = ( 'network' === $in_admin );
+	$screen-&gt;in_admin        = $in_admin;
+	$screen-&gt;is_block_editor = $is_block_editor;
+
+	self::$_registry[ $id ] = $screen;
+
+	return $screen;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-screen.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-screen.php#L210">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-screen.php#L210-L398">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/replace_editor/"><span class="hook-func">apply_filters</span>( ‘replace_editor’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$replace</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Allows replacement of the editor.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/use_block_editor_for_post_type/">use_block_editor_for_post_type()</a><code>wp-includes/post.php</code></td><td><p>Returns whether a post type is compatible with the block editor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/use_block_editor_for_post/">use_block_editor_for_post()</a><code>wp-includes/post.php</code></td><td><p>Returns whether the post can be edited in the block editor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_current_screen/">get_current_screen()</a><code>wp-admin/includes/screen.php</code></td><td><p>Get the current screen object</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_screen/__construct/">WP_Screen::__construct()</a><code>wp-admin/includes/class-wp-screen.php</code></td><td><p>Constructor</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_object_in_taxonomy/">is_object_in_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Determines if the given object type is associated with the given taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/taxonomy_exists/">taxonomy_exists()</a><code>wp-includes/taxonomy.php</code></td><td><p>Determines whether the taxonomy name exists.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_type_exists/">post_type_exists()</a><code>wp-includes/post.php</code></td><td><p>Determines whether a post type is registered.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_key/">sanitize_key()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string key.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_die/">wp_die()</a><code>wp-includes/functions.php</code></td><td><p>Kills WordPress execution and displays HTML page with an error message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 6 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus_panel/render_screen_options/">WP_Customize_Nav_Menus_Panel::render_screen_options()</a><code>wp-includes/customize/class-wp-customize-nav-menus-panel.php</code></td><td><p>Render screen options for Menus.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_current_screen/">set_current_screen()</a><code>wp-admin/includes/screen.php</code></td><td><p>Set the current screen object</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/convert_to_screen/">convert_to_screen()</a><code>wp-admin/includes/template.php</code></td><td><p>Converts a screen string to a screen object.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.3.0/">3.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

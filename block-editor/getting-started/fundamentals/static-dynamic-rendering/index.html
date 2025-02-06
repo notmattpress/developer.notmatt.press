@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/getting-started/">Getting Started</a></span><span><a href="https://developer.wordpress.org/block-editor/getting-started/fundamentals/">Fundamentals of Block Development</a></span><span class="is-current-page">Static or Dynamic rendering of a block</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Static or Dynamic rendering of a block</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>A block’s front-end markup can either be dynamically generated server-side upon request (dynamic blocks) or statically generated during the save process in the Block Editor (static blocks). This article explores each method.</p>
+<div class="callout callout-tip">
+The post <a href="https://developer.notmatt.press/news/2023/02/27/static-vs-dynamic-blocks-whats-the-difference/">Static vs. dynamic blocks: What’s the difference?</a> provides a great introduction to this topic.
+</div>
+<h2 class="is-toc-heading" id="static-rendering" tabindex="-1"><a href="#static-rendering">Static rendering</a></h2>
+<p>Blocks with “static rendering” produce front-end output that is fixed and stored in the database upon saving. These blocks rely solely on their <code>save</code> function to define their <a href="https://developer.notmatt.press/block-editor/getting-started/fundamentals/markup-representation-block/">HTML markup</a>, which remains unchanged unless manually edited in the Block Editor.</p>
+<p>If a block does not use a dynamic rendering method—meaning it doesn’t generate content on the fly via PHP when the page loads—it’s considered a “static block.”</p>
+<p>The diagram below illustrates how static block content is saved in the database and then retrieved and rendered as HTML on the front end.</p>
+<p><img alt="Blocks with static rendering diagram" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/developer.wordpress.org/files/2024/01/static-rendering.png?ssl=1"/></p>
+<h3 class="is-toc-heading" id="how-to-define-static-rendering-for-a-block" tabindex="-1"><a href="#how-to-define-static-rendering-for-a-block">How to define static rendering for a block</a></h3>
+<p>The <code>save</code> function, which can be defined when <a href="https://developer.notmatt.press/block-editor/getting-started/fundamentals/registration-of-a-block/#registration-of-the-block-with-javascript-client-side">registering a block on the client</a>, specifies the block’s HTML structure that gets saved in the database whenever you save the block in the Editor. This saved HTML is then used to display the block on the front end.</p>
+<p>Blocks in WordPress are encapsulated within special comment tags that serve as unique <a href="https://developer.notmatt.press/block-editor/getting-started/fundamentals/markup-representation-block/">block delimiters</a>. However, only the HTML defined in the static block’s <code>save</code> function—excluding these delimiters—is rendered.</p>
+<details>
+<summary><strong>View an example of static rendering in the Preformatted block</strong></summary>
+<p>
+The following <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/preformatted/save.js"><code>save</code> function</a> for the <a href="https://github.com/WordPress/gutenberg/tree/trunk/packages/block-library/src/preformatted">Preformatted</a> core block looks like this:</p>
+<pre><code class="language-js">import { RichText, useBlockProps } from '@wordpress/block-editor';
+
+export default function save( { attributes } ) {
+    const { content } = attributes;
+
+    return (
+        &lt;pre { ...useBlockProps.save() }&gt;
+            &lt;RichText.Content value={ content } /&gt;
+        &lt;/pre&gt;
+    );
+}
+</code></pre>
+<p>The function generates the following markup representation of the block when <code>attributes.content</code> has the value <code>"This is some preformatted text"</code>:</p>
+<pre><code class="language-html">&lt;!-- wp:preformatted --&gt;
+&lt;pre class="wp-block-preformatted"&gt;This is some preformatted text&lt;/pre&gt;
+&lt;!-- /wp:preformatted --&gt;
+</code></pre>
+<p>On the front end, the block will return the following markup. Notice how the delimiters are no longer present.</p>
+<pre><code class="language-html">&lt;pre class="wp-block-preformatted"&gt;This is some preformatted text&lt;/pre&gt;
+</code></pre>
+</details>
+<p></p>
+<p>Dynamic blocks, which we’ll explore in the following section, can specify an initial HTML structure through a <code>save</code> function, similar to static blocks. However, dynamic blocks primarily rely on server-side rendering to generate their content. If, for any reason, the dynamic rendering isn’t available—perhaps due to the block’s plugin being deactivated—the system will fall back to using the HTML structure saved in the database to display the block on the front end.</p>
+<p>For a practical demonstration of how this works, refer to the <a href="https://developer.notmatt.press/block-editor/getting-started/tutorial/">Building your first block</a> tutorial. Specifically, the <a href="https://developer.notmatt.press/block-editor/getting-started/tutorial/#adding-static-rendering">Adding static rendering</a> section illustrates how a block can have both a saved HTML structure and dynamic rendering capabilities.</p>
+<div class="callout callout-info">
+WordPress provides mechanisms like the <a href="https://developer.notmatt.press/reference/functions/render_block/"><code>render_block</code></a> and the <a href="https://developer.notmatt.press/block-editor/how-to-guides/block-tutorial/creating-dynamic-blocks/"><code>render_callback</code></a> function to alter the saved HTML of a block before it appears on the front end. These tools offer developers the capability to customize block output dynamically, catering to complex and interactive user experiences.
+</div>
+<p>Additional examples of WordPress blocks that use static rendering, meaning their output is fixed at the time of saving and doesn’t rely on server-side processing, include:</p>
+<ul>
+<li><a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/separator/save.js">Separator</a></li>
+<li><a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/spacer/save.js">Spacer</a></li>
+<li><a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/button/save.js">Button</a></li>
+</ul>
+<h2 class="is-toc-heading" id="dynamic-rendering" tabindex="-1"><a href="#dynamic-rendering">Dynamic rendering</a></h2>
+<p>Blocks with “dynamic rendering” are designed to generate their content and structure in real-time when requested on the front end. Unlike static blocks, which have a fixed HTML structure saved in the database, “dynamic blocks” rely on server-side processing to construct their output dynamically, making them highly versatile and suitable for content that needs to be updated frequently or is dependent on external data.</p>
+<p>The diagram below illustrates how the representation of a dynamic block is saved in the database and then retrieved and dynamically rendered as HTML on the front end.</p>
+<p><img alt="Blocks with dynamic rendering diagram" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/developer.wordpress.org/files/2024/01/dynamic-rendering.png?ssl=1"/></p>
+<p>There are some common use cases for dynamic blocks:</p>
+<ol>
+<li><strong>Blocks where content should change even if a post has not been updated:</strong> An example is the <a href="https://github.com/WordPress/gutenberg/tree/trunk/packages/block-library/src/latest-posts">Latest Posts</a> block, which will automatically update whenever a new post is published.</li>
+<li><strong>Blocks where updates to the markup should be immediately shown on the front end:</strong> If you update the structure of a block by adding a new class, adding an HTML element, or changing the layout in any other way, using a dynamic block ensures those changes are applied immediately on all occurrences of that block across the site. Without dynamic blocks, similar updates could trigger <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-edit-save/#validation">validation errors</a> in the Block Editor.</li>
+</ol>
+<h3 class="is-toc-heading" id="how-to-define-dynamic-rendering-for-a-block" tabindex="-1"><a href="#how-to-define-dynamic-rendering-for-a-block">How to define dynamic rendering for a block</a></h3>
+<p>A block can define dynamic rendering in two main ways:</p>
+<ol>
+<li>Using the <code>render_callback</code> argument that can be passed to the <a href="https://developer.notmatt.press/block-editor/getting-started/fundamentals/registration-of-a-block/#registration-of-the-block-with-php-server-side"><code>register_block_type()</code></a> function.</li>
+<li>Using a separate PHP file usually named <code>render.php</code>. This file’s path should be defined using the <a href="https://developer.notmatt.press/block-editor/getting-started/fundamentals/block-json/#files-for-the-blocks-behavior-output-or-style"><code>render</code></a> property in the <code>block.json</code> file.</li>
+</ol>
+<p>Both of these methods receive the following data:</p>
+<ul>
+<li><code>$attributes</code>: The array of attributes for the block.</li>
+<li><code>$content</code>: The markup of the block as stored in the database, if any.</li>
+<li><code>$block</code>: The instance of the <a href="https://developer.notmatt.press/reference/classes/wp_block/">WP_Block</a> class that represents the rendered block (<a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-metadata/">metadata of the block</a>).</li>
+</ul>
+<details>
+<summary><strong>View an example of dynamic rendering in the Site Title block</strong></summary>
+<p></p>
+<p>The <a href="https://github.com/WordPress/gutenberg/tree/trunk/packages/block-library/src/site-title">Site Title</a> block uses the following <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/site-title/index.php"><code>render_callback</code></a>:</p>
+<pre><code class="language-php">function render_block_core_site_title( $attributes ) {
+    $site_title = get_bloginfo( 'name' );
+    if ( ! $site_title ) {
+        return;
+    }
+
+    $tag_name = 'h1';
+    $classes  = empty( $attributes['textAlign'] ) ? '' : "has-text-align-{$attributes['textAlign']}";
+    if ( isset( $attributes['style']['elements']['link']['color']['text'] ) ) {
+        $classes .= ' has-link-color';
+    }
+
+    if ( isset( $attributes['level'] ) ) {
+        $tag_name = 0 === $attributes['level'] ? 'p' : 'h' . (int) $attributes['level'];
+    }
+
+    if ( $attributes['isLink'] ) {
+        $aria_current = is_home() || ( is_front_page() &amp;&amp; 'page' === get_option( 'show_on_front' ) ) ? ' aria-current="page"' : '';
+        $link_target  = ! empty( $attributes['linkTarget'] ) ? $attributes['linkTarget'] : '_self';
+
+        $site_title = sprintf(
+            '&lt;a href="%1$s" target="%2$s" rel="home"%3$s&gt;%4$s&lt;/a&gt;',
+            esc_url( home_url() ),
+            esc_attr( $link_target ),
+            $aria_current,
+            esc_html( $site_title )
+        );
+    }
+    $wrapper_attributes = get_block_wrapper_attributes( array( 'class' =&gt; trim( $classes ) ) );
+
+    return sprintf(
+        '&lt;%1$s %2$s&gt;%3$s&lt;/%1$s&gt;',
+        $tag_name,
+        $wrapper_attributes,
+        // already pre-escaped if it is a link.
+        $attributes['isLink'] ? $site_title : esc_html( $site_title )
+    );
+}
+</code></pre>
+<p>However, there is no <code>save</code> function defined for this block, as you can see from its <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/site-title/index.js"><code>index.js</code></a> file, which means the markup representation of the block in the database looks like this:</p>
+<pre><code class="language-html">&lt;!-- wp:site-title /--&gt;
+</code></pre>
+<p>On the front end, the <code>render_callback</code> is used to dynamically render the markup for the block depending on the specific values on the server at the time the block is requested. These values include the current site title, URL, link target, etc.</p>
+<pre><code>&lt;h1 class="wp-block-site-title"&gt;&lt;a href="https://www.wp.org" target="_self" rel="home"&gt;My WordPress Website&lt;/a&gt;&lt;/h1&gt;
+</code></pre>
+</details>
+<p></p>
+<h3 class="is-toc-heading" id="html-representation-of-dynamic-blocks-in-the-database-save" tabindex="-1"><a href="#html-representation-of-dynamic-blocks-in-the-database-save">HTML representation of dynamic blocks in the database (save)</a></h3>
+<p>For dynamic blocks, the <code>save</code> callback function can return just <code>null</code>, which tells the editor to save only the block delimiter comment (along with any existing <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-attributes/">block attributes</a>) to the database. These attributes are then passed into the server-side rendering callback, which will determine how to display the block on the front end of your site.</p>
+<p>When <code>save</code> is <code>null</code>, the Block Editor will skip the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-edit-save/#validation">block markup validation process</a>, avoiding issues with frequently changing markup.</p>
+<p>Blocks with dynamic rendering can also save an HTML representation of the block as a backup. If you provide a server-side rendering callback, the HTML representing the block in the database will be replaced with the output of your callback but will be rendered if your block is deactivated (the plugin that registers the block is uninstalled), or your render callback is removed.</p>
+<p>In some cases, the block saves an HTML representation of the block and uses a dynamic rendering to fine-tune this markup if some conditions are met. Some examples of core blocks using this approach are:</p>
+<ul>
+<li>The <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/cover">Cover</a> block <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/cover/save.js">saves</a> a full HTML representation of the block in the database. This markup is processed via a <a href="https://github.com/WordPress/gutenberg/blob/22741661998834e69db74ad863705ee2ce97b446/packages/block-library/src/cover/index.php#L74"><code>render_callback</code></a>, which <a href="https://github.com/WordPress/gutenberg/blob/22741661998834e69db74ad863705ee2ce97b446/packages/block-library/src/cover/index.php#L16">dynamically injects</a> the featured image if the “Use featured image” setting is enabled.</li>
+<li>The <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/image">Image</a> block also <a href="https://github.com/WordPress/gutenberg/blob/trunk/packages/block-library/src/image/save.js">saves</a> its HTML representation in the database. This markup is processed via a <a href="https://github.com/WordPress/gutenberg/blob/22741661998834e69db74ad863705ee2ce97b446/packages/block-library/src/image/index.php#L363"><code>render_callback</code></a>, which <a href="https://github.com/WordPress/gutenberg/blob/22741661998834e69db74ad863705ee2ce97b446/packages/block-library/src/image/index.php#L18">adds additional attributes</a> to the markup if specific conditions are met.</li>
+</ul>
+<p>If you are using <a href="https://developer.notmatt.press/block-editor/how-to-guides/block-tutorial/nested-blocks-inner-blocks/">InnerBlocks</a> in a dynamic block, you will need to save the <code>InnerBlocks</code> in the <code>save</code> callback function using <code>&lt;InnerBlocks.Content/&gt;</code>.</p>
+<h2 class="is-toc-heading" id="additional-resources" tabindex="-1"><a href="#additional-resources">Additional resources</a></h2>
+<ul>
+<li><a href="https://developer.notmatt.press/news/2023/02/27/static-vs-dynamic-blocks-whats-the-difference/">Static vs. dynamic blocks: What’s the difference?</a> | Developer Blog</li>
+<li><a href="https://developer.notmatt.press/news/2023/03/10/block-deprecation-a-tutorial/">Block deprecation – a tutorial</a> | Developer Blog</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">term_exists()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>term_exists()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">term_exists( <span class="arg-type">int|string</span> <span class="arg-name">$term</span>,  <span class="arg-type">string</span> <span class="arg-name">$taxonomy</span> = <span class="arg-default">''</span>,  <span class="arg-type">int</span> <span class="arg-name">$parent_term</span> = <span class="arg-default">null</span> ): <span class="return-type">mixed</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Determines whether a taxonomy term exists.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Formerly <a href="https://developer.notmatt.press/reference/functions/is_term/" rel="function">is_term()</a> , introduced in 2.3.0.</p>
+<p>For more information on this and similar theme functions, check out the <a href="https://developer.notmatt.press/themes/basics/conditional-tags/"> Conditional Tags</a> article in the Theme Developer Handbook.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$term</code><span class="type"><span class="int">int</span>|<span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The term to check. Accepts term ID, slug, or name.</span></div></dd><dt><code>$taxonomy</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The taxonomy name to use.</span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$parent_term</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">ID of parent term under which to confine the exists search.</span></div><p class="default">Default:<code>null</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">mixed</span> Returns null if the term does not exist.<br/>
+Returns the term ID if no taxonomy is specified and the term ID exists.<br/>
+Returns an array of the term ID and the term taxonomy ID if the taxonomy is specified and the pairing exists.<br/>
+Returns 0 if term ID 0 is passed to the function.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1575"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function term_exists( $term, $taxonomy = '', $parent_term = null ) {
+	global $_wp_suspend_cache_invalidation;
+
+	if ( null === $term ) {
+		return null;
+	}
+
+	$defaults = array(
+		'get'                    =&gt; 'all',
+		'fields'                 =&gt; 'ids',
+		'number'                 =&gt; 1,
+		'update_term_meta_cache' =&gt; false,
+		'order'                  =&gt; 'ASC',
+		'orderby'                =&gt; 'term_id',
+		'suppress_filter'        =&gt; true,
+	);
+
+	// Ensure that while importing, queries are not cached.
+	if ( ! empty( $_wp_suspend_cache_invalidation ) ) {
+		$defaults['cache_results'] = false;
+	}
+
+	if ( ! empty( $taxonomy ) ) {
+		$defaults['taxonomy'] = $taxonomy;
+		$defaults['fields']   = 'all';
+	}
+
+	/**
+	 * Filters default query arguments for checking if a term exists.
+	 *
+	 * @since 6.0.0
+	 *
+	 * @param array      $defaults    An array of arguments passed to get_terms().
+	 * @param int|string $term        The term to check. Accepts term ID, slug, or name.
+	 * @param string     $taxonomy    The taxonomy name to use. An empty string indicates
+	 *                                the search is against all taxonomies.
+	 * @param int|null   $parent_term ID of parent term under which to confine the exists search.
+	 *                                Null indicates the search is unconfined.
+	 */
+	$defaults = apply_filters( 'term_exists_default_query_args', $defaults, $term, $taxonomy, $parent_term );
+
+	if ( is_int( $term ) ) {
+		if ( 0 === $term ) {
+			return 0;
+		}
+		$args  = wp_parse_args( array( 'include' =&gt; array( $term ) ), $defaults );
+		$terms = get_terms( $args );
+	} else {
+		$term = trim( wp_unslash( $term ) );
+		if ( '' === $term ) {
+			return null;
+		}
+
+		if ( ! empty( $taxonomy ) &amp;&amp; is_numeric( $parent_term ) ) {
+			$defaults['parent'] = (int) $parent_term;
+		}
+
+		$args  = wp_parse_args( array( 'slug' =&gt; sanitize_title( $term ) ), $defaults );
+		$terms = get_terms( $args );
+		if ( empty( $terms ) || is_wp_error( $terms ) ) {
+			$args  = wp_parse_args( array( 'name' =&gt; $term ), $defaults );
+			$terms = get_terms( $args );
+		}
+	}
+
+	if ( empty( $terms ) || is_wp_error( $terms ) ) {
+		return null;
+	}
+
+	$_term = array_shift( $terms );
+
+	if ( ! empty( $taxonomy ) ) {
+		return array(
+			'term_id'          =&gt; (string) $_term-&gt;term_id,
+			'term_taxonomy_id' =&gt; (string) $_term-&gt;term_taxonomy_id,
+		);
+	}
+
+	return (string) $_term;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/taxonomy.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/taxonomy.php#L1575">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/taxonomy.php#L1575-L1654">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/term_exists_default_query_args/"><span class="hook-func">apply_filters</span>( ‘term_exists_default_query_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$defaults</span></nobr>,  <nobr><span class="arg-type">int|string</span> <span class="arg-name">$term</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr>,  <nobr><span class="arg-type">int|null</span> <span class="arg-name">$parent_term</span></nobr> )</a></dt><dd><p>Filters default query arguments for checking if a term exists.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_title/">sanitize_title()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes a string into a slug, which can be used in URLs or HTML attributes.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_terms/">get_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the terms in a given taxonomy or list of taxonomies.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unslash/">wp_unslash()</a><code>wp-includes/formatting.php</code></td><td><p>Removes slashes from a string or recursively removes slashes from strings within an array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/category_exists/">category_exists()</a><code>wp-admin/includes/taxonomy.php</code></td><td><p>Checks whether a category exists.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_category/">wp_insert_category()</a><code>wp-admin/includes/taxonomy.php</code></td><td><p>Updates an existing Category or creates a new Category.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/tag_exists/">tag_exists()</a><code>wp-admin/includes/taxonomy.php</code></td><td><p>Checks whether a post tag with a given name exists.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_create_term/">wp_create_term()</a><code>wp-admin/includes/taxonomy.php</code></td><td><p>Adds a new term to the database if it does not already exist.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_term/">is_term()</a><code>wp-includes/deprecated.php</code></td><td><p>Check if Term exists.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_unique_term_slug/">wp_unique_term_slug()</a><code>wp-includes/taxonomy.php</code></td><td><p>Makes term slug unique, if it isn’t already.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_update_term/">wp_update_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Updates term based on arguments provided.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_insert_term/">wp_insert_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Adds a new term to the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_set_object_terms/">wp_set_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Creates term and taxonomy relationships.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_remove_object_terms/">wp_remove_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes term(s) associated with a given object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_delete_term/">wp_delete_term()</a><code>wp-includes/taxonomy.php</code></td><td><p>Removes a term from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/register_taxonomy/">register_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Creates or modifies a taxonomy object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 7 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.0.0/">6.0.0</a></td><td><span class="since-description">Converted to use <code>get_terms()</code>.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-majemedia odd alt thread-odd thread-alt depth-1" data-comment-id="857" id="comment-857">
+<article class="comment-body" id="div-comment-857">
+<a class="screen-reader-text" href="#comment-content-857">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-857">
+<p>The returned array of </p>
+<pre class="wp-block-code"><code class="language-php" lang="php">['term_id' =&gt; ID, 'term_taxonomy_id' =&gt; ID]</code></pre>
+<p> returns a string for the ID instead of ints. If you need int values you’ll need to convert them to ints.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-857">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="644" id="comment-644">
+<article class="comment-body" id="div-comment-644">
+<a class="screen-reader-text" href="#comment-content-644">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-644">
+<p><strong>Checks to see if ‘Uncategorized’ category exists</strong><br>
+<strong>Check if the ‘Uncategorized’ category exists</strong><br>
+Note: <code>term_exists()</code> runs a database query. <code>get_term()</code> can be used for the same purpose, except it uses the term cache.</br></br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$term = term_exists( 'Uncategorized', 'category' );
+if ( $term !== 0 &amp;&amp; $term !== null ) {
+	echo __( "'Uncategorized' category exists!", "textdomain" );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-644">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="645" id="comment-645">
+<article class="comment-body" id="div-comment-645">
+<a class="screen-reader-text" href="#comment-content-645">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-645">
+<p><strong>Checks to see if ‘Untagged’ post_tag category exists</strong><br>
+Note: <code>term_exists()</code> runs a database query. <code>get_term()</code> can be used for the same purpose, except it uses the term cache.</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$term = term_exists( 'Untagged', 'post_tag' );
+if ( $term !== 0 &amp;&amp; $term !== null ) {
+	echo __( "'Untagged' post_tag exists!", "textdomain" );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-645">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

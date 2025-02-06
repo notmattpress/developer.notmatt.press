@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_http_validate_url()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_http_validate_url()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_http_validate_url( <span class="arg-type">string</span> <span class="arg-name">$url</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Validates a URL for safe use in the HTTP API.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Examples of URLs that are considered unsafe:</p>
+<ul>
+<li>ftp://example.com/caniload.php – Invalid protocol – only http and https are allowed.</li>
+<li><a href="http:///example.com/caniload.php">http:///example.com/caniload.php</a> – Malformed URL.</li>
+<li><a href="http://user:pass@example.com/caniload.php">http://user:pass@example.com/caniload.php</a> – Login information.</li>
+<li><a href="http://example.invalid/caniload.php">http://example.invalid/caniload.php</a> – Invalid hostname, as the IP cannot be looked up in DNS.</li>
+</ul>
+<p>Examples of URLs that are considered unsafe by default:</p>
+<ul>
+<li><a href="http://192.168.0.1/caniload.php">http://192.168.0.1/caniload.php</a> – IPs from LAN networks.<br/>This can be changed with the <a href="https://developer.notmatt.press/reference/hooks/http_request_host_is_external/">‘http_request_host_is_external’</a> filter.</li>
+<li><a href="http://198.143.164.252:81/caniload.php">http://198.143.164.252:81/caniload.php</a> – By default, only 80, 443, and 8080 ports are allowed.<br/>This can be changed with the <a href="https://developer.notmatt.press/reference/hooks/http_allowed_safe_ports/">‘http_allowed_safe_ports’</a> filter.</li>
+</ul>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$url</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Request URL.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> URL or false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="552"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_http_validate_url( $url ) {
+	if ( ! is_string( $url ) || '' === $url || is_numeric( $url ) ) {
+		return false;
+	}
+
+	$original_url = $url;
+	$url          = wp_kses_bad_protocol( $url, array( 'http', 'https' ) );
+	if ( ! $url || strtolower( $url ) !== strtolower( $original_url ) ) {
+		return false;
+	}
+
+	$parsed_url = parse_url( $url );
+	if ( ! $parsed_url || empty( $parsed_url['host'] ) ) {
+		return false;
+	}
+
+	if ( isset( $parsed_url['user'] ) || isset( $parsed_url['pass'] ) ) {
+		return false;
+	}
+
+	if ( false !== strpbrk( $parsed_url['host'], ':#?[]' ) ) {
+		return false;
+	}
+
+	$parsed_home = parse_url( get_option( 'home' ) );
+	$same_host   = isset( $parsed_home['host'] ) &amp;&amp; strtolower( $parsed_home['host'] ) === strtolower( $parsed_url['host'] );
+	$host        = trim( $parsed_url['host'], '.' );
+
+	if ( ! $same_host ) {
+		if ( preg_match( '#^(([1-9]?\d|1\d\d|25[0-5]|2[0-4]\d)\.){3}([1-9]?\d|1\d\d|25[0-5]|2[0-4]\d)$#', $host ) ) {
+			$ip = $host;
+		} else {
+			$ip = gethostbyname( $host );
+			if ( $ip === $host ) { // Error condition for gethostbyname().
+				return false;
+			}
+		}
+		if ( $ip ) {
+			$parts = array_map( 'intval', explode( '.', $ip ) );
+			if ( 127 === $parts[0] || 10 === $parts[0] || 0 === $parts[0]
+				|| ( 172 === $parts[0] &amp;&amp; 16 &lt;= $parts[1] &amp;&amp; 31 &gt;= $parts[1] )
+				|| ( 192 === $parts[0] &amp;&amp; 168 === $parts[1] )
+			) {
+				// If host appears local, reject unless specifically allowed.
+				/**
+				 * Checks if HTTP request is external or not.
+				 *
+				 * Allows to change and allow external requests for the HTTP request.
+				 *
+				 * @since 3.6.0
+				 *
+				 * @param bool   $external Whether HTTP request is external or not.
+				 * @param string $host     Host name of the requested URL.
+				 * @param string $url      Requested URL.
+				 */
+				if ( ! apply_filters( 'http_request_host_is_external', false, $host, $url ) ) {
+					return false;
+				}
+			}
+		}
+	}
+
+	if ( empty( $parsed_url['port'] ) ) {
+		return $url;
+	}
+
+	$port = $parsed_url['port'];
+
+	/**
+	 * Controls the list of ports considered safe in HTTP API.
+	 *
+	 * Allows to change and allow external requests for the HTTP request.
+	 *
+	 * @since 5.9.0
+	 *
+	 * @param int[]  $allowed_ports Array of integers for valid ports.
+	 * @param string $host          Host name of the requested URL.
+	 * @param string $url           Requested URL.
+	 */
+	$allowed_ports = apply_filters( 'http_allowed_safe_ports', array( 80, 443, 8080 ), $host, $url );
+	if ( is_array( $allowed_ports ) &amp;&amp; in_array( $port, $allowed_ports, true ) ) {
+		return $url;
+	}
+
+	if ( $parsed_home &amp;&amp; $same_host &amp;&amp; isset( $parsed_home['port'] ) &amp;&amp; $parsed_home['port'] === $port ) {
+		return $url;
+	}
+
+	return false;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/http.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/http.php#L552">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/http.php#L552-L641">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/http_allowed_safe_ports/"><span class="hook-func">apply_filters</span>( ‘http_allowed_safe_ports’,  <nobr><span class="arg-type">int[]</span> <span class="arg-name">$allowed_ports</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$host</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$url</span></nobr> )</a></dt><dd><p>Controls the list of ports considered safe in HTTP API.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/http_request_host_is_external/"><span class="hook-func">apply_filters</span>( ‘http_request_host_is_external’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$external</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$host</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$url</span></nobr> )</a></dt><dd><p>Checks if HTTP request is external or not.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_kses_bad_protocol/">wp_kses_bad_protocol()</a><code>wp-includes/kses.php</code></td><td><p>Sanitizes a string and removed disallowed URL protocols.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_collection/load_from_json/">WP_Font_Collection::load_from_json()</a><code>wp-includes/fonts/class-wp-font-collection.php</code></td><td><p>Loads font collection data from a JSON file or URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_font_faces_controller/sanitize_src/">WP_REST_Font_Faces_Controller::sanitize_src()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-font-faces-controller.php</code></td><td><p>Sanitizes a single src value for a font face.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_font_faces_controller/validate_create_font_face_settings/">WP_REST_Font_Faces_Controller::validate_create_font_face_settings()</a><code>wp-includes/rest-api/endpoints/class-wp-rest-font-faces-controller.php</code></td><td><p>Validates settings when creating a font face.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http/validate_redirects/">WP_Http::validate_redirects()</a><code>wp-includes/class-wp-http.php</code></td><td><p>Validate redirected URLs.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_http/request/">WP_Http::request()</a><code>wp-includes/class-wp-http.php</code></td><td><p>Send an HTTP request to a URI.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/pingback_ping_source_uri/">pingback_ping_source_uri()</a><code>wp-includes/comment.php</code></td><td><p>Default filter attached to pingback_ping_source_uri to validate the pingback’s Source URI.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.5.2/">3.5.2</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-mnelson4 odd alt thread-odd thread-alt depth-1" data-comment-id="2848" id="comment-2848">
+<article class="comment-body" id="div-comment-2848">
+<a class="screen-reader-text" href="#comment-content-2848">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2848">
+<p>If you’re validating a URL submitted by a user, I’d suggest instead using <a href="https://developer.notmatt.press/reference/functions/esc_url_raw/">esc_url_raw()</a>. Like so: `esc_url_raw( $url ) === $url`.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2848">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

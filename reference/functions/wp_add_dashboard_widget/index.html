@@ -1,0 +1,259 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_add_dashboard_widget()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_add_dashboard_widget()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_add_dashboard_widget( <span class="arg-type">string</span> <span class="arg-name">$widget_id</span>,  <span class="arg-type">string</span> <span class="arg-name">$widget_name</span>,  <span class="arg-type">callable</span> <span class="arg-name">$callback</span>,  <span class="arg-type">callable</span> <span class="arg-name">$control_callback</span> = <span class="arg-default">null</span>,  <span class="arg-type">array</span> <span class="arg-name">$callback_args</span> = <span class="arg-default">null</span>,  <span class="arg-type">string</span> <span class="arg-name">$context</span> = <span class="arg-default">'normal'</span>,  <span class="arg-type">string</span> <span class="arg-name">$priority</span> = <span class="arg-default">'core'</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Adds a new dashboard widget.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$widget_id</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Widget ID  (used in the <code>'id'</code> attribute for the widget).</span></div></dd><dt><code>$widget_name</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Title of the widget.</span></div></dd><dt><code>$callback</code><span class="type"><span class="callable">callable</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Function that fills the widget with the desired content.<br/>
+The function should echo its output.</span></div></dd><dt><code>$control_callback</code><span class="type"><span class="callable">callable</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Function that outputs controls for the widget. </span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$callback_args</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Data that should be set as the $args property of the widget array                                   (which is the second parameter passed to your callback). </span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$context</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The context within the screen where the box should display.<br/>
+Accepts <code>'normal'</code>, <code>'side'</code>, <code>'column3'</code>, or <code>'column4'</code>. Default <code>'normal'</code>.</span></div><p class="default">Default:<code>'normal'</code></p></dd><dt><code>$priority</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The priority within the context where the box should show.<br/>
+Accepts <code>'high'</code>, <code>'core'</code>, <code>'default'</code>, or <code>'low'</code>. Default <code>'core'</code>.</span></div><p class="default">Default:<code>'core'</code></p></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="188"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_add_dashboard_widget( $widget_id, $widget_name, $callback, $control_callback = null, $callback_args = null, $context = 'normal', $priority = 'core' ) {
+	global $wp_dashboard_control_callbacks;
+
+	$screen = get_current_screen();
+
+	$private_callback_args = array( '__widget_basename' =&gt; $widget_name );
+
+	if ( is_null( $callback_args ) ) {
+		$callback_args = $private_callback_args;
+	} elseif ( is_array( $callback_args ) ) {
+		$callback_args = array_merge( $callback_args, $private_callback_args );
+	}
+
+	if ( $control_callback &amp;&amp; is_callable( $control_callback ) &amp;&amp; current_user_can( 'edit_dashboard' ) ) {
+		$wp_dashboard_control_callbacks[ $widget_id ] = $control_callback;
+
+		if ( isset( $_GET['edit'] ) &amp;&amp; $widget_id === $_GET['edit'] ) {
+			list($url)    = explode( '#', add_query_arg( 'edit', false ), 2 );
+			$widget_name .= ' &lt;span class="postbox-title-action"&gt;&lt;a href="' . esc_url( $url ) . '"&gt;' . __( 'Cancel' ) . '&lt;/a&gt;&lt;/span&gt;';
+			$callback     = '_wp_dashboard_control_callback';
+		} else {
+			list($url)    = explode( '#', add_query_arg( 'edit', $widget_id ), 2 );
+			$widget_name .= ' &lt;span class="postbox-title-action"&gt;&lt;a href="' . esc_url( "$url#$widget_id" ) . '" class="edit-box open-box"&gt;' . __( 'Configure' ) . '&lt;/a&gt;&lt;/span&gt;';
+		}
+	}
+
+	$side_widgets = array( 'dashboard_quick_press', 'dashboard_primary' );
+
+	if ( in_array( $widget_id, $side_widgets, true ) ) {
+		$context = 'side';
+	}
+
+	$high_priority_widgets = array( 'dashboard_browser_nag', 'dashboard_php_nag' );
+
+	if ( in_array( $widget_id, $high_priority_widgets, true ) ) {
+		$priority = 'high';
+	}
+
+	if ( empty( $context ) ) {
+		$context = 'normal';
+	}
+
+	if ( empty( $priority ) ) {
+		$priority = 'core';
+	}
+
+	add_meta_box( $widget_id, $widget_name, $callback, $screen, $context, $priority, $callback_args );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/dashboard.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/dashboard.php#L188">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/dashboard.php#L188-L235">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_current_screen/">get_current_screen()</a><code>wp-admin/includes/screen.php</code></td><td><p>Get the current screen object</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/add_meta_box/">add_meta_box()</a><code>wp-admin/includes/template.php</code></td><td><p>Adds a meta box to one or more screens.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_query_arg/">add_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves a modified URL query string.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_setup/">wp_dashboard_setup()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Registers dashboard widgets.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.6.0/">5.6.0</a></td><td><span class="since-description">The <code>$context</code> and <code>$priority</code> parameters were added.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.7.0/">2.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="712" id="comment-712">
+<article class="comment-body" id="div-comment-712">
+<a class="screen-reader-text" href="#comment-content-712">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-712">
+<p><strong>Adding dashboard widgets</strong><br>
+Here is a simple dashboard widget:</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Add a new dashboard widget.
+ */
+function wpdocs_add_dashboard_widgets() {
+	wp_add_dashboard_widget( 'dashboard_widget', 'Example Dashboard Widget', 'dashboard_widget_function' );
+}
+add_action( 'wp_dashboard_setup', 'wpdocs_add_dashboard_widgets' );
+
+/**
+ * Output the contents of the dashboard widget
+ */
+function dashboard_widget_function( $post, $callback_args ) {
+	esc_html_e( "Hello World, this is my first Dashboard Widget!", "textdomain" );
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-712">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="713" id="comment-713">
+<article class="comment-body" id="div-comment-713">
+<a class="screen-reader-text" href="#comment-content-713">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-713">
+<p><strong>Running dashboard widgets</strong><br>
+To run the function use this code:</br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">do_action( 'wp_dashboard_setup' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-713">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="714" id="comment-714">
+<article class="comment-body" id="div-comment-714">
+<a class="screen-reader-text" href="#comment-content-714">Skip to note 9 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-714">
+<p><strong>Adding widgets onto the side</strong><br>
+The function doesn’t allow you to choose where you want your widget to go and will automatically add it to the “core” which is the left side. However you are able to get it on the right side very easily.</br></p>
+<p>You can use the <code>add_meta_box()</code> function instead of <code>wp_add_dashboard_widget</code>. Simply specify ‘dashboard’ in place of the <code>$post_type</code>. For example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_meta_box( 'id', 'Dashboard Widget Title', 'dash_widget', 'dashboard', 'side', 'high' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-714">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment odd alt thread-odd thread-alt depth-1" data-comment-id="5187" id="comment-5187">
+<article class="comment-body" id="div-comment-5187">
+<a class="screen-reader-text" href="#comment-content-5187">Skip to note 10 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5187">
+<p>The doc above states:</p>
+<p><em>$callback_args<br/>
+(array) (Optional) Data that should be set as the $args property of the widget array (which is the <strong>second</strong> parameter passed to your callback).<br/>
+Default value: null</em></p>
+<p>For anyone wondering what the <em>first</em> parameter of that call-back is, it is the current screen object.<br/>
+If used on the dashboard (which widgets will be), then that parameter returns an empty value.<br/>
+This is because the dashboard has no screen object.<br/>
+See also <a href="https://wordpress.org/support/topic/what-is-the-first-parameter-passed-to-wp_add_dashboard_widget-callback/" rel="nofollow ugc">https://wordpress.org/support/topic/what-is-the-first-parameter-passed-to-wp_add_dashboard_widget-callback/</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5187">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment even thread-even depth-1" data-comment-id="3537" id="comment-3537">
+<article class="comment-body" id="div-comment-3537">
+<a class="screen-reader-text" href="#comment-content-3537">Skip to note 11 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3537">
+<p>As noted in comment #714, <code>wp_add_dashboard_widget()</code> does not offer a great deal of flexibility to position a widget on the dashboard; however, it is possible to <strong>add a widget to a specific dashboard column</strong> relying on <code>add_meta_box()</code> and its <code>$context</code> parameter. </p>
+<p>The example below removes all core dashboard widgets and adds a custom one to the third dashboard column (tested ltr only). It looks odd, but it proves the point. 🙃</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+namespace Exampledashboard;
+
+add_action( 'wp_dashboard_setup', __NAMESPACE__ . 'wp_dashboard_setup' );
+
+/**
+ * Remove core widhets and add widget to Dashboard in third column.
+ * @see <a href="https://developer.notmatt.press/reference/functions/add_meta_box/" rel="ugc">https://developer.notmatt.press/reference/functions/add_meta_box/</a>
+ */
+function wp_dashboard_setup() {
+
+	// Remove Welcome panel.
+	remove_action( 'welcome_panel', 'wp_welcome_panel' );
+
+	// Remove all Dashboard widgets.
+	global $wp_meta_boxes;
+	unset( $wp_meta_boxes['dashboard'] );
+
+	// Add custom dashbboard widget.
+	add_meta_box( 'dashboard_widget_example',
+		__( 'Example Widget', 'example-text-domain' ),
+		__NAMESPACE__ . 'render_example_widget',
+		'dashboard',
+		'column3',  // $context: 'advanced', 'normal', 'side', 'column3', 'column4'
+		'high',     // $priority: 'high', 'core', 'default', 'low'
+	);
+}
+
+/**
+ * Render widget.
+ */
+function render_example_widget() {
+?&gt;
+	&lt;p&gt;Do something.&lt;/p&gt;
+&lt;?php
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3537">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-nlpro odd alt thread-odd thread-alt depth-1" data-comment-id="6217" id="comment-6217">
+<article class="comment-body" id="div-comment-6217">
+<a class="screen-reader-text" href="#comment-content-6217">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6217">
+<p>Note that if a plugin implements i18n (internationalization/translation) the $widget_name parameter value needs to be passed to the function using a translation function. Example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">wp_add_dashboard_widget( $widget_id, __( 'This is a translated widget title', 'example-plugin' ), … );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6217">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

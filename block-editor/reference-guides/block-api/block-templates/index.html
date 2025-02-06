@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Templates</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Templates</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>A block template is defined as a list of block items. Such blocks can have predefined attributes, placeholder content, and be static or dynamic. Block templates allow specifying a default initial state for an editor session.</p>
+<p>The scope of templates include:</p>
+<ul>
+<li>Setting a default state dynamically on the client. (like <code>defaultBlock</code>)</li>
+<li>Registered as a default for a given post type.</li>
+</ul>
+<p>Planned additions:</p>
+<ul>
+<li>Saved and assigned to pages as “page templates”.</li>
+<li>Defined in a <code>template.php</code> file or pulled from a custom post type (<code>wp_templates</code>) that is site specific.</li>
+<li>As the equivalent of the theme hierarchy.</li>
+</ul>
+<h2 class="is-toc-heading" id="api" tabindex="-1"><a href="#api">API</a></h2>
+<p>Templates can be declared in JS or in PHP as an array of blockTypes (block name and optional attributes).</p>
+<p>The first example in PHP creates a template for posts that includes an image block to start, you can add as many or as few blocks to your template as needed.</p>
+<p>PHP example:</p>
+<pre><code class="language-php">&lt;?php
+function myplugin_register_template() {
+    $post_type_object = get_post_type_object( 'post' );
+    $post_type_object-&gt;template = array(
+        array( 'core/image' ),
+    );
+}
+add_action( 'init', 'myplugin_register_template' );
+</code></pre>
+<p>The following example in JavaScript creates a new block using <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/block-editor/src/components/inner-blocks/README.md">InnerBlocks</a> and templates, when inserted creates a set of blocks based off the template.</p>
+<pre><code class="language-js">const el = React.createElement;
+const { registerBlockType } = wp.blocks;
+const { InnerBlocks } = wp.blockEditor;
+
+const BLOCKS_TEMPLATE = [
+    [ 'core/image', {} ],
+    [ 'core/paragraph', { placeholder: 'Image Details' } ],
+];
+
+registerBlockType( 'myplugin/template', {
+    title: 'My Template Block',
+    category: 'widgets',
+    edit: ( props ) =&gt; {
+        return el( InnerBlocks, {
+            template: BLOCKS_TEMPLATE,
+            templateLock: false,
+        } );
+    },
+    save: ( props ) =&gt; {
+        return el( InnerBlocks.Content, {} );
+    },
+} );
+</code></pre>
+<p>See the <a href="https://developer.notmatt.press/block-editor/how-to-guides/metabox/#step-4-finishing-touches">Meta Block Tutorial</a> for a full example of a template in use.</p>
+<h2 class="is-toc-heading" id="block-attributes" tabindex="-1"><a href="#block-attributes">Block attributes</a></h2>
+<p>To find a comprehensive list of all block attributes that you can define in a template, consult the block’s <code>block.json</code> file, and look at the <code>attributes</code> and <code>supports</code> values.</p>
+<p>For example, <a href="https://github.com/WordPress/gutenberg/blob/c62ccd80c7c6abb85740cf8745439029bf0f4d35/packages/block-library/src/heading/block.json#L5-L25">packages/block-library/src/heading/block.json</a> shows that the block has a <code>level</code> attribute, and supports the <code>anchor</code> parameter.</p>
+<p>If you don’t have the Gutenberg plugin installed, you can find <code>block.json</code> files inside <code>wp-includes/blocks/heading/block.json</code>.</p>
+<h2 class="is-toc-heading" id="custom-post-types" tabindex="-1"><a href="#custom-post-types">Custom post types</a></h2>
+<p>A custom post type can register its own template during registration:</p>
+<pre><code class="language-php">function myplugin_register_book_post_type() {
+    $args = array(
+        'public' =&gt; true,
+        'label'  =&gt; 'Books',
+        'show_in_rest' =&gt; true,
+        'template' =&gt; array(
+            array( 'core/image', array(
+                'align' =&gt; 'left',
+            ) ),
+            array( 'core/heading', array(
+                'placeholder' =&gt; 'Add Author...',
+            ) ),
+            array( 'core/paragraph', array(
+                'placeholder' =&gt; 'Add Description...',
+            ) ),
+        ),
+    );
+    register_post_type( 'book', $args );
+}
+add_action( 'init', 'myplugin_register_book_post_type' );
+</code></pre>
+<h2 class="is-toc-heading" id="locking" tabindex="-1"><a href="#locking">Locking</a></h2>
+<p>Sometimes the intention might be to lock the template on the UI so that the blocks presented cannot be manipulated. This is achieved with a <code>template_lock</code> property.</p>
+<pre><code class="language-php">function myplugin_register_template() {
+    $post_type_object = get_post_type_object( 'post' );
+    $post_type_object-&gt;template = array(
+        array( 'core/paragraph', array(
+            'placeholder' =&gt; 'Add Description...',
+        ) ),
+    );
+    $post_type_object-&gt;template_lock = 'all';
+}
+add_action( 'init', 'myplugin_register_template' );
+</code></pre>
+<p><em>Options:</em></p>
+<ul>
+<li><code>contentOnly</code> — prevents all operations. Additionally, the block types that don’t have content are hidden from the list view and can’t gain focus within the block list. Unlike the other lock types, this is not overridable by children.</li>
+<li><code>all</code> — prevents all operations. It is not possible to insert new blocks, move existing blocks, or delete blocks.</li>
+<li><code>insert</code> — prevents inserting or removing blocks, but allows moving existing blocks.</li>
+</ul>
+<p>Lock settings can be inherited by InnerBlocks. If <code>templateLock</code> is not set in an InnerBlocks area, the locking of the parent InnerBlocks area is used. If the block is a top level block, the locking configuration of the current post type is used.</p>
+<h2 class="is-toc-heading" id="individual-block-locking" tabindex="-1"><a href="#individual-block-locking">Individual block locking</a></h2>
+<p>Alongside template level locking, you can lock individual blocks; you can do this using a <code>lock</code> attribute on the attributes level. Block-level lock takes priority over the <code>templateLock</code> feature. Currently, you can lock moving and removing blocks.</p>
+<pre><code class="language-js">attributes: {
+  // Prevent a block from being moved or removed.
+  lock: {
+    remove: true,
+    move: true,
+  }
+}
+</code></pre>
+<p><em>Options:</em></p>
+<ul>
+<li><code>remove</code> — Locks the ability of a block from being removed.</li>
+<li><code>move</code> — Locks the ability of a block from being moved.</li>
+</ul>
+<p>You can use this with <code>templateLock</code> to lock all blocks except a single block by using <code>false</code> in <code>remove</code> or <code>move</code>.</p>
+<pre><code class="language-php">$template = array(
+    array( 'core/image', array(
+        'align' =&gt; 'left',
+    ) ),
+    array( 'core/heading', array(
+        'placeholder' =&gt; 'Add Author...',
+    ) ),
+    // Allow a Paragraph block to be moved or removed.
+    array( 'core/paragraph', array(
+        'placeholder' =&gt; 'Add Description...',
+        'lock' =&gt; array(
+            'move'   =&gt; false,
+            'remove' =&gt; false,
+        ),
+    ) ),
+);
+</code></pre>
+<h2 class="is-toc-heading" id="nested-templates" tabindex="-1"><a href="#nested-templates">Nested templates</a></h2>
+<p>Container blocks like the columns blocks also support templates. This is achieved by assigning a nested template to the block.</p>
+<pre><code class="language-php">$template = array(
+    array( 'core/paragraph', array(
+        'placeholder' =&gt; 'Add a root-level paragraph',
+    ) ),
+    array( 'core/columns', array(), array(
+        array( 'core/column', array(), array(
+            array( 'core/image', array() ),
+        ) ),
+        array( 'core/column', array(), array(
+            array( 'core/paragraph', array(
+                'placeholder' =&gt; 'Add a inner paragraph'
+            ) ),
+        ) ),
+    ) )
+);
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

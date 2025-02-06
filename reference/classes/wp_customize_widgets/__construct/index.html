@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_customize_widgets/">WP_Customize_Widgets</a></span><span class="is-current-page">WP_Customize_Widgets::__construct()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Customize_Widgets::__construct()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Customize_Widgets::__construct( <span class="arg-type">WP_Customize_Manager</span> <span class="arg-name">$manager</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Initial loader.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$manager</code><span class="type"><span class="WP_Customize_Manager"><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/" rel="class">WP_Customize_Manager</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Customizer bootstrap instance.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="100"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function __construct( $manager ) {
+	$this-&gt;manager = $manager;
+
+	// See https://github.com/xwp/wp-customize-snapshots/blob/962586659688a5b1fd9ae93618b7ce2d4e7a421c/php/class-customize-snapshot-manager.php#L420-L449
+	add_filter( 'customize_dynamic_setting_args', array( $this, 'filter_customize_dynamic_setting_args' ), 10, 2 );
+	add_action( 'widgets_init', array( $this, 'register_settings' ), 95 );
+	add_action( 'customize_register', array( $this, 'schedule_customize_register' ), 1 );
+
+	// Skip remaining hooks when the user can't manage widgets anyway.
+	if ( ! current_user_can( 'edit_theme_options' ) ) {
+		return;
+	}
+
+	add_action( 'wp_loaded', array( $this, 'override_sidebars_widgets_for_theme_switch' ) );
+	add_action( 'customize_controls_init', array( $this, 'customize_controls_init' ) );
+	add_action( 'customize_controls_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+	add_action( 'customize_controls_print_styles', array( $this, 'print_styles' ) );
+	add_action( 'customize_controls_print_scripts', array( $this, 'print_scripts' ) );
+	add_action( 'customize_controls_print_footer_scripts', array( $this, 'print_footer_scripts' ) );
+	add_action( 'customize_controls_print_footer_scripts', array( $this, 'output_widget_control_templates' ) );
+	add_action( 'customize_preview_init', array( $this, 'customize_preview_init' ) );
+	add_filter( 'customize_refresh_nonces', array( $this, 'refresh_nonces' ) );
+	add_filter( 'should_load_block_editor_scripts_and_styles', array( $this, 'should_load_block_editor_scripts_and_styles' ) );
+
+	add_action( 'dynamic_sidebar', array( $this, 'tally_rendered_widgets' ) );
+	add_filter( 'is_active_sidebar', array( $this, 'tally_sidebars_via_is_active_sidebar_calls' ), 10, 2 );
+	add_filter( 'dynamic_sidebar_has_widgets', array( $this, 'tally_sidebars_via_dynamic_sidebar_calls' ), 10, 2 );
+
+	// Selective Refresh.
+	add_filter( 'customize_dynamic_partial_args', array( $this, 'customize_dynamic_partial_args' ), 10, 2 );
+	add_action( 'customize_preview_init', array( $this, 'selective_refresh_init' ) );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-customize-widgets.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-customize-widgets.php#L100">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-customize-widgets.php#L100-L131">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_action/">add_action()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/__construct/">WP_Customize_Manager::__construct()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Constructor.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.9.0/">3.9.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

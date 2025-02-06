@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_core_updates()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_core_updates()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_core_updates( <span class="arg-type">array</span> <span class="arg-name">$options</span> = <span class="arg-default">array()</span> ): <span class="return-type">array|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Gets available core updates.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$options</code><span class="type"><span class="array">array</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Set $options[<code>'dismissed'</code>] to true to show dismissed upgrades too,                       set $options[<code>'available'</code>] to false to skip not-dismissed updates.</span></div><p class="default">Default:<code>array()</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|false</span> Array of the update objects on success, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="39"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_core_updates( $options = array() ) {
+	$options = array_merge(
+		array(
+			'available' =&gt; true,
+			'dismissed' =&gt; false,
+		),
+		$options
+	);
+
+	$dismissed = get_site_option( 'dismissed_update_core' );
+
+	if ( ! is_array( $dismissed ) ) {
+		$dismissed = array();
+	}
+
+	$from_api = get_site_transient( 'update_core' );
+
+	if ( ! isset( $from_api-&gt;updates ) || ! is_array( $from_api-&gt;updates ) ) {
+		return false;
+	}
+
+	$updates = $from_api-&gt;updates;
+	$result  = array();
+
+	foreach ( $updates as $update ) {
+		if ( 'autoupdate' === $update-&gt;response ) {
+			continue;
+		}
+
+		if ( array_key_exists( $update-&gt;current . '|' . $update-&gt;locale, $dismissed ) ) {
+			if ( $options['dismissed'] ) {
+				$update-&gt;dismissed = true;
+				$result[]          = $update;
+			}
+		} else {
+			if ( $options['available'] ) {
+				$update-&gt;dismissed = false;
+				$result[]          = $update;
+			}
+		}
+	}
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/update.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/update.php#L39">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/update.php#L39-L82">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_site_transient/">get_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a site transient.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_site_option/">get_site_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieve an option value for the current network based on name of option.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/core_auto_updates_settings/">core_auto_updates_settings()</a><code>wp-admin/update-core.php</code></td><td><p>Display WordPress auto-updates settings.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_test_wordpress_version/">WP_Site_Health::get_test_wordpress_version()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Tests for WordPress version and outputs it.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_preferred_from_update_core/">get_preferred_from_update_core()</a><code>wp-admin/includes/update.php</code></td><td><p>Selects the first update version from the update_core option.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/list_core_update/">list_core_update()</a><code>wp-admin/update-core.php</code></td><td><p>Lists available core updates.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/dismissed_updates/">dismissed_updates()</a><code>wp-admin/update-core.php</code></td><td><p>Display dismissed updates.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/core_upgrade_preamble/">core_upgrade_preamble()</a><code>wp-admin/update-core.php</code></td><td><p>Display upgrade WordPress for downloading latest or upgrading automatically form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/list_plugin_updates/">list_plugin_updates()</a><code>wp-admin/update-core.php</code></td><td><p>Display the upgrade plugins form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_update_data/">wp_get_update_data()</a><code>wp-includes/update.php</code></td><td><p>Collects counts and UI strings for available updates.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.7.0/">2.7.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

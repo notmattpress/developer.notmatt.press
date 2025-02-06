@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">_wp_make_subsizes()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>_wp_make_subsizes()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">_wp_make_subsizes( <span class="arg-type">array</span> <span class="arg-name">$new_sizes</span>,  <span class="arg-type">string</span> <span class="arg-name">$file</span>,  <span class="arg-type">array</span> <span class="arg-name">$image_meta</span>,  <span class="arg-type">int</span> <span class="arg-name">$attachment_id</span> ): <span class="return-type">array</span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Low-level function to create image sub-sizes.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Updates the image meta after each sub-size is created.<br/>Errors are stored in the returned image metadata array.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$new_sizes</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Array defining what sizes to create.</span></div></dd><dt><code>$file</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Full path to the image file.</span></div></dd><dt><code>$image_meta</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The attachment meta data array.</span></div></dd><dt><code>$attachment_id</code><span class="type"><span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Attachment ID to process.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The attachment meta data with updated <code>sizes</code> array. Includes an array of errors encountered while resizing.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="444"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function _wp_make_subsizes( $new_sizes, $file, $image_meta, $attachment_id ) {
+	if ( empty( $image_meta ) || ! is_array( $image_meta ) ) {
+		// Not an image attachment.
+		return array();
+	}
+
+	// Check if any of the new sizes already exist.
+	if ( isset( $image_meta['sizes'] ) &amp;&amp; is_array( $image_meta['sizes'] ) ) {
+		foreach ( $image_meta['sizes'] as $size_name =&gt; $size_meta ) {
+			/*
+			 * Only checks "size name" so we don't override existing images even if the dimensions
+			 * don't match the currently defined size with the same name.
+			 * To change the behavior, unset changed/mismatched sizes in the `sizes` array in image meta.
+			 */
+			if ( array_key_exists( $size_name, $new_sizes ) ) {
+				unset( $new_sizes[ $size_name ] );
+			}
+		}
+	} else {
+		$image_meta['sizes'] = array();
+	}
+
+	if ( empty( $new_sizes ) ) {
+		// Nothing to do...
+		return $image_meta;
+	}
+
+	/*
+	 * Sort the image sub-sizes in order of priority when creating them.
+	 * This ensures there is an appropriate sub-size the user can access immediately
+	 * even when there was an error and not all sub-sizes were created.
+	 */
+	$priority = array(
+		'medium'       =&gt; null,
+		'large'        =&gt; null,
+		'thumbnail'    =&gt; null,
+		'medium_large' =&gt; null,
+	);
+
+	$new_sizes = array_filter( array_merge( $priority, $new_sizes ) );
+
+	$editor = wp_get_image_editor( $file );
+
+	if ( is_wp_error( $editor ) ) {
+		// The image cannot be edited.
+		return $image_meta;
+	}
+
+	// If stored EXIF data exists, rotate the source image before creating sub-sizes.
+	if ( ! empty( $image_meta['image_meta'] ) ) {
+		$rotated = $editor-&gt;maybe_exif_rotate();
+
+		if ( is_wp_error( $rotated ) ) {
+			// TODO: Log errors.
+		}
+	}
+
+	if ( method_exists( $editor, 'make_subsize' ) ) {
+		foreach ( $new_sizes as $new_size_name =&gt; $new_size_data ) {
+			$new_size_meta = $editor-&gt;make_subsize( $new_size_data );
+
+			if ( is_wp_error( $new_size_meta ) ) {
+				// TODO: Log errors.
+			} else {
+				// Save the size meta value.
+				$image_meta['sizes'][ $new_size_name ] = $new_size_meta;
+				wp_update_attachment_metadata( $attachment_id, $image_meta );
+			}
+		}
+	} else {
+		// Fall back to `$editor-&gt;multi_resize()`.
+		$created_sizes = $editor-&gt;multi_resize( $new_sizes );
+
+		if ( ! empty( $created_sizes ) ) {
+			$image_meta['sizes'] = array_merge( $image_meta['sizes'], $created_sizes );
+			wp_update_attachment_metadata( $attachment_id, $image_meta );
+		}
+	}
+
+	return $image_meta;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/image.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/image.php#L444">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/image.php#L444-L524">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_attachment_metadata/">wp_update_attachment_metadata()</a><code>wp-includes/post.php</code></td><td><p>Updates metadata for an attachment.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_wp_error/">is_wp_error()</a><code>wp-includes/load.php</code></td><td><p>Checks whether the given variable is a WordPress Error.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_image_subsizes/">wp_update_image_subsizes()</a><code>wp-admin/includes/image.php</code></td><td><p>If any of the currently registered image sub-sizes are missing, create them and update the image meta data.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_create_image_subsizes/">wp_create_image_subsizes()</a><code>wp-admin/includes/image.php</code></td><td><p>Creates image sub-sizes, adds the new data to the image meta <code>sizes</code> array, and updates the image metadata.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_generate_attachment_metadata/">wp_generate_attachment_metadata()</a><code>wp-admin/includes/image.php</code></td><td><p>Generates attachment meta data and create image sub-sizes for images.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.3.0/">5.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-filatovdanyl odd alt thread-odd thread-alt depth-1" data-comment-id="6180" id="comment-6180">
+<article class="comment-body" id="div-comment-6180">
+<a class="screen-reader-text" href="#comment-content-6180">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6180">
+<p>I know this is an internal wp function not meant to be used in theme or plugin code, however using it is the only way I found to solve a problem: to programmatically create some additional image sizes when needed.</p>
+<p>For example I have a plugin that when we upload some image to it, it needs to have that image in 3 specific sizes. This plugin solves that by registering those sizes via add_image_size. But this way those sizes (and files) are created for all images uploaded to website, but only some of them will be used for that plugin. That is bad if multiple plugins do that and if you have over 25k uploads on a website – it reaches tens of gigs in disk usage with all those unnecessary thumbnails for every upload.</p>
+<p>So my solution to that is to remove_image_size for those plugin’s sizes, and to create needed sizes only for images actually used by that plugin based on some hook like so:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$attachment_id = 12345;
+$needed_sizes = array(
+	'some_size' =&gt; array(
+		'width' =&gt; 420,
+		'height' =&gt; 420,
+		'crop' =&gt; false
+	),
+	'some_size_2' =&gt; array(
+		'width' =&gt; 69,
+		'height' =&gt; 69,
+		'crop' =&gt; true
+	)
+);
+require_once ABSPATH . 'wp-admin/includes/image.php';
+_wp_make_subsizes( $needed_sizes, wp_get_original_image_path( $attachment_id ), wp_get_attachment_metadata( $attachment_id ), $attachment_id );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6180">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

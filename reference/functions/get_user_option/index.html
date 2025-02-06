@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_user_option()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_user_option()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_user_option( <span class="arg-type">string</span> <span class="arg-name">$option</span>,  <span class="arg-type">int</span> <span class="arg-name">$user</span>,  <span class="arg-type">string</span> <span class="arg-name">$deprecated</span> = <span class="arg-default">''</span> ): <span class="return-type">mixed</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves user option that can be either per Site or per Network.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>If the user ID is not given, then the current user will be used instead. If the user ID is given, then the user data will be retrieved. The filter for the result, will also pass the original option name and finally the user data object as the third parameter.</p>
+<p>The option will first check for the per site name and then the per Network name.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$option</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">User option name.</span></div></dd><dt><code>$user</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">User ID.</span></div></dd><dt><code>$deprecated</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Use <a href="https://developer.notmatt.press/reference/functions/get_option/" rel="function">get_option()</a>  to check for an option in the options table.</span></div><p class="default">Default:<code>''</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">mixed</span> User option value on success, false on failure.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<h5 class="wp-block-heading">Usage:</h5>
+<pre class="wp-block-code"><code class="language-php" lang="php">get_user_option( $option, $user );</code></pre>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="681"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_user_option( $option, $user = 0, $deprecated = '' ) {
+	global $wpdb;
+
+	if ( ! empty( $deprecated ) ) {
+		_deprecated_argument( __FUNCTION__, '3.0.0' );
+	}
+
+	if ( empty( $user ) ) {
+		$user = get_current_user_id();
+	}
+
+	$user = get_userdata( $user );
+	if ( ! $user ) {
+		return false;
+	}
+
+	$prefix = $wpdb-&gt;get_blog_prefix();
+	if ( $user-&gt;has_prop( $prefix . $option ) ) { // Blog-specific.
+		$result = $user-&gt;get( $prefix . $option );
+	} elseif ( $user-&gt;has_prop( $option ) ) { // User-specific and cross-blog.
+		$result = $user-&gt;get( $option );
+	} else {
+		$result = false;
+	}
+
+	/**
+	 * Filters a specific user option value.
+	 *
+	 * The dynamic portion of the hook name, `$option`, refers to the user option name.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @param mixed   $result Value for the user's option.
+	 * @param string  $option Name of the option being retrieved.
+	 * @param WP_User $user   WP_User object of the user whose option is being retrieved.
+	 */
+	return apply_filters( "get_user_option_{$option}", $result, $option, $user );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/user.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/user.php#L681">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/user.php#L681-L718">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_user_option_option/"><span class="hook-func">apply_filters</span>( “get_user_option_{$option}”,  <nobr><span class="arg-type">mixed</span> <span class="arg-name">$result</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$option</span></nobr>,  <nobr><span class="arg-type">WP_User</span> <span class="arg-name">$user</span></nobr> )</a></dt><dd><p>Filters a specific user option value.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_blog_prefix/">wpdb::get_blog_prefix()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Gets blog prefix.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_userdata/">get_userdata()</a><code>wp-includes/pluggable.php</code></td><td><p>Retrieves user info by user ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_argument/">_deprecated_argument()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_user_id/">get_current_user_id()</a><code>wp-includes/user.php</code></td><td><p>Gets the current user’s ID.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_localize_community_events/">wp_localize_community_events()</a><code>wp-includes/script-loader.php</code></td><td><p>Localizes community events data that needs to be passed to dashboard.js.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_get_community_events/">wp_ajax_get_community_events()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles Ajax requests for community events</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_edit_attachments_query_vars/">wp_edit_attachments_query_vars()</a><code>wp-admin/includes/post.php</code></td><td><p>Returns the query variables for the current attachments request.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_screen/render_per_page_options/">WP_Screen::render_per_page_options()</a><code>wp-admin/includes/class-wp-screen.php</code></td><td><p>Renders the items per page option.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_screen/render_screen_meta/">WP_Screen::render_screen_meta()</a><code>wp-admin/includes/class-wp-screen.php</code></td><td><p>Renders the screen’s help section.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_hidden_columns/">get_hidden_columns()</a><code>wp-admin/includes/screen.php</code></td><td><p>Get a list of hidden columns.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_hidden_meta_boxes/">get_hidden_meta_boxes()</a><code>wp-admin/includes/screen.php</code></td><td><p>Gets an array of IDs of hidden meta boxes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_list_table/get_items_per_page/">WP_List_Table::get_items_per_page()</a><code>wp-admin/includes/class-wp-list-table.php</code></td><td><p>Gets the number of items to display on a single page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/admin_color_scheme_picker/">admin_color_scheme_picker()</a><code>wp-admin/includes/misc.php</code></td><td><p>Displays the default admin color scheme picker (Used in user-edit.php).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_color_scheme_settings/">wp_color_scheme_settings()</a><code>wp-admin/includes/misc.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/install_plugins_favorites_form/">install_plugins_favorites_form()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Shows a username form for the favorites page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/display_plugins_table/">display_plugins_table()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Displays plugin content based on plugin list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dashboard_quick_press/">wp_dashboard_quick_press()</a><code>wp-admin/includes/dashboard.php</code></td><td><p>Displays the Quick Draft widget.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/default_password_nag_handler/">default_password_nag_handler()</a><code>wp-admin/includes/user.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/default_password_nag_edit_user/">default_password_nag_edit_user()</a><code>wp-admin/includes/user.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/default_password_nag/">default_password_nag()</a><code>wp-admin/includes/user.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_install_list_table/prepare_items/">WP_Plugin_Install_List_Table::prepare_items()</a><code>wp-admin/includes/class-wp-plugin-install-list-table.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_meta_boxes/">do_meta_boxes()</a><code>wp-admin/includes/template.php</code></td><td><p>Meta-Box template function.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_edit_posts_query/">wp_edit_posts_query()</a><code>wp-admin/includes/post.php</code></td><td><p>Runs the query to fetch the posts for listing on the edit posts page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/postbox_classes/">postbox_classes()</a><code>wp-admin/includes/post.php</code></td><td><p>Returns the list of classes to be used by a meta box.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_query_themes/">wp_ajax_query_themes()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles getting themes from <a href="https://developer.notmatt.press/reference/functions/themes_api/" rel="function">themes_api()</a>  via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nav_menu_setup/">wp_nav_menu_setup()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Register nav menu meta boxes and advanced menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_initial_nav_menu_meta_boxes/">wp_initial_nav_menu_meta_boxes()</a><code>wp-admin/includes/nav-menu.php</code></td><td><p>Limit the amount of meta boxes to pages, posts, links, and categories for first time users.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/enqueue_comment_hotkeys_js/">enqueue_comment_hotkeys_js()</a><code>wp-admin/includes/comment.php</code></td><td><p>Enqueues comment shortcuts jQuery script.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/auth_redirect/">auth_redirect()</a><code>wp-includes/pluggable.php</code></td><td><p>Checks if a user is logged in, if not it redirects them to the login page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/user_can_richedit/">user_can_richedit()</a><code>wp-includes/general-template.php</code></td><td><p>Determines whether the user can access the visual editor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_get_admin_bar_pref/">_get_admin_bar_pref()</a><code>wp-includes/admin-bar.php</code></td><td><p>Retrieves the admin bar display preference of a user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_user_settings/">wp_user_settings()</a><code>wp-includes/option.php</code></td><td><p>Saves and restores user interface settings stored in a cookie.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_all_user_settings/">get_all_user_settings()</a><code>wp-includes/option.php</code></td><td><p>Retrieves all user interface settings.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_style_loader_src/">wp_style_loader_src()</a><code>wp-includes/script-loader.php</code></td><td><p>Administration Screen CSS for changing the styles.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 25 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.0/">2.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1157" id="comment-1157">
+<article class="comment-body" id="div-comment-1157">
+<a class="screen-reader-text" href="#comment-content-1157">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1157">
+<p><strong>Basic Example</strong></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$bar = get_user_option( 'show_admin_bar_front', get_current_user_id() );
+
+if (  $bar == 'true' ) {
+	echo 'The admin bar is enabled';
+} else {
+	echo 'The admin bar is disabled';
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1157">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

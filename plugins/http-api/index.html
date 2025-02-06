@@ -1,0 +1,265 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span class="is-current-page">HTTP API</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>HTTP API</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="introduction" tabindex="-1"><a href="#introduction">Introduction</a></h2>
+<p>HTTP stands for Hypertext Transfer Protocol and is the foundational communication protocol for the entire Internet. Even if this is your first experience with HTTP it’s likely that you probably understand more than you realize. At its most basic level, HTTP works like this:</p>
+<ul class="wp-block-list">
+<li>“Hello server XYZ, may I please have file abc.html”</li>
+<li>“Well hello there little client, yes you may, here it is”</li>
+</ul>
+<p>There are many different methods to send HTTP requests in PHP. The purpose of the WordPress HTTP API is to support as many of those methods as possible and use the one that is the most suitable for the particular request.</p>
+<p>The WordPress HTTP API can also be used to communicate and interact with other APIs like the Twitter API or the Google Maps API.</p>
+<h3 class="is-toc-heading wp-block-heading" id="http-methods" tabindex="-1"><a href="#http-methods">HTTP methods</a></h3>
+<p>HTTP has several methods, or verbs, that describe particular types of actions. Though a couple more exist, WordPress has pre-built functions for three of the most common. Whenever an HTTP request is made a method is also passed with it to help the server determine what kind of action the client is requesting.</p>
+<h4 class="wp-block-heading">GET</h4>
+<p>GET is used to retrieve data. This is by far the most commonly used verb. Every time you view a website or pull data from an API you are seeing the result of a GET request. In fact your browser sent a GET request to the server you are reading this on and requested the data used to build this very article.</p>
+<h4 class="wp-block-heading">POST</h4>
+<p>POST is used to send data to the server for the server to act upon in some way. For example, a contact form. When you enter data into the form fields and click the submit button the browser takes the data and sends a POST request to the server with the text you entered into the form. From there the server will process the contact request.</p>
+<h4 class="wp-block-heading">HEAD</h4>
+<p>HEAD is much less well known than the other two. HEAD is essentially the same as a GET request except that it does not retrieve the data, only information about the data. This data describes such things as when the data was last updated, whether the client should cache the data, what type the data is, etc. Modern browsers often send HEAD requests to pages you have previously visited to determine if there are any updates. If not, you may actually be seeing a previously downloaded copy of the page instead of using bandwidth needlessly pulling in the same copy.</p>
+<p>All good API clients utilize HEAD before performing a GET request to potentially save on bandwidth. Though it will require two separate HTTP requests if HEAD says there is new data, the data size with a GET request can be very large. Only using GET when HEAD says the data is new or should not be cached will help save on expensive bandwidth and load times.</p>
+<h4 class="wp-block-heading">Custom Methods</h4>
+<p>There are other HTTP methods, such as PUT, DELETE, TRACE, and CONNECT. These methods will not be covered in this article as there aren’t pre-built methods to utilize them in WordPress, nor is it yet common for APIs to implement them.</p>
+<p>Depending upon how your server is configured you can also implement additional HTTP methods of your own. It is always a gamble to go outside of the standard methods, and places huge potential limitations on other developers creating clients to consume your site or API, however it is possible to utilize any method you wish with WordPress. We will briefly touch on how to do that in this article.</p>
+<h3 class="is-toc-heading wp-block-heading" id="response-codes" tabindex="-1"><a href="#response-codes">Response codes</a></h3>
+<p>HTTP utilizes both numeric and string response codes. Rather than go into a lengthy explanation of each, here are the standard response codes. You can define your own response codes when creating APIs, however unless you need to support specific types of responses it may be best to stick to the standard codes. Custom codes are usually in the 1xx ranges.</p>
+<h4 class="wp-block-heading">Code Classes</h4>
+<p>The type of response can quickly be seen by the leftmost digit of the three digit codes.</p>
+<figure class="wp-block-table"><figure class="wp-block-table is-style-borderless"><table><tbody><tr><th>Status Code</th><th>Description</th></tr><tr><td>2xx</td><td>Request was successful</td></tr><tr><td>3xx</td><td>Request was redirected to another URL</td></tr><tr><td>4xx</td><td>Request failed due to client error. Usually invalid authentication or missing data</td></tr><tr><td>5xx</td><td>Request failed due to a server error. Commonly missing or misconfigured configuration files</td></tr></tbody></table></figure></figure>
+<p><strong> Common Codes</strong></p>
+<p>These are the most common codes you will encounter.</p>
+<figure class="wp-block-table"><figure class="wp-block-table is-style-borderless"><table><tbody><tr><th>Status Code</th><th>Description</th></tr><tr><td>200</td><td>OK – Request was successful</td></tr><tr><td>301</td><td>Resource was moved permanently</td></tr><tr><td>302</td><td>Resource was moved temporarily</td></tr><tr><td>403</td><td>Forbidden – Usually due to an invalid authentication</td></tr><tr><td>404</td><td>Resource not found</td></tr><tr><td>500</td><td>Internal server error</td></tr><tr><td>503</td><td>Service unavailable</td></tr></tbody></table></figure></figure>
+<h2 class="is-toc-heading wp-block-heading" id="getting-data-from-an-api" tabindex="-1"><a href="#getting-data-from-an-api">GETting data from an API</a></h2>
+<p><a href="https://github.com/" title="GitHub">GitHub</a> provides an excellent API that does not require app registration for many public aspects, so to demonstrate some of these methods, examples will target the GitHub API.</p>
+<p>GETting data is made incredibly simple in WordPress through the <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_get/" title="wp_remote_get">wp_remote_get()</a></code> function. This function takes the following two arguments:</p>
+<ol class="wp-block-list">
+<li>$url – Resource to retrieve data from. This must be in a standard HTTP format</li>
+<li>$args – OPTIONAL – You may pass an array of arguments in here to alter behavior and headers, such as cookies, follow redirects, etc.</li>
+</ol>
+<p>The following defaults are assumed, though they can be changed via the $args parameter:</p>
+<ul class="wp-block-list">
+<li>method – GET</li>
+<li>timeout – 5 – How long to wait before giving up</li>
+<li>redirection – 5 – How many times to follow redirects.</li>
+<li>httpversion – 1.0</li>
+<li>blocking – true – Should the rest of the page wait to finish loading until this operation is complete?</li>
+<li>headers – array()</li>
+<li>body – null</li>
+<li>cookies – array()</li>
+</ul>
+<p>Let’s use the URL to a GitHub user account and see what sort of information we can get</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$response = wp_remote_get( 'https://api.github.com/users/blobaugh' );</code></pre>
+<p><br/>$response will contain all the headers, content, and other meta data about our request</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">Array(
+	[headers] =&gt; Array(
+		[server] =&gt; nginx
+		[date] =&gt; Fri, 05 Oct 2012 04:43:50 GMT
+		[content-type] =&gt; application/json; charset=utf-8
+		[connection] =&gt; close
+		[status] =&gt; 200 OK
+		[vary] =&gt; Accept
+		[x-ratelimit-remaining] =&gt; 4988
+		[content-length] =&gt; 594
+		[last-modified] =&gt; Fri, 05 Oct 2012 04:39:58 GMT
+		[etag] =&gt; "5d5e6f7a09462d6a2b473fb616a26d2a"
+		[x-github-media-type] =&gt; github.beta
+		[cache-control] =&gt; public, s-maxage=60, max-age=60
+		[x-content-type-options] =&gt; nosniff
+		[x-ratelimit-limit] =&gt; 5000
+	)
+	[body] =&gt; {"type":"User","login":"blobaugh","gravatar_id":"f25f324a47a1efdf7a745e0b2e3c878f","public_gists":1,"followers":22,"created_at":"2011-05-23T21:38:50Z","public_repos":31,"email":"ben@lobaugh.net","hireable":true,"blog":"http://ben.lobaugh.net","bio":null,"following":30,"name":"Ben Lobaugh","company":null,"avatar_url":"https://secure.gravatar.com/avatar/f25f324a47a1efdf7a745e0b2e3c878f?d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-user-420.png","id":806179,"html_url":"https://github.com/blobaugh","location":null,"url":"https://api.github.com/users/blobaugh"}
+	[response] =&gt; Array(
+		[preserved_text 5237511b45884ac6db1ff9d7e407f225 /] =&gt; 200
+		[message] =&gt; OK
+	)
+	[cookies] =&gt; Array()
+	[filename] =&gt;
+)</code></pre>
+<p><br/>All of the same helper functions can be used on this function as with the previous two. The exception here being that HEAD never returns a body, so that element will always be empty.</p>
+<h3 class="is-toc-heading wp-block-heading" id="get-the-body-you-always-wanted" tabindex="-1"><a href="#get-the-body-you-always-wanted">GET the body you always wanted</a></h3>
+<p>Just the body can be retrieved using <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_retrieve_body/" title="wp_remote_retrieve_body">wp_remote_retrieve_body()</a></code>. This function takes just one parameter, the response from any of the other <a href="https://developer.notmatt.press/?s=wp_remote_&amp;post_type%5B%5D=wp-parser-function">wp_remote_X</a> functions where retrieve is not the next value.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$response = wp_remote_get( 'https://api.github.com/users/blobaugh' );
+$body     = wp_remote_retrieve_body( $response );</code></pre>
+<p><br/>Still using the GitHub resource from the previous example, $body will be</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">{"type":"User","login":"blobaugh","public_repos":31,"gravatar_id":"f25f324a47a1efdf7a745e0b2e3c878f","followers":22,"avatar_url":"https://secure.gravatar.com/avatar/f25f324a47a1efdf7a745e0b2e3c878f?d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-user-420.png","public_gists":1,"created_at":"2011-05-23T21:38:50Z","email":"ben@lobaugh.net","following":30,"name":"Ben Lobaugh","company":null,"hireable":true,"id":806179,"html_url":"https://github.com/blobaugh","blog":"http://ben.lobaugh.net","location":null,"bio":null,"url":"https://api.github.com/users/blobaugh"}</code></pre>
+<p><br/>If you do not have any other operations to perform on the response other than getting the body you can reduce the code to one line with</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$body = wp_remote_retrieve_body( wp_remote_get( 'https://api.github.com/users/blobaugh' ) );</code></pre>
+<p><br/>Many of these helper functions can be used on one line similarly.</p>
+<h3 class="is-toc-heading wp-block-heading" id="get-the-response-code" tabindex="-1"><a href="#get-the-response-code">GET the response code</a></h3>
+<p>You may want to check the response code to ensure your retrieval was successful. This can be done via the <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_retrieve_response_code/">wp_remote_retrieve_response_code()</a></code> function:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$response = wp_remote_get( 'https://api.github.com/users/blobaugh' );
+$http_code = wp_remote_retrieve_response_code( $response );</code></pre>
+<p><br/>If successful <code>$http_code</code> will contain <code>200</code>.</p>
+<h3 class="is-toc-heading wp-block-heading" id="get-a-specific-header" tabindex="-1"><a href="#get-a-specific-header">GET a specific header</a></h3>
+<p>If your desire is to retrieve a specific header, say last-modified, you can do so with <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_retrieve_header">wp_remote_retrieve_header()</a></code>. This function takes two parameters</p>
+<ol class="wp-block-list">
+<li><code>$response</code> – The response from the get call</li>
+<li><code>$header</code> – Name of the header to retrieve</li>
+</ol>
+<p>To retrieve the last-modified header</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$response      = wp_remote_get( 'https://api.github.com/users/blobaugh' );
+$last_modified = wp_remote_retrieve_header( $response, 'last-modified' );</code></pre>
+<p><br/><code>$last_modified</code> will contain <code>[last-modified] =&gt; Fri, 05 Oct 2012 04:39:58 GMT</code><br/>You can also retrieve all of the headers in an array with <code>wp_remote_retrieve_headers( $response )</code>.</p>
+<h3 class="is-toc-heading wp-block-heading" id="get-using-basic-authentication" tabindex="-1"><a href="#get-using-basic-authentication">GET using basic authentication</a></h3>
+<p>APIs that are secured more provide one or more of many different types of authentication. A common, though not highly secure, authentication method is HTTP Basic Authentication. It can be used in WordPress by passing ‘Authorization’ to the second parameter of the <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_get">wp_remote_get()</a></code> function, as well as the other HTTP method functions.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$args = array(
+    'headers' =&gt; array(
+        'Authorization' =&gt; 'Basic ' . base64_encode( YOUR_USERNAME . ':' . YOUR_PASSWORD )
+    )
+);
+wp_remote_get( $url, $args );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="posting-data-to-an-api" tabindex="-1"><a href="#posting-data-to-an-api">POSTing data to an API</a></h2>
+<p>The same helper methods (<code><a href="https://developer.notmatt.press/reference/functions/wp_remote_retrieve_body">wp_remote_retrieve_body()</a></code>, etc ) are available for all of the HTTP method calls, and utilized in the same fashion.</p>
+<p>POSTing data is done using the <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_post">wp_remote_post()</a></code> function, and takes exactly the same parameters as <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_get">wp_remote_get()</a></code>. It should be noted here that you are required to pass in ALL of the elements in the array for the second parameter. The Codex provides the default acceptable values. You only need to care right now about the data you are sending so the other values will be defaulted.</p>
+<p>To send data to the server you will need to build an associative array of data. This data will be assigned to the <code>'body'</code> value. From the server side of things the value will appear in the <code>$_POST</code> variable as you would expect. i.e. if <code>body =&gt; array( 'myvar' =&gt; 5 )</code> on the server <code>$_POST['myvar'] = 5</code>.</p>
+<p>Because GitHub does not allow POSTing to the API used in the previous example, this example will pretend that it does. Typically if you want to POST data to an API you will need to contact the maintainers of the API and get an API key or some other form of authentication token. This simply proves that your application is allowed to manipulate data on the API the same way logging into a website as a user does to the website.</p>
+<p>Lets assume we are submitting a contact form with the following fields: name, email, subject, comment. To setup the body we do the following:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$body = array(
+	'name'    =&gt; 'Jane Smith',
+	'email'   =&gt; 'some@email.com',
+	'subject' =&gt; 'Checkout this API stuff',
+	'comment' =&gt; 'I just read a great tutorial. You gotta check it out!',
+);</code></pre>
+<p><br/>Now we need to set up the rest of the values that will be passed to the second parameter of <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_post">wp_remote_post()</a></code></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$args = array(
+	'body'        =&gt; $body,
+	'timeout'     =&gt; '5',
+	'redirection' =&gt; '5',
+	'httpversion' =&gt; '1.0',
+	'blocking'    =&gt; true,
+	'headers'     =&gt; array(),
+	'cookies'     =&gt; array(),
+);</code></pre>
+<p><br/>Then of course to make the call</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$response = wp_remote_post( 'http://your-contact-form.com', $args );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="heading-off-bandwidth-usage" tabindex="-1"><a href="#heading-off-bandwidth-usage">HEADing off bandwidth usage</a></h2>
+<p>It can be pretty important, and sometimes required by the API, to check a resource status using HEAD before retrieving it. On high traffic APIs, GET is often limited to a number of requests per minute or hour. There is no need to even attempt a GET request unless the HEAD request shows that the data on the API has been updated.</p>
+<p>As mentioned previously, HEAD contains data on whether or not the data has been updated, if the data should be cached, when to expire the cached copy, and sometimes a rate limit on requests to the API.</p>
+<p>Going back to the GitHub example, here are few headers to watch out for. Most of these headers are standard, but you should always check the API docs to ensure you understand which headers are named what, and their purpose.</p>
+<ul class="wp-block-list">
+<li><code>x-ratelimit-limit</code> – Number of requests allowed in a time period</li>
+<li><code>x-ratelimit-remaining</code> – Number of remaining available requests in time period</li>
+<li><code>content-length</code> – How large the content is in bytes. Can be useful to warn the user if the content is fairly large</li>
+<li><code>last-modified</code> – When the resource was last modified. Highly useful to caching tools</li>
+<li><code>cache-control</code> – How should the client handle caching</li>
+</ul>
+<p>The following will check the HEAD value of my GitHub user account:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$response = wp_remote_head( 'https://api.github.com/users/blobaugh' );</code></pre>
+<p><br/>$response should look similar to</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">Array(
+	[headers] =&gt; Array
+		(
+		[server] =&gt; nginx
+		[date] =&gt; Fri, 05 Oct 2012 05:21:26 GMT
+		[content-type] =&gt; application/json; charset=utf-8
+		[connection] =&gt; close
+		[status] =&gt; 200 OK
+		[vary] =&gt; Accept
+		[x-ratelimit-remaining] =&gt; 4982
+		[content-length] =&gt; 594
+		[last-modified] =&gt; Fri, 05 Oct 2012 04:39:58 GMT
+		[etag] =&gt; "5d5e6f7a09462d6a2b473fb616a26d2a"
+		[x-github-media-type] =&gt; github.beta
+		[cache-control] =&gt; public, s-maxage=60, max-age=60
+		[x-content-type-options] =&gt; nosniff
+		[x-ratelimit-limit] =&gt; 5000
+	)
+    [body] =&gt;
+    [response] =&gt; Array
+		(
+		[preserved_text 39a8515bd2dce2aa06ee8a2a6656b1de /] =&gt; 200
+		[message] =&gt; OK
+	)
+    [cookies] =&gt; Array(
+	)
+	[filename] =&gt;
+)</code></pre>
+<p><br/>All of the same helper functions can be used on this function as with the previous two. The exception here being that HEAD never returns a body, so that element will always be empty.</p>
+<h2 class="is-toc-heading wp-block-heading" id="make-any-sort-of-request" tabindex="-1"><a href="#make-any-sort-of-request">Make any sort of request</a></h2>
+<p>If you need to make a request using an HTTP method that is not supported by any of the above functions do not panic. The great people developing WordPress already thought of that and lovingly provided <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_request">wp_remote_request()</a></code>. This function takes the same two parameters as <code><a href="https://developer.notmatt.press/reference/functions/wp_remote_get">wp_remote_get()</a></code>, and allows you to specify the HTTP method as well. What data you need to pass along is up to your method.</p>
+<p>To send a DELETE method example you may have something similar to the following:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$args     = array(
+	'method' =&gt; 'DELETE',
+);
+$response = wp_remote_request( 'http://some-api.com/object/to/delete', $args );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="introduction-to-caching" tabindex="-1"><a href="#introduction-to-caching">Introduction to caching</a></h2>
+<p>Caching is a practice whereby commonly used objects or objects requiring significant time to build are saved into a fast object store for quick retrieval on later requests. This prevents the need to spend the time fetching and building the object again. Caching is a vast subject that is part of website optimization and could go into an entire series of articles by itself. What follows is just an introduction to caching and a simple yet effective way to quickly setup a cache for API responses.</p>
+<p>Why should you cache API responses? Well, the big elephant in the room is because external APIs slow down your site. Many consultants will tell you tapping into external APIs will improve the performance of your website by reducing the amount of connections and processing it performs, as well as costly bandwidth, but sometimes this is simply not true.</p>
+<p>It is a fine balancing act between the speed your server can send data and the amount of time it takes for the remote server to process a request, build the data, and send it back. The second glaring aspect is that many APIs have a limited number of requests in a time period, and possibly a limit to the number of connections by an application at once. Caching helps solve these dilemmas by placing a copy of the data on your server until it needs to be refreshed.</p>
+<h2 class="is-toc-heading wp-block-heading" id="when-should-you-cache" tabindex="-1"><a href="#when-should-you-cache">When should you cache?</a></h2>
+<p>The snap answer to this is *always*, but again there are times when you should not. If you are dealing with real time data or the API specifically says not to cache in the headers you may not want to cache, but for all other situations it is generally a good idea to cache any resources retrieved from an API.</p>
+<h2 class="is-toc-heading wp-block-heading" id="wordpress-transients" tabindex="-1"><a href="#wordpress-transients">WordPress Transients</a></h2>
+<p>WordPress Transients provide a convenient way to store and use cached objects. Transients live for a specified amount of time, or until you need them to expire when a resource from the API has been updated. Using the transient functionality in WordPress may be the easiest to use caching system you ever encounter. There are only three functions to do all the heavy lifting for you.</p>
+<h3 class="is-toc-heading wp-block-heading" id="cache-an-object-set-a-transient" tabindex="-1"><a href="#cache-an-object-set-a-transient">Cache an object ( Set a transient )</a></h3>
+<p>Caching an object is done with the <code><a href="https://developer.notmatt.press/reference/functions/set_transient">set_transient()</a></code> function. This function takes the following three parameters:</p>
+<ol class="wp-block-list">
+<li><code>$transient</code> – Name of the transient for future reference</li>
+<li><code>$value</code> – Value of the transient</li>
+<li><code>$expiration</code> – How many seconds from saving the transient until it expires</li>
+</ol>
+<p>An example of caching the GitHub user information response from above for one hour would be</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$response = wp_remote_get( 'https://api.github.com/users/blobaugh' );
+set_transient( 'prefix_github_userinfo', $response, 60 * 60 );</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="get-a-cached-object-get-a-transient" tabindex="-1"><a href="#get-a-cached-object-get-a-transient">Get a cached object ( Get a transient )</a></h3>
+<p>Getting a cached object is quite a bit more complex than setting a transient. You need to request the transient, but then you also need to check to see if that transient has expired and if so fetch updated data. Usually the <code>set_transient()</code> call is made inside of the <code>get_transient()</code> call. Here is an example of getting the transient data for the GitHub user profile:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$github_userinfo = get_transient( 'prefix_github_userinfo' );
+if ( false === $github_userinfo ) {
+	// Transient expired, refresh the data
+	$response = wp_remote_get( 'https://api.github.com/users/blobaugh' );
+	set_transient( 'prefix_github_userinfo', $response, HOUR_IN_SECONDS );
+}
+// Use $github_userinfo as you will</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="delete-a-cached-object-delete-a-transient" tabindex="-1"><a href="#delete-a-cached-object-delete-a-transient">Delete a cached object (Delete a transient)</a></h2>
+<p>Deleting a cached object is the easiest of all the transient functions, simply pass it a parameter of the name of the transient and you are done.</p>
+<p>To remove the Github user info:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">delete_transient( 'blobaugh_github_userinfo' );</code></pre>
+<p>More information on transients can be found <a href="https://developer.notmatt.press/apis/handbook/transients/">here</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Feed_Cache_Transient</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Feed_Cache_Transient</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Feed_Cache_Transient {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Core class used to implement feed cache transients.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_feed_cache_transient/__construct/">WP_Feed_Cache_Transient::__construct</a></td><td>Creates a new (transient) cache object.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_feed_cache_transient/load/">WP_Feed_Cache_Transient::load</a></td><td>Retrieves the data saved in the transient.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_feed_cache_transient/mtime/">WP_Feed_Cache_Transient::mtime</a></td><td>Gets mod transient.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_feed_cache_transient/save/">WP_Feed_Cache_Transient::save</a></td><td>Saves data to the transient.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_feed_cache_transient/touch/">WP_Feed_Cache_Transient::touch</a></td><td>Sets mod transient.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_feed_cache_transient/unlink/">WP_Feed_Cache_Transient::unlink</a></td><td>Deletes transients.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="17"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Feed_Cache_Transient implements SimplePie\Cache\Base {
+
+	/**
+	 * Holds the transient name.
+	 *
+	 * @since 2.8.0
+	 * @var string
+	 */
+	public $name;
+
+	/**
+	 * Holds the transient mod name.
+	 *
+	 * @since 2.8.0
+	 * @var string
+	 */
+	public $mod_name;
+
+	/**
+	 * Holds the cache duration in seconds.
+	 *
+	 * Defaults to 43200 seconds (12 hours).
+	 *
+	 * @since 2.8.0
+	 * @var int
+	 */
+	public $lifetime = 43200;
+
+	/**
+	 * Creates a new (transient) cache object.
+	 *
+	 * @since 2.8.0
+	 * @since 3.2.0 Updated to use a PHP5 constructor.
+	 * @since 6.7.0 Parameter names have been updated to be in line with the `SimplePie\Cache\Base` interface.
+	 *
+	 * @param string                           $location URL location (scheme is used to determine handler).
+	 * @param string                           $name     Unique identifier for cache object.
+	 * @param Base::TYPE_FEED|Base::TYPE_IMAGE $type     Either `TYPE_FEED` ('spc') for SimplePie data,
+	 *                                                   or `TYPE_IMAGE` ('spi') for image data.
+	 */
+	public function __construct( $location, $name, $type ) {
+		$this-&gt;name     = 'feed_' . $name;
+		$this-&gt;mod_name = 'feed_mod_' . $name;
+
+		$lifetime = $this-&gt;lifetime;
+		/**
+		 * Filters the transient lifetime of the feed cache.
+		 *
+		 * @since 2.8.0
+		 *
+		 * @param int    $lifetime Cache duration in seconds. Default is 43200 seconds (12 hours).
+		 * @param string $name     Unique identifier for the cache object.
+		 */
+		$this-&gt;lifetime = apply_filters( 'wp_feed_cache_transient_lifetime', $lifetime, $name );
+	}
+
+	/**
+	 * Saves data to the transient.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @param array|SimplePie\SimplePie $data Data to save. If passed a SimplePie object,
+	 *                                        only cache the `$data` property.
+	 * @return true Always true.
+	 */
+	public function save( $data ) {
+		if ( $data instanceof SimplePie\SimplePie ) {
+			$data = $data-&gt;data;
+		}
+
+		set_transient( $this-&gt;name, $data, $this-&gt;lifetime );
+		set_transient( $this-&gt;mod_name, time(), $this-&gt;lifetime );
+		return true;
+	}
+
+	/**
+	 * Retrieves the data saved in the transient.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return array Data for `SimplePie::$data`.
+	 */
+	public function load() {
+		return get_transient( $this-&gt;name );
+	}
+
+	/**
+	 * Gets mod transient.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return int Timestamp.
+	 */
+	public function mtime() {
+		return get_transient( $this-&gt;mod_name );
+	}
+
+	/**
+	 * Sets mod transient.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return bool False if value was not set and true if value was set.
+	 */
+	public function touch() {
+		return set_transient( $this-&gt;mod_name, time(), $this-&gt;lifetime );
+	}
+
+	/**
+	 * Deletes transients.
+	 *
+	 * @since 2.8.0
+	 *
+	 * @return true Always true.
+	 */
+	public function unlink() {
+		delete_transient( $this-&gt;name );
+		delete_transient( $this-&gt;mod_name );
+		return true;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-feed-cache-transient.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-feed-cache-transient.php#L17">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-feed-cache-transient.php#L17-L137">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.7.0/">6.7.0</a></td><td><span class="since-description">Now properly implements the SimplePieCacheBase interface.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

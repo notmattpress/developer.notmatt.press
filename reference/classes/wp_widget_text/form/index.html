@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_widget_text/">WP_Widget_Text</a></span><span class="is-current-page">WP_Widget_Text::form()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Widget_Text::form()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Widget_Text::form( <span class="arg-type">array</span> <span class="arg-name">$instance</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Outputs the Text widget settings form.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/classes/WP_Widget_Text/render_control_template_scripts">WP_Widget_Text::render_control_template_scripts()</a></li>
+<li><a href="https://developer.notmatt.press/reference/classes/_WP_Editors/editor">_WP_Editors::editor()</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$instance</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Current settings.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="454"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function form( $instance ) {
+	$instance = wp_parse_args(
+		(array) $instance,
+		array(
+			'title' =&gt; '',
+			'text'  =&gt; '',
+		)
+	);
+	?&gt;
+	&lt;?php if ( ! $this-&gt;is_legacy_instance( $instance ) ) : ?&gt;
+		&lt;?php
+
+		if ( user_can_richedit() ) {
+			add_filter( 'the_editor_content', 'format_for_editor', 10, 2 );
+			$default_editor = 'tinymce';
+		} else {
+			$default_editor = 'html';
+		}
+
+		/** This filter is documented in wp-includes/class-wp-editor.php */
+		$text = apply_filters( 'the_editor_content', $instance['text'], $default_editor );
+
+		// Reset filter addition.
+		if ( user_can_richedit() ) {
+			remove_filter( 'the_editor_content', 'format_for_editor' );
+		}
+
+		// Prevent premature closing of textarea in case format_for_editor() didn't apply or the_editor_content filter did a wrong thing.
+		$escaped_text = preg_replace( '#&lt;/textarea#i', '&amp;lt;/textarea', $text );
+
+		?&gt;
+		&lt;input id="&lt;?php echo $this-&gt;get_field_id( 'title' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'title' ); ?&gt;" class="title sync-input" type="hidden" value="&lt;?php echo esc_attr( $instance['title'] ); ?&gt;"&gt;
+		&lt;textarea id="&lt;?php echo $this-&gt;get_field_id( 'text' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'text' ); ?&gt;" class="text sync-input" hidden&gt;&lt;?php echo $escaped_text; ?&gt;&lt;/textarea&gt;
+		&lt;input id="&lt;?php echo $this-&gt;get_field_id( 'filter' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'filter' ); ?&gt;" class="filter sync-input" type="hidden" value="on"&gt;
+		&lt;input id="&lt;?php echo $this-&gt;get_field_id( 'visual' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'visual' ); ?&gt;" class="visual sync-input" type="hidden" value="on"&gt;
+	&lt;?php else : ?&gt;
+		&lt;input id="&lt;?php echo $this-&gt;get_field_id( 'visual' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'visual' ); ?&gt;" class="visual" type="hidden" value=""&gt;
+		&lt;p&gt;
+			&lt;label for="&lt;?php echo $this-&gt;get_field_id( 'title' ); ?&gt;"&gt;&lt;?php _e( 'Title:' ); ?&gt;&lt;/label&gt;
+			&lt;input class="widefat" id="&lt;?php echo $this-&gt;get_field_id( 'title' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'title' ); ?&gt;" type="text" value="&lt;?php echo esc_attr( $instance['title'] ); ?&gt;" /&gt;
+		&lt;/p&gt;
+		&lt;?php
+		if ( ! isset( $instance['visual'] ) ) {
+			$widget_info_message = __( 'This widget may contain code that may work better in the &amp;#8220;Custom HTML&amp;#8221; widget. How about trying that widget instead?' );
+		} else {
+			$widget_info_message = __( 'This widget may have contained code that may work better in the &amp;#8220;Custom HTML&amp;#8221; widget. If you have not yet, how about trying that widget instead?' );
+		}
+
+		wp_admin_notice(
+			$widget_info_message,
+			array(
+				'type'               =&gt; 'info',
+				'additional_classes' =&gt; array( 'notice-alt', 'inline' ),
+			)
+		);
+		?&gt;
+		&lt;p&gt;
+			&lt;label for="&lt;?php echo $this-&gt;get_field_id( 'text' ); ?&gt;"&gt;&lt;?php _e( 'Content:' ); ?&gt;&lt;/label&gt;
+			&lt;textarea class="widefat" rows="16" cols="20" id="&lt;?php echo $this-&gt;get_field_id( 'text' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'text' ); ?&gt;"&gt;&lt;?php echo esc_textarea( $instance['text'] ); ?&gt;&lt;/textarea&gt;
+		&lt;/p&gt;
+		&lt;p&gt;
+			&lt;input id="&lt;?php echo $this-&gt;get_field_id( 'filter' ); ?&gt;" name="&lt;?php echo $this-&gt;get_field_name( 'filter' ); ?&gt;" type="checkbox"&lt;?php checked( ! empty( $instance['filter'] ) ); ?&gt; /&gt;&amp;nbsp;&lt;label for="&lt;?php echo $this-&gt;get_field_id( 'filter' ); ?&gt;"&gt;&lt;?php _e( 'Automatically add paragraphs' ); ?&gt;&lt;/label&gt;
+		&lt;/p&gt;
+		&lt;?php
+	endif;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/widgets/class-wp-widget-text.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/widgets/class-wp-widget-text.php#L454">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/widgets/class-wp-widget-text.php#L454-L519">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/the_editor_content/"><span class="hook-func">apply_filters</span>( ‘the_editor_content’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$content</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$default_editor</span></nobr> )</a></dt><dd><p>Filters the default editor content.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_notice/">wp_admin_notice()</a><code>wp-includes/functions.php</code></td><td><p>Outputs an admin notice.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_widget_text/is_legacy_instance/">WP_Widget_Text::is_legacy_instance()</a><code>wp-includes/widgets/class-wp-widget-text.php</code></td><td><p>Determines whether a given instance is legacy and should bypass using TinyMCE.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/esc_textarea/">esc_textarea()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for textarea values.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/checked/">checked()</a><code>wp-includes/general-template.php</code></td><td><p>Outputs the HTML checked attribute.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/user_can_richedit/">user_can_richedit()</a><code>wp-includes/general-template.php</code></td><td><p>Determines whether the user can access the visual editor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_parse_args/">wp_parse_args()</a><code>wp-includes/functions.php</code></td><td><p>Merges user defined arguments into defaults array.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_filter/">add_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Adds a callback function to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/remove_filter/">remove_filter()</a><code>wp-includes/plugin.php</code></td><td><p>Removes a callback function from a filter hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.8.1/">4.8.1</a></td><td><span class="since-description">Restored original form to be displayed when in legacy mode.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.8.0/">4.8.0</a></td><td><span class="since-description">Form only contains hidden inputs which are synced with JS template.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.8.0/">2.8.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

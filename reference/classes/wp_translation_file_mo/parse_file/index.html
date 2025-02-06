@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_translation_file_mo/">WP_Translation_File_MO</a></span><span class="is-current-page">WP_Translation_File_MO::parse_file()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Translation_File_MO::parse_file()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Translation_File_MO::parse_file(): <span class="return-type">bool</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Parses the file.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">bool</span> True on success, false otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="90"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function parse_file(): bool {
+	$this-&gt;parsed = true;
+
+	$file_contents = file_get_contents( $this-&gt;file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+	if ( false === $file_contents ) {
+		return false;
+	}
+
+	$file_length = strlen( $file_contents );
+
+	if ( $file_length &lt; 24 ) {
+		$this-&gt;error = 'Invalid data';
+		return false;
+	}
+
+	$this-&gt;uint32 = $this-&gt;detect_endian_and_validate_file( substr( $file_contents, 0, 4 ) );
+
+	if ( false === $this-&gt;uint32 ) {
+		return false;
+	}
+
+	$offsets = substr( $file_contents, 4, 24 );
+
+	if ( false === $offsets ) {
+		return false;
+	}
+
+	$offsets = unpack( "{$this-&gt;uint32}rev/{$this-&gt;uint32}total/{$this-&gt;uint32}originals_addr/{$this-&gt;uint32}translations_addr/{$this-&gt;uint32}hash_length/{$this-&gt;uint32}hash_addr", $offsets );
+
+	if ( false === $offsets ) {
+		return false;
+	}
+
+	$offsets['originals_length']    = $offsets['translations_addr'] - $offsets['originals_addr'];
+	$offsets['translations_length'] = $offsets['hash_addr'] - $offsets['translations_addr'];
+
+	if ( $offsets['rev'] &gt; 0 ) {
+		$this-&gt;error = 'Unsupported revision';
+		return false;
+	}
+
+	if ( $offsets['translations_addr'] &gt; $file_length || $offsets['originals_addr'] &gt; $file_length ) {
+		$this-&gt;error = 'Invalid data';
+		return false;
+	}
+
+	// Load the Originals.
+	$original_data     = str_split( substr( $file_contents, $offsets['originals_addr'], $offsets['originals_length'] ), 8 );
+	$translations_data = str_split( substr( $file_contents, $offsets['translations_addr'], $offsets['translations_length'] ), 8 );
+
+	foreach ( array_keys( $original_data ) as $i ) {
+		$o = unpack( "{$this-&gt;uint32}length/{$this-&gt;uint32}pos", $original_data[ $i ] );
+		$t = unpack( "{$this-&gt;uint32}length/{$this-&gt;uint32}pos", $translations_data[ $i ] );
+
+		if ( false === $o || false === $t ) {
+			continue;
+		}
+
+		$original    = substr( $file_contents, $o['pos'], $o['length'] );
+		$translation = substr( $file_contents, $t['pos'], $t['length'] );
+		// GlotPress bug.
+		$translation = rtrim( $translation, "\0" );
+
+		// Metadata about the MO file is stored in the first translation entry.
+		if ( '' === $original ) {
+			foreach ( explode( "\n", $translation ) as $meta_line ) {
+				if ( '' === $meta_line || ! str_contains( $meta_line, ':' ) ) {
+					continue;
+				}
+
+				list( $name, $value ) = array_map( 'trim', explode( ':', $meta_line, 2 ) );
+
+				$this-&gt;headers[ strtolower( $name ) ] = $value;
+			}
+		} else {
+			/*
+			 * In MO files, the key normally contains both singular and plural versions.
+			 * However, this just adds the singular string for lookup,
+			 * which caters for cases where both __( 'Product' ) and _n( 'Product', 'Products' )
+			 * are used and the translation is expected to be the same for both.
+			 */
+			$parts = explode( "\0", (string) $original );
+
+			$this-&gt;entries[ $parts[0] ] = $translation;
+		}
+	}
+
+	return true;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/l10n/class-wp-translation-file-mo.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/l10n/class-wp-translation-file-mo.php#L90">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/l10n/class-wp-translation-file-mo.php#L90-L179">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_translation_file_mo/detect_endian_and_validate_file/">WP_Translation_File_MO::detect_endian_and_validate_file()</a><code>wp-includes/l10n/class-wp-translation-file-mo.php</code></td><td><p>Detects endian and validates file.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

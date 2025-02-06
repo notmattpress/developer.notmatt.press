@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/babel-plugin-import-jsx-pragma</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/babel-plugin-import-jsx-pragma</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Babel transform plugin for automatically injecting an import to be used as the pragma for the <a href="https://babeljs.io/docs/babel-plugin-transform-react-jsx">React JSX Transform plugin</a>.</p>
+<p><a href="https://reactjs.org/docs/jsx-in-depth.html">JSX</a> is merely a syntactic sugar for a function call, typically to <code>React.createElement</code> when used with <a href="https://reactjs.org/">React</a>. As such, it requires that the function referenced by this transform be within the scope of the file where the JSX occurs. In a typical React project, this means React must be imported in any file where JSX exists.</p>
+<p><strong>Babel Plugin Import JSX Pragma</strong> automates this process by introducing the necessary import automatically wherever JSX exists, allowing you to use JSX in your code without thinking to ensure the transformed function is within scope. It respects existing import statements, as well as scope variable declarations.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module to your project using <a href="https://www.npmjs.com/">npm</a>.</p>
+<pre><code class="language-bash">npm install @wordpress/babel-plugin-import-jsx-pragma
+</code></pre>
+<p><strong>Note</strong>: This package requires Node.js version with long-term support status (check <a href="https://nodejs.org/en/about/previous-releases">Active LTS or Maintenance LTS releases</a>). It is not compatible with older versions.</p>
+<h2 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h2>
+<p>Refer to the <a href="https://babeljs.io/docs/plugins">Babel Plugins documentation</a> if you don’t yet have experience working with Babel plugins.</p>
+<p>Include <code>@wordpress/babel-plugin-import-jsx-pragma</code> (and <a href="https://babeljs.io/docs/babel-plugin-transform-react-jsx/">@babel/plugin-transform-react-jsx</a>) as plugins in your Babel configuration. If you don’t include both you will receive errors when encountering JSX tokens.</p>
+<pre><code class="language-js">// .babelrc.js
+module.exports = {
+    plugins: [
+        '@wordpress/babel-plugin-import-jsx-pragma',
+        '@babel/plugin-transform-react-jsx',
+    ],
+};
+</code></pre>
+<p><em>Note:</em> <code>@wordpress/babel-plugin-import-jsx-pragma</code> is included in <code>@wordpress/babel-preset-default</code> (default preset for WordPress development) starting from <code>v4.0.0</code>. If you are using this preset, you shouldn’t include this plugin in your Babel config.</p>
+<h2 class="is-toc-heading" id="options" tabindex="-1"><a href="#options">Options</a></h2>
+<p>As the <code>@babel/plugin-transform-react-jsx</code> plugin offers options to customize the <code>pragma</code> to which the transform references, there are equivalent options to assign for customizing the imports generated.</p>
+<p>For example, if you are using the <code>react</code> package, you may want to use the following configuration:</p>
+<pre><code class="language-js">// .babelrc.js
+module.exports = {
+    plugins: [
+        [
+            '@wordpress/babel-plugin-import-jsx-pragma',
+            {
+                scopeVariable: 'createElement',
+                scopeVariableFrag: 'Fragment',
+                source: 'react',
+                isDefault: false,
+            },
+        ],
+        [
+            '@babel/plugin-transform-react-jsx',
+            {
+                pragma: 'createElement',
+                pragmaFrag: 'Fragment',
+            },
+        ],
+    ],
+};
+</code></pre>
+<h3 class="is-toc-heading" id="scopevariable" tabindex="-1"><a href="#scopevariable">scopeVariable</a></h3>
+<p><em>Type:</em> String</p>
+<p>Name of variable required to be in scope for use by the JSX pragma. For the default pragma of React.createElement, the React variable must be within scope.</p>
+<h3 class="is-toc-heading" id="scopevariablefrag" tabindex="-1"><a href="#scopevariablefrag">scopeVariableFrag</a></h3>
+<p><em>Type:</em> String</p>
+<p>Name of variable required to be in scope for <code>&lt;&gt;&lt;/&gt;</code> <code>Fragment</code> JSX. Named <code>&lt;Fragment /&gt;</code> elements<br/>
+expect Fragment to be in scope and will not add the import.</p>
+<h3 class="is-toc-heading" id="source" tabindex="-1"><a href="#source">source</a></h3>
+<p><em>Type:</em> String</p>
+<p>The module from which the scope variable is to be imported when missing.</p>
+<h3 class="is-toc-heading" id="isdefault" tabindex="-1"><a href="#isdefault">isDefault</a></h3>
+<p><em>Type:</em> Boolean</p>
+<p>Whether the scopeVariable is the default import of the source module. Note that this has no impact<br/>
+on <code>scopeVariableFrag</code>.</p>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

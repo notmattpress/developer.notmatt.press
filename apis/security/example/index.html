@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/apis/">Common APIs Handbook</a></span><span><a href="https://developer.wordpress.org/apis/security/">Security</a></span><span class="is-current-page">Example</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Example</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Complete example using capability checks, data validation, secure input, secure output and nonces:</p>
+<pre class="wp-block-code expanded"><code class="language-php" lang="php">/**
+ * Generate a Delete link based on the homepage url.
+ *
+ * @param string $content   Existing content.
+ *
+ * @return string|null
+ */
+function wporg_generate_delete_link( $content ) {
+	// Run only for single post page.
+	if ( is_single() &amp;&amp; in_the_loop() &amp;&amp; is_main_query() ) {
+		// Add query arguments: action, post, nonce
+		$url = add_query_arg(
+			[
+				'action' =&gt; 'wporg_frontend_delete',
+				'post'   =&gt; get_the_ID(),
+				'nonce'  =&gt; wp_create_nonce( 'wporg_frontend_delete' ),
+			], home_url()
+		);
+
+		return $content . ' &lt;a href="' . esc_url( $url ) . '"&gt;' . esc_html__( 'Delete Post', 'wporg' ) . '&lt;/a&gt;';
+	}
+
+	return null;
+}
+
+
+/**
+ * Request handler
+ */
+function wporg_delete_post() {
+	if ( isset( $_GET['action'] )
+         &amp;&amp; isset( $_GET['nonce'] )
+         &amp;&amp; 'wporg_frontend_delete' === $_GET['action']
+         &amp;&amp; wp_verify_nonce( $_GET['nonce'], 'wporg_frontend_delete' ) ) {
+
+		// Verify we have a post id.
+		$post_id = ( isset( $_GET['post'] ) ) ? ( $_GET['post'] ) : ( null );
+
+		// Verify there is a post with such a number.
+		$post = get_post( (int) $post_id );
+		if ( empty( $post ) ) {
+			return;
+		}
+
+		// Delete the post.
+		wp_trash_post( $post_id );
+
+		// Redirect to admin page.
+		$redirect = admin_url( 'edit.php' );
+		wp_safe_redirect( $redirect );
+
+		// We are done.
+		die;
+	}
+}
+
+
+/**
+ * Add delete post ability
+ */
+add_action('plugins_loaded', 'wporg_add_delete_post_ability');
+ 
+function wporg_add_delete_post_ability() {    
+    if ( current_user_can( 'edit_others_posts' ) ) {
+        /**
+         * Add the delete link to the end of the post content.
+         */
+        add_filter( 'the_content', 'wporg_generate_delete_link' );
+      
+        /**
+         * Register our request handler with the init hook.
+         */
+        add_action( 'init', 'wporg_delete_post' );
+    }
+}</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

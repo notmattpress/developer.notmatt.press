@@ -1,0 +1,649 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_posts_list_table/">WP_Posts_List_Table</a></span><span class="is-current-page">WP_Posts_List_Table::inline_edit()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Posts_List_Table::inline_edit()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Posts_List_Table::inline_edit()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Outputs the hidden row displayed when inline editing</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1613"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function inline_edit() {
+	global $mode;
+
+	$screen = $this-&gt;screen;
+
+	$post             = get_default_post_to_edit( $screen-&gt;post_type );
+	$post_type_object = get_post_type_object( $screen-&gt;post_type );
+
+	$taxonomy_names          = get_object_taxonomies( $screen-&gt;post_type );
+	$hierarchical_taxonomies = array();
+	$flat_taxonomies         = array();
+
+	foreach ( $taxonomy_names as $taxonomy_name ) {
+		$taxonomy = get_taxonomy( $taxonomy_name );
+
+		$show_in_quick_edit = $taxonomy-&gt;show_in_quick_edit;
+
+		/**
+		 * Filters whether the current taxonomy should be shown in the Quick Edit panel.
+		 *
+		 * @since 4.2.0
+		 *
+		 * @param bool   $show_in_quick_edit Whether to show the current taxonomy in Quick Edit.
+		 * @param string $taxonomy_name      Taxonomy name.
+		 * @param string $post_type          Post type of current Quick Edit post.
+		 */
+		if ( ! apply_filters( 'quick_edit_show_taxonomy', $show_in_quick_edit, $taxonomy_name, $screen-&gt;post_type ) ) {
+			continue;
+		}
+
+		if ( $taxonomy-&gt;hierarchical ) {
+			$hierarchical_taxonomies[] = $taxonomy;
+		} else {
+			$flat_taxonomies[] = $taxonomy;
+		}
+	}
+
+	$m            = ( isset( $mode ) &amp;&amp; 'excerpt' === $mode ) ? 'excerpt' : 'list';
+	$can_publish  = current_user_can( $post_type_object-&gt;cap-&gt;publish_posts );
+	$core_columns = array(
+		'cb'         =&gt; true,
+		'date'       =&gt; true,
+		'title'      =&gt; true,
+		'categories' =&gt; true,
+		'tags'       =&gt; true,
+		'comments'   =&gt; true,
+		'author'     =&gt; true,
+	);
+	?&gt;
+
+	&lt;form method="get"&gt;
+	&lt;table style="display: none"&gt;&lt;tbody id="inlineedit"&gt;
+	&lt;?php
+	$hclass              = count( $hierarchical_taxonomies ) ? 'post' : 'page';
+	$inline_edit_classes = "inline-edit-row inline-edit-row-$hclass";
+	$bulk_edit_classes   = "bulk-edit-row bulk-edit-row-$hclass bulk-edit-{$screen-&gt;post_type}";
+	$quick_edit_classes  = "quick-edit-row quick-edit-row-$hclass inline-edit-{$screen-&gt;post_type}";
+
+	$bulk = 0;
+
+	while ( $bulk &lt; 2 ) :
+		$classes  = $inline_edit_classes . ' ';
+		$classes .= $bulk ? $bulk_edit_classes : $quick_edit_classes;
+		?&gt;
+		&lt;tr id="&lt;?php echo $bulk ? 'bulk-edit' : 'inline-edit'; ?&gt;" class="&lt;?php echo $classes; ?&gt;" style="display: none"&gt;
+		&lt;td colspan="&lt;?php echo $this-&gt;get_column_count(); ?&gt;" class="colspanchange"&gt;
+		&lt;div class="inline-edit-wrapper" role="region" aria-labelledby="&lt;?php echo $bulk ? 'bulk' : 'quick'; ?&gt;-edit-legend"&gt;
+		&lt;fieldset class="inline-edit-col-left"&gt;
+			&lt;legend class="inline-edit-legend" id="&lt;?php echo $bulk ? 'bulk' : 'quick'; ?&gt;-edit-legend"&gt;&lt;?php echo $bulk ? __( 'Bulk Edit' ) : __( 'Quick Edit' ); ?&gt;&lt;/legend&gt;
+			&lt;div class="inline-edit-col"&gt;
+
+			&lt;?php if ( post_type_supports( $screen-&gt;post_type, 'title' ) ) : ?&gt;
+
+				&lt;?php if ( $bulk ) : ?&gt;
+
+					&lt;div id="bulk-title-div"&gt;
+						&lt;div id="bulk-titles"&gt;&lt;/div&gt;
+					&lt;/div&gt;
+
+				&lt;?php else : // $bulk ?&gt;
+
+					&lt;label&gt;
+						&lt;span class="title"&gt;&lt;?php _e( 'Title' ); ?&gt;&lt;/span&gt;
+						&lt;span class="input-text-wrap"&gt;&lt;input type="text" name="post_title" class="ptitle" value="" /&gt;&lt;/span&gt;
+					&lt;/label&gt;
+
+					&lt;?php if ( is_post_type_viewable( $screen-&gt;post_type ) ) : ?&gt;
+
+						&lt;label&gt;
+							&lt;span class="title"&gt;&lt;?php _e( 'Slug' ); ?&gt;&lt;/span&gt;
+							&lt;span class="input-text-wrap"&gt;&lt;input type="text" name="post_name" value="" autocomplete="off" spellcheck="false" /&gt;&lt;/span&gt;
+						&lt;/label&gt;
+
+					&lt;?php endif; // is_post_type_viewable() ?&gt;
+
+				&lt;?php endif; // $bulk ?&gt;
+
+			&lt;?php endif; // post_type_supports( ... 'title' ) ?&gt;
+
+			&lt;?php if ( ! $bulk ) : ?&gt;
+				&lt;fieldset class="inline-edit-date"&gt;
+					&lt;legend&gt;&lt;span class="title"&gt;&lt;?php _e( 'Date' ); ?&gt;&lt;/span&gt;&lt;/legend&gt;
+					&lt;?php touch_time( 1, 1, 0, 1 ); ?&gt;
+				&lt;/fieldset&gt;
+				&lt;br class="clear" /&gt;
+			&lt;?php endif; // $bulk ?&gt;
+
+			&lt;?php
+			if ( post_type_supports( $screen-&gt;post_type, 'author' ) ) {
+				$authors_dropdown = '';
+
+				if ( current_user_can( $post_type_object-&gt;cap-&gt;edit_others_posts ) ) {
+					$dropdown_name  = 'post_author';
+					$dropdown_class = 'authors';
+					if ( wp_is_large_user_count() ) {
+						$authors_dropdown = sprintf( '&lt;select name="%s" class="%s hidden"&gt;&lt;/select&gt;', esc_attr( $dropdown_name ), esc_attr( $dropdown_class ) );
+					} else {
+						$users_opt = array(
+							'hide_if_only_one_author' =&gt; false,
+							'capability'              =&gt; array( $post_type_object-&gt;cap-&gt;edit_posts ),
+							'name'                    =&gt; $dropdown_name,
+							'class'                   =&gt; $dropdown_class,
+							'multi'                   =&gt; 1,
+							'echo'                    =&gt; 0,
+							'show'                    =&gt; 'display_name_with_login',
+						);
+
+						if ( $bulk ) {
+							$users_opt['show_option_none'] = __( '&amp;mdash; No Change &amp;mdash;' );
+						}
+
+						/**
+						 * Filters the arguments used to generate the Quick Edit authors drop-down.
+						 *
+						 * @since 5.6.0
+						 *
+						 * @see wp_dropdown_users()
+						 *
+						 * @param array $users_opt An array of arguments passed to wp_dropdown_users().
+						 * @param bool $bulk A flag to denote if it's a bulk action.
+						 */
+						$users_opt = apply_filters( 'quick_edit_dropdown_authors_args', $users_opt, $bulk );
+
+						$authors = wp_dropdown_users( $users_opt );
+
+						if ( $authors ) {
+							$authors_dropdown  = '&lt;label class="inline-edit-author"&gt;';
+							$authors_dropdown .= '&lt;span class="title"&gt;' . __( 'Author' ) . '&lt;/span&gt;';
+							$authors_dropdown .= $authors;
+							$authors_dropdown .= '&lt;/label&gt;';
+						}
+					}
+				} // current_user_can( 'edit_others_posts' )
+
+				if ( ! $bulk ) {
+					echo $authors_dropdown;
+				}
+			} // post_type_supports( ... 'author' )
+			?&gt;
+
+			&lt;?php if ( ! $bulk &amp;&amp; $can_publish ) : ?&gt;
+
+				&lt;div class="inline-edit-group wp-clearfix"&gt;
+					&lt;label class="alignleft"&gt;
+						&lt;span class="title"&gt;&lt;?php _e( 'Password' ); ?&gt;&lt;/span&gt;
+						&lt;span class="input-text-wrap"&gt;&lt;input type="text" name="post_password" class="inline-edit-password-input" value="" /&gt;&lt;/span&gt;
+					&lt;/label&gt;
+
+					&lt;span class="alignleft inline-edit-or"&gt;
+						&lt;?php
+						/* translators: Between password field and private checkbox on post quick edit interface. */
+						_e( '&amp;ndash;OR&amp;ndash;' );
+						?&gt;
+					&lt;/span&gt;
+					&lt;label class="alignleft inline-edit-private"&gt;
+						&lt;input type="checkbox" name="keep_private" value="private" /&gt;
+						&lt;span class="checkbox-title"&gt;&lt;?php _e( 'Private' ); ?&gt;&lt;/span&gt;
+					&lt;/label&gt;
+				&lt;/div&gt;
+
+			&lt;?php endif; ?&gt;
+
+			&lt;/div&gt;
+		&lt;/fieldset&gt;
+
+		&lt;?php if ( count( $hierarchical_taxonomies ) &amp;&amp; ! $bulk ) : ?&gt;
+
+			&lt;fieldset class="inline-edit-col-center inline-edit-categories"&gt;
+				&lt;div class="inline-edit-col"&gt;
+
+				&lt;?php foreach ( $hierarchical_taxonomies as $taxonomy ) : ?&gt;
+
+					&lt;span class="title inline-edit-categories-label"&gt;&lt;?php echo esc_html( $taxonomy-&gt;labels-&gt;name ); ?&gt;&lt;/span&gt;
+					&lt;input type="hidden" name="&lt;?php echo ( 'category' === $taxonomy-&gt;name ) ? 'post_category[]' : 'tax_input[' . esc_attr( $taxonomy-&gt;name ) . '][]'; ?&gt;" value="0" /&gt;
+					&lt;ul class="cat-checklist &lt;?php echo esc_attr( $taxonomy-&gt;name ); ?&gt;-checklist"&gt;
+						&lt;?php wp_terms_checklist( 0, array( 'taxonomy' =&gt; $taxonomy-&gt;name ) ); ?&gt;
+					&lt;/ul&gt;
+
+				&lt;?php endforeach; // $hierarchical_taxonomies as $taxonomy ?&gt;
+
+				&lt;/div&gt;
+			&lt;/fieldset&gt;
+
+		&lt;?php endif; // count( $hierarchical_taxonomies ) &amp;&amp; ! $bulk ?&gt;
+
+		&lt;fieldset class="inline-edit-col-right"&gt;
+			&lt;div class="inline-edit-col"&gt;
+
+			&lt;?php
+			if ( post_type_supports( $screen-&gt;post_type, 'author' ) &amp;&amp; $bulk ) {
+				echo $authors_dropdown;
+			}
+			?&gt;
+
+			&lt;?php if ( post_type_supports( $screen-&gt;post_type, 'page-attributes' ) ) : ?&gt;
+
+				&lt;?php if ( $post_type_object-&gt;hierarchical ) : ?&gt;
+
+					&lt;label&gt;
+						&lt;span class="title"&gt;&lt;?php _e( 'Parent' ); ?&gt;&lt;/span&gt;
+						&lt;?php
+						$dropdown_args = array(
+							'post_type'         =&gt; $post_type_object-&gt;name,
+							'selected'          =&gt; $post-&gt;post_parent,
+							'name'              =&gt; 'post_parent',
+							'show_option_none'  =&gt; __( 'Main Page (no parent)' ),
+							'option_none_value' =&gt; 0,
+							'sort_column'       =&gt; 'menu_order, post_title',
+						);
+
+						if ( $bulk ) {
+							$dropdown_args['show_option_no_change'] = __( '&amp;mdash; No Change &amp;mdash;' );
+							$dropdown_args['id']                    = 'bulk_edit_post_parent';
+						}
+
+						/**
+						 * Filters the arguments used to generate the Quick Edit page-parent drop-down.
+						 *
+						 * @since 2.7.0
+						 * @since 5.6.0 The `$bulk` parameter was added.
+						 *
+						 * @see wp_dropdown_pages()
+						 *
+						 * @param array $dropdown_args An array of arguments passed to wp_dropdown_pages().
+						 * @param bool  $bulk          A flag to denote if it's a bulk action.
+						 */
+						$dropdown_args = apply_filters( 'quick_edit_dropdown_pages_args', $dropdown_args, $bulk );
+
+						wp_dropdown_pages( $dropdown_args );
+						?&gt;
+					&lt;/label&gt;
+
+				&lt;?php endif; // hierarchical ?&gt;
+
+				&lt;?php if ( ! $bulk ) : ?&gt;
+
+					&lt;label&gt;
+						&lt;span class="title"&gt;&lt;?php _e( 'Order' ); ?&gt;&lt;/span&gt;
+						&lt;span class="input-text-wrap"&gt;&lt;input type="text" name="menu_order" class="inline-edit-menu-order-input" value="&lt;?php echo $post-&gt;menu_order; ?&gt;" /&gt;&lt;/span&gt;
+					&lt;/label&gt;
+
+				&lt;?php endif; // ! $bulk ?&gt;
+
+			&lt;?php endif; // post_type_supports( ... 'page-attributes' ) ?&gt;
+
+			&lt;?php if ( 0 &lt; count( get_page_templates( null, $screen-&gt;post_type ) ) ) : ?&gt;
+
+				&lt;label&gt;
+					&lt;span class="title"&gt;&lt;?php _e( 'Template' ); ?&gt;&lt;/span&gt;
+					&lt;select name="page_template"&gt;
+						&lt;?php if ( $bulk ) : ?&gt;
+						&lt;option value="-1"&gt;&lt;?php _e( '&amp;mdash; No Change &amp;mdash;' ); ?&gt;&lt;/option&gt;
+						&lt;?php endif; // $bulk ?&gt;
+						&lt;?php
+						/** This filter is documented in wp-admin/includes/meta-boxes.php */
+						$default_title = apply_filters( 'default_page_template_title', __( 'Default template' ), 'quick-edit' );
+						?&gt;
+						&lt;option value="default"&gt;&lt;?php echo esc_html( $default_title ); ?&gt;&lt;/option&gt;
+						&lt;?php page_template_dropdown( '', $screen-&gt;post_type ); ?&gt;
+					&lt;/select&gt;
+				&lt;/label&gt;
+
+			&lt;?php endif; ?&gt;
+
+			&lt;?php if ( count( $flat_taxonomies ) &amp;&amp; ! $bulk ) : ?&gt;
+
+				&lt;?php foreach ( $flat_taxonomies as $taxonomy ) : ?&gt;
+
+					&lt;?php if ( current_user_can( $taxonomy-&gt;cap-&gt;assign_terms ) ) : ?&gt;
+						&lt;?php $taxonomy_name = esc_attr( $taxonomy-&gt;name ); ?&gt;
+						&lt;div class="inline-edit-tags-wrap"&gt;
+						&lt;label class="inline-edit-tags"&gt;
+							&lt;span class="title"&gt;&lt;?php echo esc_html( $taxonomy-&gt;labels-&gt;name ); ?&gt;&lt;/span&gt;
+							&lt;textarea data-wp-taxonomy="&lt;?php echo $taxonomy_name; ?&gt;" cols="22" rows="1" name="tax_input[&lt;?php echo esc_attr( $taxonomy-&gt;name ); ?&gt;]" class="tax_input_&lt;?php echo esc_attr( $taxonomy-&gt;name ); ?&gt;" aria-describedby="inline-edit-&lt;?php echo esc_attr( $taxonomy-&gt;name ); ?&gt;-desc"&gt;&lt;/textarea&gt;
+						&lt;/label&gt;
+						&lt;p class="howto" id="inline-edit-&lt;?php echo esc_attr( $taxonomy-&gt;name ); ?&gt;-desc"&gt;&lt;?php echo esc_html( $taxonomy-&gt;labels-&gt;separate_items_with_commas ); ?&gt;&lt;/p&gt;
+						&lt;/div&gt;
+					&lt;?php endif; // current_user_can( 'assign_terms' ) ?&gt;
+
+				&lt;?php endforeach; // $flat_taxonomies as $taxonomy ?&gt;
+
+			&lt;?php endif; // count( $flat_taxonomies ) &amp;&amp; ! $bulk ?&gt;
+
+			&lt;?php if ( post_type_supports( $screen-&gt;post_type, 'comments' ) || post_type_supports( $screen-&gt;post_type, 'trackbacks' ) ) : ?&gt;
+
+				&lt;?php if ( $bulk ) : ?&gt;
+
+					&lt;div class="inline-edit-group wp-clearfix"&gt;
+
+					&lt;?php if ( post_type_supports( $screen-&gt;post_type, 'comments' ) ) : ?&gt;
+
+						&lt;label class="alignleft"&gt;
+							&lt;span class="title"&gt;&lt;?php _e( 'Comments' ); ?&gt;&lt;/span&gt;
+							&lt;select name="comment_status"&gt;
+								&lt;option value=""&gt;&lt;?php _e( '&amp;mdash; No Change &amp;mdash;' ); ?&gt;&lt;/option&gt;
+								&lt;option value="open"&gt;&lt;?php _e( 'Allow' ); ?&gt;&lt;/option&gt;
+								&lt;option value="closed"&gt;&lt;?php _e( 'Do not allow' ); ?&gt;&lt;/option&gt;
+							&lt;/select&gt;
+						&lt;/label&gt;
+
+					&lt;?php endif; ?&gt;
+
+					&lt;?php if ( post_type_supports( $screen-&gt;post_type, 'trackbacks' ) ) : ?&gt;
+
+						&lt;label class="alignright"&gt;
+							&lt;span class="title"&gt;&lt;?php _e( 'Pings' ); ?&gt;&lt;/span&gt;
+							&lt;select name="ping_status"&gt;
+								&lt;option value=""&gt;&lt;?php _e( '&amp;mdash; No Change &amp;mdash;' ); ?&gt;&lt;/option&gt;
+								&lt;option value="open"&gt;&lt;?php _e( 'Allow' ); ?&gt;&lt;/option&gt;
+								&lt;option value="closed"&gt;&lt;?php _e( 'Do not allow' ); ?&gt;&lt;/option&gt;
+							&lt;/select&gt;
+						&lt;/label&gt;
+
+					&lt;?php endif; ?&gt;
+
+					&lt;/div&gt;
+
+				&lt;?php else : // $bulk ?&gt;
+
+					&lt;div class="inline-edit-group wp-clearfix"&gt;
+
+					&lt;?php if ( post_type_supports( $screen-&gt;post_type, 'comments' ) ) : ?&gt;
+
+						&lt;label class="alignleft"&gt;
+							&lt;input type="checkbox" name="comment_status" value="open" /&gt;
+							&lt;span class="checkbox-title"&gt;&lt;?php _e( 'Allow Comments' ); ?&gt;&lt;/span&gt;
+						&lt;/label&gt;
+
+					&lt;?php endif; ?&gt;
+
+					&lt;?php if ( post_type_supports( $screen-&gt;post_type, 'trackbacks' ) ) : ?&gt;
+
+						&lt;label class="alignleft"&gt;
+							&lt;input type="checkbox" name="ping_status" value="open" /&gt;
+							&lt;span class="checkbox-title"&gt;&lt;?php _e( 'Allow Pings' ); ?&gt;&lt;/span&gt;
+						&lt;/label&gt;
+
+					&lt;?php endif; ?&gt;
+
+					&lt;/div&gt;
+
+				&lt;?php endif; // $bulk ?&gt;
+
+			&lt;?php endif; // post_type_supports( ... comments or pings ) ?&gt;
+
+				&lt;div class="inline-edit-group wp-clearfix"&gt;
+
+					&lt;label class="inline-edit-status alignleft"&gt;
+						&lt;span class="title"&gt;&lt;?php _e( 'Status' ); ?&gt;&lt;/span&gt;
+						&lt;select name="_status"&gt;
+							&lt;?php if ( $bulk ) : ?&gt;
+								&lt;option value="-1"&gt;&lt;?php _e( '&amp;mdash; No Change &amp;mdash;' ); ?&gt;&lt;/option&gt;
+							&lt;?php endif; // $bulk ?&gt;
+
+							&lt;?php if ( $can_publish ) : // Contributors only get "Unpublished" and "Pending Review". ?&gt;
+								&lt;option value="publish"&gt;&lt;?php _e( 'Published' ); ?&gt;&lt;/option&gt;
+								&lt;option value="future"&gt;&lt;?php _e( 'Scheduled' ); ?&gt;&lt;/option&gt;
+								&lt;?php if ( $bulk ) : ?&gt;
+									&lt;option value="private"&gt;&lt;?php _e( 'Private' ); ?&gt;&lt;/option&gt;
+								&lt;?php endif; // $bulk ?&gt;
+							&lt;?php endif; ?&gt;
+
+							&lt;option value="pending"&gt;&lt;?php _e( 'Pending Review' ); ?&gt;&lt;/option&gt;
+							&lt;option value="draft"&gt;&lt;?php _e( 'Draft' ); ?&gt;&lt;/option&gt;
+						&lt;/select&gt;
+					&lt;/label&gt;
+
+					&lt;?php if ( 'post' === $screen-&gt;post_type &amp;&amp; $can_publish &amp;&amp; current_user_can( $post_type_object-&gt;cap-&gt;edit_others_posts ) ) : ?&gt;
+
+						&lt;?php if ( $bulk ) : ?&gt;
+
+							&lt;label class="alignright"&gt;
+								&lt;span class="title"&gt;&lt;?php _e( 'Sticky' ); ?&gt;&lt;/span&gt;
+								&lt;select name="sticky"&gt;
+									&lt;option value="-1"&gt;&lt;?php _e( '&amp;mdash; No Change &amp;mdash;' ); ?&gt;&lt;/option&gt;
+									&lt;option value="sticky"&gt;&lt;?php _e( 'Sticky' ); ?&gt;&lt;/option&gt;
+									&lt;option value="unsticky"&gt;&lt;?php _e( 'Not Sticky' ); ?&gt;&lt;/option&gt;
+								&lt;/select&gt;
+							&lt;/label&gt;
+
+						&lt;?php else : // $bulk ?&gt;
+
+							&lt;label class="alignleft"&gt;
+								&lt;input type="checkbox" name="sticky" value="sticky" /&gt;
+								&lt;span class="checkbox-title"&gt;&lt;?php _e( 'Make this post sticky' ); ?&gt;&lt;/span&gt;
+							&lt;/label&gt;
+
+						&lt;?php endif; // $bulk ?&gt;
+
+					&lt;?php endif; // 'post' &amp;&amp; $can_publish &amp;&amp; current_user_can( 'edit_others_posts' ) ?&gt;
+
+				&lt;/div&gt;
+
+			&lt;?php if ( $bulk &amp;&amp; current_theme_supports( 'post-formats' ) &amp;&amp; post_type_supports( $screen-&gt;post_type, 'post-formats' ) ) : ?&gt;
+				&lt;?php $post_formats = get_theme_support( 'post-formats' ); ?&gt;
+
+				&lt;label class="alignleft"&gt;
+					&lt;span class="title"&gt;&lt;?php _ex( 'Format', 'post format' ); ?&gt;&lt;/span&gt;
+					&lt;select name="post_format"&gt;
+						&lt;option value="-1"&gt;&lt;?php _e( '&amp;mdash; No Change &amp;mdash;' ); ?&gt;&lt;/option&gt;
+						&lt;option value="0"&gt;&lt;?php echo get_post_format_string( 'standard' ); ?&gt;&lt;/option&gt;
+						&lt;?php if ( is_array( $post_formats[0] ) ) : ?&gt;
+							&lt;?php foreach ( $post_formats[0] as $format ) : ?&gt;
+								&lt;option value="&lt;?php echo esc_attr( $format ); ?&gt;"&gt;&lt;?php echo esc_html( get_post_format_string( $format ) ); ?&gt;&lt;/option&gt;
+							&lt;?php endforeach; ?&gt;
+						&lt;?php endif; ?&gt;
+					&lt;/select&gt;
+				&lt;/label&gt;
+
+			&lt;?php endif; ?&gt;
+
+			&lt;/div&gt;
+		&lt;/fieldset&gt;
+
+		&lt;?php
+		list( $columns ) = $this-&gt;get_column_info();
+
+		foreach ( $columns as $column_name =&gt; $column_display_name ) {
+			if ( isset( $core_columns[ $column_name ] ) ) {
+				continue;
+			}
+
+			if ( $bulk ) {
+
+				/**
+				 * Fires once for each column in Bulk Edit mode.
+				 *
+				 * @since 2.7.0
+				 *
+				 * @param string $column_name Name of the column to edit.
+				 * @param string $post_type   The post type slug.
+				 */
+				do_action( 'bulk_edit_custom_box', $column_name, $screen-&gt;post_type );
+			} else {
+
+				/**
+				 * Fires once for each column in Quick Edit mode.
+				 *
+				 * @since 2.7.0
+				 *
+				 * @param string $column_name Name of the column to edit.
+				 * @param string $post_type   The post type slug, or current screen name if this is a taxonomy list table.
+				 * @param string $taxonomy    The taxonomy name, if any.
+				 */
+				do_action( 'quick_edit_custom_box', $column_name, $screen-&gt;post_type, '' );
+			}
+		}
+		?&gt;
+
+		&lt;div class="submit inline-edit-save"&gt;
+			&lt;?php if ( ! $bulk ) : ?&gt;
+				&lt;?php wp_nonce_field( 'inlineeditnonce', '_inline_edit', false ); ?&gt;
+				&lt;button type="button" class="button button-primary save"&gt;&lt;?php _e( 'Update' ); ?&gt;&lt;/button&gt;
+			&lt;?php else : ?&gt;
+				&lt;?php submit_button( __( 'Update' ), 'primary', 'bulk_edit', false ); ?&gt;
+			&lt;?php endif; ?&gt;
+
+			&lt;button type="button" class="button cancel"&gt;&lt;?php _e( 'Cancel' ); ?&gt;&lt;/button&gt;
+
+			&lt;?php if ( ! $bulk ) : ?&gt;
+				&lt;span class="spinner"&gt;&lt;/span&gt;
+			&lt;?php endif; ?&gt;
+
+			&lt;input type="hidden" name="post_view" value="&lt;?php echo esc_attr( $m ); ?&gt;" /&gt;
+			&lt;input type="hidden" name="screen" value="&lt;?php echo esc_attr( $screen-&gt;id ); ?&gt;" /&gt;
+			&lt;?php if ( ! $bulk &amp;&amp; ! post_type_supports( $screen-&gt;post_type, 'author' ) ) : ?&gt;
+				&lt;input type="hidden" name="post_author" value="&lt;?php echo esc_attr( $post-&gt;post_author ); ?&gt;" /&gt;
+			&lt;?php endif; ?&gt;
+
+			&lt;?php
+			wp_admin_notice(
+				'&lt;p class="error"&gt;&lt;/p&gt;',
+				array(
+					'type'               =&gt; 'error',
+					'additional_classes' =&gt; array( 'notice-alt', 'inline', 'hidden' ),
+					'paragraph_wrap'     =&gt; false,
+				)
+			);
+			?&gt;
+		&lt;/div&gt;
+	&lt;/div&gt; &lt;!-- end of .inline-edit-wrapper --&gt;
+
+		&lt;/td&gt;&lt;/tr&gt;
+
+		&lt;?php
+		++$bulk;
+	endwhile;
+	?&gt;
+	&lt;/tbody&gt;&lt;/table&gt;
+	&lt;/form&gt;
+	&lt;?php
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-posts-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-posts-list-table.php#L1613">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-posts-list-table.php#L1613-L2124">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/bulk_edit_custom_box/"><span class="hook-func">do_action</span>( ‘bulk_edit_custom_box’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$column_name</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_type</span></nobr> )</a></dt><dd><p>Fires once for each column in Bulk Edit mode.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/default_page_template_title/"><span class="hook-func">apply_filters</span>( ‘default_page_template_title’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$label</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr> )</a></dt><dd><p>Filters the title of the default page template displayed in the drop-down.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/quick_edit_custom_box/"><span class="hook-func">do_action</span>( ‘quick_edit_custom_box’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$column_name</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_type</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy</span></nobr> )</a></dt><dd><p>Fires once for each column in Quick Edit mode.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/quick_edit_dropdown_authors_args/"><span class="hook-func">apply_filters</span>( ‘quick_edit_dropdown_authors_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$users_opt</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$bulk</span></nobr> )</a></dt><dd><p>Filters the arguments used to generate the Quick Edit authors drop-down.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/quick_edit_dropdown_pages_args/"><span class="hook-func">apply_filters</span>( ‘quick_edit_dropdown_pages_args’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$dropdown_args</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$bulk</span></nobr> )</a></dt><dd><p>Filters the arguments used to generate the Quick Edit page-parent drop-down.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/quick_edit_show_taxonomy/"><span class="hook-func">apply_filters</span>( ‘quick_edit_show_taxonomy’,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$show_in_quick_edit</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$taxonomy_name</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$post_type</span></nobr> )</a></dt><dd><p>Filters whether the current taxonomy should be shown in the Quick Edit panel.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_notice/">wp_admin_notice()</a><code>wp-includes/functions.php</code></td><td><p>Outputs an admin notice.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_large_user_count/">wp_is_large_user_count()</a><code>wp-includes/user.php</code></td><td><p>Determines whether the site has a large number of users.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_post_type_viewable/">is_post_type_viewable()</a><code>wp-includes/post.php</code></td><td><p>Determines whether a post type is considered “viewable”.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_page_templates/">get_page_templates()</a><code>wp-admin/includes/theme.php</code></td><td><p>Gets the page templates available in this theme.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/submit_button/">submit_button()</a><code>wp-admin/includes/template.php</code></td><td><p>Echoes a submit button, with provided text and appropriate class(es).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/touch_time/">touch_time()</a><code>wp-admin/includes/template.php</code></td><td><p>Prints out HTML form date elements for editing post or comment publish date.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/page_template_dropdown/">page_template_dropdown()</a><code>wp-admin/includes/template.php</code></td><td><p>Prints out option HTML elements for the page templates drop-down.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_terms_checklist/">wp_terms_checklist()</a><code>wp-admin/includes/template.php</code></td><td><p>Outputs an unordered list of checkbox input elements labelled with term names.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_default_post_to_edit/">get_default_post_to_edit()</a><code>wp-admin/includes/post.php</code></td><td><p>Returns default post information to use when populating the “Write Post” form.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_theme_support/">get_theme_support()</a><code>wp-includes/theme.php</code></td><td><p>Gets the theme support arguments passed when registering that support.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_field/">wp_nonce_field()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves or display nonce hidden field for forms.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_object_taxonomies/">get_object_taxonomies()</a><code>wp-includes/taxonomy.php</code></td><td><p>Returns the names or objects of the taxonomies which are registered for the requested object or object type, such as a post object or post type name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dropdown_users/">wp_dropdown_users()</a><code>wp-includes/user.php</code></td><td><p>Creates dropdown HTML content of users.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_dropdown_pages/">wp_dropdown_pages()</a><code>wp-includes/post-template.php</code></td><td><p>Retrieves or displays a list of pages as a dropdown (select list).</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/post_type_supports/">post_type_supports()</a><code>wp-includes/post.php</code></td><td><p>Checks a post type’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_format_string/">get_post_format_string()</a><code>wp-includes/post-formats.php</code></td><td><p>Returns a pretty, translated version of a post format slug</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_theme_supports/">current_theme_supports()</a><code>wp-includes/theme.php</code></td><td><p>Checks a theme’s support for a given feature.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomy/">get_taxonomy()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the taxonomy object of $taxonomy.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_object/">get_post_type_object()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post type object by name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 19 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.0/">3.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-abdullapatva odd alt thread-odd thread-alt depth-1" data-comment-id="6377" id="comment-6377">
+<article class="comment-body" id="div-comment-6377">
+<a class="screen-reader-text" href="#comment-content-6377">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6377">
+<p><strong>Quick Edit form &amp; Bulk Edit form.</strong><br/>
+If you’re here then you probably know where these two forms are printed.</p>
+<p>However, if you’re not sure, these two forms are printed on the posts listing page or <code>/wp-admin/edit.php</code> page at the very bottom. You can browse through the source code and revert the CSS property <code>display: none</code> to see them. </p>
+<p>Both forms are initially hidden and are used as a template when you click <strong>Quick Edit</strong> or <strong>Bulk Edit</strong>.</p>
+<p>If your post type has thousands of taxonomy terms, they all will be printed in these two forms which will result in your DOM size getting huge, slow loading of <code>/edit.php</code> page, or your browser will throw a <strong>Page Unresponsive</strong> warning.</p>
+<p>E.g: If you have 15,000 categories, they all will be printed inside the DOM, not just once but twice as there are two different forms, <strong>Quick Edit</strong> and <strong>Bulk Edit</strong>. That means 30,000 DOM elements.</p>
+<p>To improve your <code>/wp-admin/edit.php</code> page loading speed and to prevent a specific taxonomy from showing in the <strong>Quick Edit</strong> and <strong>Bulk Edit</strong> forms, you can just pass <code>'show_in_quick_edit' =&gt; false</code> during <code>register_taxonomy</code> of your taxonomy.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">register_taxonomy(
+	'wpdocs_taxonomy_name',
+	'wpdocs_post_type', 
+	array(
+            'show_in_quick_edit' =&gt; false
+        ),
+);</code></pre>
+<p>What the above snippet will do:<br/>
+– Prevent the specific taxonomy from being printed in both forms<br/>
+– Improve your <code>/wp-admin/edit.php</code> page loading speed</p>
+<p>The above snippet will work for Custom Post Types, if you want to disable for default WordPress post types as well, You can do the following:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_action( 'load-edit.php', 'wpdocs_remove_terms_from_quick_edit' );
+
+/**
+ * Removes keywords from quick edit and bulk edit forms.
+ */
+function wpdocs_remove_terms_from_quick_edit() {
+	global $wp_taxonomies;
+	$wp_taxonomies['taxonomy_name']-&gt;show_in_quick_edit = false;
+}</code></pre>
+<p>When to use the above methods?<br/>
+– When you are facing high page loading time on your <code>/wp-admin/edit.php</code> page but not on any other page<br/>
+– When you get a “Page Unresponsive” warning from the browser<br/>
+– When you have thousands of taxonomy terms<br/>
+– When you don’t use <strong>Quick Edit</strong> or <strong>Bulk Edit</strong> forms to manage your content on the <code>/wp-admin/edit.php</code> page.</p>
+<p>Please note:<br/>
+– The snippets will not have an impact on the post editor page. You can manage terms on the editor page.<br/>
+– The snippets will only stop taxonomy terms from printing inside the two forms. <strong>Quick Edit</strong> and <strong>Bulk Edit</strong> forms will still be printed without taxonomy terms.</p>
+<p>If you have used <code>unset( $actions['inline hide-if-no-js'] )</code>, this will only remove the <strong>Quick Edit</strong> link under posts. However, the <strong>Quick Edit</strong> and <strong>Bulk Edit</strong> forms will still be printed along with the taxonomy terms. To completely prevent specific taxonomy terms from printing inside both forms, use the above methods.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6377">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

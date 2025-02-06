@@ -1,0 +1,734 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">dbDelta()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>dbDelta()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">dbDelta( <span class="arg-type">string[]|string</span> <span class="arg-name">$queries</span> = <span class="arg-default">''</span>,  <span class="arg-type">bool</span> <span class="arg-name">$execute</span> = <span class="arg-default">true</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Modifies the database based on specified SQL statements.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Useful for creating new tables and updating existing tables to a new structure.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$queries</code><span class="type"><span class="string[]">string[]</span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The query to run. Can be multiple queries                                 in an array, or a string of queries separated by                                 semicolons. </span></div><p class="default">Default:<code>''</code></p></dd><dt><code>$execute</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether or not to execute the query right away.<br/>
+</span></div><p class="default">Default:<code>true</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Strings containing the results of the various update queries.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2856"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function dbDelta( $queries = '', $execute = true ) { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.FunctionNameInvalid
+	global $wpdb;
+
+	if ( in_array( $queries, array( '', 'all', 'blog', 'global', 'ms_global' ), true ) ) {
+		$queries = wp_get_db_schema( $queries );
+	}
+
+	// Separate individual queries into an array.
+	if ( ! is_array( $queries ) ) {
+		$queries = explode( ';', $queries );
+		$queries = array_filter( $queries );
+	}
+
+	/**
+	 * Filters the dbDelta SQL queries.
+	 *
+	 * @since 3.3.0
+	 *
+	 * @param string[] $queries An array of dbDelta SQL queries.
+	 */
+	$queries = apply_filters( 'dbdelta_queries', $queries );
+
+	$cqueries   = array(); // Creation queries.
+	$iqueries   = array(); // Insertion queries.
+	$for_update = array();
+
+	// Create a tablename index for an array ($cqueries) of recognized query types.
+	foreach ( $queries as $qry ) {
+		if ( preg_match( '|CREATE TABLE ([^ ]*)|', $qry, $matches ) ) {
+			$cqueries[ trim( $matches[1], '`' ) ] = $qry;
+			$for_update[ $matches[1] ]            = 'Created table ' . $matches[1];
+			continue;
+		}
+
+		if ( preg_match( '|CREATE DATABASE ([^ ]*)|', $qry, $matches ) ) {
+			array_unshift( $cqueries, $qry );
+			continue;
+		}
+
+		if ( preg_match( '|INSERT INTO ([^ ]*)|', $qry, $matches ) ) {
+			$iqueries[] = $qry;
+			continue;
+		}
+
+		if ( preg_match( '|UPDATE ([^ ]*)|', $qry, $matches ) ) {
+			$iqueries[] = $qry;
+			continue;
+		}
+	}
+
+	/**
+	 * Filters the dbDelta SQL queries for creating tables and/or databases.
+	 *
+	 * Queries filterable via this hook contain "CREATE TABLE" or "CREATE DATABASE".
+	 *
+	 * @since 3.3.0
+	 *
+	 * @param string[] $cqueries An array of dbDelta create SQL queries.
+	 */
+	$cqueries = apply_filters( 'dbdelta_create_queries', $cqueries );
+
+	/**
+	 * Filters the dbDelta SQL queries for inserting or updating.
+	 *
+	 * Queries filterable via this hook contain "INSERT INTO" or "UPDATE".
+	 *
+	 * @since 3.3.0
+	 *
+	 * @param string[] $iqueries An array of dbDelta insert or update SQL queries.
+	 */
+	$iqueries = apply_filters( 'dbdelta_insert_queries', $iqueries );
+
+	$text_fields = array( 'tinytext', 'text', 'mediumtext', 'longtext' );
+	$blob_fields = array( 'tinyblob', 'blob', 'mediumblob', 'longblob' );
+	$int_fields  = array( 'tinyint', 'smallint', 'mediumint', 'int', 'integer', 'bigint' );
+
+	$global_tables  = $wpdb-&gt;tables( 'global' );
+	$db_version     = $wpdb-&gt;db_version();
+	$db_server_info = $wpdb-&gt;db_server_info();
+
+	foreach ( $cqueries as $table =&gt; $qry ) {
+		// Upgrade global tables only for the main site. Don't upgrade at all if conditions are not optimal.
+		if ( in_array( $table, $global_tables, true ) &amp;&amp; ! wp_should_upgrade_global_tables() ) {
+			unset( $cqueries[ $table ], $for_update[ $table ] );
+			continue;
+		}
+
+		// Fetch the table column structure from the database.
+		$suppress    = $wpdb-&gt;suppress_errors();
+		$tablefields = $wpdb-&gt;get_results( "DESCRIBE {$table};" );
+		$wpdb-&gt;suppress_errors( $suppress );
+
+		if ( ! $tablefields ) {
+			continue;
+		}
+
+		// Clear the field and index arrays.
+		$cfields                  = array();
+		$indices                  = array();
+		$indices_without_subparts = array();
+
+		// Get all of the field names in the query from between the parentheses.
+		preg_match( '|\((.*)\)|ms', $qry, $match2 );
+		$qryline = trim( $match2[1] );
+
+		// Separate field lines into an array.
+		$flds = explode( "\n", $qryline );
+
+		// For every field line specified in the query.
+		foreach ( $flds as $fld ) {
+			$fld = trim( $fld, " \t\n\r\0\x0B," ); // Default trim characters, plus ','.
+
+			// Extract the field name.
+			preg_match( '|^([^ ]*)|', $fld, $fvals );
+			$fieldname            = trim( $fvals[1], '`' );
+			$fieldname_lowercased = strtolower( $fieldname );
+
+			// Verify the found field name.
+			$validfield = true;
+			switch ( $fieldname_lowercased ) {
+				case '':
+				case 'primary':
+				case 'index':
+				case 'fulltext':
+				case 'unique':
+				case 'key':
+				case 'spatial':
+					$validfield = false;
+
+					/*
+					 * Normalize the index definition.
+					 *
+					 * This is done so the definition can be compared against the result of a
+					 * `SHOW INDEX FROM $table_name` query which returns the current table
+					 * index information.
+					 */
+
+					// Extract type, name and columns from the definition.
+					preg_match(
+						'/^
+							(?P&lt;index_type&gt;             # 1) Type of the index.
+								PRIMARY\s+KEY|(?:UNIQUE|FULLTEXT|SPATIAL)\s+(?:KEY|INDEX)|KEY|INDEX
+							)
+							\s+                         # Followed by at least one white space character.
+							(?:                         # Name of the index. Optional if type is PRIMARY KEY.
+								`?                      # Name can be escaped with a backtick.
+									(?P&lt;index_name&gt;     # 2) Name of the index.
+										(?:[0-9a-zA-Z$_-]|[\xC2-\xDF][\x80-\xBF])+
+									)
+								`?                      # Name can be escaped with a backtick.
+								\s+                     # Followed by at least one white space character.
+							)*
+							\(                          # Opening bracket for the columns.
+								(?P&lt;index_columns&gt;
+									.+?                 # 3) Column names, index prefixes, and orders.
+								)
+							\)                          # Closing bracket for the columns.
+						$/imx',
+						$fld,
+						$index_matches
+					);
+
+					// Uppercase the index type and normalize space characters.
+					$index_type = strtoupper( preg_replace( '/\s+/', ' ', trim( $index_matches['index_type'] ) ) );
+
+					// 'INDEX' is a synonym for 'KEY', standardize on 'KEY'.
+					$index_type = str_replace( 'INDEX', 'KEY', $index_type );
+
+					// Escape the index name with backticks. An index for a primary key has no name.
+					$index_name = ( 'PRIMARY KEY' === $index_type ) ? '' : '`' . strtolower( $index_matches['index_name'] ) . '`';
+
+					// Parse the columns. Multiple columns are separated by a comma.
+					$index_columns                  = array_map( 'trim', explode( ',', $index_matches['index_columns'] ) );
+					$index_columns_without_subparts = $index_columns;
+
+					// Normalize columns.
+					foreach ( $index_columns as $id =&gt; &amp;$index_column ) {
+						// Extract column name and number of indexed characters (sub_part).
+						preg_match(
+							'/
+								`?                      # Name can be escaped with a backtick.
+									(?P&lt;column_name&gt;    # 1) Name of the column.
+										(?:[0-9a-zA-Z$_-]|[\xC2-\xDF][\x80-\xBF])+
+									)
+								`?                      # Name can be escaped with a backtick.
+								(?:                     # Optional sub part.
+									\s*                 # Optional white space character between name and opening bracket.
+									\(                  # Opening bracket for the sub part.
+										\s*             # Optional white space character after opening bracket.
+										(?P&lt;sub_part&gt;
+											\d+         # 2) Number of indexed characters.
+										)
+										\s*             # Optional white space character before closing bracket.
+									\)                  # Closing bracket for the sub part.
+								)?
+							/x',
+							$index_column,
+							$index_column_matches
+						);
+
+						// Escape the column name with backticks.
+						$index_column = '`' . $index_column_matches['column_name'] . '`';
+
+						// We don't need to add the subpart to $index_columns_without_subparts
+						$index_columns_without_subparts[ $id ] = $index_column;
+
+						// Append the optional sup part with the number of indexed characters.
+						if ( isset( $index_column_matches['sub_part'] ) ) {
+							$index_column .= '(' . $index_column_matches['sub_part'] . ')';
+						}
+					}
+
+					// Build the normalized index definition and add it to the list of indices.
+					$indices[]                  = "{$index_type} {$index_name} (" . implode( ',', $index_columns ) . ')';
+					$indices_without_subparts[] = "{$index_type} {$index_name} (" . implode( ',', $index_columns_without_subparts ) . ')';
+
+					// Destroy no longer needed variables.
+					unset( $index_column, $index_column_matches, $index_matches, $index_type, $index_name, $index_columns, $index_columns_without_subparts );
+
+					break;
+			}
+
+			// If it's a valid field, add it to the field array.
+			if ( $validfield ) {
+				$cfields[ $fieldname_lowercased ] = $fld;
+			}
+		}
+
+		// For every field in the table.
+		foreach ( $tablefields as $tablefield ) {
+			$tablefield_field_lowercased = strtolower( $tablefield-&gt;Field );
+			$tablefield_type_lowercased  = strtolower( $tablefield-&gt;Type );
+
+			$tablefield_type_without_parentheses = preg_replace(
+				'/'
+				. '(.+)'       // Field type, e.g. `int`.
+				. '\(\d*\)'    // Display width.
+				. '(.*)'       // Optional attributes, e.g. `unsigned`.
+				. '/',
+				'$1$2',
+				$tablefield_type_lowercased
+			);
+
+			// Get the type without attributes, e.g. `int`.
+			$tablefield_type_base = strtok( $tablefield_type_without_parentheses, ' ' );
+
+			// If the table field exists in the field array...
+			if ( array_key_exists( $tablefield_field_lowercased, $cfields ) ) {
+
+				// Get the field type from the query.
+				preg_match( '|`?' . $tablefield-&gt;Field . '`? ([^ ]*( unsigned)?)|i', $cfields[ $tablefield_field_lowercased ], $matches );
+				$fieldtype            = $matches[1];
+				$fieldtype_lowercased = strtolower( $fieldtype );
+
+				$fieldtype_without_parentheses = preg_replace(
+					'/'
+					. '(.+)'       // Field type, e.g. `int`.
+					. '\(\d*\)'    // Display width.
+					. '(.*)'       // Optional attributes, e.g. `unsigned`.
+					. '/',
+					'$1$2',
+					$fieldtype_lowercased
+				);
+
+				// Get the type without attributes, e.g. `int`.
+				$fieldtype_base = strtok( $fieldtype_without_parentheses, ' ' );
+
+				// Is actual field type different from the field type in query?
+				if ( $tablefield-&gt;Type !== $fieldtype ) {
+					$do_change = true;
+					if ( in_array( $fieldtype_lowercased, $text_fields, true ) &amp;&amp; in_array( $tablefield_type_lowercased, $text_fields, true ) ) {
+						if ( array_search( $fieldtype_lowercased, $text_fields, true ) &lt; array_search( $tablefield_type_lowercased, $text_fields, true ) ) {
+							$do_change = false;
+						}
+					}
+
+					if ( in_array( $fieldtype_lowercased, $blob_fields, true ) &amp;&amp; in_array( $tablefield_type_lowercased, $blob_fields, true ) ) {
+						if ( array_search( $fieldtype_lowercased, $blob_fields, true ) &lt; array_search( $tablefield_type_lowercased, $blob_fields, true ) ) {
+							$do_change = false;
+						}
+					}
+
+					if ( in_array( $fieldtype_base, $int_fields, true ) &amp;&amp; in_array( $tablefield_type_base, $int_fields, true )
+						&amp;&amp; $fieldtype_without_parentheses === $tablefield_type_without_parentheses
+					) {
+						/*
+						 * MySQL 8.0.17 or later does not support display width for integer data types,
+						 * so if display width is the only difference, it can be safely ignored.
+						 * Note: This is specific to MySQL and does not affect MariaDB.
+						 */
+						if ( version_compare( $db_version, '8.0.17', '&gt;=' )
+							&amp;&amp; ! str_contains( $db_server_info, 'MariaDB' )
+						) {
+							$do_change = false;
+						}
+					}
+
+					if ( $do_change ) {
+						// Add a query to change the column type.
+						$cqueries[] = "ALTER TABLE {$table} CHANGE COLUMN `{$tablefield-&gt;Field}` " . $cfields[ $tablefield_field_lowercased ];
+
+						$for_update[ $table . '.' . $tablefield-&gt;Field ] = "Changed type of {$table}.{$tablefield-&gt;Field} from {$tablefield-&gt;Type} to {$fieldtype}";
+					}
+				}
+
+				// Get the default value from the array.
+				if ( preg_match( "| DEFAULT '(.*?)'|i", $cfields[ $tablefield_field_lowercased ], $matches ) ) {
+					$default_value = $matches[1];
+					if ( $tablefield-&gt;Default !== $default_value ) {
+						// Add a query to change the column's default value
+						$cqueries[] = "ALTER TABLE {$table} ALTER COLUMN `{$tablefield-&gt;Field}` SET DEFAULT '{$default_value}'";
+
+						$for_update[ $table . '.' . $tablefield-&gt;Field ] = "Changed default value of {$table}.{$tablefield-&gt;Field} from {$tablefield-&gt;Default} to {$default_value}";
+					}
+				}
+
+				// Remove the field from the array (so it's not added).
+				unset( $cfields[ $tablefield_field_lowercased ] );
+			} else {
+				// This field exists in the table, but not in the creation queries?
+			}
+		}
+
+		// For every remaining field specified for the table.
+		foreach ( $cfields as $fieldname =&gt; $fielddef ) {
+			// Push a query line into $cqueries that adds the field to that table.
+			$cqueries[] = "ALTER TABLE {$table} ADD COLUMN $fielddef";
+
+			$for_update[ $table . '.' . $fieldname ] = 'Added column ' . $table . '.' . $fieldname;
+		}
+
+		// Index stuff goes here. Fetch the table index structure from the database.
+		$tableindices = $wpdb-&gt;get_results( "SHOW INDEX FROM {$table};" );
+
+		if ( $tableindices ) {
+			// Clear the index array.
+			$index_ary = array();
+
+			// For every index in the table.
+			foreach ( $tableindices as $tableindex ) {
+				$keyname = strtolower( $tableindex-&gt;Key_name );
+
+				// Add the index to the index data array.
+				$index_ary[ $keyname ]['columns'][]  = array(
+					'fieldname' =&gt; $tableindex-&gt;Column_name,
+					'subpart'   =&gt; $tableindex-&gt;Sub_part,
+				);
+				$index_ary[ $keyname ]['unique']     = ( '0' === $tableindex-&gt;Non_unique ) ? true : false;
+				$index_ary[ $keyname ]['index_type'] = $tableindex-&gt;Index_type;
+			}
+
+			// For each actual index in the index array.
+			foreach ( $index_ary as $index_name =&gt; $index_data ) {
+
+				// Build a create string to compare to the query.
+				$index_string = '';
+				if ( 'primary' === $index_name ) {
+					$index_string .= 'PRIMARY ';
+				} elseif ( $index_data['unique'] ) {
+					$index_string .= 'UNIQUE ';
+				}
+
+				if ( 'FULLTEXT' === strtoupper( $index_data['index_type'] ) ) {
+					$index_string .= 'FULLTEXT ';
+				}
+
+				if ( 'SPATIAL' === strtoupper( $index_data['index_type'] ) ) {
+					$index_string .= 'SPATIAL ';
+				}
+
+				$index_string .= 'KEY ';
+				if ( 'primary' !== $index_name ) {
+					$index_string .= '`' . $index_name . '`';
+				}
+
+				$index_columns = '';
+
+				// For each column in the index.
+				foreach ( $index_data['columns'] as $column_data ) {
+					if ( '' !== $index_columns ) {
+						$index_columns .= ',';
+					}
+
+					// Add the field to the column list string.
+					$index_columns .= '`' . $column_data['fieldname'] . '`';
+				}
+
+				// Add the column list to the index create string.
+				$index_string .= " ($index_columns)";
+
+				// Check if the index definition exists, ignoring subparts.
+				$aindex = array_search( $index_string, $indices_without_subparts, true );
+				if ( false !== $aindex ) {
+					// If the index already exists (even with different subparts), we don't need to create it.
+					unset( $indices_without_subparts[ $aindex ] );
+					unset( $indices[ $aindex ] );
+				}
+			}
+		}
+
+		// For every remaining index specified for the table.
+		foreach ( (array) $indices as $index ) {
+			// Push a query line into $cqueries that adds the index to that table.
+			$cqueries[] = "ALTER TABLE {$table} ADD $index";
+
+			$for_update[] = 'Added index ' . $table . ' ' . $index;
+		}
+
+		// Remove the original table creation query from processing.
+		unset( $cqueries[ $table ], $for_update[ $table ] );
+	}
+
+	$allqueries = array_merge( $cqueries, $iqueries );
+	if ( $execute ) {
+		foreach ( $allqueries as $query ) {
+			$wpdb-&gt;query( $query );
+		}
+	}
+
+	return $for_update;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/upgrade.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/upgrade.php#L2856">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/upgrade.php#L2856-L3276">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/dbdelta_create_queries/"><span class="hook-func">apply_filters</span>( ‘dbdelta_create_queries’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$cqueries</span></nobr> )</a></dt><dd><p>Filters the dbDelta SQL queries for creating tables and/or databases.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/dbdelta_insert_queries/"><span class="hook-func">apply_filters</span>( ‘dbdelta_insert_queries’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$iqueries</span></nobr> )</a></dt><dd><p>Filters the dbDelta SQL queries for inserting or updating.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/dbdelta_queries/"><span class="hook-func">apply_filters</span>( ‘dbdelta_queries’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$queries</span></nobr> )</a></dt><dd><p>Filters the dbDelta SQL queries.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/db_server_info/">wpdb::db_server_info()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Returns the version of the MySQL server.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_should_upgrade_global_tables/">wp_should_upgrade_global_tables()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Determine if global tables should be upgraded.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_db_schema/">wp_get_db_schema()</a><code>wp-admin/includes/schema.php</code></td><td><p>Retrieve the SQL for creating database tables.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/db_version/">wpdb::db_version()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves the database server version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/query/">wpdb::query()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Performs a database query, using current database connection.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/tables/">wpdb::tables()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Returns an array of WordPress tables.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/suppress_errors/">wpdb::suppress_errors()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Enables or disables suppressing of database errors.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_results/">wpdb::get_results()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves an entire SQL result set from the database (i.e., many rows).</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/install_network/">install_network()</a><code>wp-admin/includes/schema.php</code></td><td><p>Install Network.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/make_db_current/">make_db_current()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Updates the database tables to a new schema.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/make_db_current_silent/">make_db_current_silent()</a><code>wp-admin/includes/upgrade.php</code></td><td><p>Updates the database tables to a new schema, but without displaying results.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.1.0/">6.1.0</a></td><td><span class="since-description">Ignores display width for integer data types on MySQL 8.0.17 or later,              to match MySQL behavior. Note: This does not affect MariaDB.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-mahd even thread-odd thread-alt depth-1" data-comment-id="3322" id="comment-3322">
+<article class="comment-body" id="div-comment-3322">
+<a class="screen-reader-text" href="#comment-content-3322">Skip to note 12 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3322">
+<p>I think it should be a common knowledge but in order to use dbDelta function you must require or include upgrade.php file. So if your dbDelta code is not working check if you have upgrade.php inside your code or not.<br>
+It is required as following. </br></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3322">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-charlestonsw odd alt thread-even depth-1" data-comment-id="1329" id="comment-1329">
+<article class="comment-body" id="div-comment-1329">
+<a class="screen-reader-text" href="#comment-content-1329">Skip to note 13 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1329">
+<p>You must be very careful in your SQL command structure when creating tables with indexes.</p>
+<p>Here is a simple example of the proper create table syntax for a table with a primary key on a field named “id” and a secondary key on a field named “first”.    </p>
+<p>PRIMARY KEY must be followed by TWO SPACES then the open parenthesis then the field name and a closing parenthesis.</p>
+<p>KEY must be followed by a SINGLE SPACE then the key name then a space then open parenthesis with the field name then a closed parenthesis.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">   private function index_test_001() {
+        global $wpdb;
+        $table_name = $wpdb-&gt;prefix . 'dbdelta_test_001';
+        $wpdb_collate = $wpdb-&gt;collate;
+        $sql =
+            "CREATE TABLE {$table_name} (
+            id mediumint(8) unsigned NOT NULL auto_increment ,
+            first varchar(255) NULL,
+            PRIMARY KEY  (id),
+            KEY first (first)
+            )
+            COLLATE {$wpdb_collate}";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta( $sql );
+    }</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="2" id="feedback-1329">
+<ul class="children">
+<li class="comment byuser comment-author-onmountain even depth-2" data-comment-id="3924" id="comment-3924">
+<article class="comment-body" id="div-comment-3924">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3924">
+<div>On my plugin I am developing I suddenly started getting errors:   //        The plugin generated 12250 characters of unexpected output during activation.    //        debug bar showed me stuff like: Notice: Undefined index: index_type in /home/cabox/workspace/wp-admin/includes/upgrade.php on line 2721    I used debug bar to see the errors but could not identify what had started the issue.  This document helped me, specifically the earlier suggestion to make sure that the “…PRIMARY KEY must be followed by TWO SPACES”.  I added the extra space on all 3 of my sql for my custom tables. It did not fix it, but that lead me to “clean up” all white spaces or any blank lines that were in my sql code.  I would click way to the right of the , on each line, and if there were blanks I would just backspace till I got rid of them.    That fixed it.  Funny, but all 3 of the custom tables were throwing the same type of errors when the 3 bdDelta’s ran:    <code> require_once ( ABSPATH . 'wp-admin/includes/upgrade.php');  dbDelta($creation_query);</code>    This was in PHP 7.2.11-2+ubuntu16.04.1+deb.sury.org+1,  MySQL  5.7.23,  WP  5.4.1  Not sure if a WP update made it more sensitive.  I did no changes to the code involved in this, before the errors started.  Without the help I found on this page, I would not have located whatever it was.  Just wanted to give back with this trick.</div>
+<div><a class="url" href="https://profiles.wordpress.org/onmountain/" rel="external nofollow">onmountain</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/dbdelta/#comment-3924"><time datetime="2020-05-29T16:53:37+00:00">5 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+<li class="comment byuser comment-author-room34 odd alt depth-2" data-comment-id="6926" id="comment-6926">
+<article class="comment-body" id="div-comment-6926">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6926">
+<div>I think this is incorrect. I know of no reason why MySQL syntax would require two spaces after <code>PRIMARY KEY</code>, and in testing just now, I ran this function with only a single space after <code>PRIMARY KEY</code> and it worked fine.</div>
+<div><a class="url" href="https://profiles.wordpress.org/room34/" rel="external nofollow">room34</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/dbdelta/#comment-6926"><time datetime="2024-02-25T16:48:28+00:00">12 months ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-grapestain even thread-odd thread-alt depth-1" data-comment-id="3062" id="comment-3062">
+<article class="comment-body" id="div-comment-3062">
+<a class="screen-reader-text" href="#comment-content-3062">Skip to note 14 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3062">
+<p>Note that the result array may say “Created table {yourtablename}” even if the table was not created, but should have been. So the result of the call is in some cases more like what should have been done, not what was actually done.</p>
+<p>Always check if all requested changes were done properly after using this function, or prepare for surprises…</p>
+<p>To check if the table was really created, you can use something like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( $wpdb-&gt;get_var("SHOW TABLES LIKE '$table_name'") != $table_name ) {
+    // Table was not created !!
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-3062">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-fpuenteonline odd alt thread-even depth-1" data-comment-id="5413" id="comment-5413">
+<article class="comment-body" id="div-comment-5413">
+<a class="screen-reader-text" href="#comment-content-5413">Skip to note 15 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5413">
+<p>There is a funny bug when creating a DATABASE or a TABLE using an IF NOT EXIST clause.</p>
+<p>Example: “CREATE TABLE IF NOT EXISTS {$table_name}…”</p>
+<p>In this case, the dbDelta function tries to find a database/table called “IF”, that does not exist and will not modify the current database/table, and execute the query entered so if the database/table exists, nothing happens.</p>
+<p>So please do not use the IF NOT EXISTS clause to delegate the dbDelta function to manage database/table structure.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-5413">
+<ul class="children">
+<li class="comment byuser comment-author-tylercollier even depth-2" data-comment-id="6021" id="comment-6021">
+<article class="comment-body" id="div-comment-6021">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6021">
+<div>What I found was that if IF NOT EXISTS is in the statement, it will create the table if necessary, however, if the table already exists, it will not alter it (which is the whole point of “delta”). @fpuenteonline is correct that the result says “Created table IF”, which is a confusing message.  For reference I’m using WP 5.5.6.</div>
+<div><a class="url" href="https://profiles.wordpress.org/tylercollier/" rel="external nofollow">tylercollier</a> <a class="comment-date" href="https://developer.notmatt.press/reference/functions/dbdelta/#comment-6021"><time datetime="2022-09-08T18:14:21+00:00">2 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-dingo_d odd alt thread-odd thread-alt depth-1" data-comment-id="4027" id="comment-4027">
+<article class="comment-body" id="div-comment-4027">
+<a class="screen-reader-text" href="#comment-content-4027">Skip to note 16 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4027">
+<p>Note that you cannot use `FOREIGN KEY` constraint with `dbDelta`: <a href="https://core.trac.wordpress.org/ticket/19207" rel="nofollow ugc">https://core.trac.wordpress.org/ticket/19207</a></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4027">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-opajaap even thread-even depth-1" data-comment-id="2195" id="comment-2195">
+<article class="comment-body" id="div-comment-2195">
+<a class="screen-reader-text" href="#comment-content-2195">Skip to note 17 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2195">
+<p>Note: If you change the name of a field, an empty column with the new name will be created, but the old column is not removed!</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2195">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-tcbarrett odd alt thread-odd thread-alt depth-1" data-comment-id="4925" id="comment-4925">
+<article class="comment-body" id="div-comment-4925">
+<a class="screen-reader-text" href="#comment-content-4925">Skip to note 18 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4925">
+<p>Always use the CREATE statement.</p>
+<p>I think it is worth noting that this function has been specifically design to carry out the heavy lifting for you. Instead of having to manage updated table specs yourself, simply *always* pass in the CREATE statement and the dbDelta function will compare it to the existing schema. It will perform the CREATE or UPDATE as needed.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4925">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-thomasprice61 even thread-even depth-1" data-comment-id="7028" id="comment-7028">
+<article class="comment-body" id="div-comment-7028">
+<a class="screen-reader-text" href="#comment-content-7028">Skip to note 19 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-7028">
+<p>The dbDelta function uses lowercase for data types (int, varchar, datetime, text, etc) and is case-sensitive.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">CREATE TABLE {$table_name} (
+    id int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    roles TEXT DEFAULT NULL, // should be lowercase
+    start_date datetime DEFAULT NULL,
+    ...</code></pre>
+<p>If Deadlock errors similar to below occur, it will likely be from UPPERCASE being used:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">WordPress database error Deadlock found when trying to get lock; try restarting transaction for query ALTER TABLE abc_table_name CHANGE COLUMN `roles` roles TEXT DEFAULT NULL made by require_once...dbDelta</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-7028">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-eboyd53 odd alt thread-odd thread-alt depth-1" data-comment-id="2070" id="comment-2070">
+<article class="comment-body" id="div-comment-2070">
+<a class="screen-reader-text" href="#comment-content-2070">Skip to note 20 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2070">
+<p>Be careful not to put a COMMENT on field or key; the preg_match code doesn’t handle it.  The following code is wrong (thanks to Store Locator Plus’ code).</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">private function index_test_001() {
+     global $wpdb;
+     $table_name = $wpdb-&gt;prefix . 'dbdelta_test_001';
+     $wpdb_collate = $wpdb-&gt;collate;
+     $sql =
+         "CREATE TABLE {$table_name} (
+         id mediumint(8) unsigned NOT NULL auto_increment ,
+         first varchar(255) NULL,
+         PRIMARY KEY  (id),
+         KEY first (first) COMMENT 'First name'
+         )
+         COLLATE {$wpdb_collate}";
+ 
+     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+     dbDelta( $sql );
+ }</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2070">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-neoacevedo even thread-even depth-1 bad-note" data-comment-id="2495" id="comment-2495">
+<article class="comment-body" id="div-comment-2495">
+<a class="screen-reader-text" href="#comment-content-2495">Skip to note 21 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2495">
+<p>If you need to change the structure of a table, is better to use <code>$wpdb</code> rather than this method because is not guaranteed it works for updating any table structure.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2495">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-octag odd alt thread-odd thread-alt depth-1 bad-note" data-comment-id="2215" id="comment-2215">
+<article class="comment-body" id="div-comment-2215">
+<a class="screen-reader-text" href="#comment-content-2215">Skip to note 22 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2215">
+<p>(I post here a <strong>corrected version</strong> of my previous note. Several typographical mistakes have slipped into the original version.)<br/>
+As a side-note, the <strong>dbDelta</strong> function cannot be used to <strong>drop a table</strong> from the <strong>wp_</strong> database . A function such as the one below can be used instead (don’t forget to replace <code>my_theme</code> with your own theme name):</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">function my_theme_drop_table ( $table_name = 'the_name_without_any_prefix' ){
+	global $wpdb;
+
+	$table_name_prepared = $wpdb-&gt;prefix . $table_name;
+	$the_removal_query = "DROP TABLE IF EXISTS {$table_name_prepared}";
+
+	$wpdb-&gt;query( $the_removal_query );
+}</code></pre>
+<p>See also <a href="https://developer.notmatt.press/plugins/the-basics/uninstall-methods/" rel="ugc">https://developer.notmatt.press/plugins/the-basics/uninstall-methods/</a>.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2215">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

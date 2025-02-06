@@ -1,0 +1,179 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/administration-menus/">Administration Menus</a></span><span class="is-current-page">Top-Level Menus</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Top-Level Menus</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<h2 class="is-toc-heading wp-block-heading" id="add-a-top-level-menu" tabindex="-1"><a href="#add-a-top-level-menu">Add a Top-Level Menu</a></h2>
+<p>To add a new Top-level menu to WordPress Administration, use the <a href="https://developer.notmatt.press/reference/functions/add_menu_page/" rel="function">add_menu_page()</a>  function.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_menu_page(
+    string $page_title,
+    string $menu_title,
+    string $capability,
+    string $menu_slug,
+    callable $function = '',
+    string $icon_url = '',
+    int $position = null
+);</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="example" tabindex="-1"><a href="#example">Example</a></h3>
+<p>Lets say we want to add a new Top-level menu called “WPOrg”.</p>
+<p><strong>The first step</strong> will be creating a function which will output the HTML. In this function we will perform the necessary security checks and render the options we’ve registered using the <a href="https://developer.notmatt.press/plugins/settings/">Settings API</a>.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">
+<p>We recommend wrapping your HTML using a <code>&lt;div&gt;</code> with a class of <code>wrap</code>.</p>
+<p></p></div></div>
+<pre class="wp-block-code"><code class="language-php" lang="php">function wporg_options_page_html() {
+    ?&gt;
+    &lt;div class="wrap"&gt;
+      &lt;h1&gt;&lt;?php echo esc_html( get_admin_page_title() ); ?&gt;&lt;/h1&gt;
+      &lt;form action="options.php" method="post"&gt;
+        &lt;?php
+        // output security fields for the registered setting "wporg_options"
+        settings_fields( 'wporg_options' );
+        // output setting sections and their fields
+        // (sections are registered for "wporg", each field is registered to a specific section)
+        do_settings_sections( 'wporg' );
+        // output save settings button
+        submit_button( __( 'Save Settings', 'textdomain' ) );
+        ?&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+    &lt;?php
+}</code></pre>
+<p><strong>The second step</strong> will be registering our WPOrg menu. The registration needs to occur during the <code>admin_menu</code> action hook.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'admin_menu', 'wporg_options_page' );
+function wporg_options_page() {
+    add_menu_page(
+        'WPOrg',
+        'WPOrg Options',
+        'manage_options',
+        'wporg',
+        'wporg_options_page_html',
+        plugin_dir_url(__FILE__) . 'images/icon_wporg.png',
+        20
+    );
+}</code></pre>
+<p>For a list of parameters and what each do please see the <a href="https://developer.notmatt.press/reference/functions/add_menu_page/" rel="function">add_menu_page()</a>  in the reference.</p>
+<h3 class="is-toc-heading wp-block-heading" id="using-a-php-file-for-html" tabindex="-1"><a href="#using-a-php-file-for-html">Using a PHP File for HTML</a></h3>
+<p>The best practice for portable code would be to create a Callback that requires/includes your PHP file.</p>
+<p>For the sake of completeness and helping you understand legacy code, we will show another way: passing a <code>PHP file path</code> as the <code>$menu_slug</code> parameter with an <code>null</code> <code>$function</code> parameter.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'admin_menu', 'wporg_options_page' );
+function wporg_options_page() {
+    add_menu_page(
+        'WPOrg',
+        'WPOrg Options',
+        'manage_options',
+        plugin_dir_path(__FILE__) . 'admin/view.php',
+        null,
+        plugin_dir_url(__FILE__) . 'images/icon_wporg.png',
+        20
+    );
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="remove-a-top-level-menu" tabindex="-1"><a href="#remove-a-top-level-menu">Remove a Top-Level Menu</a></h2>
+<p>To remove a registered menu from WordPress Administration, use the <a href="https://developer.notmatt.press/reference/functions/remove_menu_page/" rel="function">remove_menu_page()</a>  function.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">remove_menu_page(
+    string $menu_slug
+);</code></pre>
+<div class="wp-block-wporg-notice is-warning-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+Removing menus won’t prevent users accessing them directly.<br/>This should never be used as a way to restrict <a href="https://developer.notmatt.press/plugins/users/roles-and-capabilities/">user capabilities</a>.<br/>
+</div></div>
+<h3 class="is-toc-heading wp-block-heading" id="example-2" tabindex="-1"><a href="#example-2">Example</a></h3>
+<p>Lets say we want to remove the “Tools” menu from.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'admin_menu', 'wporg_remove_options_page', 99 );
+function wporg_remove_options_page() {
+    remove_menu_page( 'tools.php' );
+}</code></pre>
+<p>Make sure that the menu have been registered with the <code>admin_menu</code> hook before attempting to remove, specify a higher priority number for <a href="https://developer.notmatt.press/reference/functions/add_action/" rel="function">add_action()</a> .</p>
+<h2 class="is-toc-heading wp-block-heading" id="submitting-forms" tabindex="-1"><a href="#submitting-forms">Submitting forms</a></h2>
+<p>To process the submissions of forms on options pages, you will need two things:</p>
+<ol class="wp-block-list">
+<li>Use the URL of the page as the <code>action</code> attribute of the form.</li>
+<li>Add a hook with the slug, returned by <code>add_menu_page</code>.</li>
+</ol>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+You only need to follow those steps if you are manually creating forms in the back-end. The <a href="https://developer.notmatt.press/plugins/settings/">Settings API</a> is the recommended way to do this.<br/>
+</div></div>
+<h3 class="is-toc-heading wp-block-heading" id="form-action-attribute" tabindex="-1"><a href="#form-action-attribute">Form action attribute</a></h3>
+<p>Use the <code>$menu_slug</code> parameter of the options page as the first parameter of  <code><a href="https://developer.notmatt.press/reference/functions/menu_page_url/">menu_page_url()</a></code>. By the function will automatically escape URL and echo it by default, so you can directly use it within the <code>&lt;form&gt;</code> tag:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;form action="&lt;?php menu_page_url( 'wporg' ) ?&gt;" method="post"&gt;</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="processing-the-form" tabindex="-1"><a href="#processing-the-form">Processing the form</a></h3>
+<p>The <code>$function</code> you specify while adding the page will only be called once it is time to display the page, which makes it inappropriate if you need to send headers (ex. redirects) back to the browser.</p>
+<p><code>add_menu_page</code> returns a <code>$hookname</code>, and WordPress triggers the <code>"load-$hookname"</code> action before any HTML output. You can use this to assign a function, which could process the form.</p>
+<div class="wp-block-wporg-notice is-info-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+<code>"load-$hookname"</code> will be executed every time before an options page will be displayed, even when the form is not being submitted.<br/>
+</div></div>
+<p>With the return parameter and action in mind, the example from above would like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">add_action( 'admin_menu', 'wporg_options_page' );
+function wporg_options_page() {
+	$hookname = add_menu_page(
+		'WPOrg',
+		'WPOrg Options',
+		'manage_options',
+		'wporg',
+		'wporg_options_page_html',
+		plugin_dir_url(__FILE__) . 'images/icon_wporg.png',
+		20
+	);
+
+	add_action( 'load-' . $hookname, 'wporg_options_page_submit' );
+}</code></pre>
+<p>You can program <code>wporg_options_page_submit</code> according to your needs, but keep in mind that you must manually perform all necessary checks, including:</p>
+<ol class="wp-block-list">
+<li>Whether the form is being submitted (<code>'POST' === $_SERVER['REQUEST_METHOD']</code>).</li>
+<li><a href="https://developer.notmatt.press/plugins/security/nonces/">CSRF verification</a></li>
+<li>Validation</li>
+<li>Sanitization</li>
+</ol>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

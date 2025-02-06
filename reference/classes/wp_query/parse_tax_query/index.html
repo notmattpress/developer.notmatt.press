@@ -1,0 +1,301 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_query/">WP_Query</a></span><span class="is-current-page">WP_Query::parse_tax_query()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Query::parse_tax_query()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Query::parse_tax_query( <span class="arg-type">array</span> <span class="arg-name">$q</span> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Parses various taxonomy related query vars.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>For BC, this method is not marked as protected. See [28987].</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$q</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The query variables. Passed by reference.</span></div></dd></dl></section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1152"><code class="language-php line-numbers" id="wporg-source-code" lang="php">public function parse_tax_query( &amp;$q ) {
+	if ( ! empty( $q['tax_query'] ) &amp;&amp; is_array( $q['tax_query'] ) ) {
+		$tax_query = $q['tax_query'];
+	} else {
+		$tax_query = array();
+	}
+
+	if ( ! empty( $q['taxonomy'] ) &amp;&amp; ! empty( $q['term'] ) ) {
+		$tax_query[] = array(
+			'taxonomy' =&gt; $q['taxonomy'],
+			'terms'    =&gt; array( $q['term'] ),
+			'field'    =&gt; 'slug',
+		);
+	}
+
+	foreach ( get_taxonomies( array(), 'objects' ) as $taxonomy =&gt; $t ) {
+		if ( 'post_tag' === $taxonomy ) {
+			continue; // Handled further down in the $q['tag'] block.
+		}
+
+		if ( $t-&gt;query_var &amp;&amp; ! empty( $q[ $t-&gt;query_var ] ) ) {
+			$tax_query_defaults = array(
+				'taxonomy' =&gt; $taxonomy,
+				'field'    =&gt; 'slug',
+			);
+
+			if ( ! empty( $t-&gt;rewrite['hierarchical'] ) ) {
+				$q[ $t-&gt;query_var ] = wp_basename( $q[ $t-&gt;query_var ] );
+			}
+
+			$term = $q[ $t-&gt;query_var ];
+
+			if ( is_array( $term ) ) {
+				$term = implode( ',', $term );
+			}
+
+			if ( str_contains( $term, '+' ) ) {
+				$terms = preg_split( '/[+]+/', $term );
+				foreach ( $terms as $term ) {
+					$tax_query[] = array_merge(
+						$tax_query_defaults,
+						array(
+							'terms' =&gt; array( $term ),
+						)
+					);
+				}
+			} else {
+				$tax_query[] = array_merge(
+					$tax_query_defaults,
+					array(
+						'terms' =&gt; preg_split( '/[,]+/', $term ),
+					)
+				);
+			}
+		}
+	}
+
+	// If query string 'cat' is an array, implode it.
+	if ( is_array( $q['cat'] ) ) {
+		$q['cat'] = implode( ',', $q['cat'] );
+	}
+
+	// Category stuff.
+
+	if ( ! empty( $q['cat'] ) &amp;&amp; ! $this-&gt;is_singular ) {
+		$cat_in     = array();
+		$cat_not_in = array();
+
+		$cat_array = preg_split( '/[,\s]+/', urldecode( $q['cat'] ) );
+		$cat_array = array_map( 'intval', $cat_array );
+		$q['cat']  = implode( ',', $cat_array );
+
+		foreach ( $cat_array as $cat ) {
+			if ( $cat &gt; 0 ) {
+				$cat_in[] = $cat;
+			} elseif ( $cat &lt; 0 ) {
+				$cat_not_in[] = abs( $cat );
+			}
+		}
+
+		if ( ! empty( $cat_in ) ) {
+			$tax_query[] = array(
+				'taxonomy'         =&gt; 'category',
+				'terms'            =&gt; $cat_in,
+				'field'            =&gt; 'term_id',
+				'include_children' =&gt; true,
+			);
+		}
+
+		if ( ! empty( $cat_not_in ) ) {
+			$tax_query[] = array(
+				'taxonomy'         =&gt; 'category',
+				'terms'            =&gt; $cat_not_in,
+				'field'            =&gt; 'term_id',
+				'operator'         =&gt; 'NOT IN',
+				'include_children' =&gt; true,
+			);
+		}
+		unset( $cat_array, $cat_in, $cat_not_in );
+	}
+
+	if ( ! empty( $q['category__and'] ) &amp;&amp; 1 === count( (array) $q['category__and'] ) ) {
+		$q['category__and'] = (array) $q['category__and'];
+		if ( ! isset( $q['category__in'] ) ) {
+			$q['category__in'] = array();
+		}
+		$q['category__in'][] = absint( reset( $q['category__and'] ) );
+		unset( $q['category__and'] );
+	}
+
+	if ( ! empty( $q['category__in'] ) ) {
+		$q['category__in'] = array_map( 'absint', array_unique( (array) $q['category__in'] ) );
+		$tax_query[]       = array(
+			'taxonomy'         =&gt; 'category',
+			'terms'            =&gt; $q['category__in'],
+			'field'            =&gt; 'term_id',
+			'include_children' =&gt; false,
+		);
+	}
+
+	if ( ! empty( $q['category__not_in'] ) ) {
+		$q['category__not_in'] = array_map( 'absint', array_unique( (array) $q['category__not_in'] ) );
+		$tax_query[]           = array(
+			'taxonomy'         =&gt; 'category',
+			'terms'            =&gt; $q['category__not_in'],
+			'operator'         =&gt; 'NOT IN',
+			'include_children' =&gt; false,
+		);
+	}
+
+	if ( ! empty( $q['category__and'] ) ) {
+		$q['category__and'] = array_map( 'absint', array_unique( (array) $q['category__and'] ) );
+		$tax_query[]        = array(
+			'taxonomy'         =&gt; 'category',
+			'terms'            =&gt; $q['category__and'],
+			'field'            =&gt; 'term_id',
+			'operator'         =&gt; 'AND',
+			'include_children' =&gt; false,
+		);
+	}
+
+	// If query string 'tag' is array, implode it.
+	if ( is_array( $q['tag'] ) ) {
+		$q['tag'] = implode( ',', $q['tag'] );
+	}
+
+	// Tag stuff.
+
+	if ( '' !== $q['tag'] &amp;&amp; ! $this-&gt;is_singular &amp;&amp; $this-&gt;query_vars_changed ) {
+		if ( str_contains( $q['tag'], ',' ) ) {
+			$tags = preg_split( '/[,\r\n\t ]+/', $q['tag'] );
+			foreach ( (array) $tags as $tag ) {
+				$tag                 = sanitize_term_field( 'slug', $tag, 0, 'post_tag', 'db' );
+				$q['tag_slug__in'][] = $tag;
+			}
+		} elseif ( preg_match( '/[+\r\n\t ]+/', $q['tag'] ) || ! empty( $q['cat'] ) ) {
+			$tags = preg_split( '/[+\r\n\t ]+/', $q['tag'] );
+			foreach ( (array) $tags as $tag ) {
+				$tag                  = sanitize_term_field( 'slug', $tag, 0, 'post_tag', 'db' );
+				$q['tag_slug__and'][] = $tag;
+			}
+		} else {
+			$q['tag']            = sanitize_term_field( 'slug', $q['tag'], 0, 'post_tag', 'db' );
+			$q['tag_slug__in'][] = $q['tag'];
+		}
+	}
+
+	if ( ! empty( $q['tag_id'] ) ) {
+		$q['tag_id'] = absint( $q['tag_id'] );
+		$tax_query[] = array(
+			'taxonomy' =&gt; 'post_tag',
+			'terms'    =&gt; $q['tag_id'],
+		);
+	}
+
+	if ( ! empty( $q['tag__in'] ) ) {
+		$q['tag__in'] = array_map( 'absint', array_unique( (array) $q['tag__in'] ) );
+		$tax_query[]  = array(
+			'taxonomy' =&gt; 'post_tag',
+			'terms'    =&gt; $q['tag__in'],
+		);
+	}
+
+	if ( ! empty( $q['tag__not_in'] ) ) {
+		$q['tag__not_in'] = array_map( 'absint', array_unique( (array) $q['tag__not_in'] ) );
+		$tax_query[]      = array(
+			'taxonomy' =&gt; 'post_tag',
+			'terms'    =&gt; $q['tag__not_in'],
+			'operator' =&gt; 'NOT IN',
+		);
+	}
+
+	if ( ! empty( $q['tag__and'] ) ) {
+		$q['tag__and'] = array_map( 'absint', array_unique( (array) $q['tag__and'] ) );
+		$tax_query[]   = array(
+			'taxonomy' =&gt; 'post_tag',
+			'terms'    =&gt; $q['tag__and'],
+			'operator' =&gt; 'AND',
+		);
+	}
+
+	if ( ! empty( $q['tag_slug__in'] ) ) {
+		$q['tag_slug__in'] = array_map( 'sanitize_title_for_query', array_unique( (array) $q['tag_slug__in'] ) );
+		$tax_query[]       = array(
+			'taxonomy' =&gt; 'post_tag',
+			'terms'    =&gt; $q['tag_slug__in'],
+			'field'    =&gt; 'slug',
+		);
+	}
+
+	if ( ! empty( $q['tag_slug__and'] ) ) {
+		$q['tag_slug__and'] = array_map( 'sanitize_title_for_query', array_unique( (array) $q['tag_slug__and'] ) );
+		$tax_query[]        = array(
+			'taxonomy' =&gt; 'post_tag',
+			'terms'    =&gt; $q['tag_slug__and'],
+			'field'    =&gt; 'slug',
+			'operator' =&gt; 'AND',
+		);
+	}
+
+	$this-&gt;tax_query = new WP_Tax_Query( $tax_query );
+
+	/**
+	 * Fires after taxonomy-related query vars have been parsed.
+	 *
+	 * @since 3.7.0
+	 *
+	 * @param WP_Query $query The WP_Query instance.
+	 */
+	do_action( 'parse_tax_query', $this );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-query.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-query.php#L1152">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-query.php#L1152-L1382">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/parse_tax_query/"><span class="hook-func">do_action</span>( ‘parse_tax_query’,  <nobr><span class="arg-type">WP_Query</span> <span class="arg-name">$query</span></nobr> )</a></dt><dd><p>Fires after taxonomy-related query vars have been parsed.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_basename/">wp_basename()</a><code>wp-includes/formatting.php</code></td><td><p>i18n-friendly version of basename().</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_tax_query/__construct/">WP_Tax_Query::__construct()</a><code>wp-includes/class-wp-tax-query.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_term_field/">sanitize_term_field()</a><code>wp-includes/taxonomy.php</code></td><td><p>Sanitizes the field value in the term based on the context.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_taxonomies/">get_taxonomies()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves a list of registered taxonomy names or objects.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/absint/">absint()</a><code>wp-includes/load.php</code></td><td><p>Converts a value to non-negative integer.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get_posts/">WP_Query::get_posts()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves an array of posts based on query variables.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_query/parse_query/">WP_Query::parse_query()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Parses a query string and sets query type booleans.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.1.0/">3.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

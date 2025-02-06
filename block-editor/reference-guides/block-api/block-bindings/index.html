@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Bindings</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Bindings</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><div class="callout callout-alert">
+Block Bindings API is only available for WordPress 6.5 and above.
+</div>
+<p>The Block Bindings API lets you “bind” dynamic data to the block’s attributes, which are then reflected in the final HTML markup that is output to the browser on the front end.</p>
+<p>An example could be connecting an Image block <code>url</code> attribute to a function that returns random images from an external API.</p>
+<pre><code class="language-html">&lt;!-- wp:image {
+    "metadata":{
+        "bindings":{
+            "url":{
+                "source":"my-plugin/get-random-images"
+            }
+        }
+    }
+} --&gt;
+</code></pre>
+<h2 class="is-toc-heading" id="compatible-blocks-and-their-attributes" tabindex="-1"><a href="#compatible-blocks-and-their-attributes">Compatible blocks and their attributes</a></h2>
+<p>Right now, not all block attributes are compatible with block bindings. There is some ongoing effort to increase this compatibility, but for now, this is the list:</p>
+<figure class="wp-block-table is-style-borderless"><table>
+<thead>
+<tr>
+<th>Supported Blocks</th>
+<th>Supported Attributes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Paragraph</td>
+<td>content</td>
+</tr>
+<tr>
+<td>Heading</td>
+<td>content</td>
+</tr>
+<tr>
+<td>Image</td>
+<td>id, url, title, alt</td>
+</tr>
+<tr>
+<td>Button</td>
+<td>text, url, linkTarget, rel</td>
+</tr>
+</tbody>
+</table></figure>
+<h2 class="is-toc-heading" id="registering-a-custom-source" tabindex="-1"><a href="#registering-a-custom-source">Registering a custom source</a></h2>
+<p>Registering a source requires defining at least <code>name</code>, a <code>label</code> and a <code>callback</code> function that gets a value from the source and passes it back to a block attribute.</p>
+<p>Once a source is registered, any supporting block’s <code>metadata.bindings</code> attribute can be configured to read a value from that source.</p>
+<p>Registration can be done on the server via PHP or in the editor via JavaScript, and both can coexist.</p>
+<p>The label defined in server registration will be overridden by the label defined in the editor.</p>
+<h3 class="is-toc-heading" id="server-registration" tabindex="-1"><a href="#server-registration">Server registration</a></h3>
+<p>Server registration allows applying a callback that will be executed on the frontend for the bound attribute.</p>
+<p>The function to register a custom source is <code>register_block_bindings_source($name, $args)</code>:</p>
+<ul>
+<li><code>name</code>: <code>string</code> that sets the unique ID for the custom source.</li>
+<li><code>args</code>: <code>array</code> that contains:
+<ul>
+<li><code>label</code>: <code>string</code> with the human-readable name of the custom source.</li>
+<li><code>uses_context</code>: <code>array</code> with the block context that is passed to the callback (optional).</li>
+<li><code>get_value_callback</code>: <code>function</code> that will run on the bound block’s render function. It accepts three arguments: <code>source_args</code>, <code>block_instance</code> and <code>attribute_name</code>. This value can be overridden with the filter <code>block_bindings_source_value</code>.</li>
+</ul>
+</li>
+</ul>
+<p>Note that <code>register_block_bindings_source()</code> should be called from a handler attached to the <code>init</code> hook.</p>
+<p>Here is an example:</p>
+<pre><code class="language-php">add_action(
+    'init',
+    function () {
+        register_block_bindings_source(
+            'wpmovies/visualization-date',
+            array(
+                'label'              =&gt; __( 'Visualization Date', 'custom-bindings' ),
+                'get_value_callback' =&gt; function ( array $source_args, $block_instance ) {
+                    $post_id = $block_instance-&gt;context['postId'];
+                    if ( isset( $source_args['key'] ) ) {
+                        return get_post_meta( $post_id, $source_args['key'], true );
+                    }
+                },
+                'uses_context'       =&gt; array( 'postId' ),
+            )
+        );
+    }
+);
+</code></pre>
+<p>This example needs a <code>post_meta</code> registered, and, also, a filter can be used to return a default <code>$visualization_date</code> value, which will be shown in the next heading.</p>
+<pre><code class="language-php">add_action(
+    'init',
+    function () {
+        register_meta(
+            'post',
+            'wp_movies_visualization_date',
+            array(
+                'show_in_rest' =&gt; true,
+                'single'       =&gt; true,
+                'type'         =&gt; 'string',
+                'label'        =&gt; __( 'Movie visualization date', 'custom-bindings' ),
+            )
+        );
+    }
+);
+</code></pre>
+<h4>Block bindings source value filter</h4>
+<p><em><strong>Note:</strong> Since WordPress 6.7.</em></p>
+<p>The value returned by <code>get_value_callback</code> can be modified with the <code>block_bindings_source_value</code> filter.<br/>
+The filter has the following parameters:</p>
+<ul>
+<li><code>value</code>: The value to be filtered.</li>
+<li><code>name</code>: The name of the source.</li>
+<li><code>source_args</code>: <code>array</code> containing source arguments.</li>
+<li><code>block_instance</code>: The block instance object.</li>
+<li><code>attribute_name</code>: The name of the attribute.</li>
+</ul>
+<p>Example:</p>
+<pre><code class="language-php">function wpmovies_format_visualization_date( $value, $name ) {
+    // Prevent the filter to be applied to other sources.
+    if ( $name !== 'wpmovies/visualization-date' ) {
+        return $value;
+    }
+    if ( ! $value ) {
+        return date( 'm/d/Y' );
+    }
+    return date( 'm/d/Y', strtotime( $value ) );
+}
+
+add_filter( 'block_bindings_source_value', 'wpmovies_format_visualization_date', 10, 2 );
+</code></pre>
+<h4>Server registration Core examples</h4>
+<p>There are a few examples in Core that can be used as reference.</p>
+<ul>
+<li>Post Meta. <a href="https://github.com/WordPress/wordpress-develop/blob/trunk/src/wp-includes/block-bindings/post-meta.php">Source code</a></li>
+<li>Pattern overrides. <a href="https://github.com/WordPress/wordpress-develop/blob/trunk/src/wp-includes/block-bindings/pattern-overrides.php">Source code</a></li>
+<li>Twenty Twenty-Five theme. <a href="https://github.com/WordPress/wordpress-develop/blob/trunk/src/wp-content/themes/twentytwentyfive/functions.php">Source code</a></li>
+</ul>
+<h3 class="is-toc-heading" id="editor-registration" tabindex="-1"><a href="#editor-registration">Editor registration</a></h3>
+<p><em><strong>Note:</strong> Since WordPress 6.7.</em></p>
+<p>Editor registration on the client allows defining what the bound block will do when the value is retrieved or when the value is edited.</p>
+<p>The function to register a custom source is <code>registerBlockBindingsSource( args )</code>:</p>
+<ul>
+<li><code>args</code>: <code>object</code> with the following structure:
+<ul>
+<li><code>name</code>: <code>string</code> with the unique and machine-readable name.</li>
+<li><code>label</code>: <code>string</code> with the human readable name of the custom source. In case it was defined already on the server, the server label will be overridden by this one, in that case, it is not recommended to be defined here. (optional)</li>
+<li><code>usesContext</code>: <code>array</code> with the block context that the custom source may need. In case it was defined already on the server, it should not be defined here. (optional)</li>
+<li><code>getValues</code>: <code>function</code> that retrieves the values from the source. (optional)</li>
+<li><code>setValues</code>: <code>function</code> that allows updating the values connected to the source. (optional)</li>
+<li><code>canUserEditValue</code>: <code>function</code> to determine if the user can edit the value. The user won’t be able to edit by default. (optional)</li>
+</ul>
+</li>
+</ul>
+<p>This example will show a custom post meta date in the editor and, if it doesn’t exist, it will show today’s date. The user can edit the value of the date. (Caution: This example does not format the user input as a date—it’s only for educational purposes.)</p>
+<pre><code class="language-js">import {
+    registerBlockBindingsSource,
+} from '@wordpress/blocks';
+import { __ } from '@wordpress/i18n';
+import { store as coreDataStore } from '@wordpress/core-data';
+
+registerBlockBindingsSource( {
+    name: 'wpmovies/visualization-date',
+    label: __( 'Visualization Date', 'custom-bindings' ), // We can skip the label, as it was already defined in the server in the previous example.
+    usesContext: [ 'postType' ], // We can skip postId, as it was already defined in the server in the previous example.
+    getValues( { select, context } ) {
+        let wpMoviesVisualizationDate;
+        const { getEditedEntityRecord } = select( coreDataStore );
+        if ( context?.postType &amp;&amp; context?.postId ) {
+            wpMoviesVisualizationDate = getEditedEntityRecord(
+                'postType',
+                context?.postType,
+                context?.postId
+            ).meta?.wp_movies_visualization_date;
+        }
+        if ( wpMoviesVisualizationDate ) {
+            return {
+                content: wpMoviesVisualizationDate,
+            };
+        }
+
+        return {
+            content: new Date().toLocaleDateString( 'en-US' ),
+        };
+    },
+    setValues( { select, dispatch, context, bindings } ) {
+        dispatch( coreDataStore ).editEntityRecord(
+            'postType',
+            context?.postType,
+            context?.postId,
+            {
+                meta: {
+                    wp_movies_visualization_date: bindings?.content?.newValue,
+                },
+            }
+        );
+    },
+    canUserEditValue( { select, context } ) {
+        return true;
+    },
+} );
+</code></pre>
+<h4>getValues</h4>
+<p>The <code>getValues</code> function retrieves the value from the source on block loading. It receives an <code>object</code> as an argument with the following properties:</p>
+<ul>
+<li><code>bindings</code> returns the bindings object of the specific source. It must have the attributes as a key, and the value can be a <code>string</code> or an <code>object</code> with arguments.</li>
+<li><code>clientId</code> returns a <code>string</code> with the current block client ID.</li>
+<li><code>context</code> returns an <code>object</code> of the current block context, defined in the <code>usesContext</code> property. <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-context/">More about block context.</a>.</li>
+<li><code>select</code> returns an <code>object</code> of a given store’s selectors. <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-data/#select">More info in their docs.</a>.</li>
+</ul>
+<p>The function must return an <code>object</code> with this structure:<br/>
+<code>{ 'block attribute' : value }</code></p>
+<h4>setValues</h4>
+<p>The <code>setValues</code> function updates all the values of the source of the block bound. It receives an <code>object</code> as an argument with the following properties:</p>
+<ul>
+<li><code>bindings</code> returns the bindings object of the specific source. It must have the attributes as a key, and the value can be a <code>string</code> or an <code>object</code> with arguments. This object contains a <code>newValue</code> property with the user’s input.</li>
+<li><code>clientId</code> returns a <code>string</code> with the current block client ID.</li>
+<li><code>context</code> returns an <code>object</code> of the current block context, defined in the <code>usesContext</code> property. <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-context/">More about block context.</a>.</li>
+<li><code>dispatch</code> returns an <code>object</code> of the store’s action creators. <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-data/#dispatch">More about dispatch</a>.</li>
+<li><code>select</code> returns an <code>object</code> of a given store’s selectors. <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-data/#select">More info in their docs.</a>.</li>
+</ul>
+<h4>Editor registration Core examples</h4>
+<p>There are a few examples in Core that can be used as reference.</p>
+<ul>
+<li>Post Meta. <a href="https://github.com/WordPress/gutenberg/blob/5afd6c27bfba2be2e06b502257753fbfff1ae9f0/packages/editor/src/bindings/post-meta.js#L74-L146">Source code</a></li>
+<li>Pattern overrides. <a href="https://github.com/WordPress/gutenberg/blob/5afd6c27bfba2be2e06b502257753fbfff1ae9f0/packages/editor/src/bindings/pattern-overrides.js#L8-L100">Source code</a></li>
+</ul>
+<h2 class="is-toc-heading" id="unregistering-a-source" tabindex="-1"><a href="#unregistering-a-source">Unregistering a source</a></h2>
+<p><em><strong>Note:</strong> Since WordPress 6.7.</em></p>
+<p><code>unregisterBlockBindingsSource</code> unregisters a block bindings source by providing its name.</p>
+<pre><code class="language-js">import { unregisterBlockBindingsSource } from '@wordpress/blocks';
+
+unregisterBlockBindingsSource( 'plugin/my-custom-source' );
+</code></pre>
+<h2 class="is-toc-heading" id="getting-all-sources" tabindex="-1"><a href="#getting-all-sources">Getting all sources</a></h2>
+<p><em><strong>Note:</strong> Since WordPress 6.7.</em></p>
+<p><code>getBlockBindingsSources</code> returns all registered block bindings sources.</p>
+<pre><code class="language-js">import { getBlockBindingsSources } from '@wordpress/blocks';
+
+const registeredSources = getBlockBindingsSources();
+</code></pre>
+<h2 class="is-toc-heading" id="getting-one-specific-source" tabindex="-1"><a href="#getting-one-specific-source">Getting one specific source</a></h2>
+<p><em><strong>Note:</strong> Since WordPress 6.7.</em></p>
+<p><code>getBlockBindingsSource</code> return a specific block bindings source by its name.</p>
+<pre><code class="language-js">import { getBlockBindingsSource } from '@wordpress/blocks';
+
+const blockBindingsSource = getBlockBindingsSource( 'plugin/my-custom-source' );
+</code></pre>
+<h2 class="is-toc-heading" id="block-bindings-utils" tabindex="-1"><a href="#block-bindings-utils">Block Bindings Utils</a></h2>
+<p><em><strong>Note:</strong> Since WordPress 6.7.</em></p>
+<p>UseBlockBindingUtils is a hook with two helpers that allows developers to edit the <code>metadata.bindings</code> attribute easily.</p>
+<p>It accepts a <code>clientId</code> string as a parameter, if it is not set, the function will use the current block client ID from the context.</p>
+<p>Example:</p>
+<pre><code class="language-js">import { useBlockBindingsUtils } from '@wordpress/block-editor';
+
+const { updateBlockBindings } = useBlockBindingsUtils('my-block-client-id-12345');
+...
+</code></pre>
+<h3 class="is-toc-heading" id="updateblockbindings" tabindex="-1"><a href="#updateblockbindings">updateBlockBindings</a></h3>
+<p><code>updateBlockBindings</code> works similarly to <code>updateBlockAttributes</code>, and can be used to create, update, or remove specific connections.</p>
+<pre><code class="language-js">import { useBlockBindingsUtils } from '@wordpress/block-editor';
+
+const { updateBlockBindings } = useBlockBindingsUtils();
+
+function updateBlockBindingsURLSource( url ) {
+    updateBlockBindings({
+        url: {
+            source: 'myplugin/new-source',
+        }
+    })
+}
+
+// Remove binding from url attribute.
+function removeBlockBindingsURLSource() {
+    updateBlockBindings( { url: undefined } );
+}
+</code></pre>
+<h3 class="is-toc-heading" id="removeallblockbindings" tabindex="-1"><a href="#removeallblockbindings">removeAllBlockBindings</a></h3>
+<p><code>removeAllBlockBindings</code> will remove all existing connections in a block by removing the <code>metadata.bindings</code> attribute.</p>
+<pre><code class="language-js">import { useBlockBindingsUtils } from '@wordpress/block-editor';
+
+const { removeAllBlockBindings } = useBlockBindingsUtils();
+
+function clearBlockBindings() {
+    removeAllBlockBindings();
+}
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

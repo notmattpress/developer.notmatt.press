@@ -1,0 +1,494 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/data-basics/">Create your First App with Gutenberg Data</a></span><span class="is-current-page">Building an edit form</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Building an edit form</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>This part is about adding an <em>Edit</em> feature to our app. Here’s a glimpse of what we’re going to build:</p>
+<p><img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/data-basics/media/edit-form/form-finished.png?ssl=1"/></p>
+<h3 class="is-toc-heading" id="step-1-add-an-edit-button" tabindex="-1"><a href="#step-1-add-an-edit-button">Step 1: Add an Edit button</a></h3>
+<p>We can’t have an <em>Edit</em> form without an <em>Edit</em> button, so let’s start by adding one to our <code>PagesList</code> component:</p>
+<pre><code class="language-js">import { Button } from '@wordpress/components';
+import { decodeEntities } from '@wordpress/html-entities';
+
+const PageEditButton = () =&gt; (
+    &lt;Button variant="primary"&gt;
+        Edit
+    &lt;/Button&gt;
+)
+
+function PagesList( { hasResolved, pages } ) {
+    if ( ! hasResolved ) {
+        return &lt;Spinner /&gt;;
+    }
+    if ( ! pages?.length ) {
+        return &lt;div&gt;No results&lt;/div&gt;;
+    }
+
+    return (
+        &lt;table className="wp-list-table widefat fixed striped table-view-list"&gt;
+            &lt;thead&gt;
+                &lt;tr&gt;
+                    &lt;td&gt;Title&lt;/td&gt;
+                    &lt;td style=&gt;Actions&lt;/td&gt;
+                &lt;/tr&gt;
+            &lt;/thead&gt;
+            &lt;tbody&gt;
+                { pages?.map( ( page ) =&gt; (
+                    &lt;tr key={page.id}&gt;
+                        &lt;td&gt;{ decodeEntities( page.title.rendered ) }&lt;/td&gt;
+                        &lt;td&gt;
+                            &lt;PageEditButton pageId={ page.id } /&gt;
+                        &lt;/td&gt;
+                    &lt;/tr&gt;
+                ) ) }
+            &lt;/tbody&gt;
+        &lt;/table&gt;
+    );
+}
+</code></pre>
+<p>The only change in <code>PagesList</code> is the additional column labeled <em>Actions</em>:</p>
+<p><img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/data-basics/media/edit-form/edit-button.png?ssl=1"/></p>
+<h3 class="is-toc-heading" id="step-2-display-an-edit-form" tabindex="-1"><a href="#step-2-display-an-edit-form">Step 2: Display an Edit form</a></h3>
+<p>Our button looks nice but doesn’t do anything yet. To display an edit form, we need to have one first – let’s create it:</p>
+<pre><code class="language-js">import { Button, TextControl } from '@wordpress/components';
+function EditPageForm( { pageId, onCancel, onSaveFinished } ) {
+    return (
+        &lt;div className="my-gutenberg-form"&gt;
+            &lt;TextControl
+                __nextHasNoMarginBottom
+                __next40pxDefaultSize
+                value=''
+                label='Page title:'
+            /&gt;
+            &lt;div className="form-buttons"&gt;
+                &lt;Button onClick={ onSaveFinished } variant="primary"&gt;
+                    Save
+                &lt;/Button&gt;
+                &lt;Button onClick={ onCancel } variant="tertiary"&gt;
+                    Cancel
+                &lt;/Button&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+}
+</code></pre>
+<p>Now let’s make the button display the form we just created. As this tutorial is not focused on web design, we will wire the two together using a component that requires the least amount of code: <a href="https://developer.notmatt.press/block-editor/reference-guides/components/modal/"><code>Modal</code></a>. Let’s update <code>PageEditButton</code> accordingly:</p>
+<pre><code class="language-js">import { Button, Modal, TextControl } from '@wordpress/components';
+
+function PageEditButton({ pageId }) {
+    const [ isOpen, setOpen ] = useState( false );
+    const openModal = () =&gt; setOpen( true );
+    const closeModal = () =&gt; setOpen( false );
+    return (
+        &lt;&gt;
+            &lt;Button
+                onClick={ openModal }
+                variant="primary"
+            &gt;
+                Edit
+            &lt;/Button&gt;
+            { isOpen &amp;&amp; (
+                &lt;Modal onRequestClose={ closeModal } title="Edit page"&gt;
+                    &lt;EditPageForm
+                        pageId={pageId}
+                        onCancel={closeModal}
+                        onSaveFinished={closeModal}
+                    /&gt;
+                &lt;/Modal&gt;
+            ) }
+        &lt;/&gt;
+    )
+}
+</code></pre>
+<p>When you click the <em>Edit</em> button now, you should see the following modal:</p>
+<p><img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/data-basics/media/edit-form/form-scaffold.png?ssl=1"/></p>
+<p>Great! We now have a basic user interface to work with.</p>
+<h3 class="is-toc-heading" id="step-3-populate-the-form-with-page-details" tabindex="-1"><a href="#step-3-populate-the-form-with-page-details">Step 3: Populate the form with page details</a></h3>
+<p>We want the <code>EditPageForm</code> to display the title of the currently edited page. You may have noticed that it doesn’t receive a <code>page</code> prop, only <code>pageId</code>. That’s okay. Gutenberg Data allows us to easily access entity records from any component.</p>
+<p>In this case, we need to use the <a href="https://developer.notmatt.press/block-editor/reference-guides/data/data-core/#getentityrecord"><code>getEntityRecord</code></a> selector. The list of records is already available thanks to the <code>getEntityRecords</code> call in <code>MyFirstApp</code>, so there won’t even be any additional HTTP requests involved – we’ll get the cached record right away.</p>
+<p>Here’s how you can try it in your browser’s dev tools:</p>
+<pre><code class="language-js">wp.data.select( 'core' ).getEntityRecord( 'postType', 'page', 9 );  // Replace 9 with an actual page ID
+</code></pre>
+<p>Let’s update <code>EditPageForm</code> accordingly:</p>
+<pre><code class="language-js">function EditPageForm( { pageId, onCancel, onSaveFinished } ) {
+    const page = useSelect(
+        select =&gt; select( coreDataStore ).getEntityRecord( 'postType', 'page', pageId ),
+        [pageId]
+    );
+    return (
+        &lt;div className="my-gutenberg-form"&gt;
+            &lt;TextControl
+                __nextHasNoMarginBottom
+                __next40pxDefaultSize
+                label='Page title:'
+                value={ page.title.rendered }
+            /&gt;
+            { /* ... */ }
+        &lt;/div&gt;
+    );
+}
+</code></pre>
+<p>Now it should look like this:</p>
+<p><img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/data-basics/media/edit-form/form-populated.png?ssl=1"/></p>
+<h3 class="is-toc-heading" id="step-4-making-the-page-title-field-editable" tabindex="-1"><a href="#step-4-making-the-page-title-field-editable">Step 4: Making the Page title field editable</a></h3>
+<p>There’s one problem with our <em>Page title</em> field: you can’t edit it. It receives a fixed <code>value</code> but doesn’t update it when typing. We need an <code>onChange</code> handler.</p>
+<p>You may have seen a pattern similar to this one in other React apps. It’s known as a <a href="https://reactjs.org/docs/forms.html#controlled-components">“controlled component”</a>:</p>
+<pre><code class="language-js">function VanillaReactForm({ initialTitle }) {
+    const [title, setTitle] = useState( initialTitle );
+    return (
+        &lt;TextControl
+            __nextHasNoMarginBottom
+            __next40pxDefaultSize
+            value={ title }
+            onChange={ setTitle }
+        /&gt;
+    );
+}
+</code></pre>
+<p>Updating entity records in Gutenberg Data is similar but instead of using <code>setTitle</code> to store in local (component level) state, we use the <code>editEntityRecord</code> action which stores the updates in the <em>Redux</em> state. Here’s how you can try it out in your browser’s dev tools:</p>
+<pre><code class="language-js">// We need a valid page ID to call editEntityRecord, so let's get the first available one using getEntityRecords.
+const pageId = wp.data.select( 'core' ).getEntityRecords( 'postType', 'page' )[0].id;
+
+// Update the title
+wp.data.dispatch( 'core' ).editEntityRecord( 'postType', 'page', pageId, { title: 'updated title' } );
+</code></pre>
+<p>At this point, you may ask <em>how</em> is <code>editEntityRecord</code> better than <code>useState</code>? The answer is that it offers a few features you wouldn’t otherwise get.</p>
+<p>Firstly, we can save the changes as easily as we retrieve the data and ensure that all caches will be correctly updated.</p>
+<p>Secondly, the changes applied via <code>editEntityRecord</code> are easily undo-able via the <code>undo</code> and <code>redo</code> actions.</p>
+<p>Lastly, because the changes live in the <em>Redux</em> state, they are “global” and can be accessed by other components. For example, we could make the <code>PagesList</code> display the currently edited title.</p>
+<p>To that last point, let’s see what happens when we use <code>getEntityRecord</code> to access the entity record we just updated:</p>
+<pre><code class="language-js">wp.data.select( 'core' ).getEntityRecord( 'postType', 'page', pageId ).title
+</code></pre>
+<p>It doesn’t reflect the edits. What’s going on?</p>
+<p>Well, <code>&lt;PagesList /&gt;</code> renders the data returned by <code>getEntityRecord()</code>. If <code>getEntityRecord()</code> reflected the updated title, then anything the user types in the <code>TextControl</code> would be immediately displayed inside <code>&lt;PagesList /&gt;</code>, too. This is not what we want. The edits shouldn’t leak outside the form until the user decides to save them.</p>
+<p>Gutenberg Data solves this problem by making a distinction between <em>Entity Records</em> and <em>Edited Entity Records</em>. <em>Entity Records</em> reflect the data from the API and ignore any local edits, while <em>Edited Entity Records</em> also have all the local edits applied on top. Both co-exist in the Redux state at the same time.</p>
+<p>Let’s see what happens if we call <code>getEditedEntityRecord</code>:</p>
+<pre><code class="language-js">wp.data.select( 'core' ).getEditedEntityRecord( 'postType', 'page', pageId ).title
+// "updated title"
+
+wp.data.select( 'core' ).getEntityRecord( 'postType', 'page', pageId ).title
+// { "rendered": "&lt;original, unchanged title&gt;", "raw": "..." }
+</code></pre>
+<p>As you can see, the <code>title</code> of an Entity Record is an object, but the <code>title</code> of an Edited Entity record is a string.</p>
+<p>This is no accident. Fields like <code>title</code>, <code>excerpt</code>, and <code>content</code> may contain <a href="https://developer.notmatt.press/apis/handbook/shortcode/">shortcodes</a> or <a href="https://developer.notmatt.press/block-editor/how-to-guides/block-tutorial/creating-dynamic-blocks/">dynamic blocks</a>, which means they can only be rendered on the server. For such fields, the REST API exposes both the <code>raw</code> markup <em>and</em> the <code>rendered</code> string. For example, in the block editor, <code>content.rendered</code> could used as a visual preview, and <code>content.raw</code> could be used to populate the code editor.</p>
+<p>So why is the <code>content</code> of an Edited Entity Record a string? Since JavaScript is not be able to properly render arbitrary block markup, it stores only the <code>raw</code> markup without the <code>rendered</code> part. And since that’s a string, the entire field becomes a string.</p>
+<p>We can now update <code>EditPageForm</code> accordingly. We can access the actions using the <a href="https://developer.notmatt.press/block-editor/reference-guide/packages/packages-data/#usedispatch"><code>useDispatch</code></a> hook similarly to how we use <code>useSelect</code> to access selectors:</p>
+<pre><code class="language-js">import { useDispatch } from '@wordpress/data';
+
+function EditPageForm( { pageId, onCancel, onSaveFinished } ) {
+    const page = useSelect(
+        select =&gt; select( coreDataStore ).getEditedEntityRecord( 'postType', 'page', pageId ),
+        [ pageId ]
+    );
+    const { editEntityRecord } = useDispatch( coreDataStore );
+    const handleChange = ( title ) =&gt; editEntityRecord( 'postType', 'page', pageId, { title } );
+
+    return (
+        &lt;div className="my-gutenberg-form"&gt;
+            &lt;TextControl
+                __nextHasNoMarginBottom
+                __next40pxDefaultSize
+                label="Page title:"
+                value={ page.title }
+                onChange={ handleChange }
+            /&gt;
+            &lt;div className="form-buttons"&gt;
+                &lt;Button onClick={ onSaveFinished } variant="primary"&gt;
+                    Save
+                &lt;/Button&gt;
+                &lt;Button onClick={ onCancel } variant="tertiary"&gt;
+                    Cancel
+                &lt;/Button&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+}
+</code></pre>
+<p>We added an <code>onChange</code> handler to keep track of edits via the <code>editEntityRecord</code> action and then changed the selector to <code>getEditedEntityRecord</code> so that <code>page.title</code> always reflects the changes.</p>
+<p>This is what it looks like now:</p>
+<p><img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/data-basics/media/edit-form/form-editable.png?ssl=1"/></p>
+<h3 class="is-toc-heading" id="step-5-saving-the-form-data" tabindex="-1"><a href="#step-5-saving-the-form-data">Step 5: Saving the form data</a></h3>
+<p>Now that we can edit the page title let’s also make sure we can save it. In Gutenberg data, we save changes to the WordPress REST API using the <code>saveEditedEntityRecord</code> action. It sends the request, processes the result, and updates the cached data in the Redux state.</p>
+<p>Here’s an example you may try in your browser’s dev tools:</p>
+<pre><code class="language-js">// Replace 9 with an actual page ID
+wp.data.dispatch( 'core' ).editEntityRecord( 'postType', 'page', 9, { title: 'updated title' } );
+wp.data.dispatch( 'core' ).saveEditedEntityRecord( 'postType', 'page', 9 );
+</code></pre>
+<p>The above snippet saved a new title. Unlike before, <code>getEntityRecord</code> now reflects the updated title:</p>
+<pre><code class="language-js">// Replace 9 with an actual page ID
+wp.data.select( 'core' ).getEntityRecord( 'postType', 'page', 9 ).title.rendered
+// "updated title"
+</code></pre>
+<p>Entity records are updated to reflect any saved changes right after the REST API request is finished.</p>
+<p>This is how the <code>EditPageForm</code> looks like with a working <em>Save</em> button:</p>
+<pre><code class="language-js">function EditPageForm( { pageId, onCancel, onSaveFinished } ) {
+    // ...
+    const { saveEditedEntityRecord } = useDispatch( coreDataStore );
+    const handleSave = () =&gt; saveEditedEntityRecord( 'postType', 'page', pageId );
+
+    return (
+        &lt;div className="my-gutenberg-form"&gt;
+            {/* ... */}
+            &lt;div className="form-buttons"&gt;
+                &lt;Button onClick={ handleSave } variant="primary"&gt;
+                    Save
+                &lt;/Button&gt;
+                {/* ... */}
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+}
+</code></pre>
+<p>It works, but there’s still one thing to fix: the form modal doesn’t automatically close because we never call <code>onSaveFinished</code>. Lucky for us, <code>saveEditedEntityRecord</code> returns a promise that resolves once the save operation is finished. Let’s take advantage of it in <code>EditPageForm</code>:</p>
+<pre><code class="language-js">function EditPageForm( { pageId, onCancel, onSaveFinished } ) {
+    // ...
+    const handleSave = async () =&gt; {
+        await saveEditedEntityRecord( 'postType', 'page', pageId );
+        onSaveFinished();
+    };
+    // ...
+}
+</code></pre>
+<h3 class="is-toc-heading" id="step-6-handle-errors" tabindex="-1"><a href="#step-6-handle-errors">Step 6: Handle errors</a></h3>
+<p>We optimistically assumed that a <em>save</em> operation would always succeed. Unfortunately, it may fail in many ways:</p>
+<ul>
+<li>The website can be down</li>
+<li>The update may be invalid</li>
+<li>The page could have been deleted by someone else in the meantime</li>
+</ul>
+<p>To tell the user when any of these happens, we have to make two adjustments. We don’t want to close the form modal when the update fails. The promise returned by <code>saveEditedEntityRecord</code> is resolved with an updated record only if the update actually worked. When something goes wrong, it resolves with an empty value. Let’s use it to keep the modal open:</p>
+<pre><code class="language-js">function EditPageForm( { pageId, onSaveFinished } ) {
+    // ...
+    const handleSave = async () =&gt; {
+        const updatedRecord = await saveEditedEntityRecord( 'postType', 'page', pageId );
+        if ( updatedRecord ) {
+            onSaveFinished();
+        }
+    };
+    // ...
+}
+</code></pre>
+<p>Great! Now, let’s display an error message. The failure details can be grabbed using the <code>getLastEntitySaveError</code> selector:</p>
+<pre><code class="language-js">// Replace 9 with an actual page ID
+wp.data.select( 'core' ).getLastEntitySaveError( 'postType', 'page', 9 )
+</code></pre>
+<p>Here’s how we can use it in <code>EditPageForm</code>:</p>
+<pre><code class="language-js">function EditPageForm( { pageId, onSaveFinished } ) {
+    // ...
+    const { lastError, page } = useSelect(
+        select =&gt; ({
+            page: select( coreDataStore ).getEditedEntityRecord( 'postType', 'page', pageId ),
+            lastError: select( coreDataStore ).getLastEntitySaveError( 'postType', 'page', pageId )
+        }),
+        [ pageId ]
+    )
+    // ...
+    return (
+        &lt;div className="my-gutenberg-form"&gt;
+            {/* ... */}
+            { lastError ? (
+                &lt;div className="form-error"&gt;
+                    Error: { lastError.message }
+                &lt;/div&gt;
+            ) : false }
+            {/* ... */}
+        &lt;/div&gt;
+    );
+}
+</code></pre>
+<p>Great! <code>EditPageForm</code> is now fully aware of errors.</p>
+<p>Let’s see that error message in action. We’ll trigger an invalid update and let it fail. The post title is hard to break, so let’s set a <code>date</code> property to <code>-1</code> instead – that’s a guaranteed validation error:</p>
+<pre><code class="language-js">function EditPageForm( { pageId, onCancel, onSaveFinished } ) {
+    // ...
+    const handleChange = ( title ) =&gt; editEntityRecord( 'postType', 'page', pageId, { title, date: -1 } );
+    // ...
+}
+</code></pre>
+<p>Once you refresh the page, open the form, change the title, and hit save, you should see the following error message:</p>
+<p><img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/data-basics/media/edit-form/form-error.png?ssl=1"/></p>
+<p>Fantastic! We can now <strong>restore the previous version of <code>handleChange</code></strong> and move on to the next step.</p>
+<h3 class="is-toc-heading" id="step-7-status-indicator" tabindex="-1"><a href="#step-7-status-indicator">Step 7: Status indicator</a></h3>
+<p>There is one last problem with our form: no visual feedback. We can’t be quite sure whether the <em>Save</em> button worked until either the form disappears or an error message shows.</p>
+<p>We’re going to clear it up and communicate two states to the user: <em>Saving</em> and <em>No changes detected</em>. The relevant selectors are <code>isSavingEntityRecord</code> and <code>hasEditsForEntityRecord</code>. Unlike <code>getEntityRecord</code>, they never issue any HTTP requests but only return the current entity record state.</p>
+<p>Let’s use them in <code>EditPageForm</code>:</p>
+<pre><code class="language-js">function EditPageForm( { pageId, onSaveFinished } ) {
+    // ...
+    const { isSaving, hasEdits, /* ... */ } = useSelect(
+        select =&gt; ({
+            isSaving: select( coreDataStore ).isSavingEntityRecord( 'postType', 'page', pageId ),
+            hasEdits: select( coreDataStore ).hasEditsForEntityRecord( 'postType', 'page', pageId ),
+            // ...
+        }),
+        [ pageId ]
+    )
+}
+</code></pre>
+<p>We can now use <code>isSaving</code> and <code>hasEdits</code> to display a spinner when saving is in progress and grey out the save button when there are no edits:</p>
+<pre><code class="language-js">function EditPageForm( { pageId, onSaveFinished } ) {
+    // ...
+    return (
+        // ...
+        &lt;div className="form-buttons"&gt;
+            &lt;Button onClick={ handleSave } variant="primary" disabled={ ! hasEdits || isSaving }&gt;
+                { isSaving ? (
+                    &lt;&gt;
+                        &lt;Spinner/&gt;
+                        Saving
+                    &lt;/&gt;
+                ) : 'Save' }
+            &lt;/Button&gt;
+            &lt;Button
+                onClick={ onCancel }
+                variant="tertiary"
+                disabled={ isSaving }
+            &gt;
+                Cancel
+            &lt;/Button&gt;
+        &lt;/div&gt;
+        // ...
+    );
+}
+</code></pre>
+<p>Note that we disable the <em>save</em> button when there are no edits and when the page is currently being saved. This is to prevent the user from accidentally pressing the button twice.</p>
+<p>Also, interrupting a <em>save</em> in progress is not supported by <code>@wordpress/data</code> so we also conditionally disabled the <em>cancel</em> button.</p>
+<p>Here’s what it looks like in action:</p>
+<p><img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/data-basics/media/edit-form/form-inactive.png?ssl=1"/><br/>
+<img alt="" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/raw.githubusercontent.com/WordPress/gutenberg/HEAD/docs/how-to-guides/data-basics/media/edit-form/form-spinner.png?ssl=1"/></p>
+<h3 class="is-toc-heading" id="wiring-it-all-together" tabindex="-1"><a href="#wiring-it-all-together">Wiring it all together</a></h3>
+<p>All the pieces are in place, great! Here’s everything we built in this chapter in one place:</p>
+<pre><code class="language-js">import { useDispatch } from '@wordpress/data';
+import { Button, Modal, TextControl } from '@wordpress/components';
+
+function PageEditButton( { pageId } ) {
+    const [ isOpen, setOpen ] = useState( false );
+    const openModal = () =&gt; setOpen( true );
+    const closeModal = () =&gt; setOpen( false );
+    return (
+        &lt;&gt;
+            &lt;Button onClick={ openModal } variant="primary"&gt;
+                Edit
+            &lt;/Button&gt;
+            { isOpen &amp;&amp; (
+                &lt;Modal onRequestClose={ closeModal } title="Edit page"&gt;
+                    &lt;EditPageForm
+                        pageId={ pageId }
+                        onCancel={ closeModal }
+                        onSaveFinished={ closeModal }
+                    /&gt;
+                &lt;/Modal&gt;
+            ) }
+        &lt;/&gt;
+    );
+}
+
+function EditPageForm( { pageId, onCancel, onSaveFinished } ) {
+    const { page, lastError, isSaving, hasEdits } = useSelect(
+        ( select ) =&gt; ( {
+            page: select( coreDataStore ).getEditedEntityRecord( 'postType', 'page', pageId ),
+            lastError: select( coreDataStore ).getLastEntitySaveError( 'postType', 'page', pageId ),
+            isSaving: select( coreDataStore ).isSavingEntityRecord( 'postType', 'page', pageId ),
+            hasEdits: select( coreDataStore ).hasEditsForEntityRecord( 'postType', 'page', pageId ),
+        } ),
+        [ pageId ]
+    );
+
+    const { saveEditedEntityRecord, editEntityRecord } = useDispatch( coreDataStore );
+    const handleSave = async () =&gt; {
+        const savedRecord = await saveEditedEntityRecord( 'postType', 'page', pageId );
+        if ( savedRecord ) {
+            onSaveFinished();
+        }
+    };
+    const handleChange = ( title ) =&gt;  editEntityRecord( 'postType', 'page', page.id, { title } );
+
+    return (
+        &lt;div className="my-gutenberg-form"&gt;
+            &lt;TextControl
+                __nextHasNoMarginBottom
+                __next40pxDefaultSize
+                label="Page title:"
+                value={ page.title }
+                onChange={ handleChange }
+            /&gt;
+            { lastError ? (
+                &lt;div className="form-error"&gt;Error: { lastError.message }&lt;/div&gt;
+            ) : (
+                false
+            ) }
+            &lt;div className="form-buttons"&gt;
+                &lt;Button
+                    onClick={ handleSave }
+                    variant="primary"
+                    disabled={ ! hasEdits || isSaving }
+                &gt;
+                    { isSaving ? (
+                        &lt;&gt;
+                            &lt;Spinner/&gt;
+                            Saving
+                        &lt;/&gt;
+                    ) : 'Save' }
+                &lt;/Button&gt;
+                &lt;Button
+                    onClick={ onCancel }
+                    variant="tertiary"
+                    disabled={ isSaving }
+                &gt;
+                    Cancel
+                &lt;/Button&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+}
+</code></pre>
+<h2 class="is-toc-heading" id="whats-next" tabindex="-1"><a href="#whats-next">What’s next?</a></h2>
+<ul>
+<li><strong>Previous part:</strong> <a href="https://developer.notmatt.press/block-editor/how-to-guides/data-basics/2-building-a-list-of-pages/">Building a list of pages</a></li>
+<li><strong>Next part:</strong> <a href="https://developer.notmatt.press/block-editor/how-to-guides/data-basics/4-building-a-create-page-form/">Building a Create Page form</a></li>
+<li>(optional) Review the <a href="https://github.com/WordPress/block-development-examples/tree/trunk/plugins/data-basics-59c8f8">finished app</a> in the block-development-examples repository</li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

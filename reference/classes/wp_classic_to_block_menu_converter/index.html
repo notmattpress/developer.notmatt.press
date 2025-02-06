@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Classic_To_Block_Menu_Converter</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Classic_To_Block_Menu_Converter</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Classic_To_Block_Menu_Converter {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Converts a Classic Menu to Block Menu blocks.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_classic_to_block_menu_converter/convert/">WP_Classic_To_Block_Menu_Converter::convert</a></td><td>Converts a Classic Menu to blocks.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_classic_to_block_menu_converter/group_by_parent_id/">WP_Classic_To_Block_Menu_Converter::group_by_parent_id</a></td><td>Returns an array of menu items grouped by the id of the parent menu item.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_classic_to_block_menu_converter/to_blocks/">WP_Classic_To_Block_Menu_Converter::to_blocks</a></td><td>Turns menu item data into a nested array of parsed blocks</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="15"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Classic_To_Block_Menu_Converter {
+
+	/**
+	 * Converts a Classic Menu to blocks.
+	 *
+	 * @since 6.3.0
+	 *
+	 * @param WP_Term $menu The Menu term object of the menu to convert.
+	 * @return string|WP_Error The serialized and normalized parsed blocks on success,
+	 *                         an empty string when there are no menus to convert,
+	 *                         or WP_Error on invalid menu.
+	 */
+	public static function convert( $menu ) {
+
+		if ( ! is_nav_menu( $menu ) ) {
+			return new WP_Error(
+				'invalid_menu',
+				__( 'The menu provided is not a valid menu.' )
+			);
+		}
+
+		$menu_items = wp_get_nav_menu_items( $menu-&gt;term_id, array( 'update_post_term_cache' =&gt; false ) );
+
+		if ( empty( $menu_items ) ) {
+			return '';
+		}
+
+		// Set up the $menu_item variables.
+		// Adds the class property classes for the current context, if applicable.
+		_wp_menu_item_classes_by_context( $menu_items );
+
+		$menu_items_by_parent_id = static::group_by_parent_id( $menu_items );
+
+		$first_menu_item = isset( $menu_items_by_parent_id[0] )
+			? $menu_items_by_parent_id[0]
+			: array();
+
+		$inner_blocks = static::to_blocks(
+			$first_menu_item,
+			$menu_items_by_parent_id
+		);
+
+		return serialize_blocks( $inner_blocks );
+	}
+
+	/**
+	 * Returns an array of menu items grouped by the id of the parent menu item.
+	 *
+	 * @since 6.3.0
+	 *
+	 * @param array $menu_items An array of menu items.
+	 * @return array
+	 */
+	private static function group_by_parent_id( $menu_items ) {
+		$menu_items_by_parent_id = array();
+
+		foreach ( $menu_items as $menu_item ) {
+			$menu_items_by_parent_id[ $menu_item-&gt;menu_item_parent ][] = $menu_item;
+		}
+
+		return $menu_items_by_parent_id;
+	}
+
+	/**
+	 * Turns menu item data into a nested array of parsed blocks
+	 *
+	 * @since 6.3.0
+	 *
+	 * @param array $menu_items              An array of menu items that represent
+	 *                                       an individual level of a menu.
+	 * @param array $menu_items_by_parent_id An array keyed by the id of the
+	 *                                       parent menu where each element is an
+	 *                                       array of menu items that belong to
+	 *                                       that parent.
+	 * @return array An array of parsed block data.
+	 */
+	private static function to_blocks( $menu_items, $menu_items_by_parent_id ) {
+
+		if ( empty( $menu_items ) ) {
+			return array();
+		}
+
+		$blocks = array();
+
+		foreach ( $menu_items as $menu_item ) {
+			$class_name       = ! empty( $menu_item-&gt;classes ) ? implode( ' ', (array) $menu_item-&gt;classes ) : null;
+			$id               = ( null !== $menu_item-&gt;object_id &amp;&amp; 'custom' !== $menu_item-&gt;object ) ? $menu_item-&gt;object_id : null;
+			$opens_in_new_tab = null !== $menu_item-&gt;target &amp;&amp; '_blank' === $menu_item-&gt;target;
+			$rel              = ( null !== $menu_item-&gt;xfn &amp;&amp; '' !== $menu_item-&gt;xfn ) ? $menu_item-&gt;xfn : null;
+			$kind             = null !== $menu_item-&gt;type ? str_replace( '_', '-', $menu_item-&gt;type ) : 'custom';
+
+			$block = array(
+				'blockName' =&gt; isset( $menu_items_by_parent_id[ $menu_item-&gt;ID ] ) ? 'core/navigation-submenu' : 'core/navigation-link',
+				'attrs'     =&gt; array(
+					'className'     =&gt; $class_name,
+					'description'   =&gt; $menu_item-&gt;description,
+					'id'            =&gt; $id,
+					'kind'          =&gt; $kind,
+					'label'         =&gt; $menu_item-&gt;title,
+					'opensInNewTab' =&gt; $opens_in_new_tab,
+					'rel'           =&gt; $rel,
+					'title'         =&gt; $menu_item-&gt;attr_title,
+					'type'          =&gt; $menu_item-&gt;object,
+					'url'           =&gt; $menu_item-&gt;url,
+				),
+			);
+
+			$block['innerBlocks']  = isset( $menu_items_by_parent_id[ $menu_item-&gt;ID ] )
+			? static::to_blocks( $menu_items_by_parent_id[ $menu_item-&gt;ID ], $menu_items_by_parent_id )
+			: array();
+			$block['innerContent'] = array_map( 'serialize_block', $block['innerBlocks'] );
+
+			$blocks[] = $block;
+		}
+
+		return $blocks;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-classic-to-block-menu-converter.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-classic-to-block-menu-converter.php#L15">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-classic-to-block-menu-converter.php#L15-L132">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.3.0/">6.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

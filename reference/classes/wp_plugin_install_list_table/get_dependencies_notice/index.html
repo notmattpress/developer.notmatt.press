@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_plugin_install_list_table/">WP_Plugin_Install_List_Table</a></span><span class="is-current-page">WP_Plugin_Install_List_Table::get_dependencies_notice()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Plugin_Install_List_Table::get_dependencies_notice()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Plugin_Install_List_Table::get_dependencies_notice( <span class="arg-type">array</span> <span class="arg-name">$plugin_data</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns a notice containing a list of dependencies required by the plugin.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$plugin_data</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">An array of plugin data. See <a href="https://developer.notmatt.press/reference/functions/plugins_api">plugins_api()</a>                            for the list of possible values.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> A notice containing a list of dependencies required by the plugin,                or an empty string if none is required.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="758"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function get_dependencies_notice( $plugin_data ) {
+	if ( empty( $plugin_data['requires_plugins'] ) ) {
+		return '';
+	}
+
+	$no_name_markup  = '&lt;div class="plugin-dependency"&gt;&lt;span class="plugin-dependency-name"&gt;%s&lt;/span&gt;&lt;/div&gt;';
+	$has_name_markup = '&lt;div class="plugin-dependency"&gt;&lt;span class="plugin-dependency-name"&gt;%s&lt;/span&gt; %s&lt;/div&gt;';
+
+	$dependencies_list = '';
+	foreach ( $plugin_data['requires_plugins'] as $dependency ) {
+		$dependency_data = WP_Plugin_Dependencies::get_dependency_data( $dependency );
+
+		if (
+			false !== $dependency_data &amp;&amp;
+			! empty( $dependency_data['name'] ) &amp;&amp;
+			! empty( $dependency_data['slug'] ) &amp;&amp;
+			! empty( $dependency_data['version'] )
+		) {
+			$more_details_link  = $this-&gt;get_more_details_link( $dependency_data['name'], $dependency_data['slug'] );
+			$dependencies_list .= sprintf( $has_name_markup, esc_html( $dependency_data['name'] ), $more_details_link );
+			continue;
+		}
+
+		$result = plugins_api( 'plugin_information', array( 'slug' =&gt; $dependency ) );
+
+		if ( ! empty( $result-&gt;name ) ) {
+			$more_details_link  = $this-&gt;get_more_details_link( $result-&gt;name, $result-&gt;slug );
+			$dependencies_list .= sprintf( $has_name_markup, esc_html( $result-&gt;name ), $more_details_link );
+			continue;
+		}
+
+		$dependencies_list .= sprintf( $no_name_markup, esc_html( $dependency ) );
+	}
+
+	$dependencies_notice = sprintf(
+		'&lt;div class="plugin-dependencies notice notice-alt notice-info inline"&gt;&lt;p class="plugin-dependencies-explainer-text"&gt;%s&lt;/p&gt; %s&lt;/div&gt;',
+		'&lt;strong&gt;' . __( 'Additional plugins are required' ) . '&lt;/strong&gt;',
+		$dependencies_list
+	);
+
+	return $dependencies_notice;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/class-wp-plugin-install-list-table.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/class-wp-plugin-install-list-table.php#L758">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/class-wp-plugin-install-list-table.php#L758-L799">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/get_dependency_data/">WP_Plugin_Dependencies::get_dependency_data()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Returns API data for the dependency.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_install_list_table/get_more_details_link/">WP_Plugin_Install_List_Table::get_more_details_link()</a><code>wp-admin/includes/class-wp-plugin-install-list-table.php</code></td><td><p>Creates a ‘More details’ link for the plugin.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/plugins_api/">plugins_api()</a><code>wp-admin/includes/plugin-install.php</code></td><td><p>Retrieves plugin installer pages from the WordPress.org Plugins API.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 1 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_install_list_table/display_rows/">WP_Plugin_Install_List_Table::display_rows()</a><code>wp-admin/includes/class-wp-plugin-install-list-table.php</code></td><td><p>Generates the list table rows.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

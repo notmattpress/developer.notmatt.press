@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/rest-api/">REST API Handbook</a></span><span><a href="https://developer.wordpress.org/rest-api/extending-the-rest-api/">Extending the REST API</a></span><span class="is-current-page">Adding REST API Support For Custom Content Types</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Adding REST API Support For Custom Content Types</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The REST API can create routes for custom post types and custom taxonomies inside of the <code>wp/v2</code> namespace, using the same controllers as the default post type or taxonomy term controllers. Alternatively, you can use your own controllers and namespace. This document will cover using the default controllers for your custom content type’s API routes. This is the easiest way and ensures the highest chance of compatibility with third parties.</p>
+<h2 class="is-toc-heading" id="registering-a-custom-post-type-with-rest-api-support" tabindex="-1"><a href="#registering-a-custom-post-type-with-rest-api-support">Registering A Custom Post Type With REST API Support</a></h2>
+<p>When registering a custom post type, if you want it to be available via the REST API you should set <code>'show_in_rest' =&gt; true</code> in the arguments passed to <code>register_post_type</code>. Setting this argument to true will add a route in the <code>wp/v2</code> namespace.</p>
+<pre><code class="language-php">/**
+ * Register a book post type, with REST API support
+ *
+ * Based on example at: https://developer.notmatt.press/reference/functions/register_post_type
+ */
+add_action( 'init', 'my_book_cpt' );
+function my_book_cpt() {
+    $args = array(
+      'public'       =&gt; true,
+      'show_in_rest' =&gt; true,
+      'label'        =&gt; 'Books'
+    );
+    register_post_type( 'book', $args );
+}
+</code></pre>
+<p>You can optionally set the <code>rest_base</code> argument to change the base url, which will otherwise default to the post type’s name. In the example below, “books” is used as the value of <code>rest_base</code>. This will make the URL for the route <code>wp-json/wp/v2/books</code> instead of <code>wp-json/wp/v2/book/</code>, which would have been the default.</p>
+<p>In addition, you can pass an argument for <code>rest_controller_class</code>. This class must be a subclass of <code>WP_REST_Controller</code>. By default, <code>WP_REST_Posts_Controller</code> is used as the controller. If you are using a custom controller, then you likely will not be within the <code>wp/v2</code> namespace.</p>
+<p>Here is an example of registering a post type, with full labels, support for the REST API, a customized rest_base, and explicit registry of the default controller:</p>
+<pre><code class="language-php">/**
+ * Register a book post type, with REST API support
+ *
+ * Based on example at: https://developer.notmatt.press/reference/functions/register_post_type
+ */
+add_action( 'init', 'my_book_cpt' );
+function my_book_cpt() {
+  $labels = array(
+    'name'               =&gt; _x( 'Books', 'post type general name', 'your-plugin-textdomain' ),
+    'singular_name'      =&gt; _x( 'Book', 'post type singular name', 'your-plugin-textdomain' ),
+    'menu_name'          =&gt; _x( 'Books', 'admin menu', 'your-plugin-textdomain' ),
+    'name_admin_bar'     =&gt; _x( 'Book', 'add new on admin bar', 'your-plugin-textdomain' ),
+    'add_new'            =&gt; _x( 'Add New', 'book', 'your-plugin-textdomain' ),
+    'add_new_item'       =&gt; __( 'Add New Book', 'your-plugin-textdomain' ),
+    'new_item'           =&gt; __( 'New Book', 'your-plugin-textdomain' ),
+    'edit_item'          =&gt; __( 'Edit Book', 'your-plugin-textdomain' ),
+    'view_item'          =&gt; __( 'View Book', 'your-plugin-textdomain' ),
+    'all_items'          =&gt; __( 'All Books', 'your-plugin-textdomain' ),
+    'search_items'       =&gt; __( 'Search Books', 'your-plugin-textdomain' ),
+    'parent_item_colon'  =&gt; __( 'Parent Books:', 'your-plugin-textdomain' ),
+    'not_found'          =&gt; __( 'No books found.', 'your-plugin-textdomain' ),
+    'not_found_in_trash' =&gt; __( 'No books found in Trash.', 'your-plugin-textdomain' )
+  );
+
+  $args = array(
+    'labels'             =&gt; $labels,
+    'description'        =&gt; __( 'Description.', 'your-plugin-textdomain' ),
+    'public'             =&gt; true,
+    'publicly_queryable' =&gt; true,
+    'show_ui'            =&gt; true,
+    'show_in_menu'       =&gt; true,
+    'query_var'          =&gt; true,
+    'rewrite'            =&gt; array( 'slug' =&gt; 'book' ),
+    'capability_type'    =&gt; 'post',
+    'has_archive'        =&gt; true,
+    'hierarchical'       =&gt; false,
+    'menu_position'      =&gt; null,
+    'show_in_rest'       =&gt; true,
+    'rest_base'          =&gt; 'books',
+    'rest_controller_class' =&gt; 'WP_REST_Posts_Controller',
+    'supports'           =&gt; array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments' )
+  );
+
+  register_post_type( 'book', $args );
+}
+</code></pre>
+<p>If you are using a custom <code>rest_controller_class</code>, then the REST API is unable to automatically determine the route for a given post. In this case, you can use the <code>rest_route_for_post</code> filter to provide this information. This allows for your custom post type to be properly formatted in the Search endpoint and enables automated discovery links.</p>
+<pre><code class="language-php">function my_plugin_rest_route_for_post( $route, $post ) {
+    if ( $post-&gt;post_type === 'book' ) {
+        $route = '/wp/v2/books/' . $post-&gt;ID;
+    }
+
+    return $route;
+}
+add_filter( 'rest_route_for_post', 'my_plugin_rest_route_for_post', 10, 2 );
+</code></pre>
+<h2 class="is-toc-heading" id="registering-a-custom-taxonomy-with-rest-api-support" tabindex="-1"><a href="#registering-a-custom-taxonomy-with-rest-api-support">Registering A Custom Taxonomy With REST API Support</a></h2>
+<p>Registering a custom taxonomy with REST API support is very similar to registering a custom post type: pass <code>'show_in_rest' =&gt; true</code> in the arguments passed to <code>register_taxonomy</code>. You may optionally pass <code>rest_base</code> to change the base url for the taxonomy’s routes.</p>
+<p>The default controller for taxonomies is <code>WP_REST_Terms_Controller</code>. You may modify this with the <code>rest_controller_class</code> if you choose to use a custom controller.</p>
+<p>Here is an example of how to register a custom taxonomy with REST API support:</p>
+<pre><code class="language-php">/**
+ * Register a genre post type, with REST API support
+ *
+ * Based on example at: https://developer.notmatt.press/reference/functions/register_taxonomy/
+ */
+add_action( 'init', 'my_book_taxonomy', 30 );
+function my_book_taxonomy() {
+
+  $labels = array(
+    'name'              =&gt; _x( 'Genres', 'taxonomy general name' ),
+    'singular_name'     =&gt; _x( 'Genre', 'taxonomy singular name' ),
+    'search_items'      =&gt; __( 'Search Genres' ),
+    'all_items'         =&gt; __( 'All Genres' ),
+    'parent_item'       =&gt; __( 'Parent Genre' ),
+    'parent_item_colon' =&gt; __( 'Parent Genre:' ),
+    'edit_item'         =&gt; __( 'Edit Genre' ),
+    'update_item'       =&gt; __( 'Update Genre' ),
+    'add_new_item'      =&gt; __( 'Add New Genre' ),
+    'new_item_name'     =&gt; __( 'New Genre Name' ),
+    'menu_name'         =&gt; __( 'Genre' ),
+  );
+
+  $args = array(
+    'hierarchical'          =&gt; true,
+    'labels'                =&gt; $labels,
+    'show_ui'               =&gt; true,
+    'show_admin_column'     =&gt; true,
+    'query_var'             =&gt; true,
+    'rewrite'               =&gt; array( 'slug' =&gt; 'genre' ),
+    'show_in_rest'          =&gt; true,
+    'rest_base'             =&gt; 'genre',
+    'rest_controller_class' =&gt; 'WP_REST_Terms_Controller',
+  );
+
+  register_taxonomy( 'genre', array( 'book' ), $args );
+
+}
+</code></pre>
+<p>If you are using a custom <code>rest_controller_class</code>, then the REST API is unable to automatically determine the route for a given term. In this case, you can use the <code>rest_route_for_term</code> filter to provide this information. This allows for your custom taxonomy to be properly formatted in the Search endpoint and enables automated discovery links.</p>
+<pre><code class="language-php">function my_plugin_rest_route_for_term( $route, $term ) {
+    if ( $term-&gt;taxonomy === 'genre' ) {
+        $route = '/wp/v2/genre/' . $term-&gt;term_id;
+    }
+
+    return $route;
+}
+add_filter( 'rest_route_for_term', 'my_plugin_rest_route_for_term', 10, 2 );
+</code></pre>
+<h2 class="is-toc-heading" id="adding-rest-api-support-to-existing-content-types" tabindex="-1"><a href="#adding-rest-api-support-to-existing-content-types">Adding REST API Support To Existing Content Types</a></h2>
+<p>If you need to add REST API support for a custom post type or custom taxonomy you do not control, for example a theme or plugin you are using, you can use the <code>register_post_type_args</code> filter hook that exists since WordPress version 4.6.0.</p>
+<pre><code class="language-php">/**
+ * Add REST API support to an already registered post type.
+ */
+add_filter( 'register_post_type_args', 'my_post_type_args', 10, 2 );
+
+function my_post_type_args( $args, $post_type ) {
+
+    if ( 'book' === $post_type ) {
+        $args['show_in_rest'] = true;
+
+        // Optionally customize the rest_base or rest_controller_class
+        $args['rest_base']             = 'books';
+        $args['rest_controller_class'] = 'WP_REST_Posts_Controller';
+    }
+
+    return $args;
+}
+</code></pre>
+<p>For custom taxonomies it is almost the same. You can use the <code>register_taxonomy_args</code> filter that exists since WordPress version 4.4.0.</p>
+<pre><code class="language-php">/**
+ * Add REST API support to an already registered taxonomy.
+ */
+add_filter( 'register_taxonomy_args', 'my_taxonomy_args', 10, 2 );
+
+function my_taxonomy_args( $args, $taxonomy_name ) {
+
+    if ( 'genre' === $taxonomy_name ) {
+        $args['show_in_rest'] = true;
+
+        // Optionally customize the rest_base or rest_controller_class
+        $args['rest_base']             = 'genres';
+        $args['rest_controller_class'] = 'WP_REST_Terms_Controller';
+    }
+
+    return $args;
+}
+</code></pre>
+<h2 class="is-toc-heading" id="custom-link-relationships" tabindex="-1"><a href="#custom-link-relationships">Custom Link Relationships</a></h2>
+<p>Taxonomies &amp; custom post types have a built-in association within WordPress, but what if you want to establish a link between two custom post types? This is not supported formally within WordPress itself, but we can create our own connections between arbitrary content types using the <code>_link</code> relation.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

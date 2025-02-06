@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_rest_server/">WP_REST_Server</a></span><span class="is-current-page">WP_REST_Server::match_request_to_handler()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_REST_Server::match_request_to_handler()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_REST_Server::match_request_to_handler( <span class="arg-type">WP_REST_Request</span> <span class="arg-name">$request</span> ): <span class="return-type">array|<a href="https://developer.wordpress.org/reference/classes/wp_error/" rel="class">WP_Error</a></span></h1>
+    <div class='notice'>This function’s access is marked private. This means it is not intended for use by plugin or theme developers, only in other core functions. It is listed here for completeness.</div>
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Matches a request object to its handler.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$request</code><span class="type"><span class="WP_REST_Request"><a href="https://developer.notmatt.press/reference/classes/wp_rest_request/" rel="class">WP_REST_Request</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">The request object.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|<a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a></span> The route and request handler on success or a <a href="https://developer.notmatt.press/reference/classes/wp_error/" rel="class">WP_Error</a> instance if no handler was found.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1152"><code class="language-php line-numbers" id="wporg-source-code" lang="php">protected function match_request_to_handler( $request ) {
+	$method = $request-&gt;get_method();
+	$path   = $request-&gt;get_route();
+
+	$with_namespace = array();
+
+	foreach ( $this-&gt;get_namespaces() as $namespace ) {
+		if ( str_starts_with( trailingslashit( ltrim( $path, '/' ) ), $namespace ) ) {
+			$with_namespace[] = $this-&gt;get_routes( $namespace );
+		}
+	}
+
+	if ( $with_namespace ) {
+		$routes = array_merge( ...$with_namespace );
+	} else {
+		$routes = $this-&gt;get_routes();
+	}
+
+	foreach ( $routes as $route =&gt; $handlers ) {
+		$match = preg_match( '@^' . $route . '$@i', $path, $matches );
+
+		if ( ! $match ) {
+			continue;
+		}
+
+		$args = array();
+
+		foreach ( $matches as $param =&gt; $value ) {
+			if ( ! is_int( $param ) ) {
+				$args[ $param ] = $value;
+			}
+		}
+
+		foreach ( $handlers as $handler ) {
+			$callback = $handler['callback'];
+
+			// Fallback to GET method if no HEAD method is registered.
+			$checked_method = $method;
+			if ( 'HEAD' === $method &amp;&amp; empty( $handler['methods']['HEAD'] ) ) {
+				$checked_method = 'GET';
+			}
+			if ( empty( $handler['methods'][ $checked_method ] ) ) {
+				continue;
+			}
+
+			if ( ! is_callable( $callback ) ) {
+				return array( $route, $handler );
+			}
+
+			$request-&gt;set_url_params( $args );
+			$request-&gt;set_attributes( $handler );
+
+			$defaults = array();
+
+			foreach ( $handler['args'] as $arg =&gt; $options ) {
+				if ( isset( $options['default'] ) ) {
+					$defaults[ $arg ] = $options['default'];
+				}
+			}
+
+			$request-&gt;set_default_params( $defaults );
+
+			return array( $route, $handler );
+		}
+	}
+
+	return new WP_Error(
+		'rest_no_route',
+		__( 'No route was found matching the URL and request method.' ),
+		array( 'status' =&gt; 404 )
+	);
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api/class-wp-rest-server.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api/class-wp-rest-server.php#L1152">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api/class-wp-rest-server.php#L1152-L1223">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/get_namespaces/">WP_REST_Server::get_namespaces()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Retrieves namespaces registered on the server.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/get_routes/">WP_REST_Server::get_routes()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Retrieves the route map.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_error/__construct/">WP_Error::__construct()</a><code>wp-includes/class-wp-error.php</code></td><td><p>Initializes the error.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/serve_batch_request_v1/">WP_REST_Server::serve_batch_request_v1()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Serves the batch/v1 request.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/dispatch/">WP_REST_Server::dispatch()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Matches the request to a callback and call it.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/embed_links/">WP_REST_Server::embed_links()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Embeds the links from the data into the request.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.6.0/">5.6.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

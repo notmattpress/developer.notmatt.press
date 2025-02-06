@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_mime_type_icon()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_mime_type_icon()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_mime_type_icon( <span class="arg-type">string|int</span> <span class="arg-name">$mime</span>,  <span class="arg-type">string</span> <span class="arg-name">$preferred_ext</span> = <span class="arg-default">'.png'</span> ): <span class="return-type">string|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the icon for a MIME type or attachment.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$mime</code><span class="type"><span class="string">string</span>|<span class="int">int</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">MIME type or attachment ID.</span></div></dd><dt><code>$preferred_ext</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">File format to prefer in return. Default <code>'.png'</code>.</span></div><p class="default">Default:<code>'.png'</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string|false</span> Icon, false otherwise.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="7043"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_mime_type_icon( $mime = 0, $preferred_ext = '.png' ) {
+	if ( ! is_numeric( $mime ) ) {
+		$icon = wp_cache_get( "mime_type_icon_$mime" );
+	}
+
+	// Check if preferred file format variable is present and is a validly formatted file extension.
+	if ( ! empty( $preferred_ext ) &amp;&amp; is_string( $preferred_ext ) &amp;&amp; ! str_starts_with( $preferred_ext, '.' ) ) {
+		$preferred_ext = '.' . strtolower( $preferred_ext );
+	}
+
+	$post_id = 0;
+	if ( empty( $icon ) ) {
+		$post_mimes = array();
+		if ( is_numeric( $mime ) ) {
+			$mime = (int) $mime;
+			$post = get_post( $mime );
+			if ( $post ) {
+				$post_id = (int) $post-&gt;ID;
+				$file    = get_attached_file( $post_id );
+				$ext     = preg_replace( '/^.+?\.([^.]+)$/', '$1', $file );
+				if ( ! empty( $ext ) ) {
+					$post_mimes[] = $ext;
+					$ext_type     = wp_ext2type( $ext );
+					if ( $ext_type ) {
+						$post_mimes[] = $ext_type;
+					}
+				}
+				$mime = $post-&gt;post_mime_type;
+			} else {
+				$mime = 0;
+			}
+		} else {
+			$post_mimes[] = $mime;
+		}
+
+		$icon_files = wp_cache_get( 'icon_files' );
+
+		if ( ! is_array( $icon_files ) ) {
+			/**
+			 * Filters the icon directory path.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $path Icon directory absolute path.
+			 */
+			$icon_dir = apply_filters( 'icon_dir', ABSPATH . WPINC . '/images/media' );
+
+			/**
+			 * Filters the icon directory URI.
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $uri Icon directory URI.
+			 */
+			$icon_dir_uri = apply_filters( 'icon_dir_uri', includes_url( 'images/media' ) );
+
+			/**
+			 * Filters the array of icon directory URIs.
+			 *
+			 * @since 2.5.0
+			 *
+			 * @param string[] $uris Array of icon directory URIs keyed by directory absolute path.
+			 */
+			$dirs       = apply_filters( 'icon_dirs', array( $icon_dir =&gt; $icon_dir_uri ) );
+			$icon_files = array();
+			$all_icons  = array();
+			while ( $dirs ) {
+				$keys = array_keys( $dirs );
+				$dir  = array_shift( $keys );
+				$uri  = array_shift( $dirs );
+				$dh   = opendir( $dir );
+				if ( $dh ) {
+					while ( false !== $file = readdir( $dh ) ) {
+						$file = wp_basename( $file );
+						if ( str_starts_with( $file, '.' ) ) {
+							continue;
+						}
+
+						$ext = strtolower( substr( $file, -4 ) );
+						if ( ! in_array( $ext, array( '.svg', '.png', '.gif', '.jpg' ), true ) ) {
+							if ( is_dir( "$dir/$file" ) ) {
+								$dirs[ "$dir/$file" ] = "$uri/$file";
+							}
+							continue;
+						}
+						$all_icons[ "$dir/$file" ] = "$uri/$file";
+						if ( $ext === $preferred_ext ) {
+							$icon_files[ "$dir/$file" ] = "$uri/$file";
+						}
+					}
+					closedir( $dh );
+				}
+			}
+			// If directory only contained icons of a non-preferred format, return those.
+			if ( empty( $icon_files ) ) {
+				$icon_files = $all_icons;
+			}
+			wp_cache_add( 'icon_files', $icon_files, 'default', 600 );
+		}
+
+		$types = array();
+		// Icon wp_basename - extension = MIME wildcard.
+		foreach ( $icon_files as $file =&gt; $uri ) {
+			$types[ preg_replace( '/^([^.]*).*$/', '$1', wp_basename( $file ) ) ] =&amp; $icon_files[ $file ];
+		}
+
+		if ( ! empty( $mime ) ) {
+			$post_mimes[] = substr( $mime, 0, strpos( $mime, '/' ) );
+			$post_mimes[] = substr( $mime, strpos( $mime, '/' ) + 1 );
+			$post_mimes[] = str_replace( '/', '_', $mime );
+		}
+
+		$matches            = wp_match_mime_types( array_keys( $types ), $post_mimes );
+		$matches['default'] = array( 'default' );
+
+		foreach ( $matches as $match =&gt; $wilds ) {
+			foreach ( $wilds as $wild ) {
+				if ( ! isset( $types[ $wild ] ) ) {
+					continue;
+				}
+
+				$icon = $types[ $wild ];
+				if ( ! is_numeric( $mime ) ) {
+					wp_cache_add( "mime_type_icon_$mime", $icon );
+				}
+				break 2;
+			}
+		}
+	}
+
+	/**
+	 * Filters the mime type icon.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string $icon    Path to the mime type icon.
+	 * @param string $mime    Mime type.
+	 * @param int    $post_id Attachment ID. Will equal 0 if the function passed
+	 *                        the mime type.
+	 */
+	return apply_filters( 'wp_mime_type_icon', $icon, $mime, $post_id );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/post.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/post.php#L7043">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/post.php#L7043-L7184">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/icon_dir/"><span class="hook-func">apply_filters</span>( ‘icon_dir’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$path</span></nobr> )</a></dt><dd><p>Filters the icon directory path.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/icon_dirs/"><span class="hook-func">apply_filters</span>( ‘icon_dirs’,  <nobr><span class="arg-type">string[]</span> <span class="arg-name">$uris</span></nobr> )</a></dt><dd><p>Filters the array of icon directory URIs.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/icon_dir_uri/"><span class="hook-func">apply_filters</span>( ‘icon_dir_uri’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$uri</span></nobr> )</a></dt><dd><p>Filters the icon directory URI.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/wp_mime_type_icon/"><span class="hook-func">apply_filters</span>( ‘wp_mime_type_icon’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$icon</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$mime</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$post_id</span></nobr> )</a></dt><dd><p>Filters the mime type icon.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_add/">wp_cache_add()</a><code>wp-includes/cache.php</code></td><td><p>Adds data to the cache, if the cache key doesn’t already exist.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_basename/">wp_basename()</a><code>wp-includes/formatting.php</code></td><td><p>i18n-friendly version of basename().</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ext2type/">wp_ext2type()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the file type based on the extension name.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/includes_url/">includes_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the includes directory.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_match_mime_types/">wp_match_mime_types()</a><code>wp-includes/post.php</code></td><td><p>Checks a MIME-Type against a list.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_attached_file/">get_attached_file()</a><code>wp-includes/post.php</code></td><td><p>Retrieves attached file path based on attachment ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 4 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_media_control/to_json/">WP_Customize_Media_Control::to_json()</a><code>wp-includes/customize/class-wp-customize-media-control.php</code></td><td><p>Refresh the parameters passed to the JavaScript via JSON.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_attachment_icon_src/">get_attachment_icon_src()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieve icon URL and Path.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td><span class="since-description">Added the <code>$preferred_ext</code> parameter.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1433" id="comment-1433">
+<article class="comment-body" id="div-comment-1433">
+<a class="screen-reader-text" href="#comment-content-1433">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1433">
+<p><strong>Display the icon image of the video format</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php $img = wp_mime_type_icon( 'video/mp4' ); ?&gt;</code></pre>
+<p>[html]<br/>
+&lt;img src="&lt;?php echo $img ?&gt;" /&gt;<br/>
+[/html]</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1433">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

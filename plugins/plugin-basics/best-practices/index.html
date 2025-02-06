@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/plugin-basics/">Plugin Basics</a></span><span class="is-current-page">Best Practices</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Best Practices</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Here are some best practices to help organize your code so it works well alongside WordPress core and other WordPress plugins.</p>
+<h2 class="is-toc-heading wp-block-heading" id="avoid-naming-collisions" tabindex="-1"><a href="#avoid-naming-collisions">Avoid Naming Collisions</a></h2>
+<p>A naming collision happens when your plugin is using the same name for a variable, function or a class as another plugin.</p>
+<p>Luckily, you can avoid naming collisions by using the methods below.</p>
+<h3 class="is-toc-heading wp-block-heading" id="procedural-coding-method" tabindex="-1"><a href="#procedural-coding-method">Procedural Coding Method</a></h3>
+<p>By default, all variables, functions and classes are defined in the <strong>global namespace</strong>, which means that it is possible for your plugin to override variables, functions and classes set by another plugin and vice-versa. Variables that are defined <em>inside</em> of functions or classes are not affected by this.</p>
+<h4 class="wp-block-heading">Prefix Everything</h4>
+<p>All globally accessible code should be prefixed with a <em>unique</em> identifier. Prefixes prevent conflicts with other plugins and prevents them from overwriting your variables and accidentally calling your functions and classes.</p>
+<p>In order to prevent conflicts with other plugins, your prefix should be at least 4 letters long, though we recommend 5. You should avoid using a common English word, and instead choose something unique to your plugin. We host tens of thousands of plugins on WordPress.org alone. There are hundreds of thousands more outside our servers. You’re <em>going</em> to run into conflicts.</p>
+<p>A good way to do this is with a prefix. For example, if your plugin is called “Easy Custom Post Types” then you could use names like these:</p>
+<ul class="wp-block-list">
+<li><code>function ecpt_save_post()</code></li>
+<li><code>define( ‘ECPT_LICENSE’, true );</code></li>
+<li><code>class ECPT_Admin{}</code></li>
+<li><code>namespace EasyCustomPostTypes;</code></li>
+<li><code>update_option( 'ecpt_settings', $settings );</code></li>
+</ul>
+<div class="wp-block-group has-background is-layout-constrained wp-block-group-is-layout-constrained" style="background-color:#8dd2fc69">
+<p>Because you are making code as a part of the <strong>WordPress</strong> project, you must avoid the use of prefixes that have a high probability of conflicting with the core WordPress. This includes but is not limited to: <code>__</code> (double underscores), <code>wp_</code> , <code>WordPress</code>, or <code>_</code> (single underscore)</p>
+<p>If you are making code for a ‘sub’ plugin (such as a WooCommece extension), you would similarly need to avoid using any of their normal/common prefixes (i.e. Woo, WooCommerce).</p>
+<p>You can use them <em>inside</em> your classes or namespace, but not as stand-alone function/namespace/class.</p>
+</div>
+<p>If you’re using <code>_n()</code> or <code>__()</code> for translation, that’s fine. We’re <strong>only</strong> talking about functions you’ve created for your plugin, not the core functions from WordPress. In fact, those core features are <em>why</em> you need to not use those prefixes in your own plugin! You wouldn’t want to break WordPress for your users.</p>
+<p>Remember: Good prefix names are unique and distinct to your plugin. This will help you and the next person in debugging, as well as prevent conflicts.</p>
+<p>Code that <strong>must</strong> be prefixed includes:</p>
+<ul class="wp-block-list">
+<li>Functions (unless namespaced)</li>
+<li>Classes, interfaces, and traits (unless namespaced)</li>
+<li>Namespaces</li>
+<li>Global variables</li>
+<li>Options and transients</li>
+</ul>
+<h4 class="wp-block-heading">Check for Existing Implementations</h4>
+<p>PHP provides a number of functions to verify existence of variables, functions, classes and constants. All of these will return true if the entity exists.</p>
+<ul class="wp-block-list">
+<li><strong>Variables</strong>: <a href="http://php.net/manual/en/function.isset.php">isset()</a> (includes arrays, objects, etc.)</li>
+<li><strong>Functions</strong>: <a href="http://php.net/manual/en/function.function-exists.php">function_exists()</a></li>
+<li><strong>Classes</strong>: <a href="http://php.net/manual/en/function.class-exists.php">class_exists()</a></li>
+<li><strong>Constants</strong>: <a href="http://php.net/manual/en/function.defined.php">defined()</a></li>
+</ul>
+<p>Keep in mind that using<code> (!function_exists(‘NAME ‘)) {</code> around all your functions and classes sounds like a great idea until you realize the fatal flaw. If something else has a function with the same name and their code loads first, your plugin will break. Using if-exists to replace/override a function or class should be reserved for <em>shared</em> libraries only.</p>
+<h4 class="wp-block-heading">Example</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">// Create a function called "wporg_init" if it doesn't already exist
+if ( ! function_exists( 'wporg_init' ) ) {
+    function wporg_init() {
+        register_setting( 'wporg_settings', 'wporg_option_foo' );
+    }
+}
+
+// Create a function called "wporg_get_foo" if it doesn't already exist
+if ( ! function_exists( 'wporg_get_foo' ) ) {
+    function wporg_get_foo() {
+        return get_option( 'wporg_option_foo' );
+    }
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="object-oriented-programming-method" tabindex="-1"><a href="#object-oriented-programming-method">Object Oriented Programming Method</a></h3>
+<p>An easier way to tackle the naming collision problem is to use a <a href="http://php.net/manual/en/language.oop5.php">class</a> for the code of your plugin.</p>
+<p>You will still need to take care of checking whether the name of the class you want is already taken but the rest will be taken care of by PHP.</p>
+<h4 class="wp-block-heading">Example</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( ! class_exists( 'WPOrg_Plugin' ) ) {
+    class WPOrg_Plugin {
+        public static function init() {
+            register_setting( 'wporg_settings', 'wporg_option_foo' );
+        }
+
+        public static function get_foo() {
+            return get_option( 'wporg_option_foo' );
+        }
+    }
+
+    WPOrg_Plugin::init();
+    WPOrg_Plugin::get_foo();
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="file-organization" tabindex="-1"><a href="#file-organization">File Organization</a></h2>
+<p>The root level of your plugin directory should contain your <code>plugin-name.php</code> file and, optionally, your <a href="https://developer.notmatt.press/plugin/the-basics/uninstall-methods/">uninstall.php</a> file. All other files should be organized into sub folders whenever possible.</p>
+<h3 class="is-toc-heading wp-block-heading" id="folder-structure" tabindex="-1"><a href="#folder-structure">Folder Structure</a></h3>
+<p>A clear folder structure helps you and others working on your plugin keep similar files together.</p>
+<p>Here’s a sample folder structure for reference:</p>
+<pre class="wp-block-preformatted">/plugin-name
+     plugin-name.php
+     uninstall.php
+     /languages
+     /includes
+     /admin
+          /js
+          /css
+          /images
+     /public
+          /js
+          /css
+          /images
+</pre>
+<h2 class="is-toc-heading wp-block-heading" id="plugin-architecture" tabindex="-1"><a href="#plugin-architecture">Plugin Architecture</a></h2>
+<p>The architecture, or code organization, you choose for your plugin will likely depend on the size of your plugin.</p>
+<p>For small, single-purpose plugins that have limited interaction with WordPress core, themes or other plugins, there’s little benefit in engineering complex classes; unless you know the plugin is going to expand greatly later on.</p>
+<p>For large plugins with lots of code, start off with classes in mind. Separate style and scripts files, and even build-related files. This will help code organization and long-term maintenance of the plugin.</p>
+<h3 class="is-toc-heading wp-block-heading" id="conditional-loading" tabindex="-1"><a href="#conditional-loading">Conditional Loading</a></h3>
+<p>It’s helpful to separate your admin code from the public code. Use the conditional <a href="https://codex.wordpress.org/Function_Reference/is_admin">is_admin()</a>. You must still perform capability checks as this doesn’t indicate the user is authenticated or has Administrator-level access. See <a href="https://developer.notmatt.press/plugins/security/checking-user-capabilities/">Checking User Capabilities</a>.</p>
+<p>For example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( is_admin() ) {
+    // we are in admin mode
+    require_once __DIR__ . '/admin/plugin-name-admin.php';
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="avoiding-direct-file-access" tabindex="-1"><a href="#avoiding-direct-file-access">Avoiding Direct File Access</a></h3>
+<p>As a security precaution, it’s a good practice to disallow access if the <code>ABSPATH</code> global is not defined. This is only applicable to files which contain code outside of class or function definitions, such as the main plugin file.</p>
+<p>You can implement this by including this code at the top of the file:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
+}</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="architecture-patterns" tabindex="-1"><a href="#architecture-patterns">Architecture Patterns</a></h3>
+<p>While there are a number of possible architecture patterns, they can broadly be grouped into three variations:</p>
+<ul class="wp-block-list">
+<li><a href="https://github.com/GaryJones/move-floating-social-bar-in-genesis/blob/master/move-floating-social-bar-in-genesis.php" rel="nofollow">Single plugin file, containing functions</a></li>
+<li><a href="https://github.com/norcross/wp-comment-notes/blob/master/wp-comment-notes.php" rel="nofollow">Single plugin file, containing a class, instantiated object and optionally functions</a></li>
+<li><a href="https://github.com/tommcfarlin/WordPress-Plugin-Boilerplate" rel="nofollow">Main plugin file, then one or more class files</a></li>
+</ul>
+<h3 class="is-toc-heading wp-block-heading" id="architecture-patterns-explained" tabindex="-1"><a href="#architecture-patterns-explained">Architecture Patterns Explained</a></h3>
+<p>Specific implementations of the more complex of the above code organizations have already been written up as tutorials and slides:</p>
+<ul class="wp-block-list">
+<li><a href="https://jjj.blog/2012/12/slash-architecture-my-approach-to-building-wordpress-plugins/" rel="nofollow">Slash – Singletons, Loaders, Actions, Screens, Handlers</a></li>
+<li><a href="http://iandunn.name/wp-mvc" rel="nofollow">Implementing the MVC Pattern in WordPress Plugins</a></li>
+</ul>
+<h2 class="is-toc-heading wp-block-heading" id="boilerplate-starting-points" tabindex="-1"><a href="#boilerplate-starting-points">Boilerplate Starting Points</a></h2>
+<p>Instead of starting from scratch for each new plugin you write, you may want to start with a <strong>boilerplate</strong>. One advantage of using a boilerplate is to have consistency among your own plugins. Boilerplates also make it easier for other people to contribute to your code if you use a boilerplate they are already familiar with.</p>
+<p>These also serve as further examples of different yet comparable architectures.</p>
+<ul class="wp-block-list">
+<li><a href="https://github.com/tommcfarlin/WordPress-Plugin-Boilerplate" rel="nofollow">WordPress Plugin Boilerplate</a>: A foundation for WordPress Plugin Development that aims to provide a clear and consistent guide for building your plugins.</li>
+<li><a href="https://github.com/claudiosmweb/wordpress-plugin-boilerplate" rel="nofollow">WordPress Plugin Bootstrap</a>: Basic bootstrap to develop WordPress plugins using Grunt, Compass, GIT, and SVN.</li>
+<li><a href="https://github.com/ptahdunbar/wp-skeleton-plugin" rel="nofollow">WP Skeleton Plugin</a>: Skeleton plugin that focuses on unit tests and use of composer for development.</li>
+<li><a href="https://developer.notmatt.press/cli/commands/scaffold/plugin/">WP CLI Scaffold</a>: The Scaffold command of WP CLI creates a skeleton plugin with options such as CI configuration files</li>
+</ul>
+<p>Of course, you could take different aspects of these and others to create your own custom boilerplate.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

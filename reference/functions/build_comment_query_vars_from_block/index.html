@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">build_comment_query_vars_from_block()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>build_comment_query_vars_from_block()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">build_comment_query_vars_from_block( <span class="arg-type">WP_Block</span> <span class="arg-name">$block</span> ): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Helper function that constructs a comment query vars array from the passed block properties.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>It’s used with the Comment Query Loop inner blocks.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$block</code><span class="type"><span class="WP_Block"><a href="https://developer.notmatt.press/reference/classes/wp_block/" rel="class">WP_Block</a></span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Block instance.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> Returns the comment query parameters to use with the               <a href="https://developer.notmatt.press/reference/classes/wp_comment_query/" rel="class">WP_Comment_Query</a> constructor.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2667"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function build_comment_query_vars_from_block( $block ) {
+
+	$comment_args = array(
+		'orderby'       =&gt; 'comment_date_gmt',
+		'order'         =&gt; 'ASC',
+		'status'        =&gt; 'approve',
+		'no_found_rows' =&gt; false,
+	);
+
+	if ( is_user_logged_in() ) {
+		$comment_args['include_unapproved'] = array( get_current_user_id() );
+	} else {
+		$unapproved_email = wp_get_unapproved_comment_author_email();
+
+		if ( $unapproved_email ) {
+			$comment_args['include_unapproved'] = array( $unapproved_email );
+		}
+	}
+
+	if ( ! empty( $block-&gt;context['postId'] ) ) {
+		$comment_args['post_id'] = (int) $block-&gt;context['postId'];
+	}
+
+	if ( get_option( 'thread_comments' ) ) {
+		$comment_args['hierarchical'] = 'threaded';
+	} else {
+		$comment_args['hierarchical'] = false;
+	}
+
+	if ( get_option( 'page_comments' ) === '1' || get_option( 'page_comments' ) === true ) {
+		$per_page     = get_option( 'comments_per_page' );
+		$default_page = get_option( 'default_comments_page' );
+		if ( $per_page &gt; 0 ) {
+			$comment_args['number'] = $per_page;
+
+			$page = (int) get_query_var( 'cpage' );
+			if ( $page ) {
+				$comment_args['paged'] = $page;
+			} elseif ( 'oldest' === $default_page ) {
+				$comment_args['paged'] = 1;
+			} elseif ( 'newest' === $default_page ) {
+				$max_num_pages = (int) ( new WP_Comment_Query( $comment_args ) )-&gt;max_num_pages;
+				if ( 0 !== $max_num_pages ) {
+					$comment_args['paged'] = $max_num_pages;
+				}
+			}
+		}
+	}
+
+	return $comment_args;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/blocks.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/blocks.php#L2667">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/blocks.php#L2667-L2717">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_unapproved_comment_author_email/">wp_get_unapproved_comment_author_email()</a><code>wp-includes/comment.php</code></td><td><p>Gets unapproved comment author’s email.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_comment_query/__construct/">WP_Comment_Query::__construct()</a><code>wp-includes/class-wp-comment-query.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_query_var/">get_query_var()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the value of a query variable in the <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_user_logged_in/">is_user_logged_in()</a><code>wp-includes/pluggable.php</code></td><td><p>Determines whether the current visitor is a logged in user.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_current_user_id/">get_current_user_id()</a><code>wp-includes/user.php</code></td><td><p>Gets the current user’s ID.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.0.0/">6.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

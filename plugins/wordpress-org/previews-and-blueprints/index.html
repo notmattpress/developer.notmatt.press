@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/wordpress-org/">The WordPress.org Plugin Directory</a></span><span class="is-current-page">Previews and Blueprints</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Previews and Blueprints</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>If you haven’t noticed it yet, the WordPress Playground is an amazing feature that lets anyone safely run a temporary WordPress install within their browser. It uses WASM to run a complete WordPress install – PHP, database, and all – entirely from within your web browser. No server needed, nothing to install.</p>
+<p>For a while now Playground has supported loading any plugin or theme from the plugin directory; here’s how. </p>
+<h2 class="is-toc-heading wp-block-heading" id="the-plugin-preview-button" tabindex="-1"><a href="#the-plugin-preview-button">The Plugin Preview Button</a></h2>
+<p>The Plugin Preview feature adds a convenient button to plugins in the plugin directory, when enabled by a plugin’s developers. The button takes the user to Playground with that plugin installed. It’s right beside the Download button.</p>
+<p>The Preview button is not shown by default; it must be explicitly enabled. Developers can use blueprint files in order to configure the preview environment and install dependencies (such as other plugins and themes).</p>
+<h2 class="is-toc-heading wp-block-heading" id="enabling-plugin-previews" tabindex="-1"><a href="#enabling-plugin-previews">Enabling Plugin Previews</a></h2>
+<p>There are two things required for a plugin preview button to appear to all users:</p>
+<ol class="wp-block-list">
+<li>A valid <code>blueprint.json</code> file must be provided in a blueprints sub-directory of the plugin’s assets folder.</li>
+<li>The plugin preview must be set to “public” from the plugin’s Advanced view by a committer.</li>
+</ol>
+<p>If a valid <code>blueprint.json</code> file is present, then the Preview button will be present for plugin committers only. In which case it will look like this:</p>
+<figure class="wp-block-image size-full"><a href="https://i0.wp.com/developer.wordpress.org/files/2024/03/live-preview.png?ssl=1"><img alt="The Test Preview button allows plugin authors to showcase what their plugin does with one click." class="wp-image-154499" data-recalc-dims="1" decoding="async" fetchpriority="high" height="140" sizes="(max-width: 554px) 100vw, 554px" src="https://i0.wp.com/developer.wordpress.org/files/2024/03/live-preview.png?resize=554%2C140&amp;ssl=1" srcset="https://i0.wp.com/developer.wordpress.org/files/2024/03/live-preview.png?w=554&amp;ssl=1 554w, https://i0.wp.com/developer.wordpress.org/files/2024/03/live-preview.png?resize=300%2C76&amp;ssl=1 300w" width="554"/></a></figure>
+<p>It’s called Test Preview because that’s why it’s there: to allow plugin committers to test their plugin in the Playground environment and decide whether or not to make it easily available to the public.</p>
+<h2 class="is-toc-heading wp-block-heading" id="blueprints" tabindex="-1"><a href="#blueprints">Blueprints</a></h2>
+<p>Blueprints are json files used to set up a WordPress Playground instance. </p>
+<p>They can be used to specify things like PHP and WP versions, the landing page, and (most importantly) a series of automated steps such as logging in, and installing and activating plugins and themes.</p>
+<p>The blueprint for your plugin should be committed to the assets folder with subversion as <code>assets/blueprints/blueprint.json</code>. Initially only the one blueprint file is supported, but we expect to allow multiple in future.</p>
+<p>Here’s an example of a simple blueprint.json file that you could use as a starting point:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+    "landingPage": "/wp-admin/edit.php",
+    "preferredVersions": {
+        "php": "7.4",
+        "wp": "5.9"
+    },
+    "phpExtensionBundles": [
+        "kitchen-sink"
+    ],
+    "steps": [
+        {
+            "step": "login",
+            "username": "admin",
+            "password": "password"
+        }
+    ]
+}</code></pre>
+<p>The features used here are:</p>
+<ul class="wp-block-list">
+<li><code>landingPage</code>, which specifies the URL of the page that the user will land on when the preview loads.</li>
+<li><code>preferredVersions</code>, which specifies versions of PHP and WordPress.</li>
+<li><code>phpExtensionBundles</code>, which in this case specifies that we want most common PHP extensions to be available (kitchen-sink).</li>
+<li><code>steps</code>, which tells Playground what to do before displaying the landing page. In this case, it will simply log the user in to wp-admin.</li>
+</ul>
+<p>Here’s an example of a more advanced blueprint.json that demonstrates some more features you could use to create a rich demo environment for users:</p>
+<pre class="wp-block-code"><code class="language-json" lang="json">{
+    "landingPage": "/wp-admin/post.php?post=5&amp;action=edit",
+    "preferredVersions": {
+        "php": "7.4",
+        "wp": "5.9"
+    },
+    "phpExtensionBundles": [
+        "kitchen-sink"
+    ],
+    "steps": [
+        {
+            "step": "login",
+            "username": "admin",
+            "password": "password"
+        },
+        {
+            "step": "installPlugin",
+            "pluginZipFile": {
+                "resource": "wordpress.org\/plugins",
+                "slug": "my-imaginary-plugin-dependency"
+            },
+            "options": {
+                "activate": true
+            }
+        },
+        {
+            "step": "installPlugin",
+            "pluginZipFile": {
+                "resource": "wordpress.org\/plugins",
+                "slug": "my-imaginary-plugin"
+            },
+            "options": {
+                "activate": true
+            }
+        },
+        {
+            "step": "installTheme",
+            "themeZipFile": {
+                "resource": "wordpress.org\/themes",
+                "slug": "my-imaginary-theme"
+            }
+        },
+        {
+            "step": "setSiteOptions",
+            "options": {
+                "some_required_option_1": "your_favorite_values",
+                "some_required_option_2": "your_favorite_values"
+            }
+        },
+        {
+            "step": "runPHP",
+            "code": "&lt;?php require_once 'wordpress/wp-load.php'; wp_insert_post(array('post_title' =&gt; 'wp-load.php required for WP functionality', 'post_status' =&gt; 'publish')); ?&gt;"
+        }
+    ]
+}</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="using-a-generated-blueprint-file" tabindex="-1"><a href="#using-a-generated-blueprint-file">Using a generated Blueprint file</a></h2>
+<p>You might see a notice similar to this on your plugin’s page:</p>
+<pre class="wp-block-code"><code class="">Your plugin does not yet have a blueprint file for user previews. If you'd like to enable previews, please follow these steps to create a blueprint.
+
+1. Test your plugin in Playground.
+2. Fix any bugs in your plugin that prevent it from working in Playground.
+3. Download blueprint.json
+4. Commit your blueprint to svn.
+</code></pre>
+<p>The <strong>Test</strong> link will use an auto-generated Blueprint file to load your plugin in Playground, with some default configuration values and steps. The <strong>Download blueprint.json</strong> link will let you download that auto-generated <code>blueprint.json</code> file, which you can then modify as needed and commit to Subversion when your plugin is ready for Playground previews.</p>
+<h2 class="is-toc-heading wp-block-heading" id="committing-a-blueprint-to-subversion" tabindex="-1"><a href="#committing-a-blueprint-to-subversion">Committing a Blueprint to Subversion</a></h2>
+<p>You must commit your blueprint.json file to your plugin’s assets folder, named like this:</p>
+<p><code>/<code>assets/blueprints/</code>blueprint.json</code></p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

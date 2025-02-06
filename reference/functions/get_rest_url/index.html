@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_rest_url()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_rest_url()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_rest_url( <span class="arg-type">int|null</span> <span class="arg-name">$blog_id</span> = <span class="arg-default">null</span>,  <span class="arg-type">string</span> <span class="arg-name">$path</span> = <span class="arg-default">'/'</span>,  <span class="arg-type">string</span> <span class="arg-name">$scheme</span> = <span class="arg-default">'rest'</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the URL to a REST endpoint on a site.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Note: The returned URL is NOT escaped.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$blog_id</code><span class="type"><span class="int">int</span>|<span class="null">null</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Blog ID. Default of null returns URL for current blog.</span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$path</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">REST route. Default <code>'/'</code>.</span></div><p class="default">Default:<code>'/'</code></p></dd><dt><code>$scheme</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Sanitization scheme. Default <code>'rest'</code>.</span></div><p class="default">Default:<code>'rest'</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> Full URL to the endpoint.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="488"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_rest_url( $blog_id = null, $path = '/', $scheme = 'rest' ) {
+	if ( empty( $path ) ) {
+		$path = '/';
+	}
+
+	$path = '/' . ltrim( $path, '/' );
+
+	if ( is_multisite() &amp;&amp; get_blog_option( $blog_id, 'permalink_structure' ) || get_option( 'permalink_structure' ) ) {
+		global $wp_rewrite;
+
+		if ( $wp_rewrite-&gt;using_index_permalinks() ) {
+			$url = get_home_url( $blog_id, $wp_rewrite-&gt;index . '/' . rest_get_url_prefix(), $scheme );
+		} else {
+			$url = get_home_url( $blog_id, rest_get_url_prefix(), $scheme );
+		}
+
+		$url .= $path;
+	} else {
+		$url = trailingslashit( get_home_url( $blog_id, '', $scheme ) );
+		/*
+		 * nginx only allows HTTP/1.0 methods when redirecting from / to /index.php.
+		 * To work around this, we manually add index.php to the URL, avoiding the redirect.
+		 */
+		if ( ! str_ends_with( $url, 'index.php' ) ) {
+			$url .= 'index.php';
+		}
+
+		$url = add_query_arg( 'rest_route', $path, $url );
+	}
+
+	if ( is_ssl() &amp;&amp; isset( $_SERVER['SERVER_NAME'] ) ) {
+		// If the current host is the same as the REST URL host, force the REST URL scheme to HTTPS.
+		if ( parse_url( get_home_url( $blog_id ), PHP_URL_HOST ) === $_SERVER['SERVER_NAME'] ) {
+			$url = set_url_scheme( $url, 'https' );
+		}
+	}
+
+	if ( is_admin() &amp;&amp; force_ssl_admin() ) {
+		/*
+		 * In this situation the home URL may be http:, and `is_ssl()` may be false,
+		 * but the admin is served over https: (one way or another), so REST API usage
+		 * will be blocked by browsers unless it is also served over HTTPS.
+		 */
+		$url = set_url_scheme( $url, 'https' );
+	}
+
+	/**
+	 * Filters the REST URL.
+	 *
+	 * Use this filter to adjust the url returned by the get_rest_url() function.
+	 *
+	 * @since 4.4.0
+	 *
+	 * @param string   $url     REST URL.
+	 * @param string   $path    REST route.
+	 * @param int|null $blog_id Blog ID.
+	 * @param string   $scheme  Sanitization scheme.
+	 */
+	return apply_filters( 'rest_url', $url, $path, $blog_id, $scheme );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/rest-api.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/rest-api.php#L488">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/rest-api.php#L488-L547">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/rest_url/"><span class="hook-func">apply_filters</span>( ‘rest_url’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$url</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$path</span></nobr>,  <nobr><span class="arg-type">int|null</span> <span class="arg-name">$blog_id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$scheme</span></nobr> )</a></dt><dd><p>Filters the REST URL.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_get_url_prefix/">rest_get_url_prefix()</a><code>wp-includes/rest-api.php</code></td><td><p>Retrieves the URL prefix for any API resource.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_ssl/">is_ssl()</a><code>wp-includes/load.php</code></td><td><p>Determines if SSL is used.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/force_ssl_admin/">force_ssl_admin()</a><code>wp-includes/functions.php</code></td><td><p>Determines whether to force SSL used for the Administration Screens.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/set_url_scheme/">set_url_scheme()</a><code>wp-includes/link-template.php</code></td><td><p>Sets the scheme for a URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_home_url/">get_home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for a given site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rewrite/using_index_permalinks/">WP_Rewrite::using_index_permalinks()</a><code>wp-includes/class-wp-rewrite.php</code></td><td><p>Determines whether permalinks are being used and rewrite module is not enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_blog_option/">get_blog_option()</a><code>wp-includes/ms-blogs.php</code></td><td><p>Retrieves option value for a given blog id based on name of option.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/trailingslashit/">trailingslashit()</a><code>wp-includes/formatting.php</code></td><td><p>Appends a trailing slash.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_admin/">is_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for an administrative interface page.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_query_arg/">add_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves a modified URL query string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 8 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_local_html_output/">wp_is_local_html_output()</a><code>wp-includes/https-detection.php</code></td><td><p>Checks whether a given HTML string is likely an output from this WordPress site.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_default_packages_inline_scripts/">wp_default_packages_inline_scripts()</a><code>wp-includes/script-loader.php</code></td><td><p>Adds inline scripts required for the WordPress JavaScript packages.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_output_rsd/">rest_output_rsd()</a><code>wp-includes/rest-api.php</code></td><td><p>Adds the REST API URL to the WP RSD endpoint.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_output_link_wp_head/">rest_output_link_wp_head()</a><code>wp-includes/rest-api.php</code></td><td><p>Outputs the REST API link tag into page header.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/rest_output_link_header/">rest_output_link_header()</a><code>wp-includes/rest-api.php</code></td><td><p>Sends a Link header for the REST API.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/rest_url/">rest_url()</a><code>wp-includes/rest-api.php</code></td><td><p>Retrieves the URL to a REST endpoint.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_rest_server/serve_request/">WP_REST_Server::serve_request()</a><code>wp-includes/rest-api/class-wp-rest-server.php</code></td><td><p>Handles serving a REST API request.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_default_scripts/">wp_default_scripts()</a><code>wp-includes/script-loader.php</code></td><td><p>Registers all WordPress scripts.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/4.4.0/">4.4.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-jeromepaulos odd alt thread-odd thread-alt depth-1" data-comment-id="4389" id="comment-4389">
+<article class="comment-body" id="div-comment-4389">
+<a class="screen-reader-text" href="#comment-content-4389">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4389">
+<p>Relevant information: If you’re using the REST API, you’re most likely using JavaScript. You can get the REST endpoint for a site by getting the <code>href</code> attribute of a link tag WordPress adds to the head tag of your site:</p>
+<pre class="wp-block-code"><code class="language-js" lang="js">var endpoint = document.querySelector('link[rel="<a href='https://api.w.org/"%5D' rel="nofollow ugc">https://api.w.org/"%5D</a>').href;</code></pre>
+<p>That code will extract the endpoint from the tag:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;link rel="<a href="https://api.w.org/&amp;quot" rel="nofollow ugc">https://api.w.org/&amp;quot</a>; href="<a href="https://example.com/wp-json/&amp;quot" rel="nofollow ugc">https://example.com/wp-json/&amp;quot</a>; /&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4389">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-khoipro even thread-even depth-1" data-comment-id="2938" id="comment-2938">
+<article class="comment-body" id="div-comment-2938">
+<a class="screen-reader-text" href="#comment-content-2938">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-2938">
+<p>Example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$endpoint = get_rest_url(null, 'wp/v2/posts');</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-2938">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-jeromepaulos odd alt thread-odd thread-alt depth-1" data-comment-id="4388" id="comment-4388">
+<article class="comment-body" id="div-comment-4388">
+<a class="screen-reader-text" href="#comment-content-4388">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4388">
+<pre class="wp-block-code"><code class="language-php" lang="php">get_rest_url(); // <a href="https://example.com/wp-json/" rel="nofollow ugc">https://example.com/wp-json/</a>
+get_rest_url( null, 'wp/v2/search' ); // <a href="https://example.com/wp-json/wp/v2/search" rel="nofollow ugc">https://example.com/wp-json/wp/v2/search</a></code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4388">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

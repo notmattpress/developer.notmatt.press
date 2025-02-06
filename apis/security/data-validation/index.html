@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/apis/">Common APIs Handbook</a></span><span><a href="https://developer.wordpress.org/apis/security/">Security</a></span><span class="is-current-page">Validating Data</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Validating Data</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Untrusted data comes from many sources (users, third party sites, even your own database!) and all of it needs to be checked before it’s used.</p>
+<p>Remember: Even admins are users, and users will enter incorrect data, either on purpose or accidentally. It’s your job to protect them from themselves.</p>
+<p><em>Validating</em> input is the process of testing data against a predefined pattern (or patterns) with a definitive result: valid or invalid. Validation is a more specific approach when compared to sanitization, but both have their roles.</p>
+<p>Simple validation examples:</p>
+<ul class="wp-block-list">
+<li>Check that required fields have not been left blank</li>
+<li>Check that an entered phone number only contains numbers and punctuation</li>
+<li>Check that an requested string is one of five valid options</li>
+<li>Check that a quantity field is greater than 0</li>
+</ul>
+<p><strong>Data validation should be performed as early as possible.</strong> That means validating the data before performing any actions.</p>
+<h2 class="is-toc-heading wp-block-heading" id="validation-philosophies" tabindex="-1"><a href="#validation-philosophies">Validation Philosophies</a></h2>
+<p>There are several different philosophies about how validation should be done. Each is appropriate for different scenarios.</p>
+<h3 class="is-toc-heading wp-block-heading" id="safelist" tabindex="-1"><a href="#safelist">Safelist</a></h3>
+<p>Accept data only from a finite list of known and trusted values.</p>
+<p>When comparing untrusted data against the safelist, it’s important to make sure that strict type checking is used. Otherwise an attacker could craft input in a way that will pass the safelist but still have a malicious effect.</p>
+<h4 class="wp-block-heading">Comparison Operator</h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">$untrusted_input = '1 malicious string';  // will evaluate to integer 1 during loose comparisons
+
+if ( 1 === $untrusted_input ) {  // == would have evaluated to true, but === evaluates to false
+    echo '&lt;p&gt;Valid data';
+} else {
+    wp_die( 'Invalid data' );
+}</code></pre>
+<h4 class="wp-block-heading"><code>in_array()</code></h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">$untrusted_input = '1 malicious string';  // will evaluate to integer 1 during loose comparisons
+$safe_values     = array( 1, 5, 7 );
+
+if ( in_array( $untrusted_input, $safe_values, true ) ) {  // `true` enables strict type checking
+    echo '&lt;p&gt;Valid data';
+} else {
+    wp_die( 'Invalid data' );
+}</code></pre>
+<h4 class="wp-block-heading"><code>switch()</code></h4>
+<pre class="wp-block-code"><code class="language-php" lang="php">$untrusted_input = '1 malicious string';  // will evaluate to integer 1 during loose comparisons
+
+switch ( true ) {
+    case 1 === $untrusted_input:  // do your own strict comparison instead of relying on switch()'s loose comparison
+        echo '&lt;p&gt;Valid data';
+        break;
+
+    default:
+        wp_die( 'Invalid data' );
+}</code></pre>
+<h4 class="wp-block-heading">Blocklist</h4>
+<p>Reject data from finite list of known untrusted values. This is very rarely a good idea.</p>
+<h4 class="wp-block-heading">Format Detection</h4>
+<p>Test to see if the data is of the correct format. Only accept it if it is.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( ! ctype_alnum( $data ) ) {
+  wp_die( "Invalid format" );
+}
+
+if ( preg_match( "/[^0-9.-]/", $data ) ) {
+  wp_die( "Invalid format" );
+}</code></pre>
+<h4 class="wp-block-heading">Format Correction</h4>
+<p>Accept most any data, but remove or alter the dangerous pieces.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$trusted_integer = (int) $untrusted_integer;
+$trusted_alpha = preg_replace( '/[^a-z]/i', "", $untrusted_alpha );
+$trusted_slug = sanitize_title( $untrusted_slug );</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="example-one" tabindex="-1"><a href="#example-one">Example One</a></h2>
+<p>Let’s say we have an input field designed to accept a US zipcode:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;input type="text" id="wporg_zip_code" name="my-zipcode" maxlength="10" /&gt;</code></pre>
+<p>Here we’ve told the browser to only allow up to ten characters of input…but there’s no limitation on <em>which</em> characters they can input. They could enter <code>11221</code> or <code>eval()</code>.</p>
+<p>This is where validation comes in. When processing the form, we write code to check each field for its proper data type, and discard it if it’s incorrect.</p>
+<p>For example: to check the <code>my-zipcode</code> field, we might do something like this:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">/**
+ * Validate a US zip code.
+ *
+ * @param string $zip_code   RAW zip code to check.
+ *
+ * @return bool              true if valid, false otherwise.
+ */
+function wporg_is_valid_us_zip_code( string $zip_code ):bool {
+    // Scenario 1: empty.
+    if ( empty( $zip_code ) ) {
+        return false;
+    }
+
+    // Scenario 2: more than 10 characters.
+    // The `maxlength` attribute is only enforced by 
+    // the browser, so we still need to validate the
+    // length of the input on the server to protect
+    // against a manual submission.
+    if ( 10 &lt; strlen( trim( $zip_code ) ) ) {
+        return false;
+    }
+
+    // Scenario 3: incorrect format.
+    if ( ! preg_match( '/^d{5}(-?d{4})?$/', $zip_code ) ) {
+        return false;
+    }
+
+    // Passed successfully.
+    return true;
+}</code></pre>
+<p>Then, when processing the form, your code should check the <code>wporg_zip_code</code> field and perform the action based on the result:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( isset( $_POST['wporg_zip_code'] ) &amp;&amp; wporg_is_valid_us_zip_code( $_POST['wporg_zip_code'] ) ) {
+    // $_POST['wporg_zip_code'] is valid; carry on
+}</code></pre>
+<p>Note that this specific example is checking that the supplied data is in the correct format; it is not checking that the supplied and correctly formatted data is a valid zipcode. For that, you’d need a second function to compare against a list of valid zipcodes.</p>
+<h2 class="is-toc-heading wp-block-heading" id="example-two" tabindex="-1"><a href="#example-two">Example Two</a></h2>
+<p>Say your code will query the database for posts, and you want to allow the user to sort the query results.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">$allowed_keys = array( 'author', 'post_author', 'date', 'post_date' );
+$orderby      = sanitize_key( $_POST['orderby'] );
+if ( in_array( $orderby, $allowed_keys, true ) ) {
+    // $orderby is valid; carry on
+}</code></pre>
+<p>This example code checks an incoming sort key (stored in the <code>orderby</code> input parameter) for validity by comparing it against an array of allowed sort keys. This prevents the user from passing in arbitrary and potentially malicious data.</p>
+<p>Before checking the incoming sort key against the array, the key is passed into the built-in WordPress function <code>sanitize_key()</code>. This function ensures (among other things) that the key is in lowercase, which we want because <code>in_array()</code> performs a case-sensitive search.</p>
+<p>Passing <code>true</code> into the third parameter of <code>in_array()</code> enables strict type checking, which tells the function to not only compare values but value types as well. This allows the code to be certain that the incoming sort key is a string and not some other data type.</p>
+<h2 class="is-toc-heading wp-block-heading" id="validation-functions" tabindex="-1"><a href="#validation-functions">Validation Functions</a></h2>
+<p>Most validation is done as part of custom code, but there are some helper functions too. These are in addition to the ones listed on the Sanitization page. </p>
+<ul class="wp-block-list">
+<li><code>balanceTags( $html )</code> or <code>force_balance_tags( $html )</code> – Tries to make sure HTML tags are balanced so that valid XML is output.</li>
+<li><code><a href="//php.net/count">count()</a></code> for checking how many items are in an array</li>
+<li><code><a href="//php.net/in_array">in_array()</a></code> for checking whether something exists in an array</li>
+<li><code><a href="/reference/functions/is_email/">is_email()</a></code> will validate whether an email address is valid.</li>
+<li><a data-id="https://www.php.net/is_array" data-type="link" href="https://www.php.net/is_array"><code>is_array()</code></a> for checking whether something is an array</li>
+<li><code><a href="https://php.net/mb_strlen">mb_strlen()</a></code> or <code><a href="https://php.net/strlen">strlen()</a></code> for checking that a string has the expected number of characters</li>
+<li><code><a href="https://php.net/preg_match">preg_match()</a></code>, <code><a href="https://php.net/strpos">strpos()</a></code> for checking for occurrences of certain strings in other strings</li>
+<li><code>sanitize_html_class( $class, $fallback )</code> – Sanitizes a html classname to ensure it only contains valid characters. Strips the string down to A-Z,a-z,0-9,’-‘ and if this results in an empty string then it will return the alternate value supplied.</li>
+<li><code>tag_escape( $html_tag_name )</code> – Sanitizes an HTML tag name (does not escape anything, despite the name of the function).</li>
+<li><code><a href="/reference/functions/term_exists/">term_exists()</a></code> checks whether a tag, category, or other taxonomy term exists.</li>
+<li><code><a href="/reference/functions/username_exists/">username_exists()</a></code> checks if username exists.</li>
+<li><code><a href="/reference/functions/validate_file/">validate_file()</a></code> will validate that an entered file path is a real path (but not whether the file exists).</li>
+</ul>
+<p>Check the <a href="/reference/">WordPress code reference</a> for more functions like these. Search for functions with names like these: <code>*_exists()</code>, <code>*_validate()</code>, and <code>is_*()</code>. Not all of these are validation functions, but many are helpful.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

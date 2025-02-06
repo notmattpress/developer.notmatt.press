@@ -1,0 +1,457 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/rest-api/">REST API Handbook</a></span><span><a href="https://developer.wordpress.org/rest-api/extending-the-rest-api/">Extending the REST API</a></span><span class="is-current-page">Modifying Responses</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Modifying Responses</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The default endpoints of the WordPress REST API are designed to return data by default that provides for the majority of sites and use cases, but there are often situations where you will need to access or expose additional data in the responses for various object types.</p>
+<p>As with the rest of WordPress, the REST API is designed to be highly extensible to fit these needs. This guide details how to add additional data to the responses of default endpoints using the <code>register_rest_field</code> and <code>register_meta</code> functions. You can use these functions to add fields to any of the object types supported by the REST API. These custom fields can support both get and update operations.</p>
+<h2 class="is-toc-heading" id="important-note-about-changing-responses" tabindex="-1"><a href="#important-note-about-changing-responses">Important Note about Changing Responses</a></h2>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><p>
+Changing or removing data from core REST API endpoint responses can break plugins or WordPress core behavior, and should be avoided wherever possible.</p>
+</div></div>
+<p>The API exposes many fields on API responses, including things you might not need, or which might not fit into how your site works. While it’s tempting to modify or remove fields from REST API responses, this <strong>will</strong> cause problems with API clients that expect standard responses. This includes mobile clients, third party tools to help you manage your site, or wp-admin itself.</p>
+<p>You may only need a small amount of data, but it’s important to keep in mind that the API is about exposing an interface to all clients, not just the feature you’re working on. Changing responses is dangerous.</p>
+<p>Adding fields is not dangerous, so if you need to modify data, it’s much better to duplicate the field instead with your modified data. Removing fields is never encouraged; if you need to get back a smaller subset of data, use the <a href="https://developer.notmatt.press/rest-api/using-the-rest-api/global-parameters/#_fields"><code>_fields</code> parameter</a> or work with contexts instead.</p>
+<p>If you must remove fields from an existing context you should ensure that the behavior is <strong>opt-in</strong>, for example by providing a custom query parameter to trigger the field removal.</p>
+<p>The API cannot prevent you from changing responses, but the code is structured to strongly discourage doing so. Internally, field registration is powered by filters, and these can be used if you absolutely have no other choice.</p>
+<h2 class="is-toc-heading" id="using-register_rest_field-vs-register_meta" tabindex="-1"><a href="#using-register_rest_field-vs-register_meta">Using register_rest_field vs register_meta</a></h2>
+<p>There are two methods which can be used to add data to WordPress REST API responses, <code>register_rest_field</code> and <code>register_meta</code>.</p>
+<p><code>register_rest_field</code> may be used to add arbitrary fields to any REST API response, and can be used to both read and write data using the API. To register a new REST field you must provide your own callback functions to get or set the field’s value, as well as manually specify your own schema definition for the field.</p>
+<p><code>register_meta</code> is used to whitelist an existing custom meta value for access through the REST API. By setting a meta field’s <code>show_in_rest</code> parameter to <code>true</code>, that field’s value will be exposed on a <code>.meta</code> key in the endpoint response, and WordPress will handle setting up the callbacks for reading and writing to that meta key. This is much simpler than <code>register_rest_field</code>, with one caveat:</p>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+Prior to WordPress 4.9.8, meta fields set to <code>show_in_rest</code> using <code>register_meta</code> are registered for all objects of a given type. If one custom post type shows a meta field, all custom post types will show that meta field. As of WordPress 4.9.8 it’s possible to use <code>register_meta</code> with the <code>object_subtype</code> argument that allows one to reduce the usage of the meta key to a particular post type.<br/>
+</div></div>
+<p>Prior to WordPress 5.3, <code>register_meta</code> could only support scalar values (<code>string</code>, <code>integer</code>, <code>number</code> and <code>boolean</code>). WordPress 5.3 adds support for the <code>object</code> and <code>array</code> types.</p>
+<h2 class="is-toc-heading" id="adding-custom-fields-to-api-responses" tabindex="-1"><a href="#adding-custom-fields-to-api-responses">Adding Custom Fields to API Responses</a></h2>
+<h3 class="is-toc-heading" id="using-register_rest_field" tabindex="-1"><a href="#using-register_rest_field">Using register_rest_field</a></h3>
+<p>The <a href="https://developer.notmatt.press/reference/functions/register_rest_field/"><code>register_rest_field</code></a> function is the most flexible way to add fields to REST API response objects. It accepts three parameters:</p>
+<ol>
+<li><code>$object_type</code>: The name of the object, as a string, or an array of the names of objects for which the field is being registered. This may be a core type like “post”, “terms”, “meta”, “user” or “comment”, but can also be the string name of a custom post type.</li>
+<li><code>$attribute</code>: The name of the field. This name will be used to define the key in the response object.</li>
+<li><code>$args</code>: An array with keys that define the callback functions used to retrieve the value of the field (‘get_callback’), to update the value of the field (‘update_callback’), and to define its schema (‘schema’).</li>
+</ol>
+<p>Each of the keys of the $args array is optional, but if not used, that capability will not be added. This means that you may specify a callback function for reading the value and omit the update callback to make that field read-only if desired.</p>
+<p>Fields should be registered at the <code>rest_api_init</code> action. Using this action rather than <code>init</code> will prevent the field registration from happening during requests to WordPress that do not use the REST API.</p>
+<h3 class="is-toc-heading" id="examples" tabindex="-1"><a href="#examples">Examples</a></h3>
+<h4>Read and write an extra field in comment responses</h4>
+<pre><code class="language-php">&lt;?php
+add_action( 'rest_api_init', function () {
+    register_rest_field( 'comment', 'karma', array(
+        'get_callback' =&gt; function( $comment_arr ) {
+            $comment_obj = get_comment( $comment_arr['id'] );
+            return (int) $comment_obj-&gt;comment_karma;
+        },
+        'update_callback' =&gt; function( $karma, $comment_obj ) {
+            $ret = wp_update_comment( array(
+                'comment_ID'    =&gt; $comment_obj-&gt;comment_ID,
+                'comment_karma' =&gt; $karma
+            ) );
+            if ( false === $ret ) {
+                return new WP_Error(
+                  'rest_comment_karma_failed',
+                  __( 'Failed to update comment karma.' ),
+                  array( 'status' =&gt; 500 )
+                );
+            }
+            return true;
+        },
+        'schema' =&gt; array(
+            'description' =&gt; __( 'Comment karma.' ),
+            'type'        =&gt; 'integer'
+        ),
+    ) );
+} );
+</code></pre>
+<p>This example illustrates adding a field called <code>karma</code> to the response for posts. It works because the <code>comment_karma</code> field exists, but is unused by core. Note that an actual implementation of comment karma would need to use a separate endpoint.</p>
+<p>This is a basic example; carefully consider what permissions checks or error handling may be required for your specific field.</p>
+<h3 class="is-toc-heading" id="how-register_rest_field-works" tabindex="-1"><a href="#how-register_rest_field-works">How register_rest_field Works</a></h3>
+<p>The global variable <code>$wp_rest_additional_fields</code> is used internally by the REST API infrastructure to hold the response fields to be added to each object type. The REST API provides <code>register_rest_field</code> as a utility function for adding to this global variable. Adding to the global variable directly should be avoided to ensure forward-compatibility.</p>
+<p>For each object type — posts, or users, terms, comments, etc. — <code>$wp_rest_additional_fields</code> contains an array of field definitions containing the callbacks used to retrieve or update the field’s value.</p>
+<h2 class="is-toc-heading" id="working-with-registered-meta-in-the-rest-api" tabindex="-1"><a href="#working-with-registered-meta-in-the-rest-api">Working with registered meta in the REST API</a></h2>
+<p>The <a href="https://developer.notmatt.press/reference/functions/register_meta/"><code>register_meta</code></a> function simplifies the process of defining a meta field for a particular object type. By setting <code>'show_in_rest' =&gt; true</code> when registering a new meta key, that key will be accessible through the REST API.</p>
+<h3 class="is-toc-heading" id="read-and-write-a-post-meta-field-in-post-responses" tabindex="-1"><a href="#read-and-write-a-post-meta-field-in-post-responses">Read and write a post meta field in post responses</a></h3>
+<pre><code class="language-php">&lt;?php
+// The object type. For custom post types, this is 'post';
+// for custom comment types, this is 'comment'. For user meta,
+// this is 'user'.
+$object_type = 'post';
+$meta_args = array( // Validate and sanitize the meta value.
+    // Note: currently (4.7) one of 'string', 'boolean', 'integer',
+    // 'number' must be used as 'type'. The default is 'string'.
+    'type'         =&gt; 'string',
+    // Shown in the schema for the meta key.
+    'description'  =&gt; 'A meta key associated with a string meta value.',
+    // Return a single value of the type.
+    'single'       =&gt; true,
+    // Show in the WP REST API response. Default: false.
+    'show_in_rest' =&gt; true,
+);
+register_meta( $object_type, 'my_meta_key', $meta_args );
+</code></pre>
+<p>This example shows how to allow reading and writing of a post meta field. This will allow that field to be updated via a POST request to <code>wp-json/wp/v2/posts/&lt;post-id&gt;</code> or created along with a post via a POST request to <code>wp-json/wp/v2/posts/</code>.</p>
+<p>Note that for meta fields registered on custom post types, the post type must have <code>custom-fields</code> support. Otherwise the meta fields will not appear in the REST API.</p>
+<h3 class="is-toc-heading" id="post-type-specific-meta" tabindex="-1"><a href="#post-type-specific-meta">Post Type Specific Meta</a></h3>
+<p>WordPress 4.9.8 adds support for registering meta for a specific post type or taxonomy by using the <code>register_post_meta</code> and <code>register_term_meta</code> functions. They follow the same rules as <code>register_meta</code> but accept a post type or taxonomy as their first parameter instead of an object type. The following code would register the <code>my_meta_key</code> example above, but only for the <code>page</code> custom post type.</p>
+<pre><code class="language-php">$meta_args = array(
+    'type'         =&gt; 'string',
+    'description'  =&gt; 'A meta key associated with a string meta value.',
+    'single'       =&gt; true,
+    'show_in_rest' =&gt; true,
+);
+register_post_meta( 'page', 'my_meta_key', $meta_args );
+</code></pre>
+<h3 class="is-toc-heading" id="object-meta-type" tabindex="-1"><a href="#object-meta-type">Object Meta Type</a></h3>
+<p>WordPress 5.3 adds support for using the <code>object</code> <a href="https://tools.ietf.org/html/draft-zyp-json-schema-04#section-3.5">type</a> when registering meta. Importantly <code>object</code> refers to a JSON object, this is equivalent to an associative array in PHP.</p>
+<p>When registering <code>object</code> meta, setting the <code>type</code> to <code>object</code> is not sufficient, you also need to inform WordPress of what properties to allow. This is done by writing a JSON Schema when registering the metadata.</p>
+<p>For instance, the following code sample registers a post meta field called “release” that accepts the given JSON data.</p>
+<pre><code class="language-json">{
+  "meta": {
+    "release": {
+      "version": "5.2",
+      "artist": "Jaco"
+    }
+  }
+}
+</code></pre>
+<pre><code class="language-php">register_post_meta(
+    'post',
+    'release',
+    array(
+        'single'       =&gt; true,
+        'type'         =&gt; 'object',
+        'show_in_rest' =&gt; array(
+            'schema' =&gt; array(
+                'type'       =&gt; 'object',
+                'properties' =&gt; array(
+                    'version' =&gt; array(
+                        'type' =&gt; 'string',
+                    ),
+                    'artist'  =&gt; array(
+                        'type' =&gt; 'string',
+                    ),
+                ),
+            ),
+        ),
+    )
+);
+</code></pre>
+<p>Notice that <code>show_in_rest</code> becomes an array instead of <code>true</code> and a Json Schema is specified for the <code>schema</code> key. Each property is then listed in the <code>properties</code> array. At a minimum, each property must specify a <code>type</code>, but any JSON Schema keyword that <code>rest_validate_value_from_schema</code> understands can be used as well.</p>
+<h4>Additional Properties</h4>
+<p>By default, the list of properties is a strict whitelist. If a property is sent in the request that is not listed, the REST API will return an error: <code>your_property is not a valid property of Object.</code>. If you don’t know the property names ahead of time the <code>additionalProperties</code> keyword can be used. <code>additionalProperties</code> accepts a JSON Schema that is used to validate the unknown properties. For instance, to enforce that any additional properties are numbers, the following code can be used.</p>
+<pre><code class="language-json">{
+  "meta": {
+    "release": {
+      "version": "5.2",
+      "artist": "Jaco",
+      "unknown_field": 5.3
+    }
+  }
+}
+</code></pre>
+<pre><code class="language-php">register_post_meta(
+    'post',
+    'version',
+    array(
+        'single'       =&gt; true,
+        'type'         =&gt; 'object',
+        'show_in_rest' =&gt; array(
+            'schema' =&gt; array(
+                'type'                 =&gt; 'object',
+                'properties'           =&gt; array(
+                    'version' =&gt; array(
+                        'type' =&gt; 'string',
+                    ),
+                    'artist'  =&gt; array(
+                        'type' =&gt; 'string',
+                    ),
+                ),
+                'additionalProperties' =&gt; array(
+                    'type' =&gt; 'number',
+                ),
+            ),
+        ),
+    )
+);
+</code></pre>
+<p><code>additionalProperties</code> can be set to true to allow unknown properties of any format, but this is not recommended.</p>
+<h3 class="is-toc-heading" id="array-meta-type" tabindex="-1"><a href="#array-meta-type">Array Meta Type</a></h3>
+<p>WordPress 5.3 also adds support for using the <code>array</code> <a href="https://tools.ietf.org/html/draft-zyp-json-schema-04#section-3.5">type</a>. Importantly <code>array</code> refers to a JSON array, this is equivalent to a numeric array in PHP.</p>
+<p>When registering <code>array</code> meta, setting the <code>type</code> to <code>array</code> is not sufficient, you need to inform WordPress of what the expected format is of the items in the array. This is done by writing a JSON Schema entry when registering the metadata.</p>
+<p>If you do not provide this value, <code>register_meta</code> will return false and issue the following warning: <code>When registering an "array" meta type to show in the REST API, you must specify the schema for each array item in "show_in_rest.schema.items".</code></p>
+<p>The following code sample registers a post meta field called “projects” that contains a list of project names. It accepts the given JSON data.</p>
+<pre><code class="language-json">{
+  "meta": {
+    "projects": [
+      "WordPress",
+      "BuddyPress"
+    ]
+  }
+}
+</code></pre>
+<pre><code class="language-php">register_post_meta(
+    'post',
+    'projects',
+    array(
+        'single'       =&gt; true,
+        'type'         =&gt; 'array',
+        'show_in_rest' =&gt; array(
+            'schema' =&gt; array(
+                'type'  =&gt; 'array',
+                'items' =&gt; array(
+                    'type' =&gt; 'string',
+                ),
+            ),
+        ),
+    )
+);
+</code></pre>
+<p>Notice that again <code>show_in_rest</code> becomes an array instead of <code>true</code> and a JSON Schema is specified for the <code>schema</code> key.<br/>
+The <code>items</code> keyword is used to define the JSON schema to validate each array member against. It can be a scalar type like <code>string</code> or a complex type like <code>object</code>.</p>
+<p>For instance, to accept the given JSON data, the following meta registration would be used.</p>
+<pre><code class="language-json">{
+  "meta": {
+    "projects": [
+      {
+        "name": "WordPress",
+        "website": "https://wordpress.org"
+      },
+      {
+        "name": "BuddyPress",
+        "website": "https://buddypress.org"
+      }
+    ]
+  }
+}
+</code></pre>
+<pre><code class="language-php">register_post_meta(
+    'post',
+    'projects',
+    array(
+        'single'       =&gt; true,
+        'type'         =&gt; 'array',
+        'show_in_rest' =&gt; array(
+            'schema' =&gt; array(
+                'items' =&gt; array(
+                    'type'       =&gt; 'object',
+                    'properties' =&gt; array(
+                        'name'    =&gt; array(
+                            'type' =&gt; 'string',
+                        ),
+                        'website' =&gt; array(
+                            'type'   =&gt; 'string',
+                            'format' =&gt; 'uri',
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    )
+);
+</code></pre>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">The <code>array</code> type enforces that the array keys are sequential integers starting from 0. The array will be reindexed using <code>array_values</code>.</div></div>
+<h3 class="is-toc-heading" id="non-single-metadata" tabindex="-1"><a href="#non-single-metadata">Non-Single Metadata</a></h3>
+<p>Non-single meta fields have an array of values per object, instead of one value per object. Each of those values is stored in a separate row in the meta table.</p>
+<p>The <code>array</code> and <code>object</code> types can be used with non-single meta fields as well. For example, if the “release” meta key from earlier had <code>single</code> set to <code>false</code>, the following JSON data could be accepted.</p>
+<pre><code class="language-json">{
+  "meta": {
+    "release": [
+      {
+        "version": "5.2",
+        "artist": "Jaco"
+      },
+      {
+        "version": "5.1",
+        "artist": "Betty"
+      }
+    ]
+  }
+}
+</code></pre>
+<p>This would result in two meta database rows. The first containing <code>{ "version": "5.2", "artist": "Jaco" }</code> and the second containing <code>{ "version": "5.1", "artist": "Betty" }</code>.</p>
+<p>Similarly, the following data would be accepted for the “projects” example if it had set <code>single</code> to <code>false</code>.</p>
+<pre><code class="language-json">{
+  "meta": {
+    "projects": [
+      [
+        "WordPress",
+        "BuddyPress"
+      ],
+      [
+        "bbPress"
+      ]
+    ]
+  }
+}
+</code></pre>
+<p>This would result in two meta database rows. The first containing <code>[ "WordPress", "BuddyPress" ]</code> and the second containing <code>[ "bbPress" ]</code>.</p>
+<h3 class="is-toc-heading" id="invalid-stored-values" tabindex="-1"><a href="#invalid-stored-values">Invalid Stored Values</a></h3>
+<p>If the existing value for a meta field does not validate against the registered type and schema, the value for that meta field will be returned as null. If that null value is passed back to the API when doing an update request, you’ll receive a <code>rest_invalid_stored_value</code> error: <code>The %s property has an invalid stored value, and cannot be updated to null.</code>. To fix this, either update the meta key with a valid value or omit that property from your request.</p>
+<h3 class="is-toc-heading" id="default-metadata-values" tabindex="-1"><a href="#default-metadata-values">Default Metadata Values</a></h3>
+<p>WordPress 5.5 adds <a href="https://make.wordpress.org/core/2020/08/04/registering-default-values-for-meta-data/">official support</a> for specifying a default value for metadata if no value is defined. For example, with this code snippet the <code>price</code> meta field will be set to <code>0.00</code> in the REST API response if a value is not yet.</p>
+<pre><code class="language-php">register_post_meta(
+     'product',
+     'price',
+     array(
+         'single'  =&gt; true,
+         'type'    =&gt; 'string',
+         'default' =&gt; '0.00',
+     )
+ );
+</code></pre>
+<h2 class="is-toc-heading" id="adding-links-to-the-api-response" tabindex="-1"><a href="#adding-links-to-the-api-response">Adding Links to the API Response</a></h2>
+<p>WordPress generates a list of links associated with the queried resource to make it easier to navigate to related resources.</p>
+<pre><code class="language-json">{
+ "_links": {
+    "self": [
+      {
+        "href": "https://make.wordpress.org/core/wp-json/wp/v2/posts/28312"
+      }
+    ],
+    "collection": [
+      {
+        "href": "https://make.wordpress.org/core/wp-json/wp/v2/posts"
+      }
+    ],
+    "author": [
+      {
+        "embeddable": true,
+        "href": "https://make.wordpress.org/core/wp-json/wp/v2/users/8670591"
+      }
+    ],
+    "replies": [
+      {
+        "embeddable": true,
+        "href": "https://make.wordpress.org/core/wp-json/wp/v2/comments?post=28312"
+      }
+    ],
+    "wp:term": [
+      {
+        "taxonomy": "category",
+        "embeddable": true,
+        "href": "https://make.wordpress.org/core/wp-json/wp/v2/categories?post=28312"
+      },
+      {
+        "taxonomy": "post_tag",
+        "embeddable": true,
+        "href": "https://make.wordpress.org/core/wp-json/wp/v2/tags?post=28312"
+      }
+    ]
+  }
+}
+</code></pre>
+<p><em>A sample of links from a Make.WordPress.org post</em></p>
+<p>While these links will appear under the <code>_links</code> property in the JSON response object, it is not stored in <code>WP_REST_Response::$data</code> or accessible via <code>WP_REST_Response::get_data()</code>. Instead, the server will append the link data to the response right before echoing the response data.</p>
+<p>Custom links can be added to the response by using the <code>WP_REST_Response::add_link()</code> method. This method accepts three parameters, the link relation, the URL and optionally a list of link attributes. For example, to add the <code>author</code> and <code>wp:term</code> link.</p>
+<pre><code class="language-php">&lt;?php
+$response-&gt;add_link( 'author', rest_url( "/wp/v2/users/{$post-&gt;post_author}" ) );
+
+$response-&gt;add_link( 'https://api.w.org/term', add_query_arg( 'post', $post-&gt;ID, rest_url( "/wp/v2/{$tax_base}" ) ) );
+</code></pre>
+<p>The link relation MUST be either a <a href="https://www.iana.org/assignments/link-relations/link-relations.xhtml">registered link relation from the IANA</a> or a URI that is under your control.</p>
+<p><code>author</code> is a registered link relation described as “the context’s author”, we use that to point to the WordPress user who wrote the post. No link relation exists that describes the terms associated with a post, so WordPress uses the <code>https://api.w.org/term` URL. This is transformed to</code>wp:term` when generating the response by using a CURIE.</p>
+<p>The third parameter of <code>add_link()</code> is a list of custom attributes. The <code>embeddable</code> attribute can be used to include the linked resource appears in the <code>_embedded</code> section of the repsonse when using the <code>_embed</code> query parameter. If multiple links are added with the same relation, the embedded responses will be in the same order the links were added in.</p>
+<pre><code class="language-php">&lt;?php
+$response-&gt;add_link( 'author', rest_url( "/wp/v2/users/{$post-&gt;post_author}" ), array(
+    'embeddable' =&gt; true,
+) );
+$response-&gt;add_link( 'author', rest_url( "/wp/v2/users/{$additional_author}" ), array(
+    'embeddable' =&gt; true,
+) );
+</code></pre>
+<p><em>A sample implementation of linking to multi-author posts.</em></p>
+<pre><code class="language-json">{
+  "_links": {
+    "author": [
+      {
+        "embeddable": true,
+        "href": "https://yourwebsite.com/wp-json/wp/v2/users/1"
+      },
+      {
+        "embeddable": true,
+        "href": "https://yourwebsite.com/wp-json/wp/v2/users/2"
+      }
+    ]
+  },
+  "_embedded": {
+    "author": [
+      {
+        "id": 1,
+        "name": "Primary Author"
+      },
+      {
+        "id": 2,
+        "name": "Secondary Author"
+      }
+    ]
+  }
+}
+</code></pre>
+<p><em>The order links are added is maintained.</em></p>
+<h3 class="is-toc-heading" id="registering-a-curie" tabindex="-1"><a href="#registering-a-curie">Registering a CURIE</a></h3>
+<p>WordPress version 4.5 introduced support for Compact URIs, or CURIEs. This makes it possible to reference links by a much simpler identifier than the full URL which could easily be quite lengthy.</p>
+<p>A CURIE is registered using the <code>rest_response_link_curies</code> filter. For example.</p>
+<pre><code class="language-php">&lt;?php
+function my_plugin_prefix_register_curie( $curies ) {
+
+    $curies[] = array(
+        'name'      =&gt; 'my_plugin',
+        'href'      =&gt; 'https://api.mypluginurl.com/{rel}',
+        'templated' =&gt; true,
+    );
+
+    return $curies;
+}
+</code></pre>
+<p>This will convert link URLs from <code>https://api.mypluginurl.com/my_link` to</code>my_plugin:my_link<code>in the API response. The full URL must still be used when adding links using</code><a href="https://developer.notmatt.press/reference/classes/wp_rest_response/add_link/" rel="method">WP_REST_Response::add_link()</a> `.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

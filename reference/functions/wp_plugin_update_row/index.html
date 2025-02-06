@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_plugin_update_row()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_plugin_update_row()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_plugin_update_row( <span class="arg-type">string</span> <span class="arg-name">$file</span>,  <span class="arg-type">array</span> <span class="arg-name">$plugin_data</span> ): <span class="return-type">void|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Displays update information for a plugin.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$file</code><span class="type"><span class="string">string</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Plugin basename.</span></div></dd><dt><code>$plugin_data</code><span class="type"><span class="array">array</span></span><span class="required">required</span></dt><dd><div class="desc"><span class="description">Plugin information.</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">void|false</span> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="451"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_plugin_update_row( $file, $plugin_data ) {
+	$current = get_site_transient( 'update_plugins' );
+
+	if ( ! isset( $current-&gt;response[ $file ] ) ) {
+		return false;
+	}
+
+	$response = $current-&gt;response[ $file ];
+
+	$plugins_allowedtags = array(
+		'a'       =&gt; array(
+			'href'  =&gt; array(),
+			'title' =&gt; array(),
+		),
+		'abbr'    =&gt; array( 'title' =&gt; array() ),
+		'acronym' =&gt; array( 'title' =&gt; array() ),
+		'code'    =&gt; array(),
+		'em'      =&gt; array(),
+		'strong'  =&gt; array(),
+	);
+
+	$plugin_name = wp_kses( $plugin_data['Name'], $plugins_allowedtags );
+	$plugin_slug = isset( $response-&gt;slug ) ? $response-&gt;slug : $response-&gt;id;
+
+	if ( isset( $response-&gt;slug ) ) {
+		$details_url = self_admin_url( 'plugin-install.php?tab=plugin-information&amp;plugin=' . $plugin_slug . '&amp;section=changelog' );
+	} elseif ( isset( $response-&gt;url ) ) {
+		$details_url = $response-&gt;url;
+	} else {
+		$details_url = $plugin_data['PluginURI'];
+	}
+
+	$details_url = add_query_arg(
+		array(
+			'TB_iframe' =&gt; 'true',
+			'width'     =&gt; 600,
+			'height'    =&gt; 800,
+		),
+		$details_url
+	);
+
+	/** @var WP_Plugins_List_Table $wp_list_table */
+	$wp_list_table = _get_list_table(
+		'WP_Plugins_List_Table',
+		array(
+			'screen' =&gt; get_current_screen(),
+		)
+	);
+
+	if ( is_network_admin() || ! is_multisite() ) {
+		if ( is_network_admin() ) {
+			$active_class = is_plugin_active_for_network( $file ) ? ' active' : '';
+		} else {
+			$active_class = is_plugin_active( $file ) ? ' active' : '';
+		}
+
+		$requires_php   = isset( $response-&gt;requires_php ) ? $response-&gt;requires_php : null;
+		$compatible_php = is_php_version_compatible( $requires_php );
+		$notice_type    = $compatible_php ? 'notice-warning' : 'notice-error';
+
+		printf(
+			'&lt;tr class="plugin-update-tr%s" id="%s" data-slug="%s" data-plugin="%s"&gt;' .
+			'&lt;td colspan="%s" class="plugin-update colspanchange"&gt;' .
+			'&lt;div class="update-message notice inline %s notice-alt"&gt;&lt;p&gt;',
+			$active_class,
+			esc_attr( $plugin_slug . '-update' ),
+			esc_attr( $plugin_slug ),
+			esc_attr( $file ),
+			esc_attr( $wp_list_table-&gt;get_column_count() ),
+			$notice_type
+		);
+
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			printf(
+				/* translators: 1: Plugin name, 2: Details URL, 3: Additional link attributes, 4: Version number. */
+				__( 'There is a new version of %1$s available. &lt;a href="%2$s" %3$s&gt;View version %4$s details&lt;/a&gt;.' ),
+				$plugin_name,
+				esc_url( $details_url ),
+				sprintf(
+					'class="thickbox open-plugin-details-modal" aria-label="%s"',
+					/* translators: 1: Plugin name, 2: Version number. */
+					esc_attr( sprintf( __( 'View %1$s version %2$s details' ), $plugin_name, $response-&gt;new_version ) )
+				),
+				esc_attr( $response-&gt;new_version )
+			);
+		} elseif ( empty( $response-&gt;package ) ) {
+			printf(
+				/* translators: 1: Plugin name, 2: Details URL, 3: Additional link attributes, 4: Version number. */
+				__( 'There is a new version of %1$s available. &lt;a href="%2$s" %3$s&gt;View version %4$s details&lt;/a&gt;. &lt;em&gt;Automatic update is unavailable for this plugin.&lt;/em&gt;' ),
+				$plugin_name,
+				esc_url( $details_url ),
+				sprintf(
+					'class="thickbox open-plugin-details-modal" aria-label="%s"',
+					/* translators: 1: Plugin name, 2: Version number. */
+					esc_attr( sprintf( __( 'View %1$s version %2$s details' ), $plugin_name, $response-&gt;new_version ) )
+				),
+				esc_attr( $response-&gt;new_version )
+			);
+		} else {
+			if ( $compatible_php ) {
+				printf(
+					/* translators: 1: Plugin name, 2: Details URL, 3: Additional link attributes, 4: Version number, 5: Update URL, 6: Additional link attributes. */
+					__( 'There is a new version of %1$s available. &lt;a href="%2$s" %3$s&gt;View version %4$s details&lt;/a&gt; or &lt;a href="%5$s" %6$s&gt;update now&lt;/a&gt;.' ),
+					$plugin_name,
+					esc_url( $details_url ),
+					sprintf(
+						'class="thickbox open-plugin-details-modal" aria-label="%s"',
+						/* translators: 1: Plugin name, 2: Version number. */
+						esc_attr( sprintf( __( 'View %1$s version %2$s details' ), $plugin_name, $response-&gt;new_version ) )
+					),
+					esc_attr( $response-&gt;new_version ),
+					wp_nonce_url( self_admin_url( 'update.php?action=upgrade-plugin&amp;plugin=' ) . $file, 'upgrade-plugin_' . $file ),
+					sprintf(
+						'class="update-link" aria-label="%s"',
+						/* translators: %s: Plugin name. */
+						esc_attr( sprintf( _x( 'Update %s now', 'plugin' ), $plugin_name ) )
+					)
+				);
+			} else {
+				printf(
+					/* translators: 1: Plugin name, 2: Details URL, 3: Additional link attributes, 4: Version number 5: URL to Update PHP page. */
+					__( 'There is a new version of %1$s available, but it does not work with your version of PHP. &lt;a href="%2$s" %3$s&gt;View version %4$s details&lt;/a&gt; or &lt;a href="%5$s"&gt;learn more about updating PHP&lt;/a&gt;.' ),
+					$plugin_name,
+					esc_url( $details_url ),
+					sprintf(
+						'class="thickbox open-plugin-details-modal" aria-label="%s"',
+						/* translators: 1: Plugin name, 2: Version number. */
+						esc_attr( sprintf( __( 'View %1$s version %2$s details' ), $plugin_name, $response-&gt;new_version ) )
+					),
+					esc_attr( $response-&gt;new_version ),
+					esc_url( wp_get_update_php_url() )
+				);
+				wp_update_php_annotation( '&lt;br&gt;&lt;em&gt;', '&lt;/em&gt;' );
+			}
+		}
+
+		/**
+		 * Fires at the end of the update message container in each
+		 * row of the plugins list table.
+		 *
+		 * The dynamic portion of the hook name, `$file`, refers to the path
+		 * of the plugin's primary file relative to the plugins directory.
+		 *
+		 * @since 2.8.0
+		 *
+		 * @param array  $plugin_data An array of plugin metadata. See get_plugin_data()
+		 *                            and the <a href="https://developer.notmatt.press/reference/functions/plugin_row_meta">'plugin_row_meta'</a> filter for the list
+		 *                            of possible values.
+		 * @param object $response {
+		 *     An object of metadata about the available plugin update.
+		 *
+		 *     @type string   $id           Plugin ID, e.g. `w.org/plugins/[plugin-name]`.
+		 *     @type string   $slug         Plugin slug.
+		 *     @type string   $plugin       Plugin basename.
+		 *     @type string   $new_version  New plugin version.
+		 *     @type string   $url          Plugin URL.
+		 *     @type string   $package      Plugin update package URL.
+		 *     @type string[] $icons        An array of plugin icon URLs.
+		 *     @type string[] $banners      An array of plugin banner URLs.
+		 *     @type string[] $banners_rtl  An array of plugin RTL banner URLs.
+		 *     @type string   $requires     The version of WordPress which the plugin requires.
+		 *     @type string   $tested       The version of WordPress the plugin is tested against.
+		 *     @type string   $requires_php The version of PHP which the plugin requires.
+		 * }
+		 */
+		do_action( "in_plugin_update_message-{$file}", $plugin_data, $response ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
+
+		echo '&lt;/p&gt;&lt;/div&gt;&lt;/td&gt;&lt;/tr&gt;';
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/update.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/update.php#L451">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/update.php#L451-L620">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/in_plugin_update_message-file/"><span class="hook-func">do_action</span>( “in_plugin_update_message-{$file}”,  <nobr><span class="arg-type">array</span> <span class="arg-name">$plugin_data</span></nobr>,  <nobr><span class="arg-type">object</span> <span class="arg-name">$response</span></nobr> )</a></dt><dd><p>Fires at the end of the update message container in each row of the plugins list table.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_php_version_compatible/">is_php_version_compatible()</a><code>wp-includes/functions.php</code></td><td><p>Checks compatibility with the current PHP version.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_update_php_url/">wp_get_update_php_url()</a><code>wp-includes/functions.php</code></td><td><p>Gets the URL to learn more about updating the PHP version the site is running on.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_php_annotation/">wp_update_php_annotation()</a><code>wp-includes/functions.php</code></td><td><p>Prints the default annotation for the web host altering the “Update PHP” page URL.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_current_screen/">get_current_screen()</a><code>wp-admin/includes/screen.php</code></td><td><p>Get the current screen object</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_list_table/get_column_count/">WP_List_Table::get_column_count()</a><code>wp-admin/includes/class-wp-list-table.php</code></td><td><p>Returns the number of visible columns.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_plugin_active_for_network/">is_plugin_active_for_network()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Determines whether the plugin is active for the entire network.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_plugin_active/">is_plugin_active()</a><code>wp-admin/includes/plugin.php</code></td><td><p>Determines whether a plugin is active.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_get_list_table/">_get_list_table()</a><code>wp-admin/includes/list-table.php</code></td><td><p>Fetches an instance of a <a href="https://developer.notmatt.press/reference/classes/wp_list_table/" rel="class">WP_List_Table</a> class.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_kses/">wp_kses()</a><code>wp-includes/kses.php</code></td><td><p>Filters text content and strips out disallowed HTML.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_network_admin/">is_network_admin()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is for the network administrative interface.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/self_admin_url/">self_admin_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL to the admin area for either the current site or the network depending on context.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_site_transient/">get_site_transient()</a><code>wp-includes/option.php</code></td><td><p>Retrieves the value of a site transient.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/current_user_can/">current_user_can()</a><code>wp-includes/capabilities.php</code></td><td><p>Returns whether the current user has the specified capability.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/is_multisite/">is_multisite()</a><code>wp-includes/load.php</code></td><td><p>Determines whether Multisite is enabled.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_nonce_url/">wp_nonce_url()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves URL with nonce added to URL query.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/add_query_arg/">add_query_arg()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves a modified URL query string.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 14 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.3.0/">2.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

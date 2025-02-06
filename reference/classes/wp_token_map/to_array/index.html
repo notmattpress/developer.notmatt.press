@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_token_map/">WP_Token_Map</a></span><span class="is-current-page">WP_Token_Map::to_array()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Token_Map::to_array()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">WP_Token_Map::to_array(): <span class="return-type">array</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Exports the token map into an associate array of key/value pairs.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>Example:</p> <pre class="wp-block-code"><code class="language-php line-numbers" lang="php">$smilies-&gt;to_array() === array(
+    '8O' =&gt; '😯',
+    ':(' =&gt; '🙁',
+    ':)' =&gt; '🙂',
+    ':?' =&gt; '😕',
+);</code></pre></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array</span> The lookup key/substitution values as an associate array.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="636"><code class="language-php line-numbers" id="wporg-source-code" lang="php"> * @return array The lookup key/substitution values as an associate array.
+ */
+public function to_array(): array {
+	$tokens = array();
+
+	$at            = 0;
+	$small_mapping = 0;
+	$small_length  = strlen( $this-&gt;small_words );
+	while ( $at &lt; $small_length ) {
+		$key            = rtrim( substr( $this-&gt;small_words, $at, $this-&gt;key_length + 1 ), "\x00" );
+		$value          = $this-&gt;small_mappings[ $small_mapping++ ];
+		$tokens[ $key ] = $value;
+
+		$at += $this-&gt;key_length + 1;
+	}
+
+	foreach ( $this-&gt;large_words as $index =&gt; $group ) {
+		$prefix       = substr( $this-&gt;groups, $index * ( $this-&gt;key_length + 1 ), 2 );
+		$group_length = strlen( $group );
+		$at           = 0;
+		while ( $at &lt; $group_length ) {
+			$length = unpack( 'C', $group[ $at++ ] )[1];
+			$key    = $prefix . substr( $group, $at, $length );
+
+			$at    += $length;
+			$length = unpack( 'C', $group[ $at++ ] )[1];
+			$value  = substr( $group, $at, $length );
+
+			$tokens[ $key ] = $value;
+			$at            += $length;
+		}
+	}
+
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-token-map.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-token-map.php#L636">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-token-map.php#L636-L668">View on GitHub</a></p></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

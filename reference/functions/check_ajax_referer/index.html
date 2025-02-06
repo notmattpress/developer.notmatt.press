@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">check_ajax_referer()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>check_ajax_referer()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">check_ajax_referer( <span class="arg-type">int|string</span> <span class="arg-name">$action</span> = <span class="arg-default">-1</span>,  <span class="arg-type">false|string</span> <span class="arg-name">$query_arg</span> = <span class="arg-default">false</span>,  <span class="arg-type">bool</span> <span class="arg-name">$stop</span> = <span class="arg-default">true</span> ): <span class="return-type">int|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Verifies the Ajax request to prevent processing requests external of the blog.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$action</code><span class="type"><span class="int">int</span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Action nonce.</span></div><p class="default">Default:<code>-1</code></p></dd><dt><code>$query_arg</code><span class="type"><span class="false">false</span>|<span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Key to check for the nonce in <code>$_REQUEST</code> (since 2.5). If false,                                <code>$_REQUEST</code> values will be evaluated for <code>'_ajax_nonce'</code>, and <code>'_wpnonce'</code>                                (in that order). </span></div><p class="default">Default:<code>false</code></p></dd><dt><code>$stop</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to stop early when the nonce cannot be verified.<br/>
+</span></div><p class="default">Default:<code>true</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">int|false</span> 1 if the nonce is valid and generated between 0-12 hours ago,                   2 if the nonce is valid and generated between 12-24 hours ago.<br/>
+False if the nonce is invalid.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<p>Nonces should never be relied on for authentication, authorization, or access control. Protect your functions using <a href="https://developer.notmatt.press/reference/functions/current_user_can/" title="Function Reference/current user can"><tt>current_user_can()</tt></a> and always assume that nonces can be compromised.</p>
+<p>This function can be replaced via <a href="https://codex.wordpress.org/Glossary#plugins" title="Glossary">plugins</a>. If plugins do not redefine these functions, then this will be used instead.</p>
+<p>If <tt>$query_arg</tt> is not specified (i.e. defaults to false), then the function will look for the nonce in <tt>'_ajax_nonce'</tt>. If that is not set, then it will assume that the nonce is in <tt>'_wpnonce'</tt>, regardless of whether that query arg actually exists.</p>
+<p>If <tt>$die</tt> is set to <tt>true</tt>, execution of the script will be stopped if the nonce cannot be verified, and the output will be <tt>'-1'</tt>.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="1317"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function check_ajax_referer( $action = -1, $query_arg = false, $stop = true ) {
+	if ( -1 === $action ) {
+		_doing_it_wrong( __FUNCTION__, __( 'You should specify an action to be verified by using the first parameter.' ), '4.7.0' );
+	}
+
+	$nonce = '';
+
+	if ( $query_arg &amp;&amp; isset( $_REQUEST[ $query_arg ] ) ) {
+		$nonce = $_REQUEST[ $query_arg ];
+	} elseif ( isset( $_REQUEST['_ajax_nonce'] ) ) {
+		$nonce = $_REQUEST['_ajax_nonce'];
+	} elseif ( isset( $_REQUEST['_wpnonce'] ) ) {
+		$nonce = $_REQUEST['_wpnonce'];
+	}
+
+	$result = wp_verify_nonce( $nonce, $action );
+
+	/**
+	 * Fires once the Ajax request has been validated or not.
+	 *
+	 * @since 2.1.0
+	 *
+	 * @param string    $action The Ajax nonce action.
+	 * @param false|int $result False if the nonce is invalid, 1 if the nonce is valid and generated between
+	 *                          0-12 hours ago, 2 if the nonce is valid and generated between 12-24 hours ago.
+	 */
+	do_action( 'check_ajax_referer', $action, $result );
+
+	if ( $stop &amp;&amp; false === $result ) {
+		if ( wp_doing_ajax() ) {
+			wp_die( -1, 403 );
+		} else {
+			die( '-1' );
+		}
+	}
+
+	return $result;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/pluggable.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/pluggable.php#L1317">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/pluggable.php#L1317-L1354">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/check_ajax_referer/"><span class="hook-func">do_action</span>( ‘check_ajax_referer’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$action</span></nobr>,  <nobr><span class="arg-type">false|int</span> <span class="arg-name">$result</span></nobr> )</a></dt><dd><p>Fires once the Ajax request has been validated or not.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_doing_ajax/">wp_doing_ajax()</a><code>wp-includes/load.php</code></td><td><p>Determines whether the current request is a WordPress Ajax request.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_verify_nonce/">wp_verify_nonce()</a><code>wp-includes/pluggable.php</code></td><td><p>Verifies that a correct security nonce was used with time limit.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_doing_it_wrong/">_doing_it_wrong()</a><code>wp-includes/functions.php</code></td><td><p>Marks something as being incorrectly called.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_die/">wp_die()</a><code>wp-includes/functions.php</code></td><td><p>Kills WordPress execution and displays HTML page with an error message.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/do_action/">do_action()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to an action hook.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 3 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_plugin_dependencies/check_plugin_dependencies_during_ajax/">WP_Plugin_Dependencies::check_plugin_dependencies_during_ajax()</a><code>wp-includes/class-wp-plugin-dependencies.php</code></td><td><p>Checks plugin dependencies after a plugin is installed via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_activate_plugin/">wp_ajax_activate_plugin()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles activating a plugin via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_send_password_reset/">wp_ajax_send_password_reset()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles sending a password reset link via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_toggle_auto_updates/">wp_ajax_toggle_auto_updates()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles enabling or disable plugin and theme auto-updates via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_media_create_image_subsizes/">wp_ajax_media_create_image_subsizes()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles creating missing image sub-sizes for just uploaded images via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_health_check_get_sizes/">wp_ajax_health_check_get_sizes()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles site health check to get directories and database sizes via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_health_check_dotorg_communication/">wp_ajax_health_check_dotorg_communication()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles site health checks on server communication via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_health_check_background_updates/">wp_ajax_health_check_background_updates()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles site health checks on background updates via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_health_check_loopback_requests/">wp_ajax_health_check_loopback_requests()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles site health checks on loopback requests via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_health_check_site_status_result/">wp_ajax_health_check_site_status_result()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles site health check to update the result status via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_wp_privacy_export_personal_data/">wp_ajax_wp_privacy_export_personal_data()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles exporting a user’s personal data via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_wp_privacy_erase_personal_data/">wp_ajax_wp_privacy_erase_personal_data()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles erasing personal data via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/handle_load_themes_request/">WP_Customize_Manager::handle_load_themes_request()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Loads themes into the theme browsing/installation UI.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/handle_override_changeset_lock_request/">WP_Customize_Manager::handle_override_changeset_lock_request()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Removes changeset lock when take over request is sent via Ajax.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/handle_dismiss_autosave_or_lock_request/">WP_Customize_Manager::handle_dismiss_autosave_or_lock_request()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Deletes a given auto-draft changeset or the autosave revision for a given changeset or delete changeset lock.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/handle_changeset_trash_request/">WP_Customize_Manager::handle_changeset_trash_request()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Handles request to trash a changeset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_get_community_events/">wp_ajax_get_community_events()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles Ajax requests for community events</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/ajax_insert_auto_draft_post/">WP_Customize_Nav_Menus::ajax_insert_auto_draft_post()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Ajax handler for adding a new auto-draft post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_search_install_plugins/">wp_ajax_search_install_plugins()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles searching plugins to install via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_plugin/">wp_ajax_delete_plugin()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a plugin via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_search_plugins/">wp_ajax_search_plugins()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles searching plugins via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_install_theme/">wp_ajax_install_theme()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles installing a theme via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_update_theme/">wp_ajax_update_theme()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles updating a theme via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_theme/">wp_ajax_delete_theme()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a theme via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_install_plugin/">wp_ajax_install_plugin()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles installing a plugin via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_get_post_thumbnail_html/">wp_ajax_get_post_thumbnail_html()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles retrieving HTML for the featured image via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_wporg_username/">wp_ajax_save_wporg_username()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving the user’s WordPress.org username via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_inactive_widgets/">wp_ajax_delete_inactive_widgets()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles removing inactive widgets via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/ajax_load_available_items/">WP_Customize_Nav_Menus::ajax_load_available_items()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Ajax handler for loading available menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_nav_menus/ajax_search_available_items/">WP_Customize_Nav_Menus::ajax_search_available_items()</a><code>wp-includes/class-wp-customize-nav-menus.php</code></td><td><p>Ajax handler for searching available menu items.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_crop_image/">wp_ajax_crop_image()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles cropping an image via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_update_plugin/">wp_ajax_update_plugin()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles updating a plugin via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/custom_background/ajax_background_add/">Custom_Background::ajax_background_add()</a><code>wp-admin/includes/class-custom-background.php</code></td><td><p>Handles Ajax request for adding custom background context to an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_set_attachment_thumbnail/">wp_ajax_set_attachment_thumbnail()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles setting the featured image for an attachment via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_attachment_order/">wp_ajax_save_attachment_order()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving the attachment order via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_send_attachment_to_editor/">wp_ajax_send_attachment_to_editor()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles sending an attachment to the editor via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_send_link_to_editor/">wp_ajax_send_link_to_editor()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles sending a link to the editor via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_user_color_scheme/">wp_ajax_save_user_color_scheme()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles auto-saving the selected color scheme for a user’s own profile via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_widget/">wp_ajax_save_widget()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving a widget via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_upload_attachment/">wp_ajax_upload_attachment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles uploading attachments via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_image_editor/">wp_ajax_image_editor()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles image editing via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_set_post_thumbnail/">wp_ajax_set_post_thumbnail()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles setting the featured image via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_wp_fullscreen_save_post/">wp_ajax_wp_fullscreen_save_post()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving posts from the fullscreen editor via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_wp_remove_post_lock/">wp_ajax_wp_remove_post_lock()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles removing a post lock via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_attachment/">wp_ajax_save_attachment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles updating attachment attributes via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_save_attachment_compat/">wp_ajax_save_attachment_compat()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving backward compatible attachment attributes via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_add_menu_item/">wp_ajax_add_menu_item()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles adding a menu item via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_add_meta/">wp_ajax_add_meta()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles adding meta via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_add_user/">wp_ajax_add_user()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles adding a user via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_closed_postboxes/">wp_ajax_closed_postboxes()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles closed post boxes via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_hidden_columns/">wp_ajax_hidden_columns()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles hidden columns via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_update_welcome_panel/">wp_ajax_update_welcome_panel()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles updating whether to display the welcome panel via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_wp_link_ajax/">wp_ajax_wp_link_ajax()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles internal linking via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_menu_locations_save/">wp_ajax_menu_locations_save()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving menu locations via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_meta_box_order/">wp_ajax_meta_box_order()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving the meta box order via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_get_permalink/">wp_ajax_get_permalink()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles retrieving a permalink via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_sample_permalink/">wp_ajax_sample_permalink()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles retrieving a sample permalink via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_inline_save/">wp_ajax_inline_save()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles Quick Edit saving a post from a list table via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_inline_save_tax/">wp_ajax_inline_save_tax()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles Quick Edit saving for a term via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_find_posts/">wp_ajax_find_posts()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles querying posts for the Find Posts modal via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_widgets_order/">wp_ajax_widgets_order()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles saving the widgets order via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/_wp_ajax_add_hierarchical_term/">_wp_ajax_add_hierarchical_term()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles adding a hierarchical term via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_comment/">wp_ajax_delete_comment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a comment via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_tag/">wp_ajax_delete_tag()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a tag via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_link/">wp_ajax_delete_link()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a link via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_meta/">wp_ajax_delete_meta()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting meta via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_post/">wp_ajax_delete_post()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a post via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_trash_post/">wp_ajax_trash_post()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles sending a post to the Trash via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_page/">wp_ajax_delete_page()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a page via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_dim_comment/">wp_ajax_dim_comment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles dimming a comment via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_add_link_category/">wp_ajax_add_link_category()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles adding a link category via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_add_tag/">wp_ajax_add_tag()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles adding a tag via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_get_comments/">wp_ajax_get_comments()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles getting comments via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_replyto_comment/">wp_ajax_replyto_comment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles replying to a comment via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_edit_comment/">wp_ajax_edit_comment()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles editing a comment via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_fetch_list/">wp_ajax_fetch_list()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles fetching a list table via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_wp_compression_test/">wp_ajax_wp_compression_test()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles compression testing via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_imgedit_preview/">wp_ajax_imgedit_preview()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles image editor previews via AJAX.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/custom_image_header/ajax_header_crop/">Custom_Image_Header::ajax_header_crop()</a><code>wp-admin/includes/class-custom-image-header.php</code></td><td><p>Gets attachment uploaded by Media Manager, crops it, then saves it as a new object. Returns JSON-encoded object details.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/custom_image_header/ajax_header_add/">Custom_Image_Header::ajax_header_add()</a><code>wp-admin/includes/class-custom-image-header.php</code></td><td><p>Given an attachment ID for a header image, updates its “last used” timestamp to now.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/custom_image_header/ajax_header_remove/">Custom_Image_Header::ajax_header_remove()</a><code>wp-admin/includes/class-custom-image-header.php</code></td><td><p>Given an attachment ID for a header image, unsets it as a user-uploaded header image for the active theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/custom_background/wp_set_background_image/">Custom_Background::wp_set_background_image()</a><code>wp-admin/includes/class-custom-background.php</code></td><td></td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/save/">WP_Customize_Manager::save()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Handles customize_save WP Ajax request to save/update a changeset.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_manager/setup_theme/">WP_Customize_Manager::setup_theme()</a><code>wp-includes/class-wp-customize-manager.php</code></td><td><p>Starts preview and customize theme.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wp_customize_widgets/wp_ajax_update_widget/">WP_Customize_Widgets::wp_ajax_update_widget()</a><code>wp-includes/class-wp-customize-widgets.php</code></td><td><p>Updates widget settings asynchronously.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 80 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.0.3/">2.0.3</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="697" id="comment-697">
+<article class="comment-body" id="div-comment-697">
+<a class="screen-reader-text" href="#comment-content-697">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-697">
+<p><strong>Example</strong><br>
+In your main file, set the nonce like this:</br></p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+//Set Your Nonce
+$ajax_nonce = wp_create_nonce( "wpdocs-special-string" );
+?&gt;
+
+&lt;script type="text/javascript"&gt;
+jQuery(document).ready(function($){
+	var data = {
+		action: 'wpdocs_action',
+		security: '&lt;?php echo $ajax_nonce; ?&gt;',
+		wpdocs_string: 'Hello World!'
+	};
+	$.post(ajaxurl, data, function(response) {
+		alert("Response: " + response);
+	});
+});
+&lt;/script&gt;</code></pre>
+<p>In your AJAX file, check the referrer like this:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">/**
+ * Check the referrer for the AJAX call.
+ */
+function wpdocs_action_function() {
+	check_ajax_referer( 'wpdocs-special-string', 'security' );
+	echo sanitize_text_field( $_POST['wpdocs_string'] );
+	die;
+}
+add_action( 'wp_ajax_wpdocs_action', 'wpdocs_action_function' );</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-697">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

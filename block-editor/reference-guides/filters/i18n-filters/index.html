@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/filters/">Hooks Reference</a></span><span class="is-current-page">i18n Filters</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>i18n Filters</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The i18n functions (<code>__()</code>, <code>_x()</code>, <code>_n()</code> and <code>_nx()</code>) provide translations of strings for use in your code. The values returned by these functions are filterable if you need to override them, using the following filters:</p>
+<ul>
+<li><code>i18n.gettext</code></li>
+<li><code>i18n.gettext_with_context</code></li>
+<li><code>i18n.ngettext</code></li>
+<li><code>i18n.ngettext_with_context</code></li>
+</ul>
+<h2 class="is-toc-heading" id="filter-arguments" tabindex="-1"><a href="#filter-arguments">Filter Arguments</a></h2>
+<p>The filters are passed the following arguments, in line with their PHP equivalents.</p>
+<h3 class="is-toc-heading" id="i18n-gettext" tabindex="-1"><a href="#i18n-gettext">i18n.gettext</a></h3>
+<pre><code class="language-jsx">function i18nGettextCallback( translation, text, domain ) {
+    return translation;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="i18n-gettext_with_context" tabindex="-1"><a href="#i18n-gettext_with_context">i18n.gettext_with_context</a></h3>
+<pre><code class="language-jsx">function i18nGettextWithContextCallback( translation, text, context, domain ) {
+    return translation;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="i18n-ngettext" tabindex="-1"><a href="#i18n-ngettext">i18n.ngettext</a></h3>
+<pre><code class="language-jsx">function i18nNgettextCallback( translation, single, plural, number, domain ) {
+    return translation;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="i18n-ngettext_with_context" tabindex="-1"><a href="#i18n-ngettext_with_context">i18n.ngettext_with_context</a></h3>
+<pre><code class="language-jsx">function i18nNgettextWithContextCallback(
+    translation,
+    single,
+    plural,
+    number,
+    context,
+    domain
+) {
+    return translation;
+}
+</code></pre>
+<h2 class="is-toc-heading" id="basic-example" tabindex="-1"><a href="#basic-example">Basic Example</a></h2>
+<p>Here is a simple example, using the <code>i18n.gettext</code> filter to override a specific translation.</p>
+<pre><code class="language-jsx">// Define our filter callback.
+function myPluginGettextFilter( translation, text, domain ) {
+    if ( text === 'Create Reusable block' ) {
+        return 'Save to MyOrg block library';
+    }
+    return translation;
+}
+
+// Adding the filter
+wp.hooks.addFilter(
+    'i18n.gettext',
+    'my-plugin/override-add-to-reusable-blocks-label',
+    myPluginGettextFilter
+);
+</code></pre>
+<h2 class="is-toc-heading" id="using-text-domain-specific-filters" tabindex="-1"><a href="#using-text-domain-specific-filters">Using ‘text domain’-specific filters</a></h2>
+<p>Filters that are specific to the text domain you’re operating on are generally preferred for performance reasons (since your callback will only be run for strings in the relevant text domain).</p>
+<p>To attach to a text domain-specific filter append an underscore and the text-domain to the standard filter name. For example, if filtering a string where the text domain is “woocommerce”, you would use one of the following filters:</p>
+<ul>
+<li><code>i18n.gettext_woocommerce</code></li>
+<li><code>i18n.gettext_with_context_woocommerce</code></li>
+<li><code>i18n.ngettext_woocommerce</code></li>
+<li><code>i18n.ngettext_with_context_woocommerce</code></li>
+</ul>
+<p>For example:</p>
+<pre><code class="language-jsx">// Define our filter callback.
+function myPluginGettextFilter( translation, text, domain ) {
+    if ( text === 'You’ve fulfilled all your orders' ) {
+        return 'All packed up and ready to go. Good job!';
+    }
+    return translation;
+}
+
+// Adding the filter
+wp.hooks.addFilter(
+    'i18n.gettext_woocommerce',
+    'my-plugin/override-fulfilled-all-orders-text',
+    myPluginGettextFilter
+);
+</code></pre>
+<p><em>Note</em>: To apply a filter where the text-domain is <code>undefined</code> (for example WordPress core strings), then use the name “default” to construct the filter name.</p>
+<ul>
+<li><code>i18n.gettext_default</code></li>
+<li><code>i18n.gettext_with_context_default</code></li>
+<li><code>i18n.ngettext_default</code></li>
+<li><code>i18n.ngettext_with_context_default</code></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

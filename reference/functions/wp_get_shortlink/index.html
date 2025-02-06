@@ -1,0 +1,149 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_get_shortlink()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_get_shortlink()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_get_shortlink( <span class="arg-type">int</span> <span class="arg-name">$id</span>,  <span class="arg-type">string</span> <span class="arg-name">$context</span> = <span class="arg-default">'post'</span>,  <span class="arg-type">bool</span> <span class="arg-name">$allow_slugs</span> = <span class="arg-default">true</span> ): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Returns a shortlink for a post, page, attachment, or site.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>This function exists to provide a shortlink tag that all themes and plugins can target.<br/>A plugin must hook in to provide the actual shortlinks. Default shortlink support is limited to providing ?p= style links for posts. Plugins can short-circuit this function via the <a href="https://developer.notmatt.press/reference/hooks/pre_get_shortlink/">‘pre_get_shortlink’</a> filter or filter the output via the <a href="https://developer.notmatt.press/reference/hooks/get_shortlink/">‘get_shortlink’</a> filter.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$id</code><span class="type"><span class="int">int</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">A post or site ID. Default is 0, which means the current post or site.</span></div></dd><dt><code>$context</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether the ID is a <code>'site'</code> ID, <code>'post'</code> ID, or <code>'media'</code> ID. If <code>'post'</code>,                            the post_type of the post is consulted. If <code>'query'</code>, the current query is consulted                            to determine the ID and context. Default <code>'post'</code>.</span></div><p class="default">Default:<code>'post'</code></p></dd><dt><code>$allow_slugs</code><span class="type"><span class="bool">bool</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Whether to allow post slugs in the shortlink. It is up to the plugin how                            and whether to honor this. </span></div><p class="default">Default:<code>true</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> A shortlink or an empty string if no shortlink exists for the requested resource or if shortlinks                are not enabled.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="4145"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_get_shortlink( $id = 0, $context = 'post', $allow_slugs = true ) {
+	/**
+	 * Filters whether to preempt generating a shortlink for the given post.
+	 *
+	 * Returning a value other than false from the filter will short-circuit
+	 * the shortlink generation process, returning that value instead.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param false|string $return      Short-circuit return value. Either false or a URL string.
+	 * @param int          $id          Post ID, or 0 for the current post.
+	 * @param string       $context     The context for the link. One of 'post' or 'query',
+	 * @param bool         $allow_slugs Whether to allow post slugs in the shortlink.
+	 */
+	$shortlink = apply_filters( 'pre_get_shortlink', false, $id, $context, $allow_slugs );
+
+	if ( false !== $shortlink ) {
+		return $shortlink;
+	}
+
+	$post_id = 0;
+	if ( 'query' === $context &amp;&amp; is_singular() ) {
+		$post_id = get_queried_object_id();
+		$post    = get_post( $post_id );
+	} elseif ( 'post' === $context ) {
+		$post = get_post( $id );
+		if ( ! empty( $post-&gt;ID ) ) {
+			$post_id = $post-&gt;ID;
+		}
+	}
+
+	$shortlink = '';
+
+	// Return `?p=` link for all public post types.
+	if ( ! empty( $post_id ) ) {
+		$post_type = get_post_type_object( $post-&gt;post_type );
+
+		if ( 'page' === $post-&gt;post_type
+			&amp;&amp; 'page' === get_option( 'show_on_front' ) &amp;&amp; (int) get_option( 'page_on_front' ) === $post-&gt;ID
+		) {
+			$shortlink = home_url( '/' );
+		} elseif ( $post_type &amp;&amp; $post_type-&gt;public ) {
+			$shortlink = home_url( '?p=' . $post_id );
+		}
+	}
+
+	/**
+	 * Filters the shortlink for a post.
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param string $shortlink   Shortlink URL.
+	 * @param int    $id          Post ID, or 0 for the current post.
+	 * @param string $context     The context for the link. One of 'post' or 'query',
+	 * @param bool   $allow_slugs Whether to allow post slugs in the shortlink. Not used by default.
+	 */
+	return apply_filters( 'get_shortlink', $shortlink, $id, $context, $allow_slugs );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/link-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/link-template.php#L4145">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/link-template.php#L4145-L4202">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/get_shortlink/"><span class="hook-func">apply_filters</span>( ‘get_shortlink’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$shortlink</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$allow_slugs</span></nobr> )</a></dt><dd><p>Filters the shortlink for a post.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/pre_get_shortlink/"><span class="hook-func">apply_filters</span>( ‘pre_get_shortlink’,  <nobr><span class="arg-type">false|string</span> <span class="arg-name">$return</span></nobr>,  <nobr><span class="arg-type">int</span> <span class="arg-name">$id</span></nobr>,  <nobr><span class="arg-type">string</span> <span class="arg-name">$context</span></nobr>,  <nobr><span class="arg-type">bool</span> <span class="arg-name">$allow_slugs</span></nobr> )</a></dt><dd><p>Filters whether to preempt generating a shortlink for the given post.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/is_singular/">is_singular()</a><code>wp-includes/query.php</code></td><td><p>Determines whether the query is for an existing single post of any post type (post, attachment, page, custom post types).</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_queried_object_id/">get_queried_object_id()</a><code>wp-includes/query.php</code></td><td><p>Retrieves the ID of the currently queried object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the URL for the current site where the front end is accessible.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_option/">get_option()</a><code>wp-includes/option.php</code></td><td><p>Retrieves an option value based on an option name.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post_type_object/">get_post_type_object()</a><code>wp-includes/post.php</code></td><td><p>Retrieves a post type object by name.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 5 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_shortlink_wp_head/">wp_shortlink_wp_head()</a><code>wp-includes/link-template.php</code></td><td><p>Injects rel=shortlink into the head if a shortlink is defined for the current page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_shortlink_header/">wp_shortlink_header()</a><code>wp-includes/link-template.php</code></td><td><p>Sends a Link: rel=shortlink header if a shortlink is defined for the current page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/the_shortlink/">the_shortlink()</a><code>wp-includes/link-template.php</code></td><td><p>Displays the shortlink for a post.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_admin_bar_shortlink_menu/">wp_admin_bar_shortlink_menu()</a><code>wp-includes/admin-bar.php</code></td><td><p>Provides a shortlink.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.0.0/">3.0.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1049" id="comment-1049">
+<article class="comment-body" id="div-comment-1049">
+<a class="screen-reader-text" href="#comment-content-1049">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1049">
+<p><strong>Basic Example</strong><br/>
+Display the short link in plain text such as “Short URL: <a href="http://example.com/?p=1234" rel="nofollow ugc">http://example.com/?p=1234</a>”</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">Short URL: &lt;?php echo wp_get_shortlink(); ?&gt; </code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1049">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

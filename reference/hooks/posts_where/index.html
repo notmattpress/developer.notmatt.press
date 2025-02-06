@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/hooks/">Hooks</a></span><span><a href="https://developer.wordpress.org/reference/classes/wp_query/get_posts/">WP_Query::get_posts</a></span><span class="is-current-page">posts_where</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>posts_where</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="hook-func">apply_filters_ref_array</span>( ‘posts_where’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$where</span></nobr>,  <nobr><span class="arg-type">WP_Query</span> <span class="arg-name">$query</span></nobr> )</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Filters the WHERE clause of the query.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$where</code><span class="type"><span class="string">string</span></span></dt><dd><div class="desc"><span class="description">The WHERE clause of the query.</span></div></dd><dt><code>$query</code><span class="type"><span class="WP_Query"><a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a></span></span></dt><dd><div class="desc"><span class="description">The <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_Query</a> instance (passed by reference).</span></div></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<ul class="wp-block-list">
+<li>This filter applies to the posts where clause and allows you to restrict which posts will show up in various areas of the site. Combined with <code>restrict_manage_posts</code> it allows you to only show posts matching specific conditions.
+<p>Here is an example to match the <code>restrict_manage_posts</code> example:</p>
+<p></p></li>
+</ul>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">add_filter( 'posts_where' , 'posts_where' );
+
+function posts_where( $where ) {
+
+if( is_admin() ) {
+global $wpdb;
+
+if ( isset( $_GET['author_restrict_posts'] ) &amp;&amp; !empty( $_GET['author_restrict_posts'] ) &amp;&amp; intval( $_GET['author_restrict_posts'] ) != 0 ) {
+$author = intval( $_GET['author_restrict_posts'] );
+
+$where .= " AND ID IN (SELECT object_id FROM {$wpdb-&gt;term_relationships} WHERE term_taxonomy_id=$author )";
+}
+}
+return $where;
+}</code></pre>
+<p>Depending on setup, if we had a custom post type of type ‘book’ with a taxonomy (category style) of type ‘author’, this filter would allow us to only show books written by a specific author.
+</p>
+<li>Certain functions which retrieve posts do not run filters, so the posts_where filter functions you attach will not modify the query. To overcome this, set suppress_filters to false in the argument array passed to the function. The following code sample illustrates this.
+<p> </p></li>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">//some function that modifies the query
+function useless_condition ( $where ) { return $where . ' AND 1=1 '; }
+
+//attach your function to the posts_where filter
+add_filter( 'posts_where' , 'useless_condition' );
+
+//get posts AND make sure filters are NOT suppressed
+$posts = get_posts( array( 'suppress_filters' =&gt; FALSE ) );</code></pre>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2722"><code class="language-php line-numbers" id="wporg-source-code" lang="php">$where = apply_filters_ref_array( 'posts_where', array( $where, &amp;$this ) );
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-wp-query.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-wp-query.php#L2722">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-wp-query.php#L2722-L2722">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_query/get_posts/">WP_Query::get_posts()</a><code>wp-includes/class-wp-query.php</code></td><td><p>Retrieves an array of posts based on query variables.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/1.5.0/">1.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-aurovrata even thread-odd thread-alt depth-1" data-comment-id="3491" id="comment-3491">
+<article class="comment-body" id="div-comment-3491">
+<a class="screen-reader-text" href="#comment-content-3491">Skip to note 2 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3491">
+<p>Please note that the post_type query variable is not set for standard types (page, post and attachment, see <a href="https://developer.notmatt.press/reference/classes/wp_query/" rel="class">WP_QUery</a> class file line 2396 on <a href="https://core.trac.wordpress.org/browser/tags/5.3/src/wp-includes/class-wp-query.php#L2396" rel="nofollow ugc">trac</a>), only for custom post types, so this is how you can test for each type,</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">    add_filter( 'posts_where' , 'posts_where', 10, 2);
+    function posts_where( $args, $wp_query_obj ) {
+      $type = $wp_query_obj-&gt;query_vars['post_type'];
+      switch(true){
+        case 'any'==$type: //query any type (see codex for more details).
+          break;
+        case !empty($type) &amp;&amp; is_array($type):
+          //multiple post types define
+          break;
+        case !empty($type):
+          //post type is a custom post.
+          break;
+        case $wp_query_obj-&gt;is_attachment():
+          //post type is empty but is a media.
+          $type='attachment';
+          break;
+        case $wp_query_obj-&gt;is_page():
+          //post type is empty but is a page.
+          $type='page';
+          break;
+        default:
+          //post type is empty and not an attachment nor a page, so is a post.
+          $type='post';
+          break;
+      }
+      return $where;
+    }</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="1" id="feedback-3491">
+<ul class="children">
+<li class="comment byuser comment-author-aurovrata odd alt depth-2" data-comment-id="3908" id="comment-3908">
+<article class="comment-body" id="div-comment-3908">
+<div class="wporg-has-embedded-code comment-content" id="comment-content-3908">
+<div>Actually the above is incomplete, post_types are not being set for taxonomy archive queries.  This is a bug which has been filed on <a href="https://core.trac.wordpress.org/ticket/50070" rel="nofollow ugc">core trac</a>,</div>
+<div><a class="url" href="https://profiles.wordpress.org/aurovrata/" rel="external nofollow">Aurovrata Venet</a> <a class="comment-date" href="https://developer.notmatt.press/reference/hooks/posts_where/#comment-3908"><time datetime="2020-05-27T17:01:45+00:00">5 years ago</time></a></div>
+</div><!-- .comment-content -->
+</article>
+</li>
+</ul>
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

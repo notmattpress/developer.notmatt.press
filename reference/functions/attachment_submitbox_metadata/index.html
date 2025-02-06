@@ -1,0 +1,291 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">attachment_submitbox_metadata()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>attachment_submitbox_metadata()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">attachment_submitbox_metadata()</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Displays non-editable attachment metadata in the publish meta box.</p>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="3307"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function attachment_submitbox_metadata() {
+	$post          = get_post();
+	$attachment_id = $post-&gt;ID;
+
+	$file     = get_attached_file( $attachment_id );
+	$filename = esc_html( wp_basename( $file ) );
+
+	$media_dims = '';
+	$meta       = wp_get_attachment_metadata( $attachment_id );
+
+	if ( isset( $meta['width'], $meta['height'] ) ) {
+		/* translators: 1: A number of pixels wide, 2: A number of pixels tall. */
+		$media_dims .= "&lt;span id='media-dims-$attachment_id'&gt;" . sprintf( __( '%1$s by %2$s pixels' ), $meta['width'], $meta['height'] ) . '&lt;/span&gt;';
+	}
+	/** This filter is documented in wp-admin/includes/media.php */
+	$media_dims = apply_filters( 'media_meta', $media_dims, $post );
+
+	$att_url = wp_get_attachment_url( $attachment_id );
+
+	$author = new WP_User( $post-&gt;post_author );
+
+	$uploaded_by_name = __( '(no author)' );
+	$uploaded_by_link = '';
+
+	if ( $author-&gt;exists() ) {
+		$uploaded_by_name = $author-&gt;display_name ? $author-&gt;display_name : $author-&gt;nickname;
+		$uploaded_by_link = get_edit_user_link( $author-&gt;ID );
+	}
+	?&gt;
+	&lt;div class="misc-pub-section misc-pub-uploadedby"&gt;
+		&lt;?php if ( $uploaded_by_link ) { ?&gt;
+			&lt;?php _e( 'Uploaded by:' ); ?&gt; &lt;a href="&lt;?php echo $uploaded_by_link; ?&gt;"&gt;&lt;strong&gt;&lt;?php echo $uploaded_by_name; ?&gt;&lt;/strong&gt;&lt;/a&gt;
+		&lt;?php } else { ?&gt;
+			&lt;?php _e( 'Uploaded by:' ); ?&gt; &lt;strong&gt;&lt;?php echo $uploaded_by_name; ?&gt;&lt;/strong&gt;
+		&lt;?php } ?&gt;
+	&lt;/div&gt;
+
+	&lt;?php
+	if ( $post-&gt;post_parent ) {
+		$post_parent = get_post( $post-&gt;post_parent );
+		if ( $post_parent ) {
+			$uploaded_to_title = $post_parent-&gt;post_title ? $post_parent-&gt;post_title : __( '(no title)' );
+			$uploaded_to_link  = get_edit_post_link( $post-&gt;post_parent, 'raw' );
+			?&gt;
+			&lt;div class="misc-pub-section misc-pub-uploadedto"&gt;
+				&lt;?php if ( $uploaded_to_link ) { ?&gt;
+					&lt;?php _e( 'Uploaded to:' ); ?&gt; &lt;a href="&lt;?php echo $uploaded_to_link; ?&gt;"&gt;&lt;strong&gt;&lt;?php echo $uploaded_to_title; ?&gt;&lt;/strong&gt;&lt;/a&gt;
+				&lt;?php } else { ?&gt;
+					&lt;?php _e( 'Uploaded to:' ); ?&gt; &lt;strong&gt;&lt;?php echo $uploaded_to_title; ?&gt;&lt;/strong&gt;
+				&lt;?php } ?&gt;
+			&lt;/div&gt;
+			&lt;?php
+		}
+	}
+	?&gt;
+
+	&lt;div class="misc-pub-section misc-pub-attachment"&gt;
+		&lt;label for="attachment_url"&gt;&lt;?php _e( 'File URL:' ); ?&gt;&lt;/label&gt;
+		&lt;input type="text" class="widefat urlfield" readonly="readonly" name="attachment_url" id="attachment_url" value="&lt;?php echo esc_attr( $att_url ); ?&gt;" /&gt;
+		&lt;span class="copy-to-clipboard-container"&gt;
+			&lt;button type="button" class="button copy-attachment-url edit-media" data-clipboard-target="#attachment_url"&gt;&lt;?php _e( 'Copy URL to clipboard' ); ?&gt;&lt;/button&gt;
+			&lt;span class="success hidden" aria-hidden="true"&gt;&lt;?php _e( 'Copied!' ); ?&gt;&lt;/span&gt;
+		&lt;/span&gt;
+	&lt;/div&gt;
+	&lt;div class="misc-pub-section misc-pub-download"&gt;
+		&lt;a href="&lt;?php echo esc_attr( $att_url ); ?&gt;" download&gt;&lt;?php _e( 'Download file' ); ?&gt;&lt;/a&gt;
+	&lt;/div&gt;
+	&lt;div class="misc-pub-section misc-pub-filename"&gt;
+		&lt;?php _e( 'File name:' ); ?&gt; &lt;strong&gt;&lt;?php echo $filename; ?&gt;&lt;/strong&gt;
+	&lt;/div&gt;
+	&lt;div class="misc-pub-section misc-pub-filetype"&gt;
+		&lt;?php _e( 'File type:' ); ?&gt;
+		&lt;strong&gt;
+		&lt;?php
+
+		if ( preg_match( '/^.*?\.(\w+)$/', get_attached_file( $post-&gt;ID ), $matches ) ) {
+			echo esc_html( strtoupper( $matches[1] ) );
+			list( $mime_type ) = explode( '/', $post-&gt;post_mime_type );
+			if ( 'image' !== $mime_type &amp;&amp; ! empty( $meta['mime_type'] ) ) {
+				if ( "$mime_type/" . strtolower( $matches[1] ) !== $meta['mime_type'] ) {
+					echo ' (' . $meta['mime_type'] . ')';
+				}
+			}
+		} else {
+			echo strtoupper( str_replace( 'image/', '', $post-&gt;post_mime_type ) );
+		}
+
+		?&gt;
+		&lt;/strong&gt;
+	&lt;/div&gt;
+
+	&lt;?php
+
+	$file_size = false;
+
+	if ( isset( $meta['filesize'] ) ) {
+		$file_size = $meta['filesize'];
+	} elseif ( file_exists( $file ) ) {
+		$file_size = wp_filesize( $file );
+	}
+
+	if ( ! empty( $file_size ) ) {
+		?&gt;
+		&lt;div class="misc-pub-section misc-pub-filesize"&gt;
+			&lt;?php _e( 'File size:' ); ?&gt; &lt;strong&gt;&lt;?php echo size_format( $file_size ); ?&gt;&lt;/strong&gt;
+		&lt;/div&gt;
+		&lt;?php
+	}
+
+	if ( preg_match( '#^(audio|video)/#', $post-&gt;post_mime_type ) ) {
+		$fields = array(
+			'length_formatted' =&gt; __( 'Length:' ),
+			'bitrate'          =&gt; __( 'Bitrate:' ),
+		);
+
+		/**
+		 * Filters the audio and video metadata fields to be shown in the publish meta box.
+		 *
+		 * The key for each item in the array should correspond to an attachment
+		 * metadata key, and the value should be the desired label.
+		 *
+		 * @since 3.7.0
+		 * @since 4.9.0 Added the `$post` parameter.
+		 *
+		 * @param array   $fields An array of the attachment metadata keys and labels.
+		 * @param WP_Post $post   WP_Post object for the current attachment.
+		 */
+		$fields = apply_filters( 'media_submitbox_misc_sections', $fields, $post );
+
+		foreach ( $fields as $key =&gt; $label ) {
+			if ( empty( $meta[ $key ] ) ) {
+				continue;
+			}
+
+			?&gt;
+			&lt;div class="misc-pub-section misc-pub-mime-meta misc-pub-&lt;?php echo sanitize_html_class( $key ); ?&gt;"&gt;
+				&lt;?php echo $label; ?&gt;
+				&lt;strong&gt;
+				&lt;?php
+
+				switch ( $key ) {
+					case 'bitrate':
+						echo round( $meta['bitrate'] / 1000 ) . 'kb/s';
+						if ( ! empty( $meta['bitrate_mode'] ) ) {
+							echo ' ' . strtoupper( esc_html( $meta['bitrate_mode'] ) );
+						}
+						break;
+					case 'length_formatted':
+						echo human_readable_duration( $meta['length_formatted'] );
+						break;
+					default:
+						echo esc_html( $meta[ $key ] );
+						break;
+				}
+
+				?&gt;
+				&lt;/strong&gt;
+			&lt;/div&gt;
+			&lt;?php
+		}
+
+		$fields = array(
+			'dataformat' =&gt; __( 'Audio Format:' ),
+			'codec'      =&gt; __( 'Audio Codec:' ),
+		);
+
+		/**
+		 * Filters the audio attachment metadata fields to be shown in the publish meta box.
+		 *
+		 * The key for each item in the array should correspond to an attachment
+		 * metadata key, and the value should be the desired label.
+		 *
+		 * @since 3.7.0
+		 * @since 4.9.0 Added the `$post` parameter.
+		 *
+		 * @param array   $fields An array of the attachment metadata keys and labels.
+		 * @param WP_Post $post   WP_Post object for the current attachment.
+		 */
+		$audio_fields = apply_filters( 'audio_submitbox_misc_sections', $fields, $post );
+
+		foreach ( $audio_fields as $key =&gt; $label ) {
+			if ( empty( $meta['audio'][ $key ] ) ) {
+				continue;
+			}
+
+			?&gt;
+			&lt;div class="misc-pub-section misc-pub-audio misc-pub-&lt;?php echo sanitize_html_class( $key ); ?&gt;"&gt;
+				&lt;?php echo $label; ?&gt; &lt;strong&gt;&lt;?php echo esc_html( $meta['audio'][ $key ] ); ?&gt;&lt;/strong&gt;
+			&lt;/div&gt;
+			&lt;?php
+		}
+	}
+
+	if ( $media_dims ) {
+		?&gt;
+		&lt;div class="misc-pub-section misc-pub-dimensions"&gt;
+			&lt;?php _e( 'Dimensions:' ); ?&gt; &lt;strong&gt;&lt;?php echo $media_dims; ?&gt;&lt;/strong&gt;
+		&lt;/div&gt;
+		&lt;?php
+	}
+
+	if ( ! empty( $meta['original_image'] ) ) {
+		?&gt;
+		&lt;div class="misc-pub-section misc-pub-original-image word-wrap-break-word"&gt;
+			&lt;?php _e( 'Original image:' ); ?&gt;
+			&lt;a href="&lt;?php echo esc_url( wp_get_original_image_url( $attachment_id ) ); ?&gt;"&gt;
+				&lt;strong&gt;&lt;?php echo esc_html( wp_basename( wp_get_original_image_path( $attachment_id ) ) ); ?&gt;&lt;/strong&gt;
+			&lt;/a&gt;
+		&lt;/div&gt;
+		&lt;?php
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-admin/includes/media.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-admin/includes/media.php#L3307">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-admin/includes/media.php#L3307-L3518">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-hooks"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="hooks" tabindex="-1"><a href="#hooks">Hooks</a></h2> <dl><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/audio_submitbox_misc_sections/"><span class="hook-func">apply_filters</span>( ‘audio_submitbox_misc_sections’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$fields</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the audio attachment metadata fields to be shown in the publish meta box.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/media_meta/"><span class="hook-func">apply_filters</span>( ‘media_meta’,  <nobr><span class="arg-type">string</span> <span class="arg-name">$media_dims</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the media metadata.</p>
+</dd><dt class="wp-block-wporg-code-reference-title has-normal-font-size"><a href="https://developer.notmatt.press/reference/hooks/media_submitbox_misc_sections/"><span class="hook-func">apply_filters</span>( ‘media_submitbox_misc_sections’,  <nobr><span class="arg-type">array</span> <span class="arg-name">$fields</span></nobr>,  <nobr><span class="arg-type">WP_Post</span> <span class="arg-name">$post</span></nobr> )</a></dt><dd><p>Filters the audio and video metadata fields to be shown in the publish meta box.</p>
+</dd></dl></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_filesize/">wp_filesize()</a><code>wp-includes/functions.php</code></td><td><p>Wrapper for PHP filesize with filters and casting the result as an integer.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_original_image_url/">wp_get_original_image_url()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the URL to an original attachment image.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_original_image_path/">wp_get_original_image_path()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the path to an uploaded image file.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/human_readable_duration/">human_readable_duration()</a><code>wp-includes/functions.php</code></td><td><p>Converts a duration to human readable format.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_user/__construct/">WP_User::__construct()</a><code>wp-includes/class-wp-user.php</code></td><td><p>Constructor.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_basename/">wp_basename()</a><code>wp-includes/formatting.php</code></td><td><p>i18n-friendly version of basename().</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/sanitize_html_class/">sanitize_html_class()</a><code>wp-includes/formatting.php</code></td><td><p>Sanitizes an HTML classname to ensure it only contains valid characters.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/size_format/">size_format()</a><code>wp-includes/functions.php</code></td><td><p>Converts a number of bytes to the largest unit the bytes will fit into.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_edit_user_link/">get_edit_user_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the edit user link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_edit_post_link/">get_edit_post_link()</a><code>wp-includes/link-template.php</code></td><td><p>Retrieves the edit post link for post.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_metadata/">wp_get_attachment_metadata()</a><code>wp-includes/post.php</code></td><td><p>Retrieves attachment metadata for attachment ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_get_attachment_url/">wp_get_attachment_url()</a><code>wp-includes/post.php</code></td><td><p>Retrieves the URL for an attachment.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_attached_file/">get_attached_file()</a><code>wp-includes/post.php</code></td><td><p>Retrieves attached file path based on attachment ID.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_html/">esc_html()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML blocks.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_attr/">esc_attr()</a><code>wp-includes/formatting.php</code></td><td><p>Escaping for HTML attributes.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/esc_url/">esc_url()</a><code>wp-includes/formatting.php</code></td><td><p>Checks and cleans a URL.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/apply_filters/">apply_filters()</a><code>wp-includes/plugin.php</code></td><td><p>Calls the callback functions that have been added to a filter hook.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 13 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/3.5.0/">3.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

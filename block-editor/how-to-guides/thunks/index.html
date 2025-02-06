@@ -1,0 +1,217 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/how-to-guides/">How-to Guides</a></span><span class="is-current-page">Thunks in Core-Data</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Thunks in Core-Data</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p><a href="https://github.com/WordPress/gutenberg/pull/27276">Gutenberg 11.6</a> added support for <em>thunks</em>. You can think of thunks as functions that can be dispatched:</p>
+<pre><code class="language-js">// actions.js
+export const myThunkAction = () =&gt; ( { select, dispatch } ) =&gt; {
+    return "I'm a thunk! I can be dispatched, use selectors, and even dispatch other actions.";
+};
+</code></pre>
+<h2 class="is-toc-heading" id="why-are-thunks-useful" tabindex="-1"><a href="#why-are-thunks-useful">Why are thunks useful?</a></h2>
+<p>Thunks <a href="https://jsnajdr.wordpress.com/2021/10/04/motivation-for-thunks/">expand the meaning of what a Redux action is</a>. Before thunks, actions were purely functional and could only return and yield data. Common use cases such as interacting with the store or requesting API data from an action required using a separate <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-data/#controls">control</a>. You would often see code like:</p>
+<pre><code class="language-js">export function* saveRecordAction( id ) {
+    const record = yield controls.select( 'current-store', 'getRecord', id );
+    yield { type: 'BEFORE_SAVE', id, record };
+    const results = yield controls.fetch({ url: 'https://...', method: 'POST', data: record });
+    yield { type: 'AFTER_SAVE', id, results };
+    return results;
+}
+
+const controls = {
+    select: // ...,
+    fetch: // ...,
+};
+</code></pre>
+<p>Side effects like store operations and fetch functions would be implemented outside of the action. Thunks provide an alternative to this approach. They allow you to use side effects inline, like this:</p>
+<pre><code class="language-js">export const saveRecordAction = ( id ) =&gt; async ({ select, dispatch }) =&gt; {
+    const record = select( 'current-store', 'getRecord', id );
+    dispatch({ type: 'BEFORE_SAVE', id, record });
+    const response = await fetch({ url: 'https://...', method: 'POST', data: record });
+    const results = await response.json();
+    dispatch({ type: 'AFTER_SAVE', id, results });
+    return results;
+}
+</code></pre>
+<p>This removes the need to implement separate controls.</p>
+<h3 class="is-toc-heading" id="thunks-have-access-to-the-store-helpers" tabindex="-1"><a href="#thunks-have-access-to-the-store-helpers">Thunks have access to the store helpers</a></h3>
+<p>Let’s take a look at an example from Gutenberg core. Prior to thunks, the <code>toggleFeature</code> action from the <code>@wordpress/interface</code> package was implemented like this:</p>
+<pre><code class="language-js">export function* toggleFeature( scope, featureName ) {
+    const currentValue = yield controls.select(
+        interfaceStoreName,
+        'isFeatureActive',
+        scope,
+        featureName
+    );
+
+    yield controls.dispatch(
+        interfaceStoreName,
+        'setFeatureValue',
+        scope,
+        featureName,
+        ! currentValue
+    );
+}
+</code></pre>
+<p>Controls were the only way to <code>dispatch</code> actions and <code>select</code> data from the store.</p>
+<p>With thunks, there is a cleaner way. This is how <code>toggleFeature</code> is implemented now:</p>
+<pre><code class="language-js">export function toggleFeature( scope, featureName ) {
+    return function ( { select, dispatch } ) {
+        const currentValue = select.isFeatureActive( scope, featureName );
+        dispatch.setFeatureValue( scope, featureName, ! currentValue );
+    };
+}
+</code></pre>
+<p>Thanks to the <code>select</code> and <code>dispatch</code> arguments, thunks may use the store directly without the need for generators and controls.</p>
+<h3 class="is-toc-heading" id="thunks-can-be-async" tabindex="-1"><a href="#thunks-can-be-async">Thunks can be async</a></h3>
+<p>Imagine a simple React app that allows you to set the temperature on a thermostat. It only has one input and one button. Clicking the button dispatches a <code>saveTemperatureToAPI</code> action with the value from the input.</p>
+<p>If we used controls to save the temperature, the store definition would look like below:</p>
+<pre><code class="language-js">const store = wp.data.createReduxStore( 'my-store', {
+    actions: {
+        saveTemperatureToAPI: function*( temperature ) {
+            const result = yield { type: 'FETCH_JSON', url: 'https://...', method: 'POST', data: { temperature } };
+            return result;
+        }
+    },
+    controls: {
+        async FETCH_JSON( action ) {
+            const response = await window.fetch( action.url, {
+                method: action.method,
+                body: JSON.stringify( action.data ),
+            } );
+            return response.json();
+        }
+    },
+    // reducers, selectors, ...
+} );
+</code></pre>
+<p>While the code is reasonably straightforward, there is a level of indirection. The <code>saveTemperatureToAPI</code> action does not talk directly to the API, but has to go through the <code>FETCH_JSON</code> control.</p>
+<p>Let’s see how this indirection can be removed with thunks:</p>
+<pre><code class="language-js">const store = wp.data.createReduxStore( 'my-store', {
+    actions: {
+        saveTemperatureToAPI: ( temperature ) =&gt; async () =&gt; {
+            const response = await window.fetch( 'https://...', {
+                method: 'POST',
+                body: JSON.stringify( { temperature } ),
+            } );
+            return await response.json();
+        }
+    },
+    // reducers, selectors, ...
+} );
+</code></pre>
+<p>That’s pretty cool! What’s even better is that resolvers are supported as well:</p>
+<pre><code class="language-js">const store = wp.data.createReduxStore( 'my-store', {
+    // ...
+    selectors: {
+        getTemperature: ( state ) =&gt; state.temperature
+    },
+    resolvers: {
+        getTemperature: () =&gt; async ( { dispatch } ) =&gt; {
+            const response = await window.fetch( 'https://...' );
+            const result = await response.json();
+            dispatch.receiveCurrentTemperature( result.temperature );
+        }
+    },
+    // ...
+} );
+</code></pre>
+<p>Support for thunks is included by default in every data store, just like the (now legacy) support for<br/>
+generators and controls.</p>
+<h2 class="is-toc-heading" id="thunks-api" tabindex="-1"><a href="#thunks-api">Thunks API</a></h2>
+<p>A thunk receives a single object argument with the following keys:</p>
+<h3 class="is-toc-heading" id="select" tabindex="-1"><a href="#select">select</a></h3>
+<p>An object containing the store’s selectors pre-bound to state, which means you don’t need to provide the state, only the additional arguments. <code>select</code> triggers the related resolvers, if any, but does not wait for them to finish. It just returns the current value even if it’s null.</p>
+<p>If a selector is part of the public API, it’s available as a method on the select object:</p>
+<pre><code class="language-js">const thunk = () =&gt; ( { select } ) =&gt; {
+    // select is an object of the store’s selectors, pre-bound to current state:
+    const temperature = select.getTemperature();
+}
+</code></pre>
+<p>Since not all selectors are exposed on the store, <code>select</code> doubles as a function that supports passing a selector as an argument:</p>
+<pre><code class="language-js">const thunk = () =&gt; ( { select } ) =&gt; {
+    // select supports private selectors:
+    const doubleTemperature = select( ( temperature ) =&gt; temperature * 2 );
+}
+</code></pre>
+<h3 class="is-toc-heading" id="resolveselect" tabindex="-1"><a href="#resolveselect">resolveSelect</a></h3>
+<p><code>resolveSelect</code> is the same as <code>select</code>, except it returns a promise that resolves with the value provided by the related resolver.</p>
+<pre><code class="language-js">const thunk = () =&gt; ( { resolveSelect } ) =&gt; {
+    const temperature = await resolveSelect.getTemperature();
+}
+</code></pre>
+<h3 class="is-toc-heading" id="dispatch" tabindex="-1"><a href="#dispatch">dispatch</a></h3>
+<p>An object containing the store’s actions</p>
+<p>If an action is part of the public API, it’s available as a method on the <code>dispatch</code> object:</p>
+<pre><code class="language-js">const thunk = () =&gt; ( { dispatch } ) =&gt; {
+    // dispatch is an object of the store’s actions:
+    const temperature = await dispatch.retrieveTemperature();
+}
+</code></pre>
+<p>Since not all actions are exposed on the store, <code>dispatch</code> doubles as a function that supports passing a Redux action as an argument:</p>
+<pre><code class="language-js">const thunk = () =&gt; async ( { dispatch } ) =&gt; {
+    // dispatch is also a function accepting inline actions:
+    dispatch({ type: 'SET_TEMPERATURE', temperature: result.value });
+
+    // thunks are interchangeable with actions
+    dispatch( updateTemperature( 100 ) );
+
+    // Thunks may be async, too. When they are, dispatch returns a promise
+    await dispatch( ( ) =&gt; window.fetch( /* ... */ ) );
+}
+</code></pre>
+<h3 class="is-toc-heading" id="registry" tabindex="-1"><a href="#registry">registry</a></h3>
+<p>A registry provides access to other stores through its <code>dispatch</code>, <code>select</code>, and <code>resolveSelect</code> methods.<br/>
+These are very similar to the ones described above, with a slight twist. Calling <code>registry.select( storeName )</code> returns a function returning an object of selectors from <code>storeName</code>. This comes handy when you need to interact with another store. For example:</p>
+<pre><code class="language-js">const thunk = () =&gt; ( { registry } ) =&gt; {
+  const error = registry.select( 'core' ).getLastEntitySaveError( 'root', 'menu', menuId );
+  /* ... */
+}
+</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

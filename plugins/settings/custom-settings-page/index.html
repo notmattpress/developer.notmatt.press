@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/settings/">Settings</a></span><span class="is-current-page">Custom Settings Page</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Custom Settings Page</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>Creating a custom settings page includes the combination of: <a href="https://developer.notmatt.press/plugins/administration-menus/">creating an administration menu</a>, <a href="https://developer.notmatt.press/plugins/settings/using-settings-api/">using Settings API</a> and <a href="https://developer.notmatt.press/plugins/settings/options-api/">Options API</a>.</p>
+<div class="wp-block-wporg-notice is-alert-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content"><br/>
+Please read these chapters before attempting to create your own settings page.<br/>
+</div></div>
+<p>The example below can be used for quick reference on these topics by following the comments.</p>
+<h2 class="wp-block-heading">Complete Example</h2>
+<p>Complete example which adds a Top-Level Menu named <code>WPOrg</code>, registers a custom option named <code>wporg_options</code> and performs the CRUD (create, read, update, delete) logic using Settings API and Options API (including showing error/update messages).</p>
+<pre class="wp-block-code expanded"><code class="language-php" lang="php">/**
+ * @internal never define functions inside callbacks.
+ * these functions could be run multiple times; this would result in a fatal error.
+ */
+
+/**
+ * custom option and settings
+ */
+function wporg_settings_init() {
+	// Register a new setting for "wporg" page.
+	register_setting( 'wporg', 'wporg_options' );
+
+	// Register a new section in the "wporg" page.
+	add_settings_section(
+		'wporg_section_developers',
+		__( 'The Matrix has you.', 'wporg' ), 'wporg_section_developers_callback',
+		'wporg'
+	);
+
+	// Register a new field in the "wporg_section_developers" section, inside the "wporg" page.
+	add_settings_field(
+		'wporg_field_pill', // As of WP 4.6 this value is used only internally.
+		                        // Use $args' label_for to populate the id inside the callback.
+			__( 'Pill', 'wporg' ),
+		'wporg_field_pill_cb',
+		'wporg',
+		'wporg_section_developers',
+		array(
+			'label_for'         =&gt; 'wporg_field_pill',
+			'class'             =&gt; 'wporg_row',
+			'wporg_custom_data' =&gt; 'custom',
+		)
+	);
+}
+
+/**
+ * Register our wporg_settings_init to the admin_init action hook.
+ */
+add_action( 'admin_init', 'wporg_settings_init' );
+
+
+/**
+ * Custom option and settings:
+ *  - callback functions
+ */
+
+
+/**
+ * Developers section callback function.
+ *
+ * @param array $args  The settings array, defining title, id, callback.
+ */
+function wporg_section_developers_callback( $args ) {
+	?&gt;
+	&lt;p id="&lt;?php echo esc_attr( $args['id'] ); ?&gt;"&gt;&lt;?php esc_html_e( 'Follow the white rabbit.', 'wporg' ); ?&gt;&lt;/p&gt;
+	&lt;?php
+}
+
+/**
+ * Pill field callbakc function.
+ *
+ * WordPress has magic interaction with the following keys: label_for, class.
+ * - the "label_for" key value is used for the "for" attribute of the &lt;label&gt;.
+ * - the "class" key value is used for the "class" attribute of the &lt;tr&gt; containing the field.
+ * Note: you can add custom key value pairs to be used inside your callbacks.
+ *
+ * @param array $args
+ */
+function wporg_field_pill_cb( $args ) {
+	// Get the value of the setting we've registered with register_setting()
+	$options = get_option( 'wporg_options' );
+	?&gt;
+	&lt;select
+			id="&lt;?php echo esc_attr( $args['label_for'] ); ?&gt;"
+			data-custom="&lt;?php echo esc_attr( $args['wporg_custom_data'] ); ?&gt;"
+			name="wporg_options[&lt;?php echo esc_attr( $args['label_for'] ); ?&gt;]"&gt;
+		&lt;option value="red" &lt;?php echo isset( $options[ $args['label_for'] ] ) ? ( selected( $options[ $args['label_for'] ], 'red', false ) ) : ( '' ); ?&gt;&gt;
+			&lt;?php esc_html_e( 'red pill', 'wporg' ); ?&gt;
+		&lt;/option&gt;
+ 		&lt;option value="blue" &lt;?php echo isset( $options[ $args['label_for'] ] ) ? ( selected( $options[ $args['label_for'] ], 'blue', false ) ) : ( '' ); ?&gt;&gt;
+			&lt;?php esc_html_e( 'blue pill', 'wporg' ); ?&gt;
+		&lt;/option&gt;
+	&lt;/select&gt;
+	&lt;p class="description"&gt;
+		&lt;?php esc_html_e( 'You take the blue pill and the story ends. You wake in your bed and you believe whatever you want to believe.', 'wporg' ); ?&gt;
+	&lt;/p&gt;
+	&lt;p class="description"&gt;
+		&lt;?php esc_html_e( 'You take the red pill and you stay in Wonderland and I show you how deep the rabbit-hole goes.', 'wporg' ); ?&gt;
+	&lt;/p&gt;
+	&lt;?php
+}
+
+/**
+ * Add the top level menu page.
+ */
+function wporg_options_page() {
+	add_menu_page(
+		'WPOrg',
+		'WPOrg Options',
+		'manage_options',
+		'wporg',
+		'wporg_options_page_html'
+	);
+}
+
+
+/**
+ * Register our wporg_options_page to the admin_menu action hook.
+ */
+add_action( 'admin_menu', 'wporg_options_page' );
+
+
+/**
+ * Top level menu callback function
+ */
+function wporg_options_page_html() {
+	// check user capabilities
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	// add error/update messages
+
+	// check if the user have submitted the settings
+	// WordPress will add the "settings-updated" $_GET parameter to the url
+	if ( isset( $_GET['settings-updated'] ) ) {
+		// add settings saved message with the class of "updated"
+		add_settings_error( 'wporg_messages', 'wporg_message', __( 'Settings Saved', 'wporg' ), 'updated' );
+	}
+
+	// show error/update messages
+	settings_errors( 'wporg_messages' );
+	?&gt;
+	&lt;div class="wrap"&gt;
+		&lt;h1&gt;&lt;?php echo esc_html( get_admin_page_title() ); ?&gt;&lt;/h1&gt;
+		&lt;form action="options.php" method="post"&gt;
+			&lt;?php
+			// output security fields for the registered setting "wporg"
+			settings_fields( 'wporg' );
+			// output setting sections and their fields
+			// (sections are registered for "wporg", each field is registered to a specific section)
+			do_settings_sections( 'wporg' );
+			// output save settings button
+			submit_button( 'Save Settings' );
+			?&gt;
+		&lt;/form&gt;
+	&lt;/div&gt;
+	&lt;?php
+}</code></pre>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

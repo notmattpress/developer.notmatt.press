@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/plugins/">Plugin Handbook</a></span><span><a href="https://developer.wordpress.org/plugins/plugin-basics/">Plugin Basics</a></span><span class="is-current-page">Determining Plugin and Content Directories</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Determining Plugin and Content Directories</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow">
+<p>When coding WordPress plugins you often need to reference various files and folders throughout the WordPress installation and within your plugin or theme.</p>
+<p>WordPress provides several functions for easily determining where a given file or directory lives. Always use these functions in your plugins instead of hard-coding references to the wp-content directory or using the WordPress internal constants.</p>
+<div class="wp-block-wporg-notice is-tip-notice">
+<div class="wp-block-wporg-notice__icon"></div>
+<div class="wp-block-wporg-notice__content">WordPress allows users to place their wp-content directory anywhere they want and rename it whatever they want. Never assume that plugins will be in wp-content/plugins, uploads will be in wp-content/uploads, or that themes will be in wp-content/themes.</div></div>
+<p>PHP’s <code>__FILE__</code> magic-constant resolves symlinks automatically, so if the <code>wp-content</code> or <code>wp-content/plugins</code> or even the individual plugin directory is symlinked, hardcoded paths will not work correctly.</p>
+<h2 class="is-toc-heading wp-block-heading" id="common-usage" tabindex="-1"><a href="#common-usage">Common Usage</a></h2>
+<p>If your plugin includes JavaScript files, CSS files or other external files, then it’s likely you’ll need the URL to these files so you can load them into the page. To do this you should use the <a href="https://developer.notmatt.press/reference/functions/plugins_url/">plugins_url()</a> function like so:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">plugins_url( 'myscript.js', __FILE__ );</code></pre>
+<p>This will return the full URL to myscript.js, such as <code>example.com/wp-content/plugins/myplugin/myscript.js</code>.</p>
+<p>To load your plugins’ JavaScript or CSS into the page you should use <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_script/"><code>wp_enqueue_script()</code></a> or <a href="https://developer.notmatt.press/reference/functions/wp_enqueue_style/"><code>wp_enqueue_style()</code></a> respectively, passing the result of <code>plugins_url()</code> as the file URL.</p>
+<h2 class="is-toc-heading wp-block-heading" id="available-functions" tabindex="-1"><a href="#available-functions">Available Functions</a></h2>
+<p>WordPress includes many other functions for determining paths and URLs to files or directories within plugins, themes, and WordPress itself. See the individual DevHub pages for each function for complete information on their use.</p>
+<h3 class="is-toc-heading wp-block-heading" id="plugins" tabindex="-1"><a href="#plugins">Plugins</a></h3>
+<pre class="wp-block-code"><code class="language-php" lang="php">plugins_url()
+plugin_dir_url()
+plugin_dir_path()
+plugin_basename()</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="themes" tabindex="-1"><a href="#themes">Themes</a></h3>
+<pre class="wp-block-code"><code class="language-php" lang="php">get_template_directory_uri()
+get_stylesheet_directory_uri()
+get_stylesheet_uri()
+get_theme_root_uri()
+get_theme_root()
+get_theme_roots()
+get_stylesheet_directory()
+get_template_directory()</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="site-home" tabindex="-1"><a href="#site-home">Site Home</a></h3>
+<pre class="wp-block-code"><code class="language-php" lang="php">home_url()
+get_home_path()</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="wordpress" tabindex="-1"><a href="#wordpress">WordPress</a></h3>
+<pre class="wp-block-code"><code class="language-php" lang="php">admin_url()
+site_url()
+content_url()
+includes_url()
+wp_upload_dir()</code></pre>
+<h3 class="is-toc-heading wp-block-heading" id="multisite" tabindex="-1"><a href="#multisite">Multisite</a></h3>
+<pre class="wp-block-code"><code class="language-php" lang="php">get_admin_url()
+get_home_url()
+get_site_url()
+network_admin_url()
+network_site_url()
+network_home_url()</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="constants" tabindex="-1"><a href="#constants">Constants</a></h2>
+<p>WordPress makes use of the following constants when determining the path to the content and plugin directories. These should not be used directly by plugins or themes, but are listed here for completeness.</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">WP_CONTENT_DIR  // no trailing slash, full paths only
+WP_CONTENT_URL  // full url 
+WP_PLUGIN_DIR  // full path, no trailing slash
+WP_PLUGIN_URL  // full url, no trailing slash
+
+// Available per default in MS, not set in single site install
+// Can be used in single site installs (as usual: at your own risk)
+UPLOADS // (If set, uploads folder, relative to ABSPATH) (for e.g.: /wp-content/uploads)</code></pre>
+<h2 class="is-toc-heading wp-block-heading" id="related" tabindex="-1"><a href="#related">Related</a></h2>
+<p><strong><strong>WordPress Directories</strong></strong>:</p>
+<figure class="wp-block-table"><figure class="wp-block-table is-style-borderless"><table><tbody><tr><td><a href="https://developer.notmatt.press/reference/functions/home_url/">home_url()</a></td><td>Home URL</td><td><a href="http://www.example.com">http://www.example.com</a></td></tr><tr><td><a href="https://developer.notmatt.press/reference/functions/site_url/">site_url()</a></td><td>Site directory URL</td><td><a href="http://www.example.com">http://www.example.com</a> or <a href="http://www.example.com/wordpress">http://www.example.com/wordpress</a></td></tr><tr><td><a href="https://developer.notmatt.press/reference/functions/admin_url/">admin_url()</a></td><td>Admin directory URL</td><td><a href="http://www.example.com/wp-admin">http://www.example.com/wp-admin</a></td></tr><tr><td><a href="https://developer.notmatt.press/reference/functions/includes_url/">includes_url()</a></td><td>Includes directory URL</td><td><a href="http://www.example.com/wp-includes">http://www.example.com/wp-includes</a></td></tr><tr><td><a href="https://developer.notmatt.press/reference/functions/content_url/">content_url()</a></td><td>Content directory URL</td><td><a href="http://www.example.com/wp-content">http://www.example.com/wp-content</a></td></tr><tr><td><a href="https://developer.notmatt.press/reference/functions/plugins_url/">plugins_url()</a></td><td>Plugins directory URL</td><td><a href="http://www.example.com/wp-content/plugins">http://www.example.com/wp-content/plugins</a></td></tr><tr><td><a href="https://developer.notmatt.press/reference/functions/wp_upload_dir/">wp_upload_dir()</a></td><td>Upload directory URL (returns an array)</td><td><a href="http://www.example.com/wp-content/uploads">http://www.example.com/wp-content/uploads</a></td></tr></tbody></table></figure></figure>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

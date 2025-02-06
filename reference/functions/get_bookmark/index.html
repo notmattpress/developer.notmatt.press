@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_bookmark()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_bookmark()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_bookmark( <span class="arg-type">int|stdClass</span> <span class="arg-name">$bookmark</span>,  <span class="arg-type">string</span> <span class="arg-name">$output</span> = <span class="arg-default">OBJECT</span>,  <span class="arg-type">string</span> <span class="arg-name">$filter</span> = <span class="arg-default">'raw'</span> ): <span class="return-type">array|object|null</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves bookmark data.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$bookmark</code><span class="type"><span class="int">int</span>|<span class="stdClass">stdClass</span></span><span class="required">required</span></dt><dd><div class="desc"></div></dd><dt><code>$output</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">The required return type. One of OBJECT, ARRAY_A, or ARRAY_N, which                               correspond to an stdClass object, an associative array, or a numeric array,                               respectively. </span></div><p class="default">Default:<code>OBJECT</code></p></dd><dt><code>$filter</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">How to sanitize bookmark fields. Default <code>'raw'</code>.</span></div><p class="default">Default:<code>'raw'</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">array|object|null</span> Type returned depends on $output value.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="24"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_bookmark( $bookmark, $output = OBJECT, $filter = 'raw' ) {
+	global $wpdb;
+
+	if ( empty( $bookmark ) ) {
+		if ( isset( $GLOBALS['link'] ) ) {
+			$_bookmark = &amp; $GLOBALS['link'];
+		} else {
+			$_bookmark = null;
+		}
+	} elseif ( is_object( $bookmark ) ) {
+		wp_cache_add( $bookmark-&gt;link_id, $bookmark, 'bookmark' );
+		$_bookmark = $bookmark;
+	} else {
+		if ( isset( $GLOBALS['link'] ) &amp;&amp; ( $GLOBALS['link']-&gt;link_id === $bookmark ) ) {
+			$_bookmark = &amp; $GLOBALS['link'];
+		} else {
+			$_bookmark = wp_cache_get( $bookmark, 'bookmark' );
+			if ( ! $_bookmark ) {
+				$_bookmark = $wpdb-&gt;get_row( $wpdb-&gt;prepare( "SELECT * FROM $wpdb-&gt;links WHERE link_id = %d LIMIT 1", $bookmark ) );
+				if ( $_bookmark ) {
+					$_bookmark-&gt;link_category = array_unique( wp_get_object_terms( $_bookmark-&gt;link_id, 'link_category', array( 'fields' =&gt; 'ids' ) ) );
+					wp_cache_add( $_bookmark-&gt;link_id, $_bookmark, 'bookmark' );
+				}
+			}
+		}
+	}
+
+	if ( ! $_bookmark ) {
+		return $_bookmark;
+	}
+
+	$_bookmark = sanitize_bookmark( $_bookmark, $filter );
+
+	if ( OBJECT === $output ) {
+		return $_bookmark;
+	} elseif ( ARRAY_A === $output ) {
+		return get_object_vars( $_bookmark );
+	} elseif ( ARRAY_N === $output ) {
+		return array_values( get_object_vars( $_bookmark ) );
+	} else {
+		return $_bookmark;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/bookmark.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/bookmark.php#L24">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/bookmark.php#L24-L66">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_add/">wp_cache_add()</a><code>wp-includes/cache.php</code></td><td><p>Adds data to the cache, if the cache key doesn’t already exist.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_get_object_terms/">wp_get_object_terms()</a><code>wp-includes/taxonomy.php</code></td><td><p>Retrieves the terms associated with the given object(s), in the supplied taxonomies.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/sanitize_bookmark/">sanitize_bookmark()</a><code>wp-includes/bookmark.php</code></td><td><p>Sanitizes all bookmark fields.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wpdb/get_row/">wpdb::get_row()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Retrieves one row from the database.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/wp_cache_get/">wp_cache_get()</a><code>wp-includes/cache.php</code></td><td><p>Retrieves the cache contents from the cache by key and group.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/classes/wpdb/prepare/">wpdb::prepare()</a><code>wp-includes/class-wpdb.php</code></td><td><p>Prepares a SQL query for safe execution.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_ajax_delete_link/">wp_ajax_delete_link()</a><code>wp-admin/includes/ajax-actions.php</code></td><td><p>Handles deleting a link via AJAX.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_link_to_edit/">get_link_to_edit()</a><code>wp-admin/includes/bookmark.php</code></td><td><p>Retrieves link data based on its ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_update_link/">wp_update_link()</a><code>wp-admin/includes/bookmark.php</code></td><td><p>Updates a link in the database.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_link/">get_link()</a><code>wp-includes/deprecated.php</code></td><td><p>Retrieves bookmark data based on ID.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_edit_bookmark_link/">get_edit_bookmark_link()</a><code>wp-includes/link-template.php</code></td><td><p>Displays the edit bookmark link.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/edit_bookmark_link/">edit_bookmark_link()</a><code>wp-includes/link-template.php</code></td><td><p>Displays the edit bookmark link anchor content.</p>
+</td></tr><tr class="wporg-hidden"><td><a href="https://developer.notmatt.press/reference/functions/get_bookmark_field/">get_bookmark_field()</a><code>wp-includes/bookmark.php</code></td><td><p>Retrieves single bookmark data item or field.</p>
+</td></tr></tbody></table></figure><a class="wp-block-wporg-code-table-show-more" href="#">Show 2 more</a><a class="wp-block-wporg-code-table-show-less" href="#">Show less</a></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-codex even thread-even depth-1" data-comment-id="1447" id="comment-1447">
+<article class="comment-body" id="div-comment-1447">
+<a class="screen-reader-text" href="#comment-content-1447">Skip to note 3 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1447">
+<p><strong>Display Bookmark Name</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php 
+$bookmark = get_bookmark(5);
+echo $bookmark-&gt;link_name; 
+?&gt;</code></pre>
+<p>or:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php echo get_bookmark(5)-&gt;link_name; ?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1447">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-codex odd alt thread-odd thread-alt depth-1" data-comment-id="1448" id="comment-1448">
+<article class="comment-body" id="div-comment-1448">
+<a class="screen-reader-text" href="#comment-content-1448">Skip to note 4 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-1448">
+<p><strong>Display Bookmark as a Link</strong></p>
+<pre class="wp-block-code"><code class="language-php" lang="php">&lt;?php  
+$bookmark = get_bookmark(5);
+echo '&lt;a href="'.$bookmark-&gt;link_url.'"&gt;'.$bookmark-&gt;link_name.'&lt;/a&gt;';
+?&gt;</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-1448">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

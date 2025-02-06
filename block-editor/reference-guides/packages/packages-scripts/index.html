@@ -1,0 +1,621 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/scripts</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/scripts</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>This is a collection of reusable scripts tailored for WordPress development. For convenience, every tool provided in this package comes with an integrated recommended configuration.</p>
+<p>When working seamlessly, sophisticated command-line interfaces help to turn work with a project into a more pleasant experience. However, it’s a misleading assumption that developers can easily pick the proper tools in the first place and then ensure that they play along with each other, including all their extensions. Besides, it’s still not enough because developers are left on their own to keep all configurations and dependent tools up to date. This problem multiplies when they support more than one project which shares the same setup.</p>
+<p>Fortunately, there is a pattern that can simplify maintainers life – reusable scripts. The idea boils down to moving all the necessary configurations and scripts to one single tool dependency. In most cases, it should be possible to accomplish all tasks using the default settings, but some customization is allowed, too. With all that in place, updating all projects should become a very straightforward task.</p>
+<p><em>This package is inspired by <a href="https://www.npmjs.com/package/react-scripts">react-scripts</a> and <a href="https://www.npmjs.com/package/kcd-scripts">kcd-scripts</a>.</em></p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>You only need to install one npm module:</p>
+<pre><code class="language-bash">npm install @wordpress/scripts --save-dev
+</code></pre>
+<p><strong>Note</strong>: This package requires Node.js version with long-term support status (check <a href="https://nodejs.org/en/about/previous-releases">Active LTS or Maintenance LTS releases</a>). It is not compatible with older versions.</p>
+<h2 class="is-toc-heading" id="setup" tabindex="-1"><a href="#setup">Setup</a></h2>
+<p>This package offers a command-line interface and exposes a binary called <code>wp-scripts</code> so you can call it directly with <code>npx</code> – an npm package runner. However, this module is designed to be configured using the <code>scripts</code> section in the <code>package.json</code> file of your project. This comprehensive example demonstrates the most of the capabilities included.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "build": "wp-scripts build",
+        "check-engines": "wp-scripts check-engines",
+        "check-licenses": "wp-scripts check-licenses",
+        "format": "wp-scripts format",
+        "lint:css": "wp-scripts lint-style",
+        "lint:js": "wp-scripts lint-js",
+        "lint:md:docs": "wp-scripts lint-md-docs",
+        "lint:pkg-json": "wp-scripts lint-pkg-json",
+        "packages-update": "wp-scripts packages-update",
+        "plugin-zip": "wp-scripts plugin-zip",
+        "start": "wp-scripts start",
+        "test:e2e": "wp-scripts test-e2e",
+        "test:unit": "wp-scripts test-unit-js"
+    }
+}
+</code></pre>
+<p>It might also be a good idea to get familiar with the <a href="https://github.com/WordPress/gutenberg/tree/HEAD/docs/how-to-guides/javascript/js-build-setup.md">JavaScript Build Setup tutorial</a> for setting up a development environment to use ESNext syntax. It gives a very in-depth explanation of how to use the <a href="#build">build</a> and <a href="#start">start</a> scripts.</p>
+<h2 class="is-toc-heading" id="updating-to-new-release" tabindex="-1"><a href="#updating-to-new-release">Updating to New Release</a></h2>
+<p>To update an existing project to a new version of <code>@wordpress/scripts</code>, open the <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/scripts/CHANGELOG.md">changelog</a>, find the version you’re currently on (check <code>package.json</code> in the top-level directory of your project), and apply the migration instructions for the newer versions.</p>
+<p>In most cases bumping the <code>@wordpress/scripts</code> version in <code>package.json</code> and running <code>npm install</code> in the root folder of your project should be enough, but it’s good to check the <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/scripts/CHANGELOG.md">changelog</a> for potential breaking changes. There is also <code>packages-update</code> script included in this package that aims to automate the process of updating WordPress dependencies in your projects.</p>
+<p>We commit to keeping the breaking changes minimal so you can upgrade <code>@wordpress/scripts</code> as seamless as possible.</p>
+<h2 class="is-toc-heading" id="available-scripts" tabindex="-1"><a href="#available-scripts">Available Scripts</a></h2>
+<h3 class="is-toc-heading" id="build" tabindex="-1"><a href="#build">build</a></h3>
+<p>Transforms your code according the configuration provided so it’s ready for production and optimized for the best performance.</p>
+<p><em>This script exits after producing a single build. For incremental builds, better suited for development, see the <a href="#start">start</a> script.</em></p>
+<h4>Usage</h4>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "build": "wp-scripts build",
+        "build:custom": "wp-scripts build entry-one.js entry-two.js --output-path=custom",
+        "build:copy-php": "wp-scripts build --webpack-copy-php",
+        "build:custom-directory": "wp-scripts build --source-path=custom-directory"
+    }
+}
+</code></pre>
+<p>This is how you execute the script with presented setup:</p>
+<ul>
+<li><code>npm run build</code> – builds the code for production.</li>
+<li><code>npm run build:custom</code> – builds the code for production with two entry points and a custom output directory. Paths for custom entry points are relative to the project root.</li>
+<li><code>npm run build:copy-php</code> – builds the code for production and opts into copying all PHP files from the <code>src</code> directory and its subfolders to the output directory. By default, only PHP files listed in the <code>render</code> and <code>variations</code> fields in the detected <code>block.json</code> files get copied.</li>
+<li><code>npm run build:custom-directory</code> – builds the code for production using the <code>custom-directory</code> as the source code directory.</li>
+</ul>
+<p>This script automatically use the optimized config but sometimes you may want to specify some custom options:</p>
+<ul>
+<li><code>--webpack-bundle-analyzer</code> – enables visualization for the size of webpack output files with an interactive zoomable treemap.</li>
+<li><code>--webpack-copy-php</code> – enables copying all PHP files from the source directory ( default is <code>src</code> ) and its subfolders to the output directory.</li>
+<li><code>--webpack-no-externals</code> – disables scripts’ assets generation, and omits the list of default externals.</li>
+<li><code>--source-path</code> – allows customization of the source directory. The default is the project root <code>.</code> when <a href="#listing-entry-points">entry points are listed</a> in the command, or <code>src</code> otherwise.</li>
+<li><code>--output-path</code> – allows customization of the output directory. The default is the <code>build</code> folder.</li>
+</ul>
+<p>Experimental support for the block.json <code>viewScriptModule</code> field is available via the<br/>
+<code>--experimental-modules</code> option. With this option enabled, script and module fields will all be<br/>
+compiled. The <code>viewScriptModule</code> field is analogous to the <code>viewScript</code> field, but will compile a module<br/>
+and should be registered in WordPress using the Modules API.</p>
+<p>Learn more about <a href="#using-build-scripts">using build scripts</a> to optimize the development experience based on your specific needs.</p>
+<h4>Advanced information</h4>
+<p>This script uses <a href="https://webpack.js.org/">webpack</a> behind the scenes. It’ll look for a webpack config in the top-level directory of your package and will use it if it finds one. If none is found, it’ll use the default config provided by <code>@wordpress/scripts</code> packages. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<h3 class="is-toc-heading" id="build-blocks-manifest" tabindex="-1"><a href="#build-blocks-manifest">build-blocks-manifest</a></h3>
+<p>This script generates a PHP file containing block metadata from all<br/>
+<code>block.json</code> files in the project. This is useful for enhancing performance<br/>
+when registering multiple block types, as it allows you to use<br/>
+<code>wp_register_block_metadata_collection()</code> in WordPress.</p>
+<p>Usage: <code>wp-scripts build-blocks-manifest [options]</code></p>
+<p>Options:</p>
+<ul>
+<li><code>--input</code>: Specify the input directory (default: ‘build’)</li>
+<li><code>--output</code>: Specify the output file path (default: ‘build/blocks-manifest.php’)</li>
+</ul>
+<p>Example:</p>
+<pre><code class="language-bash">wp-scripts build-blocks-manifest --input=src --output=dist/blocks-manifest.php
+</code></pre>
+<p>This command will scan the specified input directory for <code>block.json</code> files,<br/>
+compile their metadata into a single PHP file, and output it to the specified<br/>
+location. You can then use this file with<br/>
+<code>wp_register_block_metadata_collection()</code> in your plugin:</p>
+<pre><code class="language-php">wp_register_block_metadata_collection(
+    plugin_dir_path( __FILE__ ) . 'dist',
+    plugin_dir_path( __FILE__ ) . 'dist/blocks-manifest.php'
+);
+</code></pre>
+<p>Using this approach can improve performance when registering multiple block<br/>
+types, especially for plugins with several custom blocks. Note that this<br/>
+feature is only available in WordPress 6.7 and later versions.</p>
+<h3 class="is-toc-heading" id="check-engines" tabindex="-1"><a href="#check-engines">check-engines</a></h3>
+<p>Checks if the current <code>node</code>, <code>npm</code> (or <code>yarn</code>) versions match the given <a href="https://semver.org/">semantic version</a> ranges. If the given version is not satisfied, information about installing the needed version is printed and the program exits with an error code.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "check-engines": "wp-scripts check-engines"
+    }
+}
+</code></pre>
+<p>This is how you execute the script with presented setup:</p>
+<ul>
+<li><code>npm run check-engines</code> – checks installed version of <code>node</code> and <code>npm</code>.</li>
+</ul>
+<h4>Advanced information</h4>
+<p>It uses <a href="https://www.npmjs.com/package/check-node-version">check-node-version</a> behind the scenes with the recommended configuration provided. The default requirements are set to the same Node.js and npm versions as listed in the <a href="#installation">installation</a> section for this package. You can specify your own ranges as described in <a href="https://www.npmjs.com/package/check-node-version">check-node-version docs</a>. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<h3 class="is-toc-heading" id="check-licenses" tabindex="-1"><a href="#check-licenses">check-licenses</a></h3>
+<p>Validates that all dependencies of a project are compatible with the project’s own license.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "check-licenses": "wp-scripts check-licenses --prod --gpl2 --ignore=abab"
+    }
+}
+</code></pre>
+<p><em>Flags</em>:</p>
+<ul>
+<li><code>--prod</code> (or <code>--production</code>): When present, validates only <code>dependencies</code> and not <code>devDependencies</code></li>
+<li><code>--dev</code> (or <code>--development</code>): When present, validates only <code>devDependencies</code> and not <code>dependencies</code></li>
+<li><code>--gpl2</code>: Validates against <a href="https://www.gnu.org/licenses/license-list.en.html">GPLv2 license compatibility</a></li>
+<li><code>--ignore=a,b,c</code>: A comma-separated set of package names to ignore for validation. This is intended to be used primarily in cases where a dependency’s <code>license</code> field is malformed. It’s assumed that any <code>ignored</code> package argument would be manually vetted for compatibility by the project owner.</li>
+</ul>
+<h3 class="is-toc-heading" id="format" tabindex="-1"><a href="#format">format</a></h3>
+<p>It helps to enforce coding style guidelines for your files (enabled by default for JavaScript, JSON, TypeScript, YAML) by formatting source code in a consistent way.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "format": "wp-scripts format",
+        "format:src": "wp-scripts format ./src"
+    }
+}
+</code></pre>
+<p>This is how you execute the script with presented setup:</p>
+<ul>
+<li><code>npm run format</code> – formats files in the entire project’s directories.</li>
+<li><code>npm run format:src</code> – formats files in the project’s <code>src</code> subfolder’s directories.</li>
+</ul>
+<p>When you run commands similar to the <code>npm run format:src</code> example above, you can provide a file, a directory, or <code>glob</code> syntax or any combination of them.</p>
+<p>By default, files located in <code>build</code>, <code>node_modules</code>, and <code>vendor</code> folders are ignored. You can customize the list of ignored files and directories by adding them to a <code>.prettierignore</code> file in your project.</p>
+<h3 class="is-toc-heading" id="lint-js" tabindex="-1"><a href="#lint-js">lint-js</a></h3>
+<p>Helps enforce coding style guidelines for your JavaScript and TypeScript files.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "lint:js": "wp-scripts lint-js",
+        "lint:js:src": "wp-scripts lint-js ./src"
+    }
+}
+</code></pre>
+<p>This is how you execute the script with presented setup:</p>
+<ul>
+<li><code>npm run lint:js</code> – lints JavaScript and TypeScript files in the entire project’s directories.</li>
+<li><code>npm run lint:js:src</code> – lints JavaScript and TypeScript files in the project’s <code>src</code> subfolder’s directories.</li>
+</ul>
+<p>When you run commands similar to the <code>npm run lint:js:src</code> example above, you can provide a file, a directory, or <code>glob</code> syntax or any combination of them. See <a href="https://eslint.org/docs/user-guide/command-line-interface">more examples</a>.</p>
+<p>By default, files located in <code>build</code>, <code>node_modules</code>, and <code>vendor</code> folders are ignored.</p>
+<h4>Advanced information</h4>
+<p>It uses <a href="https://eslint.org/">eslint</a> with the set of recommended rules defined in <a href="https://www.npmjs.com/package/@wordpress/eslint-plugin">@wordpress/eslint-plugin</a> npm package. You can override default rules with your own as described in <a href="https://eslint.org/docs/rules/">eslint docs</a>. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<h3 class="is-toc-heading" id="lint-pkg-json" tabindex="-1"><a href="#lint-pkg-json">lint-pkg-json</a></h3>
+<p>Helps enforce standards for your <code>package.json</code> files.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "lint:pkg-json": "wp-scripts lint-pkg-json",
+        "lint:pkg-json:src": "wp-scripts lint-pkg-json ./src"
+    }
+}
+</code></pre>
+<p>This is how you execute those scripts using the presented setup:</p>
+<ul>
+<li><code>npm run lint:pkg-json</code> – lints <code>package.json</code> file in the entire project’s directories.</li>
+<li><code>npm run lint:pkg-json:src</code> – lints <code>package.json</code> file in the project’s <code>src</code> subfolder’s directories.</li>
+</ul>
+<p>When you run commands similar to the <code>npm run lint:pkg-json:src</code> example above, you can provide one or multiple directories to scan as well. See <a href="https://github.com/tclindner/npm-package-json-lint/blob/HEAD/README.md#examples">more examples</a>.</p>
+<p>By default, files located in <code>build</code>, <code>node_modules</code>, and <code>vendor</code> folders are ignored.</p>
+<h4>Advanced information</h4>
+<p>It uses <a href="https://www.npmjs.com/package/npm-package-json-lint">npm-package-json-lint</a> with the set of recommended rules defined in <a href="https://www.npmjs.com/package/@wordpress/npm-package-json-lint-config">@wordpress/npm-package-json-lint-config</a> npm package. You can override default rules with your own as described in <a href="https://github.com/tclindner/npm-package-json-lint/wiki">npm-package-json-lint wiki</a>. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<h3 class="is-toc-heading" id="lint-md-docs" tabindex="-1"><a href="#lint-md-docs">lint-md-docs</a></h3>
+<p>Uses markdownlint to lint the markup of markdown files to enforce standards.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "lint:md:docs": "wp-scripts lint-md-docs"
+    }
+}
+</code></pre>
+<p>This is how you execute the script with presented setup:</p>
+<ul>
+<li><code>npm run lint:md:docs</code> – lints markdown files in the entire project’s directories.</li>
+</ul>
+<p>By default, files located in <code>build</code>, <code>node_modules</code>, and <code>vendor</code> folders are ignored.</p>
+<h4>Advanced information</h4>
+<p>It uses <a href="https://github.com/DavidAnson/markdownlint">markdownlint</a> with the <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/scripts/config/.markdownlint.json">.markdownlint.json</a> configuration. This configuration tunes the linting rules to match WordPress standard, you can override with your own config, see <a href="https://github.com/igorshubovych/markdownlint-cli/">markdownlint-cli</a> for command-line parameters.</p>
+<h3 class="is-toc-heading" id="lint-style" tabindex="-1"><a href="#lint-style">lint-style</a></h3>
+<p>Helps enforce coding style guidelines for your style files.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "lint:style": "wp-scripts lint-style",
+        "lint:css:src": "wp-scripts lint-style 'src/**/*.css'"
+    }
+}
+</code></pre>
+<p>This is how you execute the script with presented setup:</p>
+<ul>
+<li><code>npm run lint:style</code> – lints CSS, PCSS, and SCSS files in the entire project’s directories.</li>
+<li><code>npm run lint:css:src</code> – lints only CSS files in the project’s <code>src</code> subfolder’s directories.</li>
+</ul>
+<p>When you run commands similar to the <code>npm run lint:css:src</code> example above, be sure to include the quotation marks around file globs. This ensures that you can use the powers of <a href="https://github.com/sindresorhus/globby">globby</a> (like the <code>**</code> globstar) regardless of your shell. See <a href="https://github.com/stylelint/stylelint/blob/HEAD/docs/user-guide/cli.md#examples">more examples</a>.</p>
+<p>By default, files located in <code>build</code>, <code>node_modules</code>, and <code>vendor</code> folders are ignored.</p>
+<h4>Advanced information</h4>
+<p>It uses <a href="https://github.com/stylelint/stylelint">stylelint</a> with the <a href="https://www.npmjs.com/package/@wordpress/stylelint-config">@wordpress/stylelint-config</a> configuration per the <a href="https://developer.notmatt.press/coding-standards/wordpress-coding-standards/css/">WordPress CSS Coding Standards</a>. You can override them with your own rules as described in <a href="https://stylelint.io/user-guide/configure">stylelint user guide</a>. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<h3 class="is-toc-heading" id="packages-update" tabindex="-1"><a href="#packages-update">packages-update</a></h3>
+<p>Updates the WordPress packages used in the project to their latest version.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "packages-update": "wp-scripts packages-update",
+        "postpackages-update": "npm run build"
+    }
+}
+</code></pre>
+<p>This script provides the following custom options:</p>
+<ul>
+<li><code>--dist-tag</code> – allows specifying a custom dist-tag when updating npm packages. Defaults to <code>latest</code>. This is especially useful when using <a href="https://www.npmjs.com/package/@wordpress/dependency-extraction-webpack-plugin"><code>@wordpress/dependency-extraction-webpack-plugin</code></a>. It lets installing the npm dependencies at versions used by the given WordPress major version for local testing, etc. Example: <code>wp-scripts packages-update --dist-tag=wp-6.0</code>.</li>
+</ul>
+<h4>Advanced information</h4>
+<p>The command detects project dependencies that have name starting with <code>@wordpress/</code> by scanning the <code>package.json</code> file. By default, it executes <code>npm install @wordpress/package1@latest @wordpress/package2@latest ... --save</code> to change the package versions to the latest one. You can chose a different dist-tag than <code>latest</code> by using the <code>--dist-tag</code> option when running the command.</p>
+<h3 class="is-toc-heading" id="plugin-zip" tabindex="-1"><a href="#plugin-zip">plugin-zip</a></h3>
+<p>Creates a zip file for a WordPress plugin.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "plugin-zip": "wp-scripts plugin-zip"
+    }
+}
+</code></pre>
+<p>By default, it uses <a href="https://developer.notmatt.press/plugins/plugin-basics/best-practices/#file-organization">Plugin Handbook best practices</a> to discover files.</p>
+<h4>Advanced information</h4>
+<p>In the case where the plugin author wants to customize the files included in the zip file, they can provide the <code>files</code> field in the <code>package.json</code> file as documented in the <a href="https://www.npmjs.com/package/npm-packlist"><code>npm-packlist</code></a> package, example:</p>
+<pre><code class="language-json">{
+    "files": [ "dir" ]
+}
+</code></pre>
+<p>It reuses the same logic as <code>npm pack</code> command to create an npm package tarball.</p>
+<p>This is how you create a custom root folder inside the zip file.</p>
+<ul>
+<li>When updating a plugin, WordPress expects a folder in the root of the zip file which matches the plugin name. So be aware that this may affect the plugin update process.</li>
+<li><code>--root-folder</code> – Add a custom root folder to the zip file.</li>
+<li><code>npm run plugin-zip</code> – By default, unzipping your plugin’s zip file will result in a folder with the same name as your plugin.</li>
+<li><code>npm run plugin-zip --root-folder='custom-directory'</code> – Your plugin’s zip file will be unzipped into a folder named <code>custom-directory</code>.</li>
+<li><code>npm run plugin-zip --no-root-folder</code> – This will create a zip file that has no folder inside, your plugin files will be unzipped directly into the target directory.</li>
+</ul>
+<h3 class="is-toc-heading" id="start" tabindex="-1"><a href="#start">start</a></h3>
+<p>Transforms your code according the configuration provided so it’s ready for development. The script will automatically rebuild if you make changes to the code, and you will see the build errors in the console.</p>
+<p><em>For single builds, better suited for production, see the <a href="#build">build</a> script.</em></p>
+<h4>Usage</h4>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "start": "wp-scripts start",
+        "start:hot": "wp-scripts start --hot",
+        "start:custom": "wp-scripts start entry-one.js entry-two.js --output-path=custom",
+        "start:copy-php": "wp-scripts start --webpack-copy-php",
+        "start:custom-directory": "wp-scripts start --source-path=custom-directory"
+    }
+}
+</code></pre>
+<p>This is how you execute the script with presented setup:</p>
+<ul>
+<li><code>npm start</code> – starts the build for development.</li>
+<li><code>npm run start:hot</code> – starts the build for development with “Fast Refresh”. The page will automatically reload if you make changes to the files.</li>
+<li><code>npm run start:custom</code> – starts the build for development which contains two entry points and a custom output directory. Paths for custom entry points are relative to the project root.</li>
+<li><code>npm run start:copy-php</code> – starts the build for development and opts into copying all PHP files from the <code>src</code> directory and its subfolders to the output directory. By default, only PHP files listed in the <code>render</code> and <code>variations</code> fields in the detected <code>block.json</code> files get copied.</li>
+<li><code>npm run start:custom-directory</code> – builds the code for production using the <code>custom-directory</code> as the source code directory.</li>
+</ul>
+<p>This script automatically use the optimized config but sometimes you may want to specify some custom options:</p>
+<ul>
+<li><code>--hot</code> – enables “Fast Refresh”. The page will automatically reload if you make changes to the code. <em>For now, it requires that WordPress has the <a href="https://developer.notmatt.press/advanced-administration/debug/debug-wordpress/#script_debug"><code>SCRIPT_DEBUG</code></a> flag enabled and the <a href="https://wordpress.org/plugins/gutenberg/">Gutenberg</a> plugin installed.</em></li>
+<li><code>--no-watch</code> – Starts the build for development without starting the watcher.</li>
+<li><code>--webpack-bundle-analyzer</code> – enables visualization for the size of webpack output files with an interactive zoomable treemap.</li>
+<li><code>--webpack-copy-php</code> – enables copying all PHP files from the source directory ( default is <code>src</code> ) and its subfolders to the output directory.</li>
+<li><code>--webpack-devtool</code> – controls how source maps are generated. See options at https://webpack.js.org/configuration/devtool/#devtool.</li>
+<li><code>--webpack-no-externals</code> – disables scripts’ assets generation, and omits the list of default externals.</li>
+<li><code>--source-path</code> – allows customization of the source directory. The default is the project root <code>.</code> when <a href="#listing-entry-points">entry points are listed</a> in the command, or <code>src</code> otherwise.</li>
+<li><code>--output-path</code> – allows customization of the output directory. The default is the <code>build</code> folder.</li>
+</ul>
+<p>Experimental support for the block.json <code>viewScriptModule</code> field is available via the<br/>
+<code>--experimental-modules</code> option. With this option enabled, script and module fields will all be<br/>
+compiled. The <code>viewScriptModule</code> field is analogous to the <code>viewScript</code> field, but will compile a module<br/>
+and should be registered in WordPress using the Modules API.</p>
+<p>Learn more about <a href="#using-build-scripts">using build scripts</a> to optimize the development experience based on your specific needs.</p>
+<h4>Advanced information</h4>
+<p>This script uses <a href="https://webpack.js.org/">webpack</a> behind the scenes. It’ll look for a webpack config in the top-level directory of your package and will use it if it finds one. If none is found, it’ll use the default config provided by <code>@wordpress/scripts</code> packages. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<h3 class="is-toc-heading" id="test-e2e" tabindex="-1"><a href="#test-e2e">test-e2e</a></h3>
+<p>Launches the End-To-End (E2E) test runner. Writing tests can be done using the <a href="https://jestjs.io/docs/en/api">Jest API</a> in combination with the <a href="https://github.com/GoogleChrome/puppeteer/blob/HEAD/docs/api.md">Puppeteer API</a>:</p>
+<blockquote><p>
+<a href="https://jestjs.io/">Jest</a> is a delightful JavaScript Testing Framework with a focus on simplicity.</p>
+<p> <a href="https://pptr.dev/">Puppeteer</a> is a Node library which provides a high-level API to control Chrome or Chromium over the <a href="https://chromedevtools.github.io/devtools-protocol/">DevTools Protocol</a>. Puppeteer runs <a href="https://developers.google.com/web/updates/2017/04/headless-chrome">headless</a> by default, but can be configured to run full (non-headless) Chrome or Chromium.
+</p></blockquote>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "test:e2e": "wp-scripts test-e2e",
+        "test:e2e:help": "wp-scripts test-e2e --help",
+        "test:e2e:debug": "wp-scripts --inspect-brk test-e2e --puppeteer-devtools"
+    }
+}
+</code></pre>
+<p>This is how you execute those scripts using the presented setup:</p>
+<ul>
+<li><code>npm run test:e2e</code> – runs all e2e tests.</li>
+<li><code>npm run test:e2e:help</code> – prints all available options to configure e2e test runner.</li>
+<li><code>npm run test:e2e -- --puppeteer-interactive</code> – runs all e2e tests interactively.</li>
+<li><code>npm run test:e2e FILE_NAME -- --puppeteer-interactive</code> – runs one test file interactively.</li>
+<li><code>npm run test:e2e:watch -- --puppeteer-interactive</code> – runs all tests interactively and watch for changes.</li>
+<li><code>npm run test:e2e:debug</code> – runs all tests interactively and enables <a href="#debugging-e2e-tests">debugging tests</a>.</li>
+</ul>
+<p>Jest will look for test files with any of the following popular naming conventions:</p>
+<ul>
+<li>Files with <code>.js</code> (other supported extensions: <code>.jsx</code>, <code>.ts</code>, and <code>.tsx</code>) suffix at any level of depth in <code>spec</code> folders.</li>
+<li>Files with <code>.spec.js</code> (other supported extensions: <code>.jsx</code>, <code>.ts</code>, and <code>.tsx</code>) suffix.</li>
+</ul>
+<p>This script automatically detects the best config to start Puppeteer but sometimes you may need to specify custom options:</p>
+<ul>
+<li>You can add a <code>jest-puppeteer.config.js</code> at the root of the project or define a custom path using <code>JEST_PUPPETEER_CONFIG</code> environment variable. Check <a href="https://github.com/smooth-code/jest-puppeteer#jest-puppeteerconfigjs">jest-puppeteer</a> for more details.</li>
+</ul>
+<p>We enforce that all tests run serially in the current process using <a href="https://jestjs.io/docs/en/cli#runinband">–runInBand</a> Jest CLI option to avoid conflicts between tests caused by the fact that they share the same WordPress instance.</p>
+<h4>Failed Test Artifacts</h4>
+<p>When tests fail, both a screenshot and an HTML snapshot will be taken of the page and stored in the <code>artifacts/</code> directory at the root of your project. These snapshots may help debug failed tests during development or when running tests in a CI environment.</p>
+<p>The <code>artifacts/</code> directory can be customized by setting the <code>WP_ARTIFACTS_PATH</code> environment variable to the relative path of the desired directory within your project’s root. For example: to change the default directory from <code>artifacts/</code> to <code>my/custom/artifacts</code>, you could use <code>WP_ARTIFACTS_PATH=my/custom/artifacts npm run test:e2e</code>.</p>
+<h4>Advanced information</h4>
+<p>It uses <a href="https://jestjs.io/">Jest</a> behind the scenes and you are able to use all of its <a href="https://jestjs.io/docs/en/cli.html">CLI options</a>. You can also run <code>./node_modules/.bin/wp-scripts test:e2e --help</code> or <code>npm run test:e2e:help</code> (as mentioned above) to view all of the available options. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<p>Should there be any situation where you want to provide your own Jest config, you can do so.</p>
+<ul>
+<li>the command receives a <code>--config</code> argument. Example: <code>wp-scripts test-e2e --config my-jest-config.js</code>.</li>
+<li>there is a file called <code>jest-e2e.config.js</code>, <code>jest-e2e.config.json</code>, <code>jest.config.js</code>, or <code>jest.config.json</code> in the top-level directory of your package (at the same level than your <code>package.json</code>).</li>
+<li>a <code>jest</code> object can be provided in the <code>package.json</code> file with the test configuration.</li>
+</ul>
+<h3 class="is-toc-heading" id="test-unit-js" tabindex="-1"><a href="#test-unit-js">test-unit-js</a></h3>
+<p><em>Alias</em>: <code>test-unit-jest</code></p>
+<p>Launches the unit test runner. Writing tests can be done using the <a href="https://jestjs.io/docs/en/api">Jest API</a>.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "test:unit": "wp-scripts test-unit-js",
+        "test:unit:help": "wp-scripts test-unit-js --help",
+        "test:unit:watch": "wp-scripts test-unit-js --watch",
+        "test:unit:debug": "wp-scripts --inspect-brk test-unit-js --runInBand --no-cache"
+    }
+}
+</code></pre>
+<p>This is how you execute those scripts using the presented setup:</p>
+<ul>
+<li><code>npm run test:unit</code> – runs all unit tests.</li>
+<li><code>npm run test:unit:help</code> – prints all available options to configure unit tests runner.</li>
+<li><code>npm run test:unit:watch</code> – runs all unit tests in the watch mode.</li>
+<li><code>npm run test:unit:debug</code> – runs all unit tests in <a href="#debugging-tests">debug mode</a>.</li>
+</ul>
+<p>Jest will look for test files with any of the following popular naming conventions:</p>
+<ul>
+<li>Files with <code>.js</code> (other supported extensions: <code>.jsx</code>, <code>.ts</code>, and <code>.tsx</code>) suffix located at any level of depth in <code>__tests__</code> folders.</li>
+<li>Files with <code>.js</code> (other supported extensions: <code>.jsx</code>, <code>.ts</code>, and <code>.tsx</code>) suffix directly located in <code>test</code> folders.</li>
+<li>Files with <code>.test.js</code> (other supported extensions: <code>.jsx</code>, <code>.ts</code>, and <code>.tsx</code>) suffix.</li>
+</ul>
+<h4>Advanced information</h4>
+<p>It uses <a href="https://jestjs.io/">Jest</a> behind the scenes and you are able to use all of its <a href="https://jestjs.io/docs/en/cli.html">CLI options</a>. You can also run <code>./node_modules/.bin/wp-scripts test:unit --help</code> or <code>npm run test:unit:help</code> (as mentioned above) to view all of the available options. By default, it uses the set of recommended options defined in <a href="https://www.npmjs.com/package/@wordpress/jest-preset-default">@wordpress/jest-preset-default</a> npm package. You can override them with your own options as described in <a href="https://jestjs.io/docs/en/configuration">Jest documentation</a>. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<p>Should there be any situation where you want to provide your own Jest config, you can do so.</p>
+<ul>
+<li>the command receives a <code>--config</code> argument. Example: <code>wp-scripts test-unit --config my-jest-config.js</code>.</li>
+<li>there is a file called <code>jest-unit.config.js</code>, <code>jest-unit.config.json</code>, <code>jest.config.js</code>, or <code>jest.config.json</code> in the top-level directory of your package (at the same level than your <code>package.json</code>).</li>
+<li>a <code>jest</code> object can be provided in the <code>package.json</code> file with the test configuration.</li>
+</ul>
+<h3 class="is-toc-heading" id="test-playwright" tabindex="-1"><a href="#test-playwright">test-playwright</a></h3>
+<p>Launches the Playwright End-To-End (E2E) test runner. Similar to Puppeteer, it provides a high-level API to control a headless browser.</p>
+<p>Refer to the <a href="https://playwright.dev/docs/writing-tests">Getting Started guide</a> to learn how to write tests.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "scripts": {
+        "test:playwright": "wp-scripts test-playwright",
+        "test:playwright:help": "wp-scripts test-playwright --help",
+        "test:playwright:debug": "wp-scripts test-playwright --debug"
+    }
+}
+</code></pre>
+<p>This is how you execute those scripts using the presented setup:</p>
+<ul>
+<li><code>npm run test:playwright</code> – runs all tests.</li>
+<li><code>npm run test:playwright:help</code> – prints all available options to configure the test runner.</li>
+<li><code>npm run test:playwright:debug</code> – runs all tests interactively with the Playwright inspector.</li>
+<li><code>npm run test:playwright FILE_NAME</code> – runs a specific test file.</li>
+<li><code>npm run test:playwright -- --watch</code> – runs all tests interactively with watch mode and enhanced debugging.</li>
+</ul>
+<p>By default, Playwright looks for JavaScript or TypeScript files with <code>.test</code> or <code>.spec</code> suffix in the project root-level <code>/specs</code> folder, for example <code>/specs/login-screen.wrong-credentials.spec.ts</code>.</p>
+<p>This script automatically detects the best config to start Playwright, but sometimes you may need to specify custom options.<br/>
+To do so, you can add a file called <code>playwright.config.ts</code> or <code>playwright.config.js</code> in the top-level directory of your package (at the same level as your <code>package.json</code>).</p>
+<h4>Failed Test Artifacts</h4>
+<p>When tests fail, snapshots will be taken of the page and stored in the <code>artifacts/</code> directory at the root of your project. These snapshots may help debug failed tests during development or when running tests in a CI environment.</p>
+<p>The <code>artifacts/</code> directory can be customized by setting the <code>WP_ARTIFACTS_PATH</code> environment variable to the relative path of the desired directory within your project’s root. For example: to change the default directory from <code>artifacts/</code> to <code>my/custom/artifacts</code>, you could use <code>WP_ARTIFACTS_PATH=my/custom/artifacts npm run test:playwright</code>.</p>
+<h4>Advanced information</h4>
+<p>You are able to use all of Playwright’s <a href="https://playwright.dev/docs/test-cli#reference">CLI options</a>. You can also run <code>./node_modules/.bin/wp-scripts test-playwright --help</code> or <code>npm run test:playwright:help</code> (as mentioned above) to view all the available options. Learn more in the <a href="#advanced-usage">Advanced Usage</a> section.</p>
+<h2 class="is-toc-heading" id="passing-node-js-options" tabindex="-1"><a href="#passing-node-js-options">Passing Node.js options</a></h2>
+<p><code>wp-scripts</code> supports the full array of <a href="https://nodejs.org/api/cli.html">Node.js CLI options</a>. They can be passed after the <code>wp-scripts</code> command and before the script name.</p>
+<pre><code class="language-sh">wp-scripts [NODE_OPTIONS] script
+</code></pre>
+<h3 class="is-toc-heading" id="debugging-tests" tabindex="-1"><a href="#debugging-tests">Debugging tests</a></h3>
+<p>One common use-case for passing Node.js options is debugging your tests.</p>
+<p>Tests can be debugged by any <a href="https://nodejs.org/en/docs/guides/debugging-getting-started/#inspector-clients">inspector client</a> that supports the <a href="https://chromedevtools.github.io/devtools-protocol/">Chrome DevTools Protocol</a>.</p>
+<p>Follow the instructions for debugging Node.js with your favorite supported browser or IDE. When the instructions say to use <code>node --inspect script.js</code> or <code>node --inspect-brk script.js</code>, simply use <code>wp-scripts --inspect script</code> or <code>wp-scripts --inspect-brk script</code> instead.</p>
+<p>Google Chrome and Visual Studio Code are used as examples below.</p>
+<h4>Debugging in Google Chrome</h4>
+<p>Place <code>debugger;</code> statements in any test and run <code>wp-scripts --inspect-brk test-unit-js --runInBand --no-cache</code> (or <code>npm run test:unit:debug</code> from above).</p>
+<p>Then open <code>about:inspect</code> in Google Chrome and select <code>inspect</code> on your process.</p>
+<p>A breakpoint will be set at the first line of the script (this is done to give you time to open the developer tools and to prevent Jest from executing before you have time to do so). Click the resume button in the upper right panel of the dev tools to continue execution. When Jest executes the test that contains the debugger statement, execution will pause and you can examine the current scope and call stack.</p>
+<h4>Debugging in Visual Studio Code</h4>
+<p>Debugging npm scripts is supported out of the box for Visual Studio Code as of <a href="https://code.visualstudio.com/blogs/2018/07/12/introducing-logpoints-and-auto-attach#_npm-scripts-and-debugging">version 1.23</a> and can be used to debug Jest unit tests.</p>
+<p>Make sure <code>wp-scripts --inspect-brk test-unit-js --runInBand --no-cache</code> is saved as <code>test:unit:debug</code> in your <code>package.json</code> file to run tests in Visual Studio Code.</p>
+<p>When debugging, set a breakpoint in your tests by clicking on a line in the editor’s left margin by the line numbers.</p>
+<p>Then open npm scripts in the explorer or run <code>Explorer: Focus on NPM Scripts View</code> in the command palette to see the npm scripts. To start the tests, click the debug icon next to <code>test:unit:debug</code>.</p>
+<p>The tests will start running, and execution will pause on your selected line so you can inspect the current scope and call stack within the editor.</p>
+<p>See <a href="https://code.visualstudio.com/Docs/editor/debugging">Debugging in Visual Studio Code</a> for more details on using the Visual Studio Code debugger.</p>
+<h4>Debugging e2e tests</h4>
+<p>Since e2e tests run both in the node context <em>and</em> the (usually headless) browser context, not all lines of code can have breakpoints set within the inspector client—only the node context is debugged in the inspector client.</p>
+<p>The code executed in the node context includes all of the test files <em>excluding</em> code within <code>page.evaluate</code> functions. The <code>page.evaluate</code> functions and the rest of your app code is executed within the browser context.</p>
+<p>Test code (node context) can be debugged normally using the instructions above.</p>
+<p>To also debug the browser context, run <code>wp-scripts --inspect-brk test-e2e --puppeteer-devtools</code>. The <code>--puppeteer-devtools</code> option (or the <code>PUPPETEER_DEVTOOLS="true"</code> environment variable when used with <code>PUPPETEER_HEADLESS="false"</code>) will disable headless mode and launch the browser with the devtools already open. Breakpoints can then be set in the browser context using these devtools.</p>
+<p>For more e2e debugging tips check out the <a href="https://developers.google.com/web/tools/puppeteer/debugging">Puppeteer debugging docs</a>.</p>
+<h2 class="is-toc-heading" id="using-build-scripts" tabindex="-1"><a href="#using-build-scripts">Using build scripts</a></h2>
+<p>The <code>build</code> and <code>start</code> commands use <a href="https://webpack.js.org/">webpack</a> behind the scenes. webpack is used to bundle and optimize code for web applications, enabling developers to manage dependencies efficiently, enhance performance, and simplify the development workflow.</p>
+<h3 class="is-toc-heading" id="listing-entry-points" tabindex="-1"><a href="#listing-entry-points">Listing entry points</a></h3>
+<p>The simplest way to list JavaScript entry points is to pass them as arguments for the command.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-bash">wp-scripts build entry-one.js entry-two.js
+</code></pre>
+<p>The default location for the source files is the project’s root. In effect, the command above will look for <code>entry-one.js</code> and <code>entry-two.js</code> in the project’s root and output the generated files into the <code>build</code> directory.</p>
+<h3 class="is-toc-heading" id="automatic-block-json-detection-and-the-source-code-directory" tabindex="-1"><a href="#automatic-block-json-detection-and-the-source-code-directory">Automatic block.json detection and the source code directory</a></h3>
+<p>A convenient alternative for blocks is using automatic entry point detection. In that case, the source code directory (the default is <code>./src</code>) and its subdirectories are scanned for the existence of <code>block.json</code> files. If one or more are found, the JavaScript files listed in metadata are treated as entry points and will be output into corresponding folders in the <code>build</code> directory. The script fields in <code>block.json</code> should pass relative paths to <code>block.json</code> in the same folder.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-json">{
+    "editorScript": "file:index.js",
+    "script": "file:script.js",
+    "viewScript": "file:view.js"
+}
+</code></pre>
+<p>This allows for the creation of multiple blocks that use a single build process triggered with a simple command:</p>
+<pre><code class="language-bash">wp-scripts build
+</code></pre>
+<p>The source directory can be customized using the <code>--source-path</code> flag and the output directory with the <code>--output-path</code> flag.</p>
+<h3 class="is-toc-heading" id="fallback-entry-point" tabindex="-1"><a href="#fallback-entry-point">Fallback entry point</a></h3>
+<p>The fallback entry point is <code>src/index.js</code> (other supported extensions: <code>.jsx</code>, <code>.ts</code>, and <code>.tsx</code>) in case there is no <code>block.json</code> file found. In that scenario, the output generated will be written to <code>build/index.js</code>.</p>
+<h3 class="is-toc-heading" id="importing-styles-in-javascript" tabindex="-1"><a href="#importing-styles-in-javascript">Importing styles in JavaScript</a></h3>
+<p><em>Example:</em></p>
+<pre><code class="language-scss">// index.scss
+$body-color: red;
+
+.wp-block-my-block {
+    color: $body-color;
+}
+</code></pre>
+<pre><code class="language-css">/* style.css */
+.wp-block-my-block {
+    background-color: black;
+}
+</code></pre>
+<pre><code class="language-js">// index.js
+import './index.pcss';
+import './index.scss';
+import './style.css';
+</code></pre>
+<p>When you run the build using the default command <code>wp-scripts build</code> (also applies to <code>start</code>) in addition to the JavaScript file <code>index.js</code> generated in the <code>build</code> folder, you should see two more files:</p>
+<ol>
+<li><code>index.css</code> – all imported CSS files are bundled into one chunk named after the entry point, which defaults to <code>index.js</code>, and thus the file created becomes <code>index.css</code>. This is for styles used only in the editor.</li>
+<li><code>style-index.css</code> – imported <code>style.css</code> file(s) (applies to PCSS, SASS and SCSS extensions) get bundled into one <code>style-index.css</code> file that is meant to be used both on the front-end and in the editor.</li>
+</ol>
+<p>For example, when the project has two entry points:</p>
+<pre><code class="language-bash">wp-scripts build entry-one.js entry-two.js
+</code></pre>
+<p>In that case, the CSS generated based on import statements in the JavaScript code will follow the names of the entry points: <code>entry-one.css</code> and <code>entry-two.css</code>.</p>
+<p><em>Important:</em> Avoid using <code>style</code> keyword in an entry point name, this might break your build process.</p>
+<p>You can also bundle CSS modules by prefixing <code>.module</code> to the extension, e.g. <code>style.module.scss</code>. Otherwise, these files are handled like all other <code>style.scss</code>. They will also be extracted into <code>style-index.css</code>.</p>
+<h3 class="is-toc-heading" id="using-fonts-and-images" tabindex="-1"><a href="#using-fonts-and-images">Using fonts and images</a></h3>
+<p>It is possible to reference font (<code>woff</code>, <code>woff2</code>, <code>eot</code>, <code>ttf</code> and <code>otf</code>) and image (<code>bmp</code>, <code>png</code>, <code>jpg</code>, <code>jpeg</code>, <code>gif</code> and <code>wepb</code>) files from CSS that is controlled by webpack as explained in the previous section.</p>
+<p><em>Example:</em></p>
+<pre><code class="language-css">/* style.css */
+@font-face {
+    font-family: Gilbert;
+    src: url( ../assets/gilbert-color.otf );
+}
+.wp-block-my-block {
+    background-color: url( ../assets/block-background.png );
+    font-family: Gilbert;
+}
+</code></pre>
+<h3 class="is-toc-heading" id="using-svg" tabindex="-1"><a href="#using-svg">Using SVG</a></h3>
+<p><em>Example:</em></p>
+<pre><code class="language-js">import starUrl, { ReactComponent as Star } from './star.svg';
+
+const App = () =&gt; (
+    &lt;div&gt;
+        &lt;img src={ starUrl } alt="star" /&gt;
+        &lt;Star /&gt;
+    &lt;/div&gt;
+);
+</code></pre>
+<h2 class="is-toc-heading" id="advanced-usage" tabindex="-1"><a href="#advanced-usage">Advanced Usage</a></h2>
+<p>This package should generally be used with the set of recommended config files. While it’s possible to override every config file provided, if you have to do it, your use case is far more complicated than anticipated. If that happens, it would be better to avoid using the whole abstraction layer and set up your project with full control over the tooling used.</p>
+<h3 class="is-toc-heading" id="default-webpack-config" tabindex="-1"><a href="#default-webpack-config">Default webpack config</a></h3>
+<p><code>@wordpress/scripts</code> bundles the default webpack config used as a base by the WordPress editor. These are the defaults:</p>
+<ul>
+<li><a href="https://webpack.js.org/configuration/entry-context/#entry">Entry</a>: the entry points for your project get detected by scanning all script fields in <code>block.json</code> files located in the <code>src</code> directory. The fallback entry point is <code>src/index.js</code> (other supported extensions: <code>.jsx</code>, <code>.ts</code>, and <code>.tsx</code>) in case there is no <code>block.json</code> file found.</li>
+<li><a href="https://webpack.js.org/configuration/output">Output</a>: <code>build/[name].js</code>, for example: <code>build/index.js</code>, or <code>build/my-block/index.js</code>.</li>
+<li><a href="https://webpack.js.org/loaders/">Loaders</a>:
+<ul>
+<li><a href="https://webpack.js.org/loaders/babel-loader/"><code>babel-loader</code></a> allows transpiling JavaScript and TypeScript files using Babel and webpack.</li>
+<li><a href="https://www.npmjs.com/package/@svgr/webpack"><code>@svgr/webpack</code></a> and <a href="https://webpack.js.org/loaders/url-loader/"><code>url-loader</code></a> makes it possible to handle SVG files in JavaScript code.</li>
+<li><a href="https://webpack.js.org/loaders/css-loader/"><code>css-loader</code></a> chained with <a href="https://webpack.js.org/loaders/postcss-loader/"><code>postcss-loader</code></a> and <a href="https://webpack.js.org/loaders/sass-loader/">sass-loader</a> let webpack process CSS, SASS or SCSS files referenced in JavaScript files.</li>
+</ul>
+</li>
+<li><a href="https://webpack.js.org/configuration/plugins">Plugins</a> (among others):
+<ul>
+<li><a href="https://webpack.js.org/plugins/copy-webpack-plugin/"><code>CopyWebpackPlugin</code></a> copies all <code>block.json</code> files discovered in the <code>src</code> directory to the build directory.</li>
+<li><a href="https://webpack.js.org/plugins/mini-css-extract-plugin/"><code>MiniCssExtractPlugin</code></a> extracts CSS into separate files. It creates a CSS file per JavaScript entry point which contains CSS.</li>
+<li><a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/dependency-extraction-webpack-plugin/README.md"><code>@wordpress/dependency-extraction-webpack-plugin</code></a> is used with the default configuration to ensure that WordPress provided scripts are not included in the built bundle.</li>
+</ul>
+</li>
+</ul>
+<h3 class="is-toc-heading" id="provide-your-own-webpack-config" tabindex="-1"><a href="#provide-your-own-webpack-config">Provide your own webpack config</a></h3>
+<p>Should there be any situation where you want to provide your own webpack config, you can do so. The <code>build</code> and <code>start</code> commands will use your provided file when:</p>
+<ul>
+<li>the command receives a <code>--config</code> argument. Example: <code>wp-scripts build --config my-own-webpack-config.js</code>.</li>
+<li>there is a file called <code>webpack.config.js</code> or <code>webpack.config.babel.js</code> in the top-level directory of your project (at the same level as <code>package.json</code>).</li>
+</ul>
+<h4>Extending the webpack config</h4>
+<p>To extend the provided webpack config, or replace subsections within the provided webpack config, you can provide your own <code>webpack.config.js</code> file, <code>require</code> the provided <code>webpack.config.js</code> file, and use the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax"><code>spread</code> operator</a> to import all of or part of the provided configuration.</p>
+<p>In the example below, a <code>webpack.config.js</code> file is added to the root folder extending the provided webpack config to include custom logic to parse module’s source and convert it to a JavaScript object using <a href="https://www.npmjs.com/package/toml"><code>toml</code></a>. It may be useful to import toml or other non-JSON files as JSON, without specific loaders:</p>
+<pre><code class="language-javascript">const toml = require( 'toml' );
+const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
+
+module.exports = {
+    ...defaultConfig,
+    module: {
+        ...defaultConfig.module,
+        rules: [
+            ...defaultConfig.module.rules,
+            {
+                test: /.toml/,
+                type: 'json',
+                parser: {
+                    parse: toml.parse,
+                },
+            },
+        ],
+    },
+};
+</code></pre>
+<p>If you follow this approach, please, be aware that:</p>
+<ul>
+<li>You should keep using the <code>wp-scripts</code> commands (<code>start</code> and <code>build</code>). Do not use <code>webpack</code> directly.</li>
+<li>Future versions of this package may change what webpack and Babel plugins we bundle, default configs, etc. Should those changes be necessary, they will be registered in the <a href="https://github.com/WordPress/gutenberg/blob/HEAD/packages/scripts/CHANGELOG.md">package’s CHANGELOG</a>, so make sure to read it before upgrading.</li>
+</ul>
+<h2 class="is-toc-heading" id="contributing-to-this-package" tabindex="-1"><a href="#contributing-to-this-package">Contributing to this package</a></h2>
+<p>This is an individual package that’s part of the Gutenberg project. The project is organized as a monorepo. It’s made up of multiple self-contained software packages, each with a specific purpose. The packages in this monorepo are published to <a href="https://www.npmjs.com/">npm</a> and used by <a href="https://make.wordpress.org/core/">WordPress</a> as well as other software projects.</p>
+<p>To find out more about contributing to this package or Gutenberg as a whole, please read the project’s main <a href="https://github.com/WordPress/gutenberg/tree/HEAD/CONTRIBUTING.md">contributor guide</a>.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

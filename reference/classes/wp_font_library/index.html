@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">WP_Font_Library</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>WP_Font_Library</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> WP_Font_Library {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Font Library class.</p>
+</section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_library/get_font_collection/">WP_Font_Library::get_font_collection</a></td><td>Gets a font collection.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_library/get_font_collections/">WP_Font_Library::get_font_collections</a></td><td>Gets all the font collections available.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_library/get_instance/">WP_Font_Library::get_instance</a></td><td>Utility method to retrieve the main instance of the class.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_library/is_collection_registered/">WP_Font_Library::is_collection_registered</a></td><td>Checks if a font collection is registered.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_library/register_font_collection/">WP_Font_Library::register_font_collection</a></td><td>Register a new font collection.</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_font_library/unregister_font_collection/">WP_Font_Library::unregister_font_collection</a></td><td>Unregisters a previously registered font collection.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="17"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class WP_Font_Library {
+
+	/**
+	 * Font collections.
+	 *
+	 * @since 6.5.0
+	 * @var array
+	 */
+	private $collections = array();
+
+	/**
+	 * Container for the main instance of the class.
+	 *
+	 * @since 6.5.0
+	 * @var WP_Font_Library|null
+	 */
+	private static $instance = null;
+
+	/**
+	 * Register a new font collection.
+	 *
+	 * @since 6.5.0
+	 *
+	 * @param string $slug Font collection slug. May only contain alphanumeric characters, dashes,
+	 *                     and underscores. See sanitize_title().
+	 * @param array  $args Font collection data. See wp_register_font_collection() for information on accepted arguments.
+	 * @return WP_Font_Collection|WP_Error A font collection if it was registered successfully,
+	 *                                     or WP_Error object on failure.
+	 */
+	public function register_font_collection( string $slug, array $args ) {
+		$new_collection = new WP_Font_Collection( $slug, $args );
+
+		if ( $this-&gt;is_collection_registered( $new_collection-&gt;slug ) ) {
+			$error_message = sprintf(
+				/* translators: %s: Font collection slug. */
+				__( 'Font collection with slug: "%s" is already registered.' ),
+				$new_collection-&gt;slug
+			);
+			_doing_it_wrong(
+				__METHOD__,
+				$error_message,
+				'6.5.0'
+			);
+			return new WP_Error( 'font_collection_registration_error', $error_message );
+		}
+		$this-&gt;collections[ $new_collection-&gt;slug ] = $new_collection;
+		return $new_collection;
+	}
+
+	/**
+	 * Unregisters a previously registered font collection.
+	 *
+	 * @since 6.5.0
+	 *
+	 * @param string $slug Font collection slug.
+	 * @return bool True if the font collection was unregistered successfully and false otherwise.
+	 */
+	public function unregister_font_collection( string $slug ) {
+		if ( ! $this-&gt;is_collection_registered( $slug ) ) {
+			_doing_it_wrong(
+				__METHOD__,
+				/* translators: %s: Font collection slug. */
+				sprintf( __( 'Font collection "%s" not found.' ), $slug ),
+				'6.5.0'
+			);
+			return false;
+		}
+		unset( $this-&gt;collections[ $slug ] );
+		return true;
+	}
+
+	/**
+	 * Checks if a font collection is registered.
+	 *
+	 * @since 6.5.0
+	 *
+	 * @param string $slug Font collection slug.
+	 * @return bool True if the font collection is registered and false otherwise.
+	 */
+	private function is_collection_registered( string $slug ) {
+		return array_key_exists( $slug, $this-&gt;collections );
+	}
+
+	/**
+	 * Gets all the font collections available.
+	 *
+	 * @since 6.5.0
+	 *
+	 * @return array List of font collections.
+	 */
+	public function get_font_collections() {
+		return $this-&gt;collections;
+	}
+
+	/**
+	 * Gets a font collection.
+	 *
+	 * @since 6.5.0
+	 *
+	 * @param string $slug Font collection slug.
+	 * @return WP_Font_Collection|null Font collection object, or null if the font collection doesn't exist.
+	 */
+	public function get_font_collection( string $slug ) {
+		if ( $this-&gt;is_collection_registered( $slug ) ) {
+			return $this-&gt;collections[ $slug ];
+		}
+		return null;
+	}
+
+	/**
+	 * Utility method to retrieve the main instance of the class.
+	 *
+	 * The instance will be created if it does not exist yet.
+	 *
+	 * @since 6.5.0
+	 *
+	 * @return WP_Font_Library The main instance.
+	 */
+	public static function get_instance() {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/fonts/class-wp-font-library.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/fonts/class-wp-font-library.php#L17">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/fonts/class-wp-font-library.php#L17-L142">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/6.5.0/">6.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

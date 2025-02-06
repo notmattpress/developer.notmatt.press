@@ -1,0 +1,89 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/block-api/">Block API Reference</a></span><span class="is-current-page">Annotations</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Annotations</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><div class="callout callout-alert">
+<strong>Note:</strong> This API is experimental, that means it is subject to non-backward compatible changes or removal in any future version.
+</div>
+<p>Annotations are a way to highlight a specific piece in a post created with the block editor. Examples of this include commenting on a piece of text and spellchecking. Both can use the annotations API to mark a piece of text.</p>
+<h2 class="is-toc-heading" id="api" tabindex="-1"><a href="#api">API</a></h2>
+<p>To see the API for yourself the easiest way is to have a block that is at least 200 characters long without formatting and putting the following in the console:</p>
+<pre><code class="language-js">wp.data.dispatch( 'core/annotations' ).addAnnotation( {
+    source: 'my-annotations-plugin',
+    blockClientId: wp.data.select( 'core/block-editor' ).getBlockOrder()[ 0 ],
+    richTextIdentifier: 'content',
+    range: {
+        start: 50,
+        end: 100,
+    },
+} );
+</code></pre>
+<p>The start and the end of the range should be calculated based only on the text of the relevant <code>RichText</code>. For example, in the following HTML position 0 will refer to the position before the capital S:</p>
+<pre><code class="language-html">&lt;strong&gt;Strong text&lt;/strong&gt;
+</code></pre>
+<p>To help with determining the correct positions, the <code>wp.richText.create</code> method can be used. This will split a piece of HTML into text and formats.</p>
+<p>All available properties can be found in the API documentation of the <code>addAnnotation</code> action.</p>
+<p>The property <code>richTextIdentifier</code> is the identifier of the RichText instance the annotation applies to. This is necessary because blocks may have multiple rich text instances that are used to manage data for different attributes, so you need to pass this in order to highlight text within the correct one.</p>
+<p>For example the Paragraph block only has a single RichText instance, with the identifier <code>content</code>. The quote block type has 2 RichText instances, so if you wish to highlight text in the citation, you need to pass <code>citation</code> as the <code>richTextIdentifier</code> when adding an annotation. To target the quote content, you need to use the identifier <code>value</code>. Refer to the source code of the block type to find the correct identifier.</p>
+<h2 class="is-toc-heading" id="block-annotation" tabindex="-1"><a href="#block-annotation">Block annotation</a></h2>
+<p>It is also possible to annotate a block completely. In that case just provide the <code>selector</code> property and set it to <code>block</code>. The default <code>selector</code> is <code>range</code>, which can be used for text annotation.</p>
+<pre><code class="language-js">wp.data.dispatch( 'core/annotations' ).addAnnotation( {
+    source: 'my-annotations-plugin',
+    blockClientId: wp.data.select( 'core/block-editor' ).getBlockOrder()[ 0 ],
+    selector: 'block',
+} );
+</code></pre>
+<p>This doesn’t provide any styling out of the box, so you have to provide some CSS to make sure your annotation is shown:</p>
+<pre><code class="language-css">.is-annotated-by-my-annotations-plugin {
+    outline: 1px solid black;
+}
+</code></pre>
+<h2 class="is-toc-heading" id="text-annotation" tabindex="-1"><a href="#text-annotation">Text annotation</a></h2>
+<p>The text annotation is controlled by the <code>start</code> and <code>end</code> properties. Simple <code>start</code> and <code>end</code> properties don’t work for HTML, so these properties are assumed to be offsets within the <code>rich-text</code> internal structure. For simplicity you can think about this as if all HTML would be stripped out and then you calculate the <code>start</code> and the <code>end</code> of the annotation.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

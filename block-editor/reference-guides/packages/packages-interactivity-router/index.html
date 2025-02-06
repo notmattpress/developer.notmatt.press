@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/">Reference Guides</a></span><span><a href="https://developer.wordpress.org/block-editor/reference-guides/packages/">Package Reference</a></span><span class="is-current-page">@wordpress/interactivity-router</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>@wordpress/interactivity-router</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>The package <code>@wordpress/interactivity-router</code> enables loading content from other pages without a full page reload. Currently, the only supported mode is “region-based”. Full “client-side navigation” is still in experimental phase.</p>
+<p>The package defines an Interactivity API store with the <code>core/router</code> namespace, exposing state and 2 actions: <code>navigate</code> and <code>prefetch</code> to handle client-side navigation.</p>
+<p>The <code>@wordpress/interactivity-router</code> package was <a href="https://make.wordpress.org/core/2024/02/19/merge-announcement-interactivity-api/">introduced in WordPress Core in v6.5</a>. This means this package is already bundled in Core in any version of WordPress higher than v6.5.</p>
+<div class="callout callout-info">
+    Check the <a href="https://developer.notmatt.press/block-editor/reference-guides/interactivity-api/">Interactivity API Reference docs in the Block Editor handbook</a> to learn more about the Interactivity API.
+</div>
+<h2 class="is-toc-heading" id="usage" tabindex="-1"><a href="#usage">Usage</a></h2>
+<p>The package is intended to be imported dynamically in the <code>view.js</code> files of interactive blocks. This is done in in order to reduce the JS bundle size on the initial page load.</p>
+<pre><code class="language-js">/* view.js */
+
+import { store } from '@wordpress/interactivity';
+
+// This is how you would typically use the navigate() action in your block.
+store( 'my-namespace/myblock', {
+    actions: {
+        *goToPage( e ) {
+            e.preventDefault();
+
+            // We import the package dynamically to reduce the initial JS bundle size.
+            // Async actions are defined as generators so the import() must be called with `yield`.
+            const { actions } = yield import(
+                '@wordpress/interactivity-router'
+            );
+            yield actions.navigate( e.target.href );
+        },
+    },
+} );
+</code></pre>
+<p>Now, you can call <code>actions.navigate()</code> in your block’s <code>view.js</code> file to navigate to a different page or e.g. pass it to a <code>data-wp-on--click</code> attribute.</p>
+<p>When loaded, this package <a href="https://github.com/WordPress/gutenberg/blob/ed7d78652526270b63976d7a970dba46a2bfcbb0/packages/interactivity-router/src/index.ts#L212">adds the following state and actions</a> to the <code>core/router</code> store:</p>
+<pre><code class="language-js">const { state, actions } = store( 'core/router', {
+    state: {
+        url: window.location.href,
+        navigation: {
+            hasStarted: false,
+            hasFinished: false,
+            texts: {
+                loading: '',
+                loaded: '',
+            },
+            message: '',
+        },
+    },
+    actions: {
+        *navigate(href, options) {...},
+        prefetch(url, options) {...},
+    }
+})
+</code></pre>
+<div class="callout callout-tip">
+    The core “Query Loop” block is <a href="https://github.com/WordPress/gutenberg/blob/cd701e94ceffea7ef2f423274a2f77025bcfa1a6/packages/block-library/src/query/view.js#L35">using this package</a> to provide the <a href="https://github.com/WordPress/gutenberg/blob/cd701e94ceffea7ef2f423274a2f77025bcfa1a6/packages/block-library/src/query/index.php#L33">region-based navigation</a>.
+</div>
+<h3 class="is-toc-heading" id="directives" tabindex="-1"><a href="#directives">Directives</a></h3>
+<h4><code>data-wp-router-region</code></h4>
+<p>It defines a region that is updated on navigation. It requires a unique ID as the value and can only be used in root interactive elements, i.e., elements with <code>data-wp-interactive</code> that are not nested inside other elements with <code>data-wp-interactive</code>.</p>
+<p>Example:</p>
+<pre><code class="language-html">&lt;div data-wp-interactive="myblock" data-wp-router-region="main-list"&gt;
+  &lt;ul&gt;
+     &lt;li&gt;&lt;a href="/post-1"&gt;Post 1&lt;/a&gt;&lt;/li&gt;
+     &lt;li&gt;&lt;a href="/post-2"&gt;Post 2&lt;/a&gt;&lt;/li&gt;
+     &lt;li&gt;&lt;a href="/post-3"&gt;Post 3&lt;/a&gt;&lt;/li&gt;
+  &lt;/ul&gt;
+  &lt;a data-wp-on--click="actions.navigate" href="/page/2"&gt;
+&lt;/div&gt;
+</code></pre>
+<h3 class="is-toc-heading" id="actions" tabindex="-1"><a href="#actions">Actions</a></h3>
+<h4><code>navigate</code></h4>
+<p>Navigates to the specified page.</p>
+<p>This function normalizes the passed <code>href</code>, fetches the page HTML if needed, and updates any interactive regions whose contents have changed in the new page. It also creates a new entry in the browser session history.</p>
+<p><strong>Params</strong></p>
+<pre><code class="language-js">navigate( href: string, options: NavigateOptions = {} )
+</code></pre>
+<ul>
+<li><code>href</code>: The page <code>href</code>.</li>
+<li><code>options</code>: Options object.
+<ul>
+<li><code>force</code>: If <code>true</code>, it forces re-fetching the URL. <code>navigate()</code> always caches the page, so if the page has been navigated to before, it will be used. Default is <code>false</code>.</li>
+<li><code>html</code>: HTML string to be used instead of fetching the requested URL.</li>
+<li><code>replace</code>: If <code>true</code>, it replaces the current entry in the browser session history. Default is <code>false</code>.</li>
+<li><code>timeout</code>: Time until the navigation is aborted, in milliseconds. Default is <code>10000</code>.</li>
+<li><code>loadingAnimation</code>: Whether an animation should be shown while navigating. Default to <code>true</code>.</li>
+<li><code>screenReaderAnnouncement</code>: Whether a message for screen readers should be announced while navigating. Default to <code>true</code>.</li>
+</ul>
+</li>
+</ul>
+<h4><code>prefetch</code></h4>
+<p>Prefetches the page for the passed URL. The page is cached and can be used for navigation.</p>
+<p>The function normalizes the URL and stores internally the fetch promise, to avoid triggering a second fetch for an ongoing request.</p>
+<p><strong>Params</strong></p>
+<pre><code class="language-js">prefetch( url: string, options: PrefetchOptions = {} )
+</code></pre>
+<ul>
+<li><code>url</code>: The page <code>url</code>.</li>
+<li><code>options</code>: Options object.
+<ul>
+<li><code>force</code>: If <code>true</code>, forces fetching the URL again.</li>
+<li><code>html</code>: HTML string to be used instead of fetching the requested URL.</li>
+</ul>
+</li>
+</ul>
+<h3 class="is-toc-heading" id="state" tabindex="-1"><a href="#state">State</a></h3>
+<p><code>state.url</code> is a reactive property synchronized with the current URL.<br/>
+Properties under <code>state.navigation</code> are meant for loading bar animations.</p>
+<h2 class="is-toc-heading" id="installation" tabindex="-1"><a href="#installation">Installation</a></h2>
+<p>Install the module:</p>
+<pre><code class="language-bash">npm install @wordpress/interactivity-router --save
+</code></pre>
+<p>This step is only required if you use the Interactivity API outside WordPress.</p>
+<p>Within WordPress, the package is already bundled in Core. To ensure it’s enqueued, add <code>@wordpress/interactivity-router</code> to the dependency array of the script module. This process is often done automatically with tools like <a href="https://developer.notmatt.press/block-editor/getting-started/devenv/get-started-with-wp-scripts/"><code>wp-scripts</code></a>.</p>
+<p>Furthermore, this package assumes your code will run in an <strong>ES2015+</strong> environment. If you’re using an environment with limited or no support for such language features and APIs, you should include the polyfill shipped in <a href="https://github.com/WordPress/gutenberg/tree/HEAD/packages/babel-preset-default#polyfill"><code>@wordpress/babel-preset-default</code></a> in your code.</p>
+<h2 class="is-toc-heading" id="license" tabindex="-1"><a href="#license">License</a></h2>
+<p>Interactivity API proposal, as part of Gutenberg and the WordPress project is free software, and is released under the terms of the GNU General Public License version 2 or (at your option) any later version. See <a href="https://github.com/WordPress/gutenberg/blob/trunk/LICENSE.md">LICENSE.md</a> for complete license.</p>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">get_post_datetime()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>get_post_datetime()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">get_post_datetime( <span class="arg-type">int|WP_Post</span> <span class="arg-name">$post</span> = <span class="arg-default">null</span>,  <span class="arg-type">string</span> <span class="arg-name">$field</span> = <span class="arg-default">'date'</span>,  <span class="arg-type">string</span> <span class="arg-name">$source</span> = <span class="arg-default">'local'</span> ): <span class="return-type">DateTimeImmutable|false</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves post published or modified time as a <code>DateTimeImmutable</code> object instance.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The object will be set to the timezone from WordPress settings.</p>
+<p>For legacy reasons, this function allows to choose to instantiate from local or UTC time in database.<br/>Normally this should make no difference to the result. However, the values might get out of sync in database, typically because of timezone setting changes. The parameter ensures the ability to reproduce backwards compatible behaviors in such cases.</p>
+</section>
+<section class="wp-block-wporg-code-reference-parameters"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="parameters" tabindex="-1"><a href="#parameters">Parameters</a></h2> <dl><dt><code>$post</code><span class="type"><span class="int">int</span>|<span class="WP_Post"><a href="https://developer.notmatt.press/reference/classes/wp_post/" rel="class">WP_Post</a></span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Post ID or post object. Default is global <code>$post</code> object.</span></div><p class="default">Default:<code>null</code></p></dd><dt><code>$field</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Published or modified time to use from database. Accepts <code>'date'</code> or <code>'modified'</code>.<br/>
+Default <code>'date'</code>.</span></div><p class="default">Default:<code>'date'</code></p></dd><dt><code>$source</code><span class="type"><span class="string">string</span></span><span class="required">optional</span></dt><dd><div class="desc"><span class="description">Local or UTC time to use from database. Accepts <code>'local'</code> or <code>'gmt'</code>.<br/>
+Default <code>'local'</code>.</span></div><p class="default">Default:<code>'local'</code></p></dd></dl></section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">DateTimeImmutable|false</span> Time object on success, false on failure.</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="2808"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function get_post_datetime( $post = null, $field = 'date', $source = 'local' ) {
+	$post = get_post( $post );
+
+	if ( ! $post ) {
+		return false;
+	}
+
+	$wp_timezone = wp_timezone();
+
+	if ( 'gmt' === $source ) {
+		$time     = ( 'modified' === $field ) ? $post-&gt;post_modified_gmt : $post-&gt;post_date_gmt;
+		$timezone = new DateTimeZone( 'UTC' );
+	} else {
+		$time     = ( 'modified' === $field ) ? $post-&gt;post_modified : $post-&gt;post_date;
+		$timezone = $wp_timezone;
+	}
+
+	if ( empty( $time ) || '0000-00-00 00:00:00' === $time ) {
+		return false;
+	}
+
+	$datetime = date_create_immutable_from_format( 'Y-m-d H:i:s', $time, $timezone );
+
+	if ( false === $datetime ) {
+		return false;
+	}
+
+	return $datetime-&gt;setTimezone( $wp_timezone );
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/general-template.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/general-template.php#L2808">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/general-template.php#L2808-L2836">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_timezone/">wp_timezone()</a><code>wp-includes/functions.php</code></td><td><p>Retrieves the timezone of the site as a <code>DateTimeZone</code> object.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post/">get_post()</a><code>wp-includes/post.php</code></td><td><p>Retrieves post data given a post ID or post object.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_timestamp/">get_post_timestamp()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves post published or modified time as a Unix timestamp.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_time/">get_post_time()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves the time at which the post was written.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/get_post_modified_time/">get_post_modified_time()</a><code>wp-includes/general-template.php</code></td><td><p>Retrieves the time at which the post was last modified.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.3.0/">5.3.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

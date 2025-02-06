@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/classes/">Classes</a></span><span class="is-current-page">Walker_CategoryDropdown</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Walker_CategoryDropdown</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;"><span class="keyword">class</span> Walker_CategoryDropdown {}</h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Core class used to create an HTML dropdown list of Categories.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <h3 class="is-toc-heading has-heading-5-font-size" id="see-also" tabindex="-1"><a href="#see-also">See also</a></h3><ul><li><a href="https://developer.notmatt.press/reference/classes/walker">Walker</a></li>
+</ul></section>
+<section class="wp-block-wporg-code-reference-methods"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="methods" tabindex="-1"><a href="#methods">Methods</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Name</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/walker_categorydropdown/start_el/">Walker_CategoryDropdown::start_el</a></td><td>Starts the element output.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="17"><code class="language-php line-numbers" id="wporg-source-code" lang="php">class Walker_CategoryDropdown extends Walker {
+
+	/**
+	 * What the class handles.
+	 *
+	 * @since 2.1.0
+	 * @var string
+	 *
+	 * @see Walker::$tree_type
+	 */
+	public $tree_type = 'category';
+
+	/**
+	 * Database fields to use.
+	 *
+	 * @since 2.1.0
+	 * @todo Decouple this
+	 * @var string[]
+	 *
+	 * @see Walker::$db_fields
+	 */
+	public $db_fields = array(
+		'parent' =&gt; 'parent',
+		'id'     =&gt; 'term_id',
+	);
+
+	/**
+	 * Starts the element output.
+	 *
+	 * @since 2.1.0
+	 * @since 5.9.0 Renamed `$category` to `$data_object` and `$id` to `$current_object_id`
+	 *              to match parent class for PHP 8 named parameter support.
+	 *
+	 * @see Walker::start_el()
+	 *
+	 * @param string  $output            Used to append additional content (passed by reference).
+	 * @param WP_Term $data_object       Category data object.
+	 * @param int     $depth             Depth of category. Used for padding.
+	 * @param array   $args              Uses 'selected', 'show_count', and 'value_field' keys, if they exist.
+	 *                                   See wp_dropdown_categories().
+	 * @param int     $current_object_id Optional. ID of the current category. Default 0.
+	 */
+	public function start_el( &amp;$output, $data_object, $depth = 0, $args = array(), $current_object_id = 0 ) {
+		// Restores the more descriptive, specific name for use within this method.
+		$category = $data_object;
+
+		$pad = str_repeat( '&amp;nbsp;', $depth * 3 );
+
+		/** This filter is documented in wp-includes/category-template.php */
+		$cat_name = apply_filters( 'list_cats', $category-&gt;name, $category );
+
+		if ( isset( $args['value_field'] ) &amp;&amp; isset( $category-&gt;{$args['value_field']} ) ) {
+			$value_field = $args['value_field'];
+		} else {
+			$value_field = 'term_id';
+		}
+
+		$output .= "\t&lt;option class=\"level-$depth\" value=\"" . esc_attr( $category-&gt;{$value_field} ) . '"';
+
+		// Type-juggling causes false matches, so we force everything to a string.
+		if ( (string) $category-&gt;{$value_field} === (string) $args['selected'] ) {
+			$output .= ' selected="selected"';
+		}
+		$output .= '&gt;';
+		$output .= $pad . $cat_name;
+		if ( $args['show_count'] ) {
+			$output .= '&amp;nbsp;&amp;nbsp;(' . number_format_i18n( $category-&gt;count ) . ')';
+		}
+		$output .= "&lt;/option&gt;\n";
+	}
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/class-walker-category-dropdown.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/class-walker-category-dropdown.php#L17">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/class-walker-category-dropdown.php#L17-L87">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/walker/">Walker</a><code>wp-includes/class-wp-walker.php</code></td><td><p>A class for displaying various tree-like structures.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/2.1.0/">2.1.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

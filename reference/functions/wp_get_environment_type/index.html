@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/reference/">Reference</a></span><span><a href="https://developer.wordpress.org/reference/functions/">Functions</a></span><span class="is-current-page">wp_get_environment_type()</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>wp_get_environment_type()</h1>
+    <h1 class="wp-block-wporg-code-reference-title" style="margin-bottom:40px;">wp_get_environment_type(): <span class="return-type">string</span></h1>
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-container-core-post-content-is-layout-1 wp-block-post-content-is-layout-flow">
+<section class="wp-block-wporg-code-reference-summary"><p>Retrieves the current environment type.</p>
+</section>
+<section class="wp-block-wporg-code-reference-description"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="description" tabindex="-1"><a href="#description">Description</a></h2> <p>The type can be set via the <code>WP_ENVIRONMENT_TYPE</code> global system variable, or a constant of the same name.</p>
+<p>Possible values are ‘local’, ‘development’, ‘staging’, and ‘production’.<br/>If not set, the type defaults to ‘production’.</p>
+</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-return-value"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="return" tabindex="-1"><a href="#return">Return</a></h2> <span class="return-type">string</span> The current environment type.</section>
+<section class="wporg-has-embedded-code wp-block-wporg-code-reference-explanation"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="more-information" tabindex="-1"><a href="#more-information">More Information</a></h2>
+<ul class="wp-block-list">
+<li>This function allows plugin and theme authors to more easily differentiate how they handle specific functionality between production and development sites in a standardized way.</li>
+<li>When <code>development</code> is returned by <a href="https://developer.notmatt.press/reference/functions/wp_get_environment_type/" rel="function">wp_get_environment_type()</a> , <code>WP_DEBUG</code> will be set to <code>true</code> if it is not defined in the <code>wp-config.php</code> file of the site.</li>
+<li>All hosts that support setting up staging environments are requested to set this feature to <code>staging</code> on those staging environments. Similarly, all developers with development environments shall set this value to <code>development</code> appropriately.</li>
+</ul>
+<p>Example Usage:</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">switch ( wp_get_environment_type() ) {
+case 'local':
+case 'development':
+do_nothing();
+break;
+
+case 'staging':
+do_staging_thing();
+break;
+
+case 'production':
+default:
+do_production_thing();
+break;
+}</code></pre>
+</section>
+<section class="wp-block-wporg-code-reference-source"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="source" tabindex="-1"><a href="#source">Source</a></h2> <pre aria-label="Function source code" class="wp-block-code" data-start="222"><code class="language-php line-numbers" id="wporg-source-code" lang="php">function wp_get_environment_type() {
+	static $current_env = '';
+
+	if ( ! defined( 'WP_RUN_CORE_TESTS' ) &amp;&amp; $current_env ) {
+		return $current_env;
+	}
+
+	$wp_environments = array(
+		'local',
+		'development',
+		'staging',
+		'production',
+	);
+
+	// Add a note about the deprecated WP_ENVIRONMENT_TYPES constant.
+	if ( defined( 'WP_ENVIRONMENT_TYPES' ) &amp;&amp; function_exists( '_deprecated_argument' ) ) {
+		if ( function_exists( '__' ) ) {
+			/* translators: %s: WP_ENVIRONMENT_TYPES */
+			$message = sprintf( __( 'The %s constant is no longer supported.' ), 'WP_ENVIRONMENT_TYPES' );
+		} else {
+			$message = sprintf( 'The %s constant is no longer supported.', 'WP_ENVIRONMENT_TYPES' );
+		}
+
+		_deprecated_argument(
+			'define()',
+			'5.5.1',
+			$message
+		);
+	}
+
+	// Check if the environment variable has been set, if `getenv` is available on the system.
+	if ( function_exists( 'getenv' ) ) {
+		$has_env = getenv( 'WP_ENVIRONMENT_TYPE' );
+		if ( false !== $has_env ) {
+			$current_env = $has_env;
+		}
+	}
+
+	// Fetch the environment from a constant, this overrides the global system variable.
+	if ( defined( 'WP_ENVIRONMENT_TYPE' ) &amp;&amp; WP_ENVIRONMENT_TYPE ) {
+		$current_env = WP_ENVIRONMENT_TYPE;
+	}
+
+	// Make sure the environment is an allowed one, and not accidentally set to an invalid value.
+	if ( ! in_array( $current_env, $wp_environments, true ) ) {
+		$current_env = 'production';
+	}
+
+	return $current_env;
+}
+</code></pre><p class="wporg-dot-link-list"><a href="https://developer.notmatt.press/reference/files/wp-includes/load.php/">View all references</a> <a href="https://core.trac.wordpress.org/browser/tags/6.7/src/wp-includes/load.php#L222">View on Trac</a> <a href="https://github.com/WordPress/wordpress-develop/blob/6.7/src/wp-includes/load.php#L222-L271">View on GitHub</a></p></section>
+<section class="wp-block-wporg-code-reference-related" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="related" tabindex="-1"><a href="#related">Related</a></h2> <section class="wp-block-wporg-code-table" id="uses" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Uses</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/_deprecated_argument/">_deprecated_argument()</a><code>wp-includes/functions.php</code></td><td><p>Marks a function argument as deprecated and inform when it has been used.</p>
+</td></tr></tbody></table></figure></section> <section class="wp-block-wporg-code-table" id="used-by" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Used by</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_authorize_application_redirect_url_valid/">wp_is_authorize_application_redirect_url_valid()</a><code>wp-admin/includes/user.php</code></td><td><p>Validates the redirect URL protocol scheme. The protocol can be anything except <code>http</code> and <code>javascript</code>.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_is_application_passwords_supported/">wp_is_application_passwords_supported()</a><code>wp-includes/user.php</code></td><td><p>Checks if Application Passwords is supported.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/is_development_environment/">WP_Site_Health::is_development_environment()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Checks if the current environment type is set to ‘development’ or ‘local’.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/classes/wp_site_health/get_tests/">WP_Site_Health::get_tests()</a><code>wp-admin/includes/class-wp-site-health.php</code></td><td><p>Returns a set of tests that belong to the site status page.</p>
+</td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/functions/wp_initial_constants/">wp_initial_constants()</a><code>wp-includes/default-constants.php</code></td><td><p>Defines initial WordPress constants.</p>
+</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-changelog"><h2 class="is-toc-heading wp-block-heading has-heading-5-font-size" id="changelog" tabindex="-1"><a href="#changelog">Changelog</a></h2> <section class="wp-block-wporg-code-table" style="margin-top:var(--wp--preset--spacing--20);"><figure class="wp-block-table"><table><thead><tr><th scope="col">Version</th><th scope="col">Description</th></tr></thead><tbody><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.5.1/">5.5.1</a></td><td><span class="since-description">Removed the ability to alter the list of types.</span></td></tr><tr class=""><td><a href="https://developer.notmatt.press/reference/since/5.5.0/">5.5.0</a></td><td>Introduced.</td></tr></tbody></table></figure></section> </section>
+<section class="wp-block-wporg-code-reference-comments" data-nosnippet="true"><h2 class="is-toc-heading wp-block-heading" id="user-contributed-notes" tabindex="-1"><a href="#user-contributed-notes">User Contributed Notes</a></h2> <ol class="comment-list"> <li class="comment byuser comment-author-khoipro even thread-even depth-1" data-comment-id="4923" id="comment-4923">
+<article class="comment-body" id="div-comment-4923">
+<a class="screen-reader-text" href="#comment-content-4923">Skip to note 5 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-4923">
+<p>See case from rtCamp. They placed in <code>mu-plugins/non-production.php</code>.</p>
+<pre class="wp-block-code"><code class="language-php line-numbers" lang="php">&lt;?php
+/**
+ *  Non-production environment functionality.
+ */
+
+if ( 'production' !== wp_get_environment_type() ) {
+
+	// Block crawling.
+	add_filter( 'robots_txt', 'wpdocs_name_block_crawling', 999 );
+
+	// Enable "Discourage search engines from indexing this site" option.
+	add_filter( 'pre_option_blog_public', '__return_zero', 999 );
+
+}
+
+/**
+ * Filters the robots.txt output to block crawling on non-production environment.
+ *
+ * @param string $output The robots.txt output.
+ */
+function wpdocs_name_block_crawling( $output ) {
+
+	$output = '# Crawling is blocked for non-production environment' . PHP_EOL;
+	$output .= 'User-agent: *' . PHP_EOL;
+	$output .= 'Disallow: /';
+
+	return $output;
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-4923">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-ludwig-c odd alt thread-odd thread-alt depth-1" data-comment-id="5819" id="comment-5819">
+<article class="comment-body" id="div-comment-5819">
+<a class="screen-reader-text" href="#comment-content-5819">Skip to note 6 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-5819">
+<p>Setting the environment type by <em>.htaccess</em> or Apache configuration</p>
+<p><code># Rules to set WP_ENVIRONMENT_TYPE based on hostname<br/>
+RewriteCond %{HTTP_HOST} [.]?localhost$<br/>
+RewriteRule .? - [E=WP_ENVIRONMENT_TYPE:local]<br/>
+RewriteCond %{HTTP_HOST} ^staging.domain.com$<br/>
+RewriteRule .? - [E=WP_ENVIRONMENT_TYPE:staging]<br/>
+RewriteCond %{HTTP_HOST} ^www.domain.com$<br/>
+RewriteRule .? - [E=WP_ENVIRONMENT_TYPE:production]</code></p>
+<p>Setting the environment type by Nginx configuration (best inside the php location)<br/>
+<code>fastcgi_param WP_ENVIRONMENT_TYPE staging;</code></p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-5819">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-ashkanahmadi even thread-even depth-1" data-comment-id="6360" id="comment-6360">
+<article class="comment-body" id="div-comment-6360">
+<a class="screen-reader-text" href="#comment-content-6360">Skip to note 7 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6360">
+<p>You can turn this into various functions to use specifically in certain environments:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">function is_local_environment() {
+   $env = wp_get_environment_type();
+   return (defined('WP_ENVIRONMENT_TYPE') &amp;&amp; $env === 'local');
+}</code></pre>
+<p>And then use that in your code. Example:</p>
+<pre class="wp-block-code"><code class="language-php" lang="php">if ( is_local_environment() ) {
+  // do something only in local environment
+}</code></pre>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6360">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+<li class="comment byuser comment-author-kratosgemini odd alt thread-odd thread-alt depth-1" data-comment-id="6540" id="comment-6540">
+<article class="comment-body" id="div-comment-6540">
+<a class="screen-reader-text" href="#comment-content-6540">Skip to note 8 content</a>
+
+<!-- .comment-metadata -->
+<div class="wporg-has-embedded-code comment-content" id="comment-content-6540">
+<p>The return value is cached via a <code>static</code> variable, so the <code>WP_ENVIRONMENT_TYPE</code> global system variable or constant must be set before the first call to <code>wp_get_environment_type()</code>. Otherwise, the defined environment type is not honored.</p>
+</div><!-- .comment-content -->
+<section class="wporg-has-embedded-code feedback hide-if-js" data-comment-count="0" id="feedback-6540">
+</section><!-- .feedback -->
+
+</article><!-- .comment-body -->
+</li>
+</ol></section>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>

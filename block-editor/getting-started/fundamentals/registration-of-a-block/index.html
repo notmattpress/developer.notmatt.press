@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Untitled Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: 'Quicksand', 'Open Sans', 'Helvetica', 'Arial', san-serif;
+        }
+        a, h1, h2, h3, h4, h5, h6 {
+            color: #0073aa;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        .has-small-font-size.is-link-to-top {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+        .entry-content {
+            position:relative;
+        }
+        .entry-content img {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class='container'>
+    
+    <div class="page-metadata" data-published="" data-last-updated=""></div>
+    
+    <div aria-label="Breadcrumbs" class="wp-block-wporg-site-breadcrumbs has-small-font-size" role="navigation"><div class="wporg-site-breadcrumbs__wrapper"><span><a href="https://developer.wordpress.org">Home</a></span><span><a href="https://developer.wordpress.org/block-editor/">Block Editor Handbook</a></span><span><a href="https://developer.wordpress.org/block-editor/getting-started/">Getting Started</a></span><span><a href="https://developer.wordpress.org/block-editor/getting-started/fundamentals/">Fundamentals of Block Development</a></span><span class="is-current-page">Registration of a block</span></div></div>  <!-- Full breadcrumbs HTML -->
+    <h1>Registration of a block</h1>
+    
+    
+    <div class="content"><div class="entry-content wp-block-post-content is-layout-flow wp-block-post-content-is-layout-flow"><p>Blocks in WordPress are typically bundled in a plugin and registered on both the server and client-side using <code>block.json</code> metadata.</p>
+<p>While it’s possible to register blocks solely on the client-side, best practices strongly advise registering them on both the server and client. This dual registration is crucial for enabling server-side features such as Dynamic Rendering, Block Supports, Block Hooks, and Style Variations. Without server-side registration, these functionalities will not operate correctly.</p>
+<p>For instance, if you want a block <a href="https://developer.notmatt.press/themes/global-settings-and-styles/settings/blocks/">to be styled via <code>theme.json</code></a>, it must be registered on the server. Otherwise, the block won’t recognize or apply any styles assigned to it in <code>theme.json</code>.</p>
+<p>The following diagram details the registration process for a block.</p>
+<p><a href="https://i0.wp.com/developer.wordpress.org/files/2023/11/block-registration-e1700493399839.png?ssl=1" title="Open Block Registration diagram image"><img alt="Open Block Registration diagram image" data-recalc-dims="1" decoding="async" src="https://i0.wp.com/developer.wordpress.org/files/2023/11/block-registration-e1700493399839.png?ssl=1"/></a></p>
+<h2 class="is-toc-heading" id="registering-a-block-with-php-server-side" tabindex="-1"><a href="#registering-a-block-with-php-server-side">Registering a block with PHP (server-side)</a></h2>
+<p>Block registration on the server usually takes place in the main plugin PHP file with the <a href="https://developer.notmatt.press/reference/functions/register_block_type/"><code>register_block_type()</code></a> function called on the <a href="https://developer.notmatt.press/reference/hooks/init/"><code>init</code></a> hook. This function simplifies block type registration by reading metadata stored in a <code>block.json</code> file.</p>
+<p>This function is designed to register block types and primarily uses two parameters in this context, although it can accommodate more variations:</p>
+<ul>
+<li><strong><code>$block_type</code> (<code>string</code>):</strong> This can either be the path to the directory containing the <code>block.json</code> file or the complete path to the metadata file if it has a different name. This parameter tells WordPress where to find the block’s configuration.
+</li>
+<li>
+<p><strong><code>$args</code> (<code>array</code>):</strong> This is an optional parameter where you can specify additional arguments for the block type. By default, this is an empty array, but it can include various options, one of which is the <code>$render_callback</code>. This callback is used to render blocks on the front end and is an alternative to the <code>render</code> property in <code>block.json</code>.</p>
+</li>
+</ul>
+<p>During the development process, the <code>block.json</code> file is typically moved from the <code>src</code> (source) directory to the <code>build</code> directory as part of compiling your code. Therefore, when registering your block, ensure the <code>$block_type</code> path points to the <code>block.json</code> file within the <code>build</code> directory.</p>
+<p>The <code>register_block_type()</code> function returns the registered block type (<code>WP_Block_Type</code>) on success or <code>false</code> on failure. Here is a simple example using the <code>render_callback</code>.</p>
+<pre><code class="language-php">register_block_type(
+    __DIR__ . '/build',
+    array(
+        'render_callback' =&gt; 'render_block_core_notice',
+    )
+);
+</code></pre>
+<p>Here is a more complete example, including the <code>init</code> hook.</p>
+<pre><code class="language-php">function minimal_block_ca6eda___register_block() {
+    register_block_type( __DIR__ . '/build' );
+}
+add_action( 'init', 'minimal_block_ca6eda___register_block' );
+</code></pre>
+<p><em>See the <a href="https://github.com/WordPress/block-development-examples/tree/trunk/plugins/minimal-block-ca6eda">full block example</a> of the  <a href="https://github.com/WordPress/block-development-examples/blob/trunk/plugins/minimal-block-ca6eda/plugin.php">code above</a></em></p>
+<h2 class="is-toc-heading" id="registering-a-block-with-javascript-client-side" tabindex="-1"><a href="#registering-a-block-with-javascript-client-side">Registering a block with JavaScript (client-side)</a></h2>
+<p>When the block has already been registered on the server, you only need to register the client-side settings in JavaScript using the <a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-blocks/#registerblocktype"><code>registerBlockType</code></a> method from the <code>@wordpress/blocks</code> package. You just need to make sure you use the same block name as defined in the block’s <code>block.json</code> file. Here’s an example:</p>
+<pre><code class="language-js">import { registerBlockType } from '@wordpress/blocks';
+
+registerBlockType( 'my-plugin/notice', {
+    edit: Edit,
+    // ...other client-side settings
+} );
+</code></pre>
+<p>While it’s generally advised to register blocks on the server using PHP for the benefits outlined in the <a href="https://developer.notmatt.press/block-editor/reference-guides/block-api/block-metadata/#benefits-using-the-metadata-file">“Benefits using the metadata file”</a> section, you can opt to register a block solely on the client-side. The <code>registerBlockType</code> method allows you to register a block type using metadata.</p>
+<p>The function accepts two parameters:</p>
+<ul>
+<li><strong><code>blockNameOrMetadata</code> (<code>string</code>|<code>Object</code>):</strong> This can either be the block type’s name as a string or an object containing the block’s metadata, which is typically loaded from the <code>block.json</code> file.</li>
+<li><strong><code>settings</code> (<code>Object</code>):</strong> This is an object containing the block’s client-side settings.</li>
+</ul>
+<div class="callout callout-tip">
+    You can import the contents of the <code>block.json</code> file (or any other <code>.json</code> file) directly into your JavaScript files if you’re using a build process, such as the one provided by <a href="https://developer.notmatt.press/block-editor/getting-started/devenv/get-started-with-wp-scripts/#the-build-process-with-wp-scripts"><code>wp-scripts</code></a>.
+</div>
+<p>The <code>settings</code> object passed as the second parameter includes many properties, but these are the two most important ones:</p>
+<ul>
+<li><strong><code>edit</code>:</strong> The React component that gets used in the Editor for our block.</li>
+<li><strong><code>save</code>:</strong> The function that returns the static HTML markup that gets saved to the database.</li>
+</ul>
+<p>The <code>registerBlockType()</code> function returns the registered block type (<code>WPBlock</code>) on success or <code>undefined</code> on failure. Here’s an example:</p>
+<pre><code class="language-js">import { registerBlockType } from '@wordpress/blocks';
+import { useBlockProps } from '@wordpress/block-editor';
+import metadata from './block.json';
+
+const Edit = () =&gt; &lt;p { ...useBlockProps() }&gt;Hello World - Block Editor&lt;/p&gt;;
+const save = () =&gt; &lt;p { ...useBlockProps.save() }&gt;Hello World - Frontend&lt;/p&gt;;
+
+registerBlockType( metadata.name, {
+    edit: Edit,
+    save,
+} );
+</code></pre>
+<p><em>See the <a href="https://github.com/WordPress/block-development-examples/tree/trunk/plugins/minimal-block-ca6eda">full block example</a> of the <a href="https://github.com/WordPress/block-development-examples/blob/trunk/plugins/minimal-block-ca6eda/src/index.js">code above</a></em></p>
+<h2 class="is-toc-heading" id="additional-resources" tabindex="-1"><a href="#additional-resources">Additional resources</a></h2>
+<ul>
+<li><a href="https://developer.notmatt.press/reference/functions/register_block_type/"><code>register_block_type</code> PHP function</a></li>
+<li><a href="https://developer.notmatt.press/block-editor/reference-guides/packages/packages-blocks/#registerblocktype"><code>registerBlockType</code> JS function</a></li>
+<li><a href="https://github.com/WordPress/gutenberg/discussions/55884">Why a block needs to be registered in both the server and the client?</a> | GitHub Discussion</li>
+<li><a href="https://excalidraw.com/#json=PUQu7jpvbKsUHYfpHWn7s,61QnhpZtjykp3s44lbUN_g">Block Registration diagram</a></li>
+</ul>
+</div></div>
+    </div>
+<footer class="text-center mt-10 py-5">
+    <p class="text-sm"><a href="https://notmatt.press">NotMattPress</a>.</p>
+</footer>
+</body>
+</html>
